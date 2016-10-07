@@ -134,7 +134,7 @@ namespace UniGit
 					{
 						if (entry.IsToken)
 						{
-							if (string.IsNullOrEmpty(username)) username = entry.Token;
+							if (string.IsNullOrEmpty(username)) username = entry.Token.Trim();
 							password = string.Empty;
 						}
 						else
