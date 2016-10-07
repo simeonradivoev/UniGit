@@ -107,7 +107,7 @@ namespace UniGit
 
 		private void FetchChanges()
 		{
-			if (!GitManager.IsValidRepo) return;
+			if (!GitManager.IsValidRepo || !GitManager.Settings.AutoFetch) return;
 			Remote remote = GitManager.Repository.Network.Remotes.FirstOrDefault();
 			if (remote == null) return;
 			GitManager.Repository.Network.Fetch(remote,new FetchOptions() {CredentialsProvider = FetchChangesCredentialHandler});

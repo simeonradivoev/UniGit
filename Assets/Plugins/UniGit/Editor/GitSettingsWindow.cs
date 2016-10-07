@@ -15,6 +15,7 @@ namespace UniGit
 		private string[] remoteNames;
 		private Rect addRepositoryButtonRect;
 		[SerializeField] private SettingTabEnum tab;
+		private SerializedObject serializedSettings;
 
 		[MenuItem("Window/GIT Settings")]
 		public static void CreateEditor()
@@ -44,6 +45,7 @@ namespace UniGit
 		{
 			if(!GitManager.IsValidRepo) return;
 			OnGitUpdate(null);
+			serializedSettings = new SerializedObject(GitManager.Settings);
 
 			GitManager.updateRepository -= OnGitUpdate;
 			GitManager.updateRepository += OnGitUpdate;
@@ -155,7 +157,14 @@ namespace UniGit
 
 			GitSettings settings = GitManager.Settings;
 
-			settings.AutoStage = EditorGUILayout.Toggle(new GUIContent("Auto Stage", "Auto stage changes for commiting when an asset is modified"), settings.AutoStage);
+			SerializedProperty iteratorProperty = serializedSettings.GetIterator();
+			iteratorProperty.Next(true);
+			iteratorProperty.NextVisible(true);
+			while (iteratorProperty.NextVisible(true))
+			{
+				EditorGUILayout.PropertyField(iteratorProperty);
+			}
+			serializedSettings.ApplyModifiedProperties();
 
 			GUILayout.Box(new GUIContent("Git Settings"), "ProjectBrowserHeaderBgMiddle");
 
