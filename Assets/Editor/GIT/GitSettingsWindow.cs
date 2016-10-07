@@ -284,7 +284,8 @@ namespace UniGit
 				if (GUILayout.Button("Create Credentials File"))
 				{
 					GitManager.GitCredentials = CreateInstance<GitCredentials>();
-					AssetDatabase.CreateAsset(GitManager.GitCredentials, "Assets/Editor/Resources/Git-Credentials.asset");
+					if(!Directory.Exists("Assets/Editor/GIT/Resources")) AssetDatabase.CreateFolder("Assets/Editor/GIT", "Resources");
+					AssetDatabase.CreateAsset(GitManager.GitCredentials, "Assets/Editor/GIT/Resources/Git-Credentials.asset");
 					AssetDatabase.SaveAssets();
 				}
 				return;
@@ -319,7 +320,7 @@ namespace UniGit
 				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewPassword);
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
-				if (GUILayout.Button(new GUIContent("Change Password"), "minibutton"))
+				if (GUILayout.Button(new GUIContent("Change Password"), "minibuttonleft"))
 				{
 					gitCredential.EncryptPassword(gitCredential.NewPassword);
 					gitCredential.NewPassword = "";
@@ -328,7 +329,12 @@ namespace UniGit
 					EditorUtility.DisplayDialog("Password Changed", "Password successfully changed", "Ok");
 				}
 				GUI.enabled = true;
-				if (GUILayout.Button(new GUIContent("Remove"), "minibutton"))
+				if (GUILayout.Button(new GUIContent("Save"), "minibuttonmid"))
+				{
+					EditorUtility.SetDirty(GitManager.GitCredentials);
+					AssetDatabase.SaveAssets();
+				}
+				if (GUILayout.Button(new GUIContent("Remove"), "minibuttonright"))
 				{
 					GitManager.GitCredentials.RemoveEntry(gitCredential);
 					GUIUtility.ExitGUI();
