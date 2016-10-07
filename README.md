@@ -30,3 +30,4 @@ An open source GIT Unity3D editor plugin.
 ## Not implemented yet
 * Branch Switching
 * Unity scene/prefab merging
+* Rebasing
