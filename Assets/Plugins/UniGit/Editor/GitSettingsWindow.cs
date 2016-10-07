@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
@@ -85,6 +86,7 @@ namespace UniGit
 			remoteNames = remotes.Select(r => r.Name).ToArray();
 		}
 
+		[UsedImplicitly]
 		private void OnGUI()
 		{
 			if (!GitManager.IsValidRepo)

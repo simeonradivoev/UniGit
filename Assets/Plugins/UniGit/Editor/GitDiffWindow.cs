@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
@@ -61,6 +62,7 @@ namespace UniGit
 			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
 		}
 
+		[UsedImplicitly]
 		private void OnEnable()
 		{
 			editoSerializedObject = new SerializedObject(this);
@@ -79,6 +81,7 @@ namespace UniGit
 			Repaint();
 		}
 
+		[UsedImplicitly]
 		private void OnUnfocus()
 		{
 			if(!GitManager.IsValidRepo) return;
@@ -86,6 +89,7 @@ namespace UniGit
 			GUI.FocusControl(null);
 		}
 
+		[UsedImplicitly]
 		private void OnFocus()
 		{
 			if(!GitManager.IsValidRepo) return;
@@ -133,6 +137,7 @@ namespace UniGit
 			}
 		}
 
+		[UsedImplicitly]
 		private void OnGUI()
 		{
 			CreateStyles();

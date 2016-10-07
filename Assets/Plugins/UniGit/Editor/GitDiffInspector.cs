@@ -40,12 +40,7 @@ namespace UniGit
 			}
 		}
 
-		private void OnEnable()
-		{
-			
-		}
-
-		private void OnGUI()
+		private void OnGui()
 		{
 			if (patch == null)
 			{

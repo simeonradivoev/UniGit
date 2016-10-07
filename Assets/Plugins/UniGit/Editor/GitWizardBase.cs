@@ -84,35 +84,6 @@ namespace UniGit
 			return EditorGUI.EndChangeCheck();
 		}
 
-		private byte[] PEM(string type, byte[] data)
-		{
-			string pem = Encoding.ASCII.GetString(data);
-			string header = String.Format("-----BEGIN {0}-----", type);
-			string footer = String.Format("-----END {0}-----", type);
-			int start = pem.IndexOf(header) + header.Length;
-			int end = pem.IndexOf(footer, start);
-			string base64 = pem.Substring(start, (end - start));
-			return Convert.FromBase64String(base64);
-		}
-
-		private X509Certificate LoadCertificateFile(string filename)
-		{
-			X509Certificate x509 = null;
-			using (FileStream fs = File.OpenRead(filename))
-			{
-				byte[] data = new byte[fs.Length];
-				fs.Read(data, 0, data.Length);
-				if (data[0] != 0x30)
-				{
-					// maybe it's ASCII PEM base64 encoded ? 
-					data = PEM("CERTIFICATE", data);
-				}
-				if (data != null)
-					x509 = new X509Certificate(data);
-			}
-			return x509;
-		}
-
 		#region Handlers
 		protected LibGit2Sharp.Credentials CredentialsHandler(string url, string user, SupportedCredentialTypes supported)
 		{

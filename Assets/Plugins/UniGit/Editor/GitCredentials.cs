@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace UniGit
@@ -10,6 +11,7 @@ namespace UniGit
 	{
 		[SerializeField,HideInInspector] private List<Entry> entries;
 
+		[UsedImplicitly]
 		private void OnEnable()
 		{
 			if (entries == null)
@@ -56,10 +58,6 @@ namespace UniGit
 			[SerializeField] private bool isToken;
 			[SerializeField] private string token;
 			private string newPassword;
-
-			public Entry()
-			{
-			}
 
 			public string Name
 			{

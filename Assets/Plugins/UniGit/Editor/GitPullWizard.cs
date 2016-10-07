@@ -29,6 +29,7 @@ namespace UniGit
 			pullOptions = new PullOptions() {MergeOptions = mergeOptions, FetchOptions = fetchOptions};
 		}
 
+		[UsedImplicitly]
 		private void Awake()
 		{
 			position = new Rect(position.x,position.y,position.width,300);
