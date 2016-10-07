@@ -12,10 +12,9 @@ namespace UniGit
 {
 	public class GitWizardBase : ScriptableWizard
 	{
-		protected Branch[] branches;
 		protected Remote[] remotes;
 		protected GUIContent[] remoteNames;
-		protected GUIContent[] branchNames;
+		protected string[] branchNames;
 		[SerializeField] protected Credentials credentials;
 		[SerializeField]
 		protected int selectedRemote;
@@ -30,23 +29,34 @@ namespace UniGit
 		{
 			remotes = GitManager.Repository.Network.Remotes.ToArray();
 			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
-			branches = GitManager.Repository.Branches.ToArray();
-			branchNames = branches.Select(b => new GUIContent(b.FriendlyName)).ToArray();
+			branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
 
 		public void Init(Branch branch)
 		{
+			branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+
 			selectedRemote = Array.IndexOf(remotes, branch.Remote);
-			selectedBranch = Array.IndexOf(branches, branch);
+			selectedBranch = Array.IndexOf(branchNames, branch.CanonicalName);
 		}
 
-		protected override bool DrawWizardGUI()
+		protected void DrawRemoteSelection()
 		{
-			EditorGUI.BeginChangeCheck();
 			selectedRemote = EditorGUILayout.Popup(new GUIContent("Remote"), selectedRemote, remoteNames);
-			selectedBranch = EditorGUILayout.Popup(new GUIContent("Branch"), selectedBranch, branchNames);
+		}
+
+		protected void DrawBranchSelection()
+		{
+			EditorGUILayout.BeginHorizontal();
+			EditorGUILayout.PrefixLabel(new GUIContent("Branch"));
+			selectedBranch = EditorGUILayout.Popup(selectedBranch, branchNames);
+			EditorGUILayout.EndHorizontal();
+		}
+
+		protected void DrawCredentials()
+		{
 			credentalsExpanded = EditorGUILayout.PropertyField(serializedObject.FindProperty("credentials"));
 			if (credentalsExpanded)
 			{
@@ -63,6 +73,14 @@ namespace UniGit
 				}
 				EditorGUI.indentLevel = 0;
 			}
+		}
+
+		protected override bool DrawWizardGUI()
+		{
+			EditorGUI.BeginChangeCheck();
+			DrawRemoteSelection();
+			DrawBranchSelection();
+			DrawCredentials();
 			return EditorGUI.EndChangeCheck();
 		}
 

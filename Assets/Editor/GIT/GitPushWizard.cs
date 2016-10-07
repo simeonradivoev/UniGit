@@ -19,8 +19,10 @@ namespace UniGit
 
 		protected override bool DrawWizardGUI()
 		{
-			bool hasChanged = base.DrawWizardGUI();
-			return hasChanged;
+			EditorGUI.BeginChangeCheck();
+			DrawBranchSelection();
+			DrawCredentials();
+			return EditorGUI.EndChangeCheck();
 		}
 
 		[UsedImplicitly]
@@ -28,10 +30,13 @@ namespace UniGit
 		{
 			try
 			{
-				GitManager.Repository.Network.Push(branches[selectedBranch], pushOptions);
-				GitManager.Update();
-				GetWindow<GitHistoryWindow>().Focus();
-				GetWindow<GitHistoryWindow>().ShowNotification(new GUIContent("Push Complete"));
+				using (var repository = new Repository(GitManager.RepoPath))
+				{
+					repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
+					GitManager.Update();
+					GetWindow<GitHistoryWindow>().Focus();
+					GetWindow<GitHistoryWindow>().ShowNotification(new GUIContent("Push Complete"));
+				}
 			}
 			catch (Exception e)
 			{

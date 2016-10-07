@@ -20,7 +20,7 @@ namespace UniGit
 	{
 		public const string GitDirectory = @"C:\Program Files\Git";
 
-		private static string repoPath;
+		public static string RepoPath { get { return Application.dataPath.Replace("/Assets", "").Replace("/", "\\"); } }
 
 		public static event Action<RepositoryStatus> updateRepository;
 		private static Repository repository;
@@ -67,8 +67,7 @@ namespace UniGit
 				AssetDatabase.CreateAsset(gitSettings,"Assets/Editor/Resources/Git-Settings.asset");
 				AssetDatabase.SaveAssets();
 			}
-			repoPath = Application.dataPath.Replace("/Assets", "").Replace("/", "\\");
-			repository = new Repository(repoPath);
+			repository = new Repository(RepoPath);
 			Update();
 
 			if (IconStyle == null)
@@ -117,7 +116,7 @@ namespace UniGit
 			if (reloadRepository || repository == null)
 			{
 				if(repository != null) repository.Dispose();
-				repository = new Repository(repoPath);
+				repository = new Repository(RepoPath);
 			}
 
 			if (repository != null)
