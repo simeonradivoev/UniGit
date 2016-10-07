@@ -113,7 +113,7 @@ namespace UniGit
 
 		internal static void Update(bool reloadRepository)
 		{
-			if (reloadRepository || repository == null)
+			if (reloadRepository || (repository == null && IsValidRepo))
 			{
 				if(repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
@@ -336,7 +336,7 @@ namespace UniGit
 
 		public static bool IsValidRepo
 		{
-			get { return Repository.IsValid(Application.dataPath.Replace("/Assets", "")); }
+			get { return Repository.IsValid(RepoPath); }
 		}
 
 		public static Repository Repository
@@ -459,7 +459,7 @@ namespace UniGit
 	{
 		private static string[] OnWillSaveAssets(string[] paths)
 		{
-			if (GitManager.Settings.AutoStage)
+			if (GitManager.Settings != null && GitManager.Settings.AutoStage)
 			{
 				string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
 				if(pathsFinal.Length > 0) GitManager.Repository.Stage(pathsFinal);
@@ -473,7 +473,7 @@ namespace UniGit
 	{
 		static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 		{
-			if (GitManager.Settings.AutoStage)
+			if (GitManager.Settings != null && GitManager.Settings.AutoStage)
 			{
 				if (importedAssets.Length > 0)
 				{
