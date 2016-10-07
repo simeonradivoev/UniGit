@@ -11,3 +11,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef65460956a26024f97325eff029ce67, type: 3}
   m_Name: Git-Settings
   m_EditorClassIdentifier: 
+  AutoStage: 1
