@@ -440,6 +440,10 @@ namespace UniGit
 					UpdateRemotes();
 					GUI.FocusControl("");
 				}
+				if (GUILayout.Button(new GUIContent("Open","Show the repository in browser."), "minibuttonmid"))
+				{
+					Application.OpenURL(remote.Url);
+				}
 				if (GUILayout.Button(new GUIContent("Remove"), "minibuttonright"))
 				{
 					remotes.Remove(remote.Name);
