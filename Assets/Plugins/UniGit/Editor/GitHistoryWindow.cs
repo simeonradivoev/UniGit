@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
@@ -85,6 +86,7 @@ namespace UniGit
 			
 		}
 
+		[UsedImplicitly]
 		private void OnFocus()
 		{
 			GUI.FocusControl(null);
@@ -92,11 +94,13 @@ namespace UniGit
 			OnRepositoryUpdate(null);
 		}
 
+		[UsedImplicitly]
 		private void OnUnfocus()
 		{
 			GUI.FocusControl(null);
 		}
 
+		[UsedImplicitly]
 		private void OnEnable()
 		{
 			cachedProfilePicturesDictionary = new Dictionary<string, WWW>();
@@ -174,6 +178,7 @@ namespace UniGit
 			commitRects = new Rect[cachedCommits.Length];
 		}
 
+		[UsedImplicitly]
 		private void OnDestory()
 		{
 			foreach (var profilePicture in cachedProfilePicturesDictionary)
@@ -185,6 +190,7 @@ namespace UniGit
 		private const float helpBoxHeight = 38;
 		private readonly float commitSpacing = EditorGUIUtility.singleLineHeight / 2;
 
+		[UsedImplicitly]
 		private void OnGUI()
 		{
 			CreateStyles();
