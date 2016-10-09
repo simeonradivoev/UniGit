@@ -56,6 +56,10 @@ namespace UniGit
 
 		private bool OnPackBuildProgress(PackBuilderStage stage, int current, int total)
 		{
+			if (stage == PackBuilderStage.Deltafying)
+			{
+				return false;
+			}
 			bool cancel = EditorUtility.DisplayCancelableProgressBar("Building Pack", stage.ToString(), (float)current / total);
 			if (current == total)
 			{
