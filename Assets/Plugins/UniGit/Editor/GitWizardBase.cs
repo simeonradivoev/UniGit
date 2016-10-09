@@ -169,9 +169,8 @@ namespace UniGit
 					GetWindow<GitDiffWindow>().ShowNotification(content);
 					GetWindow<GitDiffWindow>().commitMessage = GitManager.Repository.Info.Message;
 					break;
-				default:
-					throw new ArgumentOutOfRangeException();
 			}
+			GitManager.Update();
 			Debug.LogFormat("{0} Status: {1}", mergeType, result.Status);
 		}
 

@@ -135,14 +135,14 @@ namespace UniGit
 
 			GitSettings settings = GitManager.Settings;
 
-			SerializedProperty iteratorProperty = serializedSettings.GetIterator();
-			iteratorProperty.Next(true);
-			iteratorProperty.NextVisible(true);
-			while (iteratorProperty.NextVisible(true))
-			{
-				EditorGUILayout.PropertyField(iteratorProperty);
-			}
+			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoStage"));
+			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoFetch"));
 			serializedSettings.ApplyModifiedProperties();
+			EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommits"));
+			if (serializedSettings.ApplyModifiedProperties())
+			{
+				GitManager.Update();
+			}
 
 			GUILayout.Box(new GUIContent("Git Settings"), "ProjectBrowserHeaderBgMiddle");
 

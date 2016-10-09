@@ -96,8 +96,9 @@ namespace UniGit
 			//update selected branch
 			UpdateSelectedBranch();
 
-			//update commits
-			cachedCommits = selectedBranch.LoadBranch().Commits.Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+			//update commits and limit them depending on settings
+			cachedCommits = (GitManager.Settings.MaxCommits >= 0 ? selectedBranch.LoadBranch().Commits.Take(GitManager.Settings.MaxCommits) : selectedBranch.LoadBranch().Commits).Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+
 			commitRects = new Rect[cachedCommits.Length];
 
 			hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
