@@ -103,6 +103,7 @@ namespace UniGit
 			public string DecryptPassword()
 			{
 				string decrypredPassword;
+				if (string.IsNullOrEmpty(password)) return "";
 				return DPAPI.Decrypt(password, Application.dataPath, out decrypredPassword);
 			}
 		}
