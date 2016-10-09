@@ -32,3 +32,27 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+### Visual Studio Project ###
+
+# ignore VS project files just for UniGitVs
+!UniGitVs/*.csproj
+!UniGitVs/*.sln
+
+# Build results
+UniGitVs/[Dd]ebug/
+UniGitVs/[Dd]ebugPublic/
+UniGitVs/[Rr]elease/
+UniGitVs/[Rr]eleases/
+UniGitVs/[Bb]in/
+UniGitVs/[Oo]bj/
+UniGitVs/[Ll]og/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio 2015 cache/options directory
+.vs/

@@ -1,0 +1,302 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{3CA20806-5A5F-4CD6-AC17-702D6E6863A5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>UniGitVs</RootNamespace>
+    <AssemblyName>UniGitVs</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+    <RegisterForComInterop>false</RegisterForComInterop>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="LibGit2Sharp">
+      <HintPath>..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Moq">
+      <HintPath>..\Assets\Plugins\LibGit2Sharp\Editor\Moq.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEditor">
+      <HintPath>..\..\..\..\..\..\..\Program Files\Unity\Editor\Data\Managed\UnityEditor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\..\..\..\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\DPAPI.cs">
+      <Link>DPAPI.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCommitDetailsWindow.cs">
+      <Link>GitCommitDetailsWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitConflictsHandler.cs">
+      <Link>GitConflictsHandler.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCredentials.cs">
+      <Link>GitCredentials.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitDiffInspector.cs">
+      <Link>GitDiffInspector.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitDiffWindow.cs">
+      <Link>GitDiffWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitFetchWizard.cs">
+      <Link>GitFetchWizard.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitHistoryWindow.cs">
+      <Link>GitHistoryWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitManager.cs">
+      <Link>GitManager.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitMergeWizard.cs">
+      <Link>GitMergeWizard.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitProjectContextMenus.cs">
+      <Link>GitProjectContextMenus.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitPullWizard.cs">
+      <Link>GitPullWizard.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitPushWizard.cs">
+      <Link>GitPushWizard.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettings.cs">
+      <Link>GitSettings.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettingsWindow.cs">
+      <Link>GitSettingsWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWizardBase.cs">
+      <Link>GitWizardBase.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Extensions\FlagHelper.cs">
+      <Link>FlagHelper.cs</Link>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\add.png">
+      <Link>Editor Default Resources\Icons\UniGit\add.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\add_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\add_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\deleted.png">
+      <Link>Editor Default Resources\Icons\UniGit\deleted.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\deleted_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\deleted_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\error.png">
+      <Link>Editor Default Resources\Icons\UniGit\error.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\error_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\error_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\GitCheckout.png">
+      <Link>Editor Default Resources\Icons\UniGit\GitCheckout.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\GitFetch.png">
+      <Link>Editor Default Resources\Icons\UniGit\GitFetch.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\GitMerge.png">
+      <Link>Editor Default Resources\Icons\UniGit\GitMerge.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\info.png">
+      <Link>Editor Default Resources\Icons\UniGit\info.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\info_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\info_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\meta.png">
+      <Link>Editor Default Resources\Icons\UniGit\meta.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\meta_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\meta_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\minus.png">
+      <Link>Editor Default Resources\Icons\UniGit\minus.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\minus_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\minus_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\renamed.png">
+      <Link>Editor Default Resources\Icons\UniGit\renamed.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\renamed_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\renamed_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\success.png">
+      <Link>Editor Default Resources\Icons\UniGit\success.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\success_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\success_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\warning.png">
+      <Link>Editor Default Resources\Icons\UniGit\warning.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\Icons\UniGit\warning_small.png">
+      <Link>Editor Default Resources\Icons\UniGit\warning_small.png</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Editor Default Resources\UniGit\gitignore.txt">
+      <Link>Editor Default Resources\UniGit\gitignore.txt</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll">
+      <Link>Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.pdb">
+      <Link>Plugins\LibGit2Sharp\Editor\LibGit2Sharp.pdb</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.xml">
+      <Link>Plugins\LibGit2Sharp\Editor\LibGit2Sharp.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\Moq.dll">
+      <Link>Plugins\LibGit2Sharp\Editor\Moq.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\Moq.xml">
+      <Link>Plugins\LibGit2Sharp\Editor\Moq.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.dll">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.pdb">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.pdb</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.dll">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.pdb">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.pdb</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll.config">
+      <Link>Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll.config</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.dll.meta">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.dll.meta</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.pdb.meta">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\amd64\git2-785d8c4.pdb.meta</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\linux\amd64\libgit2-785d8c4.so">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\linux\amd64\libgit2-785d8c4.so</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\linux\amd64\libgit2-785d8c4.so.meta">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\linux\amd64\libgit2-785d8c4.so.meta</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.dll.meta">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.dll.meta</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Assets\Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.pdb.meta">
+      <Link>Plugins\LibGit2Sharp\Editor\NativeBinaries\x86\git2-785d8c4.pdb.meta</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>if not exist "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" md "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\"
+move /Y "$(SolutionDir)$(OutDir)$(TargetName).dll" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\$(TargetName).dll"
+move /Y "$(SolutionDir)$(OutDir)$(TargetName).pdb" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\$(TargetName).pdb"</PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
