@@ -33,6 +33,8 @@ namespace UniGit
 
 		private void OnGitManagerUpdateInternal(RepositoryStatus status)
 		{
+			titleContent.image = GitManager.GetGitStatusIcon();
+
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
 			if (initilized == null || !GitManager.IsValidRepo) return;
