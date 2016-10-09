@@ -12,7 +12,7 @@ using Tree = LibGit2Sharp.Tree;
 
 namespace UniGit
 {
-	public class GitHistoryWindow : EditorWindow
+	public class GitHistoryWindow : GitUpdatableWindow
 	{
 		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
 		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
@@ -86,105 +86,26 @@ namespace UniGit
 				styles.commitMessage = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(6,4,4,4),clipping = TextClipping.Clip};
 				Profiler.EndSample();
 			}
-			
 		}
 
-		[UsedImplicitly]
-		private void OnFocus()
+		protected override void OnGitUpdate(RepositoryStatus status)
 		{
-			GUI.FocusControl(null);
-			if (!GitManager.IsValidRepo) return;
-			OnRepositoryUpdate(GitManager.Repository.RetrieveStatus());
-		}
+			//update all branches
+			cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
 
-		[UsedImplicitly]
-		private void OnUnfocus()
-		{
-			GUI.FocusControl(null);
-		}
+			//update selected branch
+			UpdateSelectedBranch();
 
-		[UsedImplicitly]
-		private void OnEnable()
-		{
-			cachedProfilePicturesDictionary = new Dictionary<string, WWW>();
-			GitManager.updateRepository -= OnRepositoryUpdate;
-			GitManager.updateRepository += OnRepositoryUpdate;
+			//update commits
+			cachedCommits = selectedBranch.LoadBranch().Commits.Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+			commitRects = new Rect[cachedCommits.Length];
 
-			FetchChanges();
-			titleContent.image = GitManager.GetGitStatusIcon();
-			Repaint();
-		}
-
-		private void FetchChanges()
-		{
-			if (!GitManager.IsValidRepo || !GitManager.Settings.AutoFetch) return;
-			Remote remote = GitManager.Repository.Network.Remotes.FirstOrDefault();
-			if (remote == null) return;
-			Profiler.BeginSample("Git History window automatic fetching");
-			GitManager.Repository.Network.Fetch(remote,new FetchOptions() {CredentialsProvider = FetchChangesCredentialHandler});
-			Profiler.EndSample();
-		}
-
-		private Credentials FetchChangesCredentialHandler(string url, string user, SupportedCredentialTypes supported)
-		{
-			if (supported == SupportedCredentialTypes.UsernamePassword)
-			{
-				if (GitManager.GitCredentials != null)
-				{
-					var entry = GitManager.GitCredentials.GetEntry(url);
-					if (entry != null)
-					{
-						if (entry.IsToken)
-						{
-							return new UsernamePasswordCredentials()
-							{
-								Username = entry.Token,
-								Password = string.Empty
-							};
-						}
-						else
-						{
-							return new UsernamePasswordCredentials()
-							{
-								Username = entry.Username,
-								Password = entry.DecryptPassword()
-							};
-						}
-						
-					}
-				}
-			}
-			return new DefaultCredentials();
-		}
-
-		private void Init()
-		{
-			if (cachedBranches == null)
-			{
-				UpdateBranches();
-			}
-
-			if (selectedBranch == null)
-			{
-				UpdateBranch();
-			}
-		}
-
-		private void OnRepositoryUpdate(RepositoryStatus status)
-		{
-			if (cachedBranches != null) UpdateBranches();
-			if (selectedBranch != null) UpdateBranch();
 			hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
 			titleContent.image = GitManager.GetGitStatusIcon();
 			Repaint();
 		}
 
-		private void UpdateBranches()
-		{
-			cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
-		}
-
-		private void UpdateBranch()
+		private void UpdateSelectedBranch()
 		{
 			var tmpBranch = GitManager.Repository.Branches.FirstOrDefault(b => b.CanonicalName == selectedBranchName);
 			if (tmpBranch != null)
@@ -196,8 +117,23 @@ namespace UniGit
 				selectedBranch = new BranchInfo(GitManager.Repository.Head);
 				selectedBranchName = selectedBranch.CanonicalName;
 			}
-			cachedCommits = selectedBranch.LoadBranch().Commits.Select(c => new CommitInfo(c,cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
-			commitRects = new Rect[cachedCommits.Length];
+		}
+
+		protected override void OnInitialize()
+		{
+			cachedProfilePicturesDictionary = new Dictionary<string, WWW>();
+		}
+
+		protected override void OnFocus()
+		{
+			base.OnFocus();
+			GUI.FocusControl(null);
+		}
+
+		[UsedImplicitly]
+		private void OnUnfocus()
+		{
+			GUI.FocusControl(null);
 		}
 
 		[UsedImplicitly]
@@ -222,8 +158,6 @@ namespace UniGit
 				InvalidRepoGUI();
 				return;
 			}
-
-			Init();
 
 			RepositoryInformation repoInformation = GitManager.Repository.Info;
 			DoToolbar(toolbarRect, repoInformation);
@@ -287,7 +221,7 @@ namespace UniGit
 					selectBranchMenu.AddItem(new GUIContent(branch.FriendlyName), false, (b) =>
 					{
 						selectedBranchName = (string)b;
-						UpdateBranch();
+						UpdateSelectedBranch();
 					}, branch.FriendlyName);
 				}
 				selectBranchMenu.ShowAsContext();

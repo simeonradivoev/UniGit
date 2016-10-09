@@ -126,17 +126,6 @@ namespace UniGit
 		}
 
 		#region Fetch
-		protected bool FetchTransferProgress(TransferProgress progress)
-		{
-			float percent = (float)progress.ReceivedObjects / progress.TotalObjects;
-			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Received total of: {0} bytes. {1}%", progress.ReceivedBytes, (percent * 100).ToString("###")), percent);
-			if (progress.TotalObjects == progress.ReceivedObjects)
-			{
-				Debug.Log("Transfer Complete. Received a total of " + progress.IndexedObjects + " objects");
-			}
-			//true to continue
-			return !cancel;
-		}
 
 		protected bool FetchProgress(string serverProgressOutput)
 		{

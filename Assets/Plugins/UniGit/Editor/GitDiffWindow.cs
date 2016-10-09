@@ -13,13 +13,12 @@ using Debug = UnityEngine.Debug;
 
 namespace UniGit
 {
-	public class GitDiffWindow : EditorWindow
+	public class GitDiffWindow : GitUpdatableWindow
 	{
 		[MenuItem("Window/GIT Diff Window")]
 		public static void CreateEditor()
 		{
 			GitDiffWindow diffWindow = GetWindow<GitDiffWindow>();
-			diffWindow.Init();
 			diffWindow.titleContent = new GUIContent("Git Diff");
 		}
 
@@ -56,29 +55,18 @@ namespace UniGit
 			public GUIStyle diffElement;
 		}
 
-		private void Init()
+		protected override void OnGitUpdate(RepositoryStatus status)
 		{
-			if (!GitManager.IsValidRepo) return;
-			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
+			UpdateStatusList();
+			UpdateStatusList(status);
 		}
 
-		[UsedImplicitly]
-		private void OnEnable()
+		protected override void OnInitialize()
 		{
+			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
 			editoSerializedObject = new SerializedObject(this);
-			if (settings == null)
-			{
-				settings = new Settings();
-				settings.showFileStatusTypeFilter = (FileStatus)(-1);
-			}
-
-
-			GitManager.updateRepository -= OnRepositoryUpdate;
-			GitManager.updateRepository += OnRepositoryUpdate;
-
-			UpdateStatusList();
-			titleContent.image = GitManager.GetGitStatusIcon();
-			Repaint();
+			settings = new Settings();
+			settings.showFileStatusTypeFilter = (FileStatus)(-1);
 		}
 
 		[UsedImplicitly]
@@ -86,41 +74,23 @@ namespace UniGit
 		{
 			if(!GitManager.IsValidRepo) return;
 			statusList.SelectAll(false);
-			GUI.FocusControl(null);
 		}
 
 		[UsedImplicitly]
-		private void OnFocus()
+		protected override void OnFocus()
 		{
-			if(!GitManager.IsValidRepo) return;
-			OnRepositoryUpdate(GitManager.Repository.RetrieveStatus());
+			base.OnFocus();
 			GUI.FocusControl(null);
-		}
-
-		private void OnRepositoryUpdate(RepositoryStatus status)
-		{
-			UpdateStatusList(status);
-			titleContent.image = GitManager.GetGitStatusIcon();
-			Repaint();
 		}
 
 		private void UpdateStatusList()
 		{
-			if (!GitManager.IsValidRepo) return;
 			UpdateStatusList(GitManager.Repository.RetrieveStatus());
 		}
 
 		private void UpdateStatusList(RepositoryStatus status)
 		{
-			if (!GitManager.IsValidRepo) return;
-			if (statusList == null)
-			{
-				statusList = new StatusList(status, settings.showFileStatusTypeFilter);
-			}
-			else
-			{
-				statusList.Update(status, settings.showFileStatusTypeFilter);
-			}
+			statusList.Update(status, settings.showFileStatusTypeFilter);
 		}
 
 		private void CreateStyles()
@@ -628,6 +598,11 @@ namespace UniGit
 		{
 			[SerializeField]
 			private List<StatusListEntry> entires;
+
+			public StatusList()
+			{
+				entires = new List<StatusListEntry>();
+			}
 
 			public StatusList(IEnumerable<StatusEntry> enumerable, FileStatus filter)
 			{

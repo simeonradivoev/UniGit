@@ -103,6 +103,8 @@ namespace UniGit
 				};
 			}
 
+			AutoFetchChanges();
+
 			EditorApplication.projectWindowItemOnGUI += CustomIcons;
 		}
 
@@ -213,6 +215,65 @@ namespace UniGit
 			float height = Mathf.Min(rect.height, 32);
 			GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, IconStyle);
 		}
+
+		#region Auto Fetching
+		private static void AutoFetchChanges()
+		{
+			if (!IsValidRepo || !Settings.AutoFetch) return;
+			using (Repository repository = new Repository(RepoPath))
+			{
+				Remote remote = repository.Network.Remotes.FirstOrDefault();
+				if (remote == null) return;
+				Profiler.BeginSample("Git automatic fetching");
+				try
+				{
+					Repository.Network.Fetch(remote, new FetchOptions() {CredentialsProvider = FetchChangesAutoCredentialHandler,OnTransferProgress = FetchTransferProgressHandler });
+				}
+				catch (Exception e)
+				{
+					Debug.LogErrorFormat("Automatic Fetching from remote: {0} with URL: {1} Failed!", remote.Name, remote.Url);
+					Debug.LogException(e);
+				}
+				finally
+				{
+					EditorUtility.ClearProgressBar();
+				}
+				Profiler.EndSample();
+			}
+		}
+
+		private static Credentials FetchChangesAutoCredentialHandler(string url, string user, SupportedCredentialTypes supported)
+		{
+			if (supported == SupportedCredentialTypes.UsernamePassword)
+			{
+				if (GitManager.GitCredentials != null)
+				{
+					var entry = GitManager.GitCredentials.GetEntry(url);
+					if (entry != null)
+					{
+						if (entry.IsToken)
+						{
+							return new UsernamePasswordCredentials()
+							{
+								Username = entry.Token,
+								Password = string.Empty
+							};
+						}
+						else
+						{
+							return new UsernamePasswordCredentials()
+							{
+								Username = entry.Username,
+								Password = entry.DecryptPassword()
+							};
+						}
+
+					}
+				}
+			}
+			return new DefaultCredentials();
+		}
+		#endregion
 
 		#region Helpers
 
@@ -325,6 +386,20 @@ namespace UniGit
 		public static IEnumerable<string> GetPathsWithMeta(IEnumerable<string> paths)
 		{
 			return paths.SelectMany(p => GetPathWithMeta(p));
+		}
+		#endregion
+
+		#region Progress Handlers
+		public static bool FetchTransferProgressHandler(TransferProgress progress)
+		{
+			float percent = (float)progress.ReceivedObjects / progress.TotalObjects;
+			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Received total of: {0} bytes. {1}%", progress.ReceivedBytes, (percent * 100).ToString("###")), percent);
+			if (progress.TotalObjects == progress.ReceivedObjects)
+			{
+				Debug.Log("Transfer Complete. Received a total of " + progress.IndexedObjects + " objects");
+			}
+			//true to continue
+			return !cancel;
 		}
 		#endregion
 

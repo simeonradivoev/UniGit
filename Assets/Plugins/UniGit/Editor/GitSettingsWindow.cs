@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitSettingsWindow : EditorWindow
+	public class GitSettingsWindow : GitUpdatableWindow
 	{
 		private RemoteCollection remotes;
 		private BranchCollection branches;
@@ -25,53 +25,29 @@ namespace UniGit
 			browser.titleContent = new GUIContent("Git Settings");
 		}
 
-		private void OnFocus()
+		protected override void OnFocus()
 		{
-			if (!GitManager.IsValidRepo) return;
+			base.OnFocus();
 			GUI.FocusControl(null);
+			if (!GitManager.IsValidRepo) return;
 			OnGitUpdate(null);
 		}
 
+		[UsedImplicitly]
 		private void OnUnfocus()
 		{
 			GUI.FocusControl(null);
 		}
 
-		private void OnDestry()
+		protected override void OnInitialize()
 		{
-			Debug.Log("Close");
-		}
-
-		private void OnEnable()
-		{
-			if(!GitManager.IsValidRepo) return;
-			OnGitUpdate(null);
 			serializedSettings = new SerializedObject(GitManager.Settings);
-
-			GitManager.updateRepository -= OnGitUpdate;
-			GitManager.updateRepository += OnGitUpdate;
 		}
 
-		private void OnGitUpdate(RepositoryStatus status)
+		protected override void OnGitUpdate(RepositoryStatus status)
 		{
-			if (remotes != null) UpdateRemotes();
-			if (branches != null) UpdateBranches();
-		}
-
-		private void InitBranches()
-		{
-			if (branches == null)
-			{
-				UpdateBranches();
-			}
-		}
-
-		private void InitRemotes()
-		{
-			if (remotes == null)
-			{
-				UpdateRemotes();
-			}
+			UpdateRemotes();
+			UpdateBranches();
 		}
 
 		private void UpdateBranches()
@@ -287,8 +263,6 @@ namespace UniGit
 
 		private void DoSecurity(Event current)
 		{
-			InitRemotes();
-
 			if (GitManager.GitCredentials == null)
 			{
 				EditorGUILayout.HelpBox("No Git Credentials",MessageType.Warning);
@@ -369,9 +343,6 @@ namespace UniGit
 
 		private void DoBranches(Event current)
 		{
-			InitBranches();
-			InitRemotes();
-
 			foreach (var branch in branches)
 			{
 				GUILayout.Label(new GUIContent(branch.FriendlyName), "ShurikenModuleTitle");
@@ -423,8 +394,6 @@ namespace UniGit
 
 		private void DoRemotes(Event current)
 		{
-			InitRemotes();
-
 			int remoteCount = remotes.Count();
 			if (remoteCount <= 0)
 			{
