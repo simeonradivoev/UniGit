@@ -48,8 +48,12 @@ namespace UniGit
 		[MenuItem("Window/GIT History")]
 		public static void CreateEditor()
 		{
-			GitHistoryWindow browser = GetWindow<GitHistoryWindow>();
-			browser.titleContent = new GUIContent("Git History");
+			GetWindow(true);
+		}
+
+		public static GitHistoryWindow GetWindow(bool focus)
+		{
+			return GetWindow<GitHistoryWindow>("Git History", focus);
 		}
 
 		private void CreateStyles()

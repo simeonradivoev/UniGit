@@ -12,3 +12,5 @@ MonoBehaviour:
   m_Name: Git-Settings
   m_EditorClassIdentifier: 
   AutoStage: 1
+  AutoFetch: 1
+  MaxCommits: 32

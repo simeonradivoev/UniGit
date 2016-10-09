@@ -153,21 +153,21 @@ namespace UniGit
 			switch (result.Status)
 			{
 				case MergeStatus.UpToDate:
-					GetWindow<GitHistoryWindow>().ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
+					GitHistoryWindow.GetWindow(true).ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
 					break;
 				case MergeStatus.FastForward:
-					GetWindow<GitHistoryWindow>().ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
+					GitHistoryWindow.GetWindow(true).ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
 					break;
 				case MergeStatus.NonFastForward:
-					GetWindow<GitDiffWindow>().ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
-					GetWindow<GitDiffWindow>().commitMessage = GitManager.Repository.Info.Message;
+					GitDiffWindow.GetWindow(true).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
+					GitDiffWindow.GetWindow(false).commitMessage = GitManager.Repository.Info.Message;
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = EditorGUIUtility.IconContent("console.warnicon");
 					content.text = "There are merge conflicts!";
-					GetWindow<GitDiffWindow>().ShowNotification(content);
-					GetWindow<GitDiffWindow>().commitMessage = GitManager.Repository.Info.Message;
+					GitDiffWindow.GetWindow(true).ShowNotification(content);
+					GitDiffWindow.GetWindow(false).commitMessage = GitManager.Repository.Info.Message;
 					break;
 			}
 			GitManager.Update();

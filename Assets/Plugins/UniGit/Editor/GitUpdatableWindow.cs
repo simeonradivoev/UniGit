@@ -18,6 +18,7 @@ namespace UniGit
 			GitManager.updateRepository += OnGitManagerUpdateInternal;
 
 			if (initilized == null) return;
+			//this will be called when entering Play mode
 			OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
 		}
 
@@ -28,6 +29,7 @@ namespace UniGit
 			initilized = true;
 			if (!GitManager.IsValidRepo) return;
 			OnInitialize();
+			OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
 			Repaint();
 		}
 

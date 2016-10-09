@@ -18,8 +18,12 @@ namespace UniGit
 		[MenuItem("Window/GIT Diff Window")]
 		public static void CreateEditor()
 		{
-			GitDiffWindow diffWindow = GetWindow<GitDiffWindow>();
-			diffWindow.titleContent = new GUIContent("Git Diff");
+			GetWindow(true);
+		}
+
+		public static GitDiffWindow GetWindow(bool focus)
+		{
+			return GetWindow<GitDiffWindow>("Git Diff", focus);
 		}
 
 		public Rect CommitRect { get { return new Rect(0,0,position.width,120);} }
@@ -63,10 +67,10 @@ namespace UniGit
 
 		protected override void OnInitialize()
 		{
-			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
-			editoSerializedObject = new SerializedObject(this);
 			settings = new Settings();
 			settings.showFileStatusTypeFilter = (FileStatus)(-1);
+			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
+			editoSerializedObject = new SerializedObject(this);
 		}
 
 		[UsedImplicitly]
@@ -156,7 +160,15 @@ namespace UniGit
 				ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
 			}
 			settings.emptyCommit = GUILayout.Toggle(settings.emptyCommit,new GUIContent("Empty Commit", "Commit the message only without changes"));
+			EditorGUI.BeginChangeCheck();
 			settings.amendCommit = GUILayout.Toggle(settings.amendCommit,new GUIContent("Amend Commit", "Amend previous commit."));
+			if (EditorGUI.EndChangeCheck())
+			{
+				if (settings.amendCommit && string.IsNullOrEmpty(commitMessage))
+				{
+					commitMessage = GitManager.Repository.Head.Tip.Message;
+				}
+			}
 			settings.prettify = GUILayout.Toggle(settings.prettify,new GUIContent("Prettify", "Prettify the commit message"));
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
@@ -170,7 +182,7 @@ namespace UniGit
 			{
 				GitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
 				GitManager.Update();
-				GetWindow<GitHistoryWindow>().Focus();
+				GitHistoryWindow.GetWindow(true);
 			}
 			catch (Exception e)
 			{

@@ -32,8 +32,8 @@ namespace UniGit
 			{
 				GitManager.Repository.Network.Fetch(remotes[selectedRemote], fetchOptions);
 				Debug.Log("Fetch Complete");
-				GetWindow<GitHistoryWindow>().Focus();
-				GetWindow<GitHistoryWindow>().ShowNotification(new GUIContent("Fetch Complete"));
+				var window = GitHistoryWindow.GetWindow(true);
+				window.ShowNotification(new GUIContent("Fetch Complete"));
 			}
 			catch (Exception e)
 			{

@@ -34,8 +34,8 @@ namespace UniGit
 				{
 					repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
 					GitManager.Update();
-					GetWindow<GitHistoryWindow>().Focus();
-					GetWindow<GitHistoryWindow>().ShowNotification(new GUIContent("Push Complete"));
+					var window = GitHistoryWindow.GetWindow(true);
+					window.ShowNotification(new GUIContent("Push Complete"));
 				}
 			}
 			catch (Exception e)
@@ -57,11 +57,7 @@ namespace UniGit
 		private bool OnPackBuildProgress(PackBuilderStage stage, int current, int total)
 		{
 			bool cancel = EditorUtility.DisplayCancelableProgressBar("Building Pack", stage.ToString(), (float)current / total);
-			if (cancel)
-			{
-				EditorUtility.ClearProgressBar();
-			}
-			if (current >= total)
+			if (current == total)
 			{
 				Debug.Log("Pack Building completed.");
 			}

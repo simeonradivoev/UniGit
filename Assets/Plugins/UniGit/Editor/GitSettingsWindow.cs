@@ -21,8 +21,12 @@ namespace UniGit
 		[MenuItem("Window/GIT Settings")]
 		public static void CreateEditor()
 		{
-			GitSettingsWindow browser = GetWindow<GitSettingsWindow>();
-			browser.titleContent = new GUIContent("Git Settings");
+			GetWindow(true);
+		}
+
+		public static GitSettingsWindow GetWindow(bool focus)
+		{
+			return GetWindow<GitSettingsWindow>("Git Settings",focus);
 		}
 
 		protected override void OnFocus()

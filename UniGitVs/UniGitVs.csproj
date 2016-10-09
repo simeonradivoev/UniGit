@@ -104,6 +104,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettingsWindow.cs">
       <Link>GitSettingsWindow.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitUpdatableWindow.cs">
+      <Link>GitUpdatableWindow.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWizardBase.cs">
       <Link>GitWizardBase.cs</Link>
     </Compile>

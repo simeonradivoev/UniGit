@@ -38,7 +38,7 @@ namespace UniGit
 			try
 			{
 				MergeResult result = GitManager.Repository.MergeFetchedRefs(GitManager.Signature, mergeOptions);
-				GetWindow<GitHistoryWindow>().Focus();
+				GitHistoryWindow.GetWindow(true);
 				OnMergeComplete(result,"Merge");
 				GitManager.Update();
 				AssetDatabase.Refresh();
