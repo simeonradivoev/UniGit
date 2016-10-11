@@ -28,6 +28,7 @@ namespace UniGit
 		private static GitCredentials gitCredentials;
 		private static GitSettings gitSettings;
 		internal static Icons icons;
+		private static bool needsFetch;
 
 		public class Icons
 		{
@@ -103,14 +104,31 @@ namespace UniGit
 				};
 			}
 
-			AutoFetchChanges();
-
 			EditorApplication.projectWindowItemOnGUI += CustomIcons;
 
 			GitLfsManager.Load();
 			GitHookManager.Load();
 			GitExternalManager.Load();
 			GitCredentialsManager.Load();
+
+			needsFetch = true;
+			EditorApplication.update += OnEditorUpdate;
+			
+		}
+
+		internal static void OnEditorUpdate()
+		{
+			if (needsFetch)
+			{
+				try
+				{
+					AutoFetchChanges();
+				}
+				finally
+				{
+					needsFetch = false;
+				}
+			}
 		}
 
 		internal static void Update()

@@ -22,6 +22,7 @@ namespace UniGit
 
 		public Entry GetEntry(string url)
 		{
+			if (entries == null) return null;
 			return entries.FirstOrDefault(r => r.URL.Equals(url,StringComparison.InvariantCultureIgnoreCase));
 		}
 

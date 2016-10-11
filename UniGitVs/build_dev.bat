@@ -5,7 +5,7 @@ for /f "tokens=2*" %%A in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Win
 	if not [%%B] == [] (
 		set devenvPath=%%B
 		set devenvPath=!devenvPath:devenv.exe=devenv.com!
-		"!devenvPath!" "UniGitVs.sln" /build Debug /project "UniGitVs.csproj" /projectconfig Debug /out log.txt
+		"!devenvPath!" "UniGitVs.sln" /build Debug /project "UniGitVs.csproj" /projectconfig Debug
 	)
 )
 
