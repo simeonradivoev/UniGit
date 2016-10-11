@@ -106,6 +106,11 @@ namespace UniGit
 			AutoFetchChanges();
 
 			EditorApplication.projectWindowItemOnGUI += CustomIcons;
+
+			GitLfsManager.Load();
+			GitHookManager.Load();
+			GitExternalManager.Load();
+			GitCredentialsManager.Load();
 		}
 
 		internal static void Update()
@@ -227,7 +232,7 @@ namespace UniGit
 				Profiler.BeginSample("Git automatic fetching");
 				try
 				{
-					Repository.Network.Fetch(remote, new FetchOptions() {CredentialsProvider = FetchChangesAutoCredentialHandler,OnTransferProgress = FetchTransferProgressHandler });
+					Repository.Network.Fetch(remote, new FetchOptions() {CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler,OnTransferProgress = FetchTransferProgressHandler });
 				}
 				catch (Exception e)
 				{
@@ -240,38 +245,6 @@ namespace UniGit
 				}
 				Profiler.EndSample();
 			}
-		}
-
-		private static Credentials FetchChangesAutoCredentialHandler(string url, string user, SupportedCredentialTypes supported)
-		{
-			if (supported == SupportedCredentialTypes.UsernamePassword)
-			{
-				if (GitManager.GitCredentials != null)
-				{
-					var entry = GitManager.GitCredentials.GetEntry(url);
-					if (entry != null)
-					{
-						if (entry.IsToken)
-						{
-							return new UsernamePasswordCredentials()
-							{
-								Username = entry.Token,
-								Password = string.Empty
-							};
-						}
-						else
-						{
-							return new UsernamePasswordCredentials()
-							{
-								Username = entry.Username,
-								Password = entry.DecryptPassword()
-							};
-						}
-
-					}
-				}
-			}
-			return new DefaultCredentials();
 		}
 		#endregion
 
@@ -318,7 +291,8 @@ namespace UniGit
 					}
 				}
 
-				EditorUtility.InvokeDiffTool(Path.GetFileName(path) + " - " + entry.Target.Sha, oldFilePath, Path.GetFileName(path) + " - " + (other == null ? "Working Tree" : other.Id.Sha), otherFilePath, "", "");
+				var asset = AssetDatabase.LoadAssetAtPath(path,typeof(Object));
+				GitExternalManager.ShowDiff(Path.GetFileName(path) + " - " + entry.Target.Sha, oldFilePath, Path.GetFileName(path) + " - " + (other == null ? "Working Tree" : other.Id.Sha), otherFilePath, asset != null ? asset.GetType() : null);
 			}
 		}
 

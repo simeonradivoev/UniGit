@@ -20,8 +20,8 @@ namespace UniGit
 		private Dictionary<string, WWW> cachedProfilePicturesDictionary;
 		private Styles styles;
 		private BranchInfo selectedBranch;
-		private BranchInfo[] cachedBranches;
-		private CommitInfo[] cachedCommits;
+		private BranchInfo[] cachedBranches = new BranchInfo[0];
+		private CommitInfo[] cachedCommits = new CommitInfo[0];
 		private Rect[] commitRects;
 		private Rect historyScrollContentsRect;
 		private Rect warningBoxRect;
@@ -100,10 +100,13 @@ namespace UniGit
 			//update selected branch
 			UpdateSelectedBranch();
 
-			//update commits and limit them depending on settings
-			cachedCommits = (GitManager.Settings.MaxCommits >= 0 ? selectedBranch.LoadBranch().Commits.Take(GitManager.Settings.MaxCommits) : selectedBranch.LoadBranch().Commits).Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+			if (selectedBranch != null)
+			{
+				//update commits and limit them depending on settings
+				cachedCommits = (GitManager.Settings.MaxCommits >= 0 ? selectedBranch.LoadBranch().Commits.Take(GitManager.Settings.MaxCommits) : selectedBranch.LoadBranch().Commits).Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
 
-			commitRects = new Rect[cachedCommits.Length];
+				commitRects = new Rect[cachedCommits.Length];
+			}
 
 			hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
 			titleContent.image = GitManager.GetGitStatusIcon();
@@ -189,7 +192,14 @@ namespace UniGit
 			}
 			if (GUI.Button(btRect, pushButtonContent, "toolbarbutton"))
 			{
-				ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(selectedBranch.LoadBranch());
+				if (GitExternalManager.TakePush())
+				{
+					GitManager.Update();
+				}
+				else
+				{
+					ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(selectedBranch.LoadBranch());
+				}
 			}
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			GUI.enabled = !hasConflicts;
@@ -198,7 +208,16 @@ namespace UniGit
 			pullButtonContent.text = "Pull";
 			if (GUI.Button(btRect, pullButtonContent, "toolbarbutton"))
 			{
-				ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(selectedBranch.LoadBranch());
+				Branch branch = selectedBranch.LoadBranch();
+				if (GitExternalManager.TakePull())
+				{
+					AssetDatabase.Refresh();
+					GitManager.Update();
+				}
+				else
+				{
+					ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(branch);
+				}
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 			GUIContent fetchButtonContent = EditorGUIUtility.IconContent("UniGit/GitFetch");
@@ -206,7 +225,15 @@ namespace UniGit
 			fetchButtonContent.text = "Fetch";
 			if (GUI.Button(btRect, fetchButtonContent, "toolbarbutton"))
 			{
-				ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(selectedBranch.LoadBranch());
+				Branch branch = selectedBranch.LoadBranch();
+				if (GitExternalManager.TakeFetch(branch.Remote.Name))
+				{
+					GitManager.Update();
+				}
+				else
+				{
+					ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
+				}
 			}
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			GUIContent mergeButtonContent = EditorGUIUtility.IconContent("UniGit/GitMerge");
@@ -214,7 +241,14 @@ namespace UniGit
 			mergeButtonContent.text = "Merge";
 			if (GUI.Button(btRect, mergeButtonContent, "toolbarbutton"))
 			{
-				ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
+				if (GitExternalManager.TakeMerge())
+				{
+					GitManager.Update();
+				}
+				else
+				{
+					ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
+				}
 			}
 			GUI.enabled = true;
 			btRect = new Rect(rect.x + rect.width - 64, btRect.y, 64, btRect.height);
@@ -542,8 +576,11 @@ namespace UniGit
 					{
 						Debug.LogError("Missing default gitignore.txt in resources");
 					}
-
+					AssetDatabase.Refresh();
+					AssetDatabase.SaveAssets();
 					GitManager.Initlize();
+					GitManager.Update();
+					GUIUtility.ExitGUI();
 					return;
 				}
 			}
@@ -607,6 +644,7 @@ namespace UniGit
 						GitManager.Update(true);
 						editorWindow.Close();
 						Profiler.EndSample();
+						AssetDatabase.Refresh();
 					}
 				}
 				EditorGUILayout.Space();

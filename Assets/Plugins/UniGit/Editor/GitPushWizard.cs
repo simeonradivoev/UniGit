@@ -14,7 +14,7 @@ namespace UniGit
 		protected override void OnEnable()
 		{
 			base.OnEnable();
-			pushOptions = new PushOptions() {CredentialsProvider = CredentialsHandler, OnPackBuilderProgress = OnPackBuildProgress, OnPushTransferProgress = PushTransferProgress, OnPushStatusError = OnFail };
+			pushOptions = new PushOptions() {CredentialsProvider = CredentialsHandler, OnPackBuilderProgress = OnPackBuildProgress, OnPushTransferProgress = PushTransferProgress, OnPushStatusError = OnFail,OnNegotiationCompletedBeforePush = GitHookManager.PrePushHandler};
 		}
 
 		protected override bool DrawWizardGUI()

@@ -25,15 +25,12 @@ namespace UniGit
 			return entries.FirstOrDefault(r => r.URL.Equals(url,StringComparison.InvariantCultureIgnoreCase));
 		}
 
-
-		public Entry CreateEntry()
+		internal void AddEntry(Entry entry)
 		{
-			Entry entry = new Entry();
 			entries.Add(entry);
-			return entry;
 		}
 
-		public void RemoveEntry(Entry entry)
+		internal void RemoveEntry(Entry entry)
 		{
 			entries.Remove(entry);
 		}
@@ -56,8 +53,8 @@ namespace UniGit
 			[SerializeField] private string username;
 			[SerializeField] private string password;
 			[SerializeField] private bool isToken;
-			[SerializeField] private string token;
-			private string newPassword;
+			[SerializeField] private string newPassword;
+			[SerializeField] private bool hasPassword;
 
 			public string Name
 			{
@@ -71,10 +68,10 @@ namespace UniGit
 				set { url = value; }
 			}
 
-			public string Username
+			public bool IsToken
 			{
-				get { return username; }
-				set { username = value; }
+				get { return isToken; }
+				set { isToken = value; }
 			}
 
 			public string NewPassword
@@ -83,21 +80,41 @@ namespace UniGit
 				set { newPassword = value; }
 			}
 
-			public bool IsToken
+			public string Username
 			{
-				get { return isToken; }
-				set { isToken = value; }
+				get { return username; }
 			}
 
-			public string Token
+			public bool HasPassword
 			{
-				get { return token; }
-				set { token = value; }
+				get
+				{
+					if (!hasPassword)
+					{
+						return !string.IsNullOrEmpty(password);
+					}
+					return true; 
+				}
+			}
+
+			internal void SetHasPassword(bool hasPassword)
+			{
+				this.hasPassword = hasPassword;
+			}
+
+			public void SetUsername(string username)
+			{
+				this.username = username;
 			}
 
 			public void EncryptPassword(string password)
 			{
 				this.password = DPAPI.Encrypt(DPAPI.KeyType.UserKey, password, Application.dataPath);
+			}
+
+			public void ClearPassword()
+			{
+				this.password = string.Empty;
 			}
 
 			public string DecryptPassword()

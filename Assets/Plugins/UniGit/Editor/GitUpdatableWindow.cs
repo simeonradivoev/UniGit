@@ -44,6 +44,17 @@ namespace UniGit
 			Repaint();
 		}
 
+		#region Safe Controlls
+
+		public void LoseFocus()
+		{
+			GUIUtility.keyboardControl = 0;
+			EditorGUIUtility.editingTextField = false;
+			Repaint();
+		}
+
+		#endregion
+
 		protected abstract void OnGitUpdate(RepositoryStatus status);
 		protected abstract void OnInitialize();
 	}

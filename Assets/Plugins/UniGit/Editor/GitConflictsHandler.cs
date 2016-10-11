@@ -70,14 +70,7 @@ namespace UniGit
 					}
 				}
 
-				if (asset is Texture)
-				{
-					CallProccess("TortoiseGitIDiff.exe", string.Format("-base:\"{0}\" -mine:\"{1}\" -theirs:\"{2}\" -merged:\"{3}\"", conflictPathAncestor, conflictPathOurs, conflictPathTheirs, path));
-				}
-				else
-				{
-					CallProccess("TortoiseGitMerge.exe", string.Format("-base:\"{0}\" -mine:\"{1}\" -theirs:\"{2}\" -merged:\"{3}\"", conflictPathAncestor, conflictPathOurs, conflictPathTheirs, path));
-				}
+				GitExternalManager.HandleConflict(conflictPathTheirs, conflictPathOurs, conflictPathAncestor, path, asset.GetType());
 			}
 			else if (favor == MergeFileFavor.Ours)
 			{
@@ -101,55 +94,6 @@ namespace UniGit
 			}
 
 			//Debug.Log(EditorUtility.InvokeDiffTool(Path.GetFileName(theirs.Path) + " - Theirs", conflictPathTheirs, Path.GetFileName(ours.Path) + " - Ours", conflictPathOurs, "", conflictPathAncestor));
-		}
-
-		private static bool CallProccess(string name,string parameters)
-		{
-			if (ExistsOnPath(name))
-			{
-				ProcessStartInfo startInfo = new ProcessStartInfo();
-				startInfo.CreateNoWindow = false;
-				startInfo.UseShellExecute = false;
-				startInfo.FileName = "TortoiseGitIDiff.exe";
-				startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-				startInfo.Arguments = parameters;
-
-				try
-				{
-					// Start the process with the info we specified.
-					// Call WaitForExit and then the using statement will close.
-					using (Process exeProcess = Process.Start(startInfo))
-					{
-						exeProcess.WaitForExit();
-						return true;
-					}
-				}
-				catch
-				{
-					return false;
-				}
-			}
-			return false;
-		}
-
-		public static bool ExistsOnPath(string fileName)
-		{
-			return GetFullPath(fileName) != null;
-		}
-
-		public static string GetFullPath(string fileName)
-		{
-			if (File.Exists(fileName))
-				return Path.GetFullPath(fileName);
-
-			var values = Environment.GetEnvironmentVariable("PATH");
-			foreach (var path in values.Split(';'))
-			{
-				var fullPath = Path.Combine(path, fileName);
-				if (File.Exists(fullPath))
-					return fullPath;
-			}
-			return null;
 		}
 	}
 }

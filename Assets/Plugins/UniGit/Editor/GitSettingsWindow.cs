@@ -12,7 +12,7 @@ namespace UniGit
 	{
 		private RemoteCollection remotes;
 		private BranchCollection branches;
-		private RemoteEntry[] remoteCacheList;
+		private RemoteEntry[] remoteCacheList = new RemoteEntry[0];
 		private string[] remoteNames;
 		private Rect addRepositoryButtonRect;
 		[SerializeField] private SettingTabEnum tab;
@@ -32,7 +32,7 @@ namespace UniGit
 		protected override void OnFocus()
 		{
 			base.OnFocus();
-			GUI.FocusControl(null);
+			LoseFocus();
 			if (!GitManager.IsValidRepo) return;
 			OnGitUpdate(null);
 		}
@@ -40,7 +40,7 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnUnfocus()
 		{
-			GUI.FocusControl(null);
+			LoseFocus();
 		}
 
 		protected override void OnInitialize()
@@ -78,10 +78,16 @@ namespace UniGit
 			Event current = Event.current;
 
 			EditorGUILayout.BeginHorizontal("Toolbar");
+			EditorGUI.BeginChangeCheck();
 			bool value = GUILayout.Toggle(tab == SettingTabEnum.General, new GUIContent("General"), "toolbarbutton");
 			if (value)
 			{
 				tab = SettingTabEnum.General;
+			}
+			value = GUILayout.Toggle(tab == SettingTabEnum.Externals, new GUIContent("Externals"), "toolbarbutton");
+			if (value)
+			{
+				tab = SettingTabEnum.Externals;
 			}
 			value = GUILayout.Toggle(tab == SettingTabEnum.Remotes, new GUIContent("Remotes"), "toolbarbutton");
 			if (value)
@@ -93,39 +99,49 @@ namespace UniGit
 			{
 				tab = SettingTabEnum.Branches;
 			}
+			value = GUILayout.Toggle(tab == SettingTabEnum.LFS, new GUIContent("LFS"), "toolbarbutton");
+			if (value)
+			{
+				tab = SettingTabEnum.LFS;
+			}
 			value = GUILayout.Toggle(tab == SettingTabEnum.Security, new GUIContent("Security"), "toolbarbutton");
 			if (value)
 			{
 				tab = SettingTabEnum.Security;
 			}
+			if(EditorGUI.EndChangeCheck()) LoseFocus();
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.Space();
 
-			if (tab == SettingTabEnum.Remotes)
+			switch (tab)
 			{
-				DoRemotes(current);
-			}
-			else if(tab == SettingTabEnum.Branches)
-			{
-				DoBranches(current);
-			}
-			else if (tab == SettingTabEnum.Security)
-			{
-				DoSecurity(current);
-			}
-			else
-			{
-				DoGeneral(current);
+				case SettingTabEnum.Remotes:
+					DoRemotes(current);
+					break;
+				case SettingTabEnum.Externals:
+					DoExternals(current);
+						break;
+				case SettingTabEnum.Branches:
+					DoBranches(current);
+					break;
+				case SettingTabEnum.LFS:
+					DoLFS(current);
+					break;
+				case SettingTabEnum.Security:
+					DoSecurity(current);
+					break;
+				default:
+					DoGeneral(current);
+					break;
 			}
 
 			EditorGUILayout.Space();
 
 			if (current.type == EventType.MouseDown)
 			{
-				GUIUtility.keyboardControl = 0;
-				GUI.FocusControl(null);
+				LoseFocus();
 			}
 		}
 
@@ -136,8 +152,6 @@ namespace UniGit
 		private void DoGeneral(Event current)
 		{
 			GUILayout.Box(new GUIContent("Unity Settings"), "ProjectBrowserHeaderBgTop");
-
-			GitSettings settings = GitManager.Settings;
 
 			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoStage"));
 			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoFetch"));
@@ -203,6 +217,7 @@ namespace UniGit
 			EditorGUI.BeginChangeCheck();
 			EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.PrefixLabel(content);
+			GUI.SetNextControlName(key + " Config Popup");
 			int newValueIndex = EditorGUILayout.Popup(Array.IndexOf(options, oldValue), options);
 			string newValue;
 			if (newValueIndex >= 0 && newValueIndex < options.Length)
@@ -224,6 +239,7 @@ namespace UniGit
 		{
 			string oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
+			GUI.SetNextControlName(key + " Config String");
 			string newValue = EditorGUILayout.DelayedTextField(content, oldValue);
 			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
 			{
@@ -235,6 +251,7 @@ namespace UniGit
 		{
 			int oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
+			GUI.SetNextControlName(key + " Config Int");
 			int newValue = EditorGUILayout.DelayedIntField(content, oldValue);
 			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
 			{
@@ -246,6 +263,7 @@ namespace UniGit
 		{
 			int oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
+			GUI.SetNextControlName(key + " Config Int");
 			int newValue = EditorGUILayout.IntSlider(content, oldValue,min,max);
 			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
 			{
@@ -256,6 +274,7 @@ namespace UniGit
 		private void DoConfigToggle(GUIContent content,string key,bool def)
 		{
 			bool oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
+			GUI.SetNextControlName(key + " Config Toggle");
 			bool newValue = EditorGUILayout.Toggle(content, oldValue);
 			if (oldValue != newValue)
 			{
@@ -265,8 +284,30 @@ namespace UniGit
 
 		#endregion
 
+		private Rect addCredentialsRect;
+
 		private void DoSecurity(Event current)
 		{
+			EditorGUILayout.BeginHorizontal();
+			SerializedProperty credentialsManagerProperty = serializedSettings.FindProperty("CredentialsManager");
+			int newSelectedIndex = EditorGUILayout.Popup(new GUIContent("Credentials Manager", "The name of the External program to use"), GitCredentialsManager.SelectedAdapterIndex, GitCredentialsManager.AdapterNames);
+			credentialsManagerProperty.stringValue = newSelectedIndex >= 0 && newSelectedIndex < GitCredentialsManager.AdapterIds.Length ? GitCredentialsManager.AdapterIds[newSelectedIndex] : "";
+			if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+			{
+				GitCredentialsManager.SetSelectedAdapter(newSelectedIndex);
+				AssetDatabase.SaveAssets();
+			}
+			GUI.enabled = newSelectedIndex >= 0;
+			if (GUILayout.Button(new GUIContent("Remove"),"minibutton",GUILayout.Width(64)))
+			{
+				if (EditorUtility.DisplayDialog("Remove Credentials Manager", "This will remove all stored passwords in the Manager. Usernames and URLs will be kept in Unity", "Remove", "Cancel"))
+				{
+					GitCredentialsManager.SetSelectedAdapter(-1);
+				}
+			}
+			GUI.enabled = true;
+			EditorGUILayout.EndHorizontal();
+
 			if (GitManager.GitCredentials == null)
 			{
 				EditorGUILayout.HelpBox("No Git Credentials",MessageType.Warning);
@@ -286,36 +327,74 @@ namespace UniGit
 				EditorGUILayout.Space();
 				EditorGUILayout.BeginVertical("ShurikenModuleBg");
 				EditorGUI.BeginChangeCheck();
+				GUI.SetNextControlName(gitCredential.URL + " Credential Name");
 				gitCredential.Name = EditorGUILayout.TextField(new GUIContent("Name"), gitCredential.Name);
-				gitCredential.URL = EditorGUILayout.TextField(new GUIContent("URL"), gitCredential.URL);
+				GUI.enabled = false;
+				GUI.SetNextControlName(gitCredential.URL + " Credential URL");
+				EditorGUILayout.TextField(new GUIContent("URL"), gitCredential.URL);
+				GUI.enabled = true;
 				EditorGUILayout.Space();
 				GUILayout.Label(GUIContent.none, "ShurikenLine");
 				EditorGUILayout.Space();
-				gitCredential.IsToken = EditorGUILayout.Toggle(new GUIContent("Is Token", "Are credentials used as a token, like in GitHub."), gitCredential.IsToken);
+				bool newIsToken = gitCredential.IsToken;
+				newIsToken = EditorGUILayout.Toggle(new GUIContent("Is Token", "Are credentials used as a token, like in GitHub."), newIsToken);
+				if (newIsToken != gitCredential.IsToken)
+				{
+					gitCredential.IsToken = newIsToken;
+					if (gitCredential.IsToken)
+					{
+						GitCredentialsManager.ClearCredentialPassword(gitCredential.URL);
+					}
+				}
+
 				if (gitCredential.IsToken)
 				{
-					gitCredential.Token = EditorGUILayout.TextField(new GUIContent("Token"), gitCredential.Token);
+					GUI.SetNextControlName(gitCredential.URL + " Credential Token");
+					string newUsername = EditorGUILayout.DelayedTextField(new GUIContent("Token"), gitCredential.Username);
+					if (newUsername != gitCredential.Username)
+					{
+						GitCredentialsManager.SetNewUsername(gitCredential.URL, newUsername);
+					}
 				}
 				else
 				{
-					gitCredential.Username = EditorGUILayout.TextField(new GUIContent("Username"), gitCredential.Username);
+					GUI.SetNextControlName(gitCredential.URL + " Credential username");
+					string newUsername = EditorGUILayout.DelayedTextField(new GUIContent("Username"), gitCredential.Username);
+					if (newUsername != gitCredential.Username)
+					{
+						GitCredentialsManager.SetNewUsername(gitCredential.URL, newUsername);
+					}
+					GUI.SetNextControlName(gitCredential.URL + " Credential New Password");
 					gitCredential.NewPassword = EditorGUILayout.PasswordField(new GUIContent("New Password"), gitCredential.NewPassword);
+
+					if (!gitCredential.HasPassword)
+					{
+						EditorGUILayout.HelpBox("Credential has no set Password", MessageType.Warning);
+					}
 				}
 				
 				if (EditorGUI.EndChangeCheck())
 				{
 					EditorUtility.SetDirty(GitManager.GitCredentials);
 				}
+
 				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewPassword);
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
 				if (GUILayout.Button(new GUIContent("Change Password"), "minibuttonleft"))
 				{
-					gitCredential.EncryptPassword(gitCredential.NewPassword);
+					GitCredentialsManager.SetNewPassword(gitCredential.URL,gitCredential.Username,gitCredential.NewPassword);
 					gitCredential.NewPassword = "";
 					EditorUtility.SetDirty(GitManager.GitCredentials);
 					GUI.FocusControl("");
 					EditorUtility.DisplayDialog("Password Changed", "Password successfully changed", "Ok");
+				}
+				GUI.enabled = gitCredential.HasPassword;
+				if (GUILayout.Button(new GUIContent("Clear Password"), "minibuttonmid"))
+				{
+					GitCredentialsManager.ClearCredentialPassword(gitCredential.URL);
+					EditorUtility.SetDirty(GitManager.GitCredentials);
+					AssetDatabase.SaveAssets();
 				}
 				GUI.enabled = true;
 				if (GUILayout.Button(new GUIContent("Save"), "minibuttonmid"))
@@ -325,7 +404,7 @@ namespace UniGit
 				}
 				if (GUILayout.Button(new GUIContent("Remove"), "minibuttonright"))
 				{
-					GitManager.GitCredentials.RemoveEntry(gitCredential);
+					GitCredentialsManager.DeleteCredentials(gitCredential.URL);
 					GUIUtility.ExitGUI();
 					return;
 				}
@@ -339,7 +418,11 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button(new GUIContent("Add Credentials")))
 			{
-				GitManager.GitCredentials.CreateEntry();
+				PopupWindow.Show(addCredentialsRect,new AddCredentialPopup());
+			}
+			if (current.type == EventType.Repaint)
+			{
+				addCredentialsRect = GUILayoutUtility.GetLastRect();
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
@@ -396,6 +479,95 @@ namespace UniGit
 			}
 		}
 
+		#region Externals
+
+		private void DoExternals(Event current)
+		{
+			SerializedProperty externalTypesProperty = serializedSettings.FindProperty("ExternalsType");
+			externalTypesProperty.intValue = (int)(GitSettings.ExternalsTypeEnum)EditorGUILayout.EnumMaskField(new GUIContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), (GitSettings.ExternalsTypeEnum)externalTypesProperty.intValue);
+			if (serializedSettings.ApplyModifiedProperties())
+			{
+				AssetDatabase.SaveAssets();
+			}
+
+			SerializedProperty externalProgramProperty = serializedSettings.FindProperty("ExternalProgram");
+			int newSelectedIndex = EditorGUILayout.Popup(new GUIContent("External Program", "The name of the External program to use"), GitExternalManager.SelectedAdapterIndex, GitExternalManager.AdapterNames);
+			externalProgramProperty.stringValue = GitExternalManager.AdapterNames[newSelectedIndex].text;
+			if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+			{
+				GitExternalManager.SetSelectedAdapter(newSelectedIndex);
+				AssetDatabase.SaveAssets();
+			}
+
+		}
+
+		#endregion
+
+		#region LFS
+
+		private Rect trackFileRect;
+
+		private void DoLFS(Event current)
+		{
+			if (!GitLfsManager.Installed)
+			{
+				EditorGUILayout.HelpBox("Git LFS not installed",MessageType.Warning);
+				if (GUILayout.Button(new GUIContent("Download")))
+				{
+					Application.OpenURL("https://git-lfs.github.com/");
+				}
+				return;
+			}
+
+			if (!GitLfsManager.CheckInitialized())
+			{
+				EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
+				if (GUILayout.Button(new GUIContent("Initialize")))
+				{
+					GitLfsManager.Initialize();
+				}
+				return;
+			}
+
+			GUILayout.Label(new GUIContent("Settings"), "ProjectBrowserHeaderBgTop");
+
+
+			string url = GitManager.Repository.Config.GetValueOrDefault("lfs.url", "");
+			if (string.IsNullOrEmpty(url))
+			{
+				EditorGUILayout.HelpBox("You should specify a LFS server URL",MessageType.Warning);
+			}
+
+			DoConfigStringField(new GUIContent("URL"), "lfs.url", "");
+
+			EditorGUILayout.Space();
+
+			foreach (var info in GitLfsManager.TrackedInfo)
+			{
+				GUILayout.Label(new GUIContent(info.Extension),"ShurikenModuleTitle");
+				GUI.SetNextControlName(info.GetHashCode() + " Extension");
+				info.Extension = EditorGUILayout.DelayedTextField(new GUIContent("Extension"),info.Extension);
+				GUI.SetNextControlName(info.GetHashCode() + " Type");
+				info.Type = (GitLfsTrackedInfo.TrackType)EditorGUILayout.EnumPopup(new GUIContent("Type"), info.Type);
+
+				if (info.IsDirty)
+				{
+					GitLfsManager.SaveTracking();
+					break;
+				}
+			}
+
+			if (GUILayout.Button("Track File"))
+			{
+				PopupWindow.Show(trackFileRect,new GitLfsTrackPopupWindow(this));
+			}
+			if (current.type == EventType.Repaint)
+			{
+				trackFileRect = GUILayoutUtility.GetLastRect();
+			}
+		}
+		#endregion
+
 		private void DoRemotes(Event current)
 		{
 			int remoteCount = remotes.Count();
@@ -411,8 +583,10 @@ namespace UniGit
 				EditorGUILayout.BeginVertical();
 				EditorGUI.BeginChangeCheck();
 				GUI.enabled = false;
+				GUI.SetNextControlName(remote.GetHashCode() + " Remote Name");
 				EditorGUILayout.TextField(new GUIContent("Name"), remote.Name);
 				GUI.enabled = true;
+				GUI.SetNextControlName(remote.GetHashCode() + " Remote URL");
 				remote.Url = EditorGUILayout.DelayedTextField(new GUIContent("URL"), remote.Url);
 				//remote.PushUrl = EditorGUILayout.DelayedTextField(new GUIContent("Push URL"), remote.PushUrl, "ShurikenValue");
 				remote.TagFetchMode = (TagFetchMode)EditorGUILayout.EnumPopup(new GUIContent("Tag Fetch Mode"), remote.TagFetchMode);
@@ -515,8 +689,10 @@ namespace UniGit
 		private enum SettingTabEnum
 		{
 			General,
+			Externals,
 			Remotes,
 			Branches,
+			LFS,
 			Security
 		}
 
@@ -551,6 +727,43 @@ namespace UniGit
 				}
 				GUI.enabled = true;
 				EditorGUILayout.Space();
+			}
+		}
+
+		private class AddCredentialPopup : PopupWindowContent
+		{
+			private string name;
+			private string url;
+			private string username;
+			private string password;
+
+			public override Vector2 GetWindowSize()
+			{
+				return new Vector2(300, 80);
+			}
+
+			public override void OnGUI(Rect rect)
+			{
+				name = EditorGUILayout.TextField(new GUIContent("Name"), name);
+				url = EditorGUILayout.TextField(new GUIContent("URL"), url);
+				password = EditorGUILayout.PasswordField(new GUIContent("Password"), password);
+				GUI.enabled = !string.IsNullOrEmpty(url);
+				if (GUILayout.Button(new GUIContent("Add Credential")))
+				{
+					var entry = GitCredentialsManager.CreatEntry(url, username, password);
+					if (entry != null)
+					{
+						entry.Name = name;
+						EditorUtility.SetDirty(GitManager.GitCredentials);
+						AssetDatabase.SaveAssets();
+						GetWindow<GitSettingsWindow>().Focus();
+					}
+					else
+					{
+						editorWindow.ShowNotification(new GUIContent("URL already exists"));
+					}
+				}
+				GUI.enabled = true;
 			}
 		}
 		#endregion
