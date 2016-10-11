@@ -202,7 +202,7 @@ namespace UniGit
 
 		private void DoDiffScroll(Event current)
 		{
-			float totalTypesCount = statusList.Select(i => i.State).Distinct().Count();
+			float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
 			float elementsTotalHeight = (statusList.Count(i => settings.MinimizedFileStatus.IsFlagSet(i.State)) + totalTypesCount)  * elementHeight;
 
 			GUILayout.BeginArea(DiffToolbarRect, GUIContent.none, "Toolbar");
