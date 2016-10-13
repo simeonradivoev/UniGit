@@ -34,6 +34,7 @@ namespace UniGit
 			{
 				RegisterFilter();
 				Update();
+
 			}
 		}
 

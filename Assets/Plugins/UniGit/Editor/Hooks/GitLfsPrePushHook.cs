@@ -10,6 +10,8 @@ namespace Assets.Plugins.UniGit.Editor.Hooks
 	{
 		public override bool OnPrePush(IEnumerable<PushUpdate> updates)
 		{
+			if (!GitLfsManager.Installed || !GitLfsManager.CheckInitialized()) return true;
+
 			using (var process = new Process())
 			{
 				process.StartInfo.FileName = "git-lfs";
