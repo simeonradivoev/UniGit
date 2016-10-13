@@ -26,51 +26,7 @@ namespace UniGit
 
 			if (favor == MergeFileFavor.Normal)
 			{
-				Object asset = AssetDatabase.LoadAssetAtPath(path, typeof(Object));
-				var arg = new CancelEventArgs();
-				if(OnHandleConflictEvent != null) OnHandleConflictEvent.Invoke(path,asset, arg);
-
-				if (arg.Cancel) return;
-				var conflict = GitManager.Repository.Index.Conflicts[path];
-				var ancestor = conflict.Ancestor;
-				var ours = conflict.Ours;
-				var theirs = conflict.Theirs;
-
-				var ancestorBlob = (ancestor != null) ? (Blob)GitManager.Repository.Lookup(ancestor.Id) : null;
-				var ourBlob = (ours != null) ? (Blob)GitManager.Repository.Lookup(ours.Id) : null;
-				var theirBlob = (theirs != null) ? (Blob)GitManager.Repository.Lookup(theirs.Id) : null;
-
-				var ourStream = (ours != null) ? ourBlob.GetContentStream(new FilteringOptions(ours.Path)) : null;
-				var theirStream = (theirs != null) ? theirBlob.GetContentStream(new FilteringOptions(theirs.Path)) : null;
-				var ancestorStream = (ancestor != null) ? ancestorBlob.GetContentStream(new FilteringOptions(ancestor.Path)) : null;
-
-				var conflictPathOurs = Application.dataPath.Replace("Assets", "Temp/our_conflict_file_tmp");
-				var conflictPathTheirs = Application.dataPath.Replace("Assets", "Temp/their_conflict_file_tmp");
-				var conflictPathAncestor = Application.dataPath.Replace("Assets", "Temp/ancestor_conflict_file_tmp");
-
-				if (ourStream != null)
-				{
-					using (var ourOutputStream = File.Create(conflictPathOurs))
-					{
-						ourStream.CopyTo(ourOutputStream);
-					}
-				}
-				if (theirStream != null)
-				{
-					using (var theirOutputStream = File.Create(conflictPathTheirs))
-					{
-						theirStream.CopyTo(theirOutputStream);
-					}
-				}
-				if (ancestorStream != null)
-				{
-					using (var ancestorOutputStream = File.Create(conflictPathAncestor))
-					{
-						ancestorStream.CopyTo(ancestorOutputStream);
-					}
-				}
-
-				GitExternalManager.HandleConflict(conflictPathTheirs, conflictPathOurs, conflictPathAncestor, path, asset.GetType());
+				GitExternalManager.HandleConflict(path);
 			}
 			else if (favor == MergeFileFavor.Ours)
 			{

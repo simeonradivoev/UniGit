@@ -72,7 +72,15 @@ namespace UniGit
 		[MenuItem("Assets/Git/Revert", priority = 80), UsedImplicitly]
 		private static void Revet()
 		{
-			GitManager.Repository.CheckoutPaths("HEAD", Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e)), new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress});
+			var paths = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e));
+			if (GitExternalManager.TakeRevert(paths))
+			{
+				AssetDatabase.Refresh();
+				GitManager.Update();
+				return;
+			}
+
+			GitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress});
 			EditorUtility.ClearProgressBar();
 			GitManager.Update();
 			AssetDatabase.Refresh();

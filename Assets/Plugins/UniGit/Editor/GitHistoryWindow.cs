@@ -266,13 +266,19 @@ namespace UniGit
 				selectBranchMenu.ShowAsContext();
 			}
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
-			GUI.enabled = !selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead;
+			GUI.enabled = GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead);
 			GUIContent checkoutButtonContent = EditorGUIUtility.IconContent("UniGit/GitCheckout");
 			checkoutButtonContent.text = "Switch";
 			checkoutButtonContent.tooltip = selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch";
 			if (GUI.Button(btRect, checkoutButtonContent, "toolbarbutton"))
 			{
+				if (GitExternalManager.TakeSwitch())
+				{
+					AssetDatabase.Refresh();
+					GitManager.Update();
+				}
 
+				//todo Implement native switching
 			}
 			GUI.enabled = true;
 			Profiler.EndSample();
@@ -411,7 +417,15 @@ namespace UniGit
 			GUI.enabled = selectedBranch.IsCurrentRepositoryHead && !isHead;
 			if (GUI.Button(buttonRect, new GUIContent("Reset", "Reset changes made up to this commit"), "minibuttonleft"))
 			{
-				PopupWindow.Show(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id)));
+				if (GitExternalManager.TakeReset(GitManager.Repository.Lookup<Commit>(commit.Id)))
+				{
+					AssetDatabase.Refresh();
+					GitManager.Update();
+				}
+				else
+				{
+					PopupWindow.Show(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id)));
+				}
 			}
 			GUI.enabled = true;
 			buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);

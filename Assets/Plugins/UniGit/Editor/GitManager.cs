@@ -278,49 +278,15 @@ namespace UniGit
 			return fileStatus.IsFlagSet(FileStatus.ModifiedInIndex | FileStatus.NewInIndex | FileStatus.RenamedInIndex | FileStatus.TypeChangeInIndex | FileStatus.DeletedFromIndex);
 		}
 
-		public static void ShowDiff(string path,Commit commit,[CanBeNull] Commit other)
+		public static void ShowDiff(string path, [NotNull] Commit start,[NotNull] Commit end)
 		{
-			TreeEntry entry = commit[path];
-
-			if (entry != null)
-			{
-				Blob blob = entry.Target as Blob;
-				if (blob == null || blob.IsBinary) return;
-				string oldFilePath = Application.dataPath.Replace("Assets", "Temp/") + "Git-diff-tmp-file";
-				if (!string.IsNullOrEmpty(oldFilePath))
-				{
-					using (FileStream file = File.Create(oldFilePath))
-					{
-						blob.GetContentStream().CopyTo(file);
-					}
-				}
-				string otherFilePath = path;
-				if (other != null)
-				{
-					TreeEntry otherEntry = other[path];
-					if (otherEntry == null) return;
-					Blob otherBlob = otherEntry.Target as Blob;
-					if (otherBlob == null || otherBlob.IsBinary) return;
-					otherFilePath = Application.dataPath.Replace("Assets", "Temp/") + "Git-diff-tmp-file-other";
-					if (string.IsNullOrEmpty(otherFilePath)) return;
-					using (FileStream file = File.Create(otherFilePath))
-					{
-						otherBlob.GetContentStream().CopyTo(file);
-					}
-				}
-
-				var asset = AssetDatabase.LoadAssetAtPath(path,typeof(Object));
-				GitExternalManager.ShowDiff(Path.GetFileName(path) + " - " + entry.Target.Sha, oldFilePath, Path.GetFileName(path) + " - " + (other == null ? "Working Tree" : other.Id.Sha), otherFilePath, asset != null ? asset.GetType() : null);
-			}
+			GitExternalManager.ShowDiff(path,start,end);
 		}
 
 		public static void ShowDiff(string path)
 		{
 			if (string.IsNullOrEmpty(path) ||  Repository == null) return;
-			if (Repository.Head != null && Repository.Head.Tip != null)
-			{
-				ShowDiff(path, Repository.Head.Tip,null);
-			}
+			GitExternalManager.ShowDiff(path);
 		}
 
 		public static void ShowDiffPrev(string path)
@@ -554,6 +520,18 @@ namespace UniGit
 					if (movedAssetsFinal.Length > 0) GitManager.Repository.Stage(movedAssetsFinal);
 				}
 			}
+
+			//automatic deletion is necessary even if AutoStage is off
+			if (deletedAssets.Length > 0)
+			{
+				foreach (var asset in deletedAssets)
+				{
+					Debug.Log(asset);
+				}
+				string[] deletedAssetsFinal = deletedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g))).ToArray();
+				if (deletedAssetsFinal.Length > 0) GitManager.Repository.Unstage(deletedAssetsFinal);
+			}
+
 			GitManager.Update();
 		}
 	}

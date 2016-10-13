@@ -21,7 +21,9 @@ namespace UniGit
 			Push = 1 << 1,
 			Fetch = 1 << 2,
 			Merge = 1 << 3,
-			Commit = 1 << 4
+			Commit = 1 << 4,
+			Switch = 1 << 5,
+			Reset = 1 << 6,
 		}
 	}
 }

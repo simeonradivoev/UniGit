@@ -151,6 +151,7 @@ namespace UniGit
 
 		private void DoGeneral(Event current)
 		{
+			//todo cache general settings to reduce lookup
 			GUILayout.Box(new GUIContent("Unity Settings"), "ProjectBrowserHeaderBgTop");
 
 			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoStage"));

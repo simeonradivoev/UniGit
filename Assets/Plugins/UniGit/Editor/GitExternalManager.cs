@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
+using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Attributes;
 using UnityEngine;
@@ -83,39 +85,40 @@ namespace UniGit
 		public static bool TakeCommit(string message)
 		{
 			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit) || SelectedAdatapter == null) return false;
-			SelectedAdatapter.Commit(message);
-			return true;
+			return SelectedAdatapter.Commit(message);
 		}
 
 		public static bool TakePush()
 		{
 			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Push) || SelectedAdatapter == null) return false;
-			SelectedAdatapter.Push();
-			return true;
+			return SelectedAdatapter.Push();
 		}
 
 		public static bool TakePull()
 		{
 			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Pull) || SelectedAdatapter == null) return false;
-			SelectedAdatapter.Pull();
-			return true;
+			return SelectedAdatapter.Pull();
 		}
 
 		public static bool TakeMerge()
 		{
 			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Merge) || SelectedAdatapter == null) return false;
-			SelectedAdatapter.Merge();
-			return true;
+			return SelectedAdatapter.Merge();
 		}
 
 		public static bool TakeFetch(string remote)
 		{
 			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
-			SelectedAdatapter.Fetch(remote);
-			return true;
+			return SelectedAdatapter.Fetch(remote);
 		}
 
-		public static void HandleConflict(string left, string right, string ansestor, string merge,Type assetType)
+		public static bool TakeReset(Commit commit)
+		{
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Reset(commit);
+		}
+
+		public static void HandleConflict(string path)
 		{
 			if (SelectedAdatapter == null)
 			{
@@ -123,10 +126,10 @@ namespace UniGit
 				return;
 			}
 
-			SelectedAdatapter.Conflict(left,right,ansestor,merge,assetType);
+			SelectedAdatapter.Conflict(path);
 		}
 
-		public static void ShowDiff(string leftTitle,string leftPath, string rightTitle,string rightPath, [CanBeNull] Type assetType)
+		public static void ShowDiff(string path)
 		{
 			if (SelectedAdatapter == null)
 			{
@@ -134,7 +137,46 @@ namespace UniGit
 				return;
 			}
 
-			SelectedAdatapter.Diff(leftTitle,leftPath, rightTitle,rightPath, assetType);
+			SelectedAdatapter.Diff(path);
+		}
+
+		public static void ShowDiff(string path,string path2)
+		{
+			if (SelectedAdatapter == null)
+			{
+				Debug.LogWarning("No selected external program.");
+				return;
+			}
+
+			SelectedAdatapter.Diff(path, path2);
+		}
+
+		public static void ShowDiff(string path, Commit start,Commit end)
+		{
+			if (SelectedAdatapter == null)
+			{
+				Debug.LogWarning("No selected external program.");
+				return;
+			}
+
+			SelectedAdatapter.Diff(path, start, end);
+		}
+
+		public static bool TakeRevert(IEnumerable<string> paths)
+		{
+			if (SelectedAdatapter == null)
+			{
+				Debug.LogWarning("No selected external program.");
+				return false;
+			}
+
+			return SelectedAdatapter.Revert(paths);
+		}
+
+		public static bool TakeSwitch()
+		{
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Switch) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Switch();
 		}
 
 		#region Process Helpers
@@ -148,13 +190,15 @@ namespace UniGit
 
 		public static bool CallProccess(string name, string parameters)
 		{
-			if (ExistsOnPath(name))
+			string fullPath = GetFullPath(name);
+
+			if (fullPath != null)
 			{
 				ProcessStartInfo startInfo = new ProcessStartInfo
 				{
 					CreateNoWindow = false,
 					UseShellExecute = false,
-					FileName = name,
+					FileName = fullPath,
 					WorkingDirectory = GitManager.RepoPath,
 					WindowStyle = ProcessWindowStyle.Hidden,
 					RedirectStandardOutput = true,
@@ -189,8 +233,8 @@ namespace UniGit
 			if (File.Exists(fileName))
 				return Path.GetFullPath(fileName);
 
-			var values = Environment.GetEnvironmentVariable("PATH");
-			foreach (var path in values.Split(';'))
+			var values = Environment.GetEnvironmentVariable("PATH",EnvironmentVariableTarget.Machine).Split(';');
+			foreach (var path in values)
 			{
 				var fullPath = Path.Combine(path, fileName);
 				if (File.Exists(fullPath))

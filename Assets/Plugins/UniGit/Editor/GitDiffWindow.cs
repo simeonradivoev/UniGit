@@ -606,7 +606,16 @@ namespace UniGit
 
 		private void RevertSelectedCallback()
 		{
-			GitManager.Repository.CheckoutPaths("HEAD",statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)),new CheckoutOptions() {CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress });
+			IEnumerable<string> paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path));
+
+			if (GitExternalManager.TakeRevert(paths))
+			{
+				AssetDatabase.Refresh();
+				GitManager.Update();
+				return;
+			}
+
+			GitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() {CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress });
 			EditorUtility.ClearProgressBar();
 		}
 
