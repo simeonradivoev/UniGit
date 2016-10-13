@@ -58,15 +58,17 @@ namespace UniGit
 					//GUILayout.Label(new GUIContent(" (" + change.Status + ") " + change.Path));
 					EditorGUILayout.EndHorizontal();
 					Rect r = GUILayoutUtility.GetLastRect();
-					if (Event.current.type == EventType.ContextClick)
+					if (Event.current.type == EventType.ContextClick && r.Contains(Event.current.mousePosition))
 					{
+						string path = change.Path;
 						GenericMenu menu = new GenericMenu();
 						if (commit.Parents.Count() == 1)
 						{
+							
 							menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
 							{
 								Commit parent = commit.Parents.Single();
-								GitManager.ShowDiff(change.Path, parent, commit);
+								GitManager.ShowDiff(path, parent, commit);
 							});
 						}
 						else
@@ -75,7 +77,7 @@ namespace UniGit
 						}
 						menu.AddItem(new GUIContent("Difference with HEAD"), false, () =>
 						{
-							GitManager.ShowDiff(change.Path, commit, GitManager.Repository.Head.Tip);
+							GitManager.ShowDiff(path, commit, GitManager.Repository.Head.Tip);
 						});
 						menu.ShowAsContext();
 					}
