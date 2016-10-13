@@ -33,9 +33,8 @@ namespace UniGit
 			if (CheckInitialized())
 			{
 				RegisterFilter();
+				Update();
 			}
-
-			Update();
 		}
 
 		public static void Update()
