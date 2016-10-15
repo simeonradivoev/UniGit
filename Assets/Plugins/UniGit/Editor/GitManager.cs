@@ -149,6 +149,7 @@ namespace UniGit
 				RepositoryStatus repoStatus = repository.RetrieveStatus();
 				if(updateRepository != null) updateRepository.Invoke(repoStatus);
 				statusTree = new StatusTreeClass(repoStatus);
+				RepaintProjectWidnow();
 			}
 		}
 
@@ -267,6 +268,34 @@ namespace UniGit
 		#endregion
 
 		#region Helpers
+
+		public static void RepaintProjectWidnow()
+		{
+			Type type = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
+			var projectWindow = Resources.FindObjectsOfTypeAll(type).FirstOrDefault();
+			if (projectWindow != null)
+			{
+				((EditorWindow)projectWindow).Repaint();
+			}
+		}
+
+		public static bool IsEmptyFolderMeta(string path)
+		{
+			if (path.EndsWith(".meta"))
+			{
+				return IsEmptyFolder(path.Substring(0, path.Length - 5));
+			}
+			return false;
+		}
+
+		public static bool IsEmptyFolder(string path)
+		{
+			if (Directory.Exists(path))
+			{
+				return Directory.GetFileSystemEntries(path).Length <= 0;
+			}
+			return false;
+		}
 
 		public static bool CanStage(FileStatus fileStatus)
 		{
@@ -398,6 +427,9 @@ namespace UniGit
 		public class StatusTreeClass
 		{
 			private Dictionary<string, StatusTreeEntry> entries = new Dictionary<string, StatusTreeEntry>();
+			private string currentPath;
+			private string[] currentPathArray;
+			private FileStatus currentStatus;
 
 			public StatusTreeClass(IEnumerable<StatusEntry> status)
 			{
@@ -408,27 +440,33 @@ namespace UniGit
 			{
 				foreach (var entry in status)
 				{
-					string[] paths = entry.FilePath.Split('\\');
-					AddRecursive(0, paths, entries, entry.State);
+					currentPath = entry.FilePath;
+					currentPathArray = entry.FilePath.Split('\\');
+					currentStatus = !Settings.ShowEmptyFolders && IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.State;
+					AddRecursive(0, entries);
 				}
 			}
 
-			private void AddRecursive(int entryNameIndex, string[] path, Dictionary<string, StatusTreeEntry> entries, FileStatus fileStatus)
+			private void AddRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
 			{
 				StatusTreeEntry entry;
-				string pathChunk = path[entryNameIndex].Replace(".meta", "");
+				string pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
+
+				//should a state change be marked at this level (inverse depth)
+				bool markState = Settings.ProjectStatusOverlayDepth < 0 || (Mathf.Abs(currentPathArray.Length - entryNameIndex)) <= Math.Max(1, Settings.ProjectStatusOverlayDepth);
 				if (entries.TryGetValue(pathChunk, out entry))
 				{
-					entry.State = entry.State.SetFlags(fileStatus, true);
+					if(markState) entry.State = entry.State.SetFlags(currentStatus, true);
 				}
 				else
 				{
-					entry = new StatusTreeEntry(fileStatus);
+					entry = new StatusTreeEntry();
+					if (markState) entry.State = entry.State.SetFlags(currentStatus);
 					entries.Add(pathChunk, entry);
 				}
-				if (entryNameIndex < path.Length - 1)
+				if (entryNameIndex < currentPathArray.Length - 1)
 				{
-					AddRecursive(entryNameIndex + 1, path, entry.SubEntiEntries, fileStatus);
+					AddRecursive(entryNameIndex + 1, entry.SubEntiEntries);
 				}
 			}
 
@@ -465,18 +503,7 @@ namespace UniGit
 		public class StatusTreeEntry
 		{
 			private Dictionary<string, StatusTreeEntry> subEntiEntries = new Dictionary<string, StatusTreeEntry>();
-			private FileStatus state;
-
-			public StatusTreeEntry(FileStatus state)
-			{
-				this.state = state;
-			}
-
-			public FileStatus State
-			{
-				get { return state; }
-				set { state = value; }
-			}
+			public FileStatus State { get; set; }
 
 			public Dictionary<string, StatusTreeEntry> SubEntiEntries
 			{
@@ -510,13 +537,13 @@ namespace UniGit
 			{
 				if (importedAssets.Length > 0)
 				{
-					string[] importedAssetsFinal = importedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
-					if(importedAssetsFinal.Length > 0) GitManager.Repository.Stage(importedAssetsFinal);
+					string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
+					if (importedAssetsToStage.Length > 0) GitManager.Repository.Stage(importedAssetsToStage);
 				}
 
 				if (movedAssets.Length > 0)
 				{
-					string[] movedAssetsFinal = movedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
+					string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
 					if (movedAssetsFinal.Length > 0) GitManager.Repository.Stage(movedAssetsFinal);
 				}
 			}

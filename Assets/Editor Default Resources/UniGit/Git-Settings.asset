@@ -17,3 +17,4 @@ MonoBehaviour:
   ExternalsType: -1
   ExternalProgram: Tortoise Git
   CredentialsManager: wincred
+  ProjectStatusOverlayDepth: 1

@@ -712,7 +712,9 @@ namespace UniGit
 				{
 					if (entry.FilePath.EndsWith(".meta"))
 					{
-						string mainAssetPath = entry.FilePath.Remove(entry.FilePath.Length - 5, 5);
+						string mainAssetPath = entry.FilePath.Substring(0, entry.FilePath.Length - 5);
+						if (!GitManager.Settings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) continue;;
+						
 						StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
 						if (ent != null)
 						{

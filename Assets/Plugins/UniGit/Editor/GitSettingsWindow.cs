@@ -158,6 +158,8 @@ namespace UniGit
 			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoFetch"));
 			serializedSettings.ApplyModifiedProperties();
 			EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommits"));
+			EditorGUILayout.PropertyField(serializedSettings.FindProperty("ProjectStatusOverlayDepth"));
+			EditorGUILayout.PropertyField(serializedSettings.FindProperty("ShowEmptyFolders"));
 			if (serializedSettings.ApplyModifiedProperties())
 			{
 				GitManager.Update();
