@@ -35,8 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CredentialManagement">
-      <HintPath>..\Assets\Plugins\WindowsCredentialManagement\CredentialManagement.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\Assets\Plugins\WindowsCredentialManagement\Editor\CredentialManagement.dll</HintPath>
     </Reference>
     <Reference Include="LibGit2Sharp">
       <HintPath>..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll</HintPath>
