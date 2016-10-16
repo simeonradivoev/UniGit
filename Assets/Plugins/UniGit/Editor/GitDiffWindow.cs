@@ -458,10 +458,17 @@ namespace UniGit
 						}
 						else
 						{
-							lastSelectedIndex = index;
-							statusList.SelectAll(false);
-							info.Selected = !info.Selected;
-							GUI.FocusControl(info.Path);
+							if (current.clickCount == 2)
+							{
+								Selection.activeObject = AssetDatabase.LoadAssetAtPath(info.Path, typeof (Object));
+							}
+							else
+							{
+								lastSelectedIndex = index;
+								statusList.SelectAll(false);
+								info.Selected = !info.Selected;
+								GUI.FocusControl(info.Path);
+							}
 						}
 						current.Use();
 						Repaint();
