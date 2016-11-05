@@ -33,6 +33,7 @@ namespace UniGit
 			Commit = 1 << 4,
 			Switch = 1 << 5,
 			Reset = 1 << 6,
+			Revert = 1 << 7
 		}
 	}
 }

@@ -207,6 +207,8 @@ namespace UniGit
 			{
 				GUI.FocusControl("");
 				commitMessage = string.Empty;
+				//reset amend commit so the user will have to enable it again to load the last commit message
+				settings.amendCommit = false;
 			}
 		}
 

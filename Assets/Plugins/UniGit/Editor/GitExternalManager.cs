@@ -164,12 +164,7 @@ namespace UniGit
 
 		public static bool TakeRevert(IEnumerable<string> paths)
 		{
-			if (SelectedAdatapter == null)
-			{
-				Debug.LogWarning("No selected external program.");
-				return false;
-			}
-
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Revert) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Revert(paths);
 		}
 
