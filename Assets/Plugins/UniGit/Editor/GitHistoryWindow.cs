@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
@@ -94,6 +95,13 @@ namespace UniGit
 
 		protected override void OnGitUpdate(RepositoryStatus status)
 		{
+			ThreadPool.QueueUserWorkItem(UpdateChachesThreaded, status);
+		}
+
+		private void UpdateChachesThreaded(object statusObj)
+		{
+			RepositoryStatus status = (RepositoryStatus)statusObj;
+
 			//update all branches
 			cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
 
@@ -109,8 +117,13 @@ namespace UniGit
 			}
 
 			hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
+			actionQueue.Enqueue(UpdateGitStatusIcon);
+			actionQueue.Enqueue(Repaint);
+		}
+
+		private void UpdateGitStatusIcon()
+		{
 			titleContent.image = GitManager.GetGitStatusIcon();
-			Repaint();
 		}
 
 		private void UpdateSelectedBranch()
@@ -119,6 +132,7 @@ namespace UniGit
 			if (tmpBranch != null)
 			{
 				selectedBranch = new BranchInfo(tmpBranch);
+
 			}
 			if (selectedBranch == null)
 			{
@@ -130,6 +144,11 @@ namespace UniGit
 		protected override void OnInitialize()
 		{
 			cachedProfilePicturesDictionary = new Dictionary<string, WWW>();
+		}
+
+		protected override void OnRepositoryLoad(Repository repository)
+		{
+			Repaint();
 		}
 
 		protected override void OnFocus()
@@ -167,6 +186,7 @@ namespace UniGit
 				return;
 			}
 
+			if(GitManager.Repository == null || selectedBranch == null) return;
 			RepositoryInformation repoInformation = GitManager.Repository.Info;
 			DoToolbar(toolbarRect, repoInformation);
 			EditorGUILayout.Space();

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
@@ -35,7 +36,7 @@ namespace UniGit
 		[SerializeField] public string commitMessage;
 		private Rect commitsRect;
 		private Styles styles;
-		private Settings settings;
+		[SerializeField] private Settings settings;
 		private int lastSelectedIndex;
 		[SerializeField] private StatusList statusList;
 
@@ -59,29 +60,45 @@ namespace UniGit
 			public GUIStyle diffElement;
 		}
 
+		protected override void OnEnable()
+		{
+			base.OnEnable();
+			editoSerializedObject = new SerializedObject(this);
+			if (settings == null) settings = new Settings();
+		}
+
 		protected override void OnGitUpdate(RepositoryStatus status)
 		{
-			statusList = new StatusList(status,settings.showFileStatusTypeFilter);
+			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, status);
 		}
 
 		private void UpdateStatusList()
 		{
-			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
+			if(GitManager.Repository == null) return;
+			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, GitManager.Repository.RetrieveStatus());
 		}
 
 		protected override void OnInitialize()
 		{
-			settings = new Settings();
-			settings.showFileStatusTypeFilter = (FileStatus)(-1);
-			statusList = new StatusList(GitManager.Repository.RetrieveStatus(), settings.showFileStatusTypeFilter);
-			editoSerializedObject = new SerializedObject(this);
+		
+		}
+
+		protected override void OnRepositoryLoad(Repository repository)
+		{
+			
+		}
+
+		private void CreateStatusListThreaded(object statusObj)
+		{
+			statusList = new StatusList((RepositoryStatus)statusObj, settings.showFileStatusTypeFilter);
+			actionQueue.Enqueue(Repaint);
 		}
 
 		[UsedImplicitly]
 		private void OnUnfocus()
 		{
 			if(!GitManager.IsValidRepo) return;
-			statusList.SelectAll(false);
+			if(statusList != null) statusList.SelectAll(false);
 		}
 
 		[UsedImplicitly]
@@ -121,7 +138,6 @@ namespace UniGit
 			DoCommit(repoInfo);
 			GUILayout.EndArea();
 
-			SerializedProperty diffScrollProperty = editoSerializedObject.FindProperty("diffScroll");
 			if (statusList == null) return;
 			DoDiffScroll(Event.current);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
@@ -9,28 +10,24 @@ namespace UniGit
 	{
 		//used an object because the EditorWindow saves Booleans even if private
 		private object initilized;
+		private object hasFocused;
+		protected Queue<Action> actionQueue = new Queue<Action>();
 
 		protected virtual void OnEnable()
 		{
 			titleContent.image = GitManager.GetGitStatusIcon();
 
+			EditorApplication.update -= OnEditorUpdate;
+			EditorApplication.update += OnEditorUpdate;
 			GitManager.updateRepository -= OnGitManagerUpdateInternal;
 			GitManager.updateRepository += OnGitManagerUpdateInternal;
-
-			if (initilized == null) return;
-			//this will be called when entering Play mode
-			OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
+			GitManager.onRepositoryLoad -= OnRepositoryLoad;
+			GitManager.onRepositoryLoad += OnRepositoryLoad;
 		}
 
 		protected virtual void OnFocus()
 		{
-			//Only initialize if the editor Window is focused
-			if (initilized != null) return;
-			initilized = true;
-			if (!GitManager.IsValidRepo) return;
-			OnInitialize();
-			OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
-			Repaint();
+			hasFocused = true;
 		}
 
 		private void OnGitManagerUpdateInternal(RepositoryStatus status)
@@ -42,6 +39,40 @@ namespace UniGit
 			if (initilized == null || !GitManager.IsValidRepo) return;
 			OnGitUpdate(status);
 			Repaint();
+		}
+
+		private void OnEditorUpdate()
+		{
+			//Only initialize if the editor Window is focused
+			if (hasFocused != null && initilized == null && GitManager.Repository != null)
+			{
+				initilized = true;
+				if (!GitManager.IsValidRepo) return;
+				OnInitialize();
+				OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
+				//simulate repository loading for first initialization
+				OnRepositoryLoad(GitManager.Repository);
+				OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
+				Repaint();
+			}
+
+			if (actionQueue.Count > 0)
+			{
+				Action action = actionQueue.Dequeue();
+				if (action != null)
+				{
+					try
+					{
+						action.Invoke();
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+						throw;
+					}
+				}
+				
+			}
 		}
 
 		#region Safe Controlls
@@ -57,5 +88,6 @@ namespace UniGit
 
 		protected abstract void OnGitUpdate(RepositoryStatus status);
 		protected abstract void OnInitialize();
+		protected abstract void OnRepositoryLoad(Repository repository);
 	}
 }

@@ -46,10 +46,17 @@ namespace UniGit
 		protected override void OnInitialize()
 		{
 			serializedSettings = new SerializedObject(GitManager.Settings);
+			OnGitUpdate(null);
+		}
+
+		protected override void OnRepositoryLoad(Repository repository)
+		{
+			Repaint();
 		}
 
 		protected override void OnGitUpdate(RepositoryStatus status)
 		{
+			if(GitManager.Repository == null) return;
 			UpdateRemotes();
 			UpdateBranches();
 		}
@@ -114,27 +121,29 @@ namespace UniGit
 			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.Space();
-
-			switch (tab)
+			if (GitManager.Repository != null)
 			{
-				case SettingTabEnum.Remotes:
-					DoRemotes(current);
-					break;
-				case SettingTabEnum.Externals:
-					DoExternals(current);
+				switch (tab)
+				{
+					case SettingTabEnum.Remotes:
+						DoRemotes(current);
 						break;
-				case SettingTabEnum.Branches:
-					DoBranches(current);
-					break;
-				case SettingTabEnum.LFS:
-					DoLFS(current);
-					break;
-				case SettingTabEnum.Security:
-					DoSecurity(current);
-					break;
-				default:
-					DoGeneral(current);
-					break;
+					case SettingTabEnum.Externals:
+						DoExternals(current);
+						break;
+					case SettingTabEnum.Branches:
+						DoBranches(current);
+						break;
+					case SettingTabEnum.LFS:
+						DoLFS(current);
+						break;
+					case SettingTabEnum.Security:
+						DoSecurity(current);
+						break;
+					default:
+						DoGeneral(current);
+						break;
+				}
 			}
 
 			EditorGUILayout.Space();
@@ -154,15 +163,18 @@ namespace UniGit
 			//todo cache general settings to reduce lookup
 			GUILayout.Box(new GUIContent("Unity Settings"), "ProjectBrowserHeaderBgTop");
 
-			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoStage"));
-			EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoFetch"));
-			serializedSettings.ApplyModifiedProperties();
-			EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommits"));
-			EditorGUILayout.PropertyField(serializedSettings.FindProperty("ProjectStatusOverlayDepth"));
-			EditorGUILayout.PropertyField(serializedSettings.FindProperty("ShowEmptyFolders"));
-			if (serializedSettings.ApplyModifiedProperties())
+			if (serializedSettings != null)
 			{
-				GitManager.Update();
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoStage"));
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoFetch"));
+				serializedSettings.ApplyModifiedProperties();
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommits"));
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("ProjectStatusOverlayDepth"));
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("ShowEmptyFolders"));
+				if (serializedSettings.ApplyModifiedProperties())
+				{
+					GitManager.Update();
+				}
 			}
 
 			GUILayout.Box(new GUIContent("Git Settings"), "ProjectBrowserHeaderBgMiddle");

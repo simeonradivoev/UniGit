@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
@@ -20,7 +21,8 @@ namespace UniGit
 	{
 		public const string GitDirectory = @"C:\Program Files\Git";
 
-		public static string RepoPath { get { return Application.dataPath.Replace("/Assets", "").Replace("/", "\\"); } }
+		private static string repoPathCached;
+		public static string RepoPath { get { return repoPathCached; } }
 
 		public static event Action<RepositoryStatus> updateRepository;
 		private static Repository repository;
@@ -29,6 +31,8 @@ namespace UniGit
 		private static GitSettings gitSettings;
 		internal static Icons icons;
 		private static bool needsFetch;
+		public static event Action<Repository> onRepositoryLoad;
+		private static Queue<Action> actionQueue = new Queue<Action>(); 
 
 		public class Icons
 		{
@@ -55,6 +59,8 @@ namespace UniGit
 		[InitializeOnLoadMethod]
 		internal static void Initlize()
 		{
+			repoPathCached = Application.dataPath.Replace("/Assets", "").Replace("/", "\\");
+
 			if (!IsValidRepo)
 			{
 				return;
@@ -68,8 +74,6 @@ namespace UniGit
 				AssetDatabase.CreateAsset(gitSettings, "Assets/Editor Default Resources/UniGit/Git-Settings.asset");
 				AssetDatabase.SaveAssets();
 			}
-			repository = new Repository(RepoPath);
-			Update();
 
 			if (IconStyle == null)
 			{
@@ -129,6 +133,28 @@ namespace UniGit
 					needsFetch = false;
 				}
 			}
+
+			if (repository == null && IsValidRepo)
+			{
+				Update(true);
+			}
+
+			if (actionQueue.Count > 0)
+			{
+				Action action = actionQueue.Dequeue();
+				if (action != null)
+				{
+					try
+					{
+						action.Invoke();
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+						throw;
+					}
+				}
+			}
 		}
 
 		internal static void Update()
@@ -142,20 +168,28 @@ namespace UniGit
 			{
 				if(repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
+				if(onRepositoryLoad != null) onRepositoryLoad.Invoke(repository);
 			}
 
 			if (repository != null)
 			{
 				RepositoryStatus repoStatus = repository.RetrieveStatus();
 				if(updateRepository != null) updateRepository.Invoke(repoStatus);
-				statusTree = new StatusTreeClass(repoStatus);
-				RepaintProjectWidnow();
+				ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, repoStatus);
 			}
+		}
+
+		private static void UpdateStatusTreeThreaded(object statusObj)
+		{
+			RepositoryStatus status = (RepositoryStatus)statusObj;
+			statusTree = new StatusTreeClass(status);
+			actionQueue.Enqueue(RepaintProjectWidnow);
 		}
 
 		public static Texture2D GetGitStatusIcon()
 		{
 			if (!IsValidRepo) return EditorGUIUtility.FindTexture("CollabNew");
+			if (Repository == null) return EditorGUIUtility.FindTexture("Collab");
 			if (Repository.Index.Conflicts.Any()) return EditorGUIUtility.FindTexture("CollabConflict");
 			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
 			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
@@ -251,7 +285,8 @@ namespace UniGit
 				Profiler.BeginSample("Git automatic fetching");
 				try
 				{
-					Repository.Network.Fetch(remote, new FetchOptions() {CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler,OnTransferProgress = FetchTransferProgressHandler });
+
+					repository.Network.Fetch(remote, new FetchOptions() {CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler,OnTransferProgress = FetchTransferProgressHandler });
 				}
 				catch (Exception e)
 				{
