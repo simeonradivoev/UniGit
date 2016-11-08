@@ -14,7 +14,8 @@ MonoBehaviour:
   AutoStage: 1
   AutoFetch: 1
   MaxCommits: 32
-  ExternalsType: -1
+  ExternalsType: 0
   ExternalProgram: Tortoise Git
   CredentialsManager: wincred
-  ProjectStatusOverlayDepth: 1
+  ProjectStatusOverlayDepth: 2
+  ShowEmptyFolders: 0

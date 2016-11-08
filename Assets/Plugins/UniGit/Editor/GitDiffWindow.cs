@@ -463,8 +463,11 @@ namespace UniGit
 							if (!current.control) statusList.SelectAll(false);
 
 							int tmpIndex = 0;
-							foreach (var selectInfo in statusList.Where(i => settings.showFileStatusTypeFilter.IsFlagSet(i.State)))
+							foreach (var selectInfo in statusList)
 							{
+								FileStatus mergedStatus = GetMergedStatus(selectInfo.State);
+								bool isExpanded = settings.MinimizedFileStatus.IsFlagSet(mergedStatus);
+								if (!isExpanded) continue;
 								if (tmpIndex >= Mathf.Min(lastSelectedIndex, index) && tmpIndex <= Mathf.Max(lastSelectedIndex, index))
 								{
 									selectInfo.Selected = true;

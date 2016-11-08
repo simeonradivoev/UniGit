@@ -259,6 +259,7 @@ namespace UniGit
 
 		private static void CustomIcons(string guid, Rect rect)
 		{
+			if(statusTree == null) return;
 			string path = AssetDatabase.GUIDToAssetPath(guid);
 			var status = statusTree.GetStatus(path);
 			if (status != null)
