@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
@@ -117,7 +116,6 @@ namespace UniGit
 
 			needsFetch = true;
 			EditorApplication.update += OnEditorUpdate;
-			
 		}
 
 		internal static void OnEditorUpdate()
@@ -268,6 +266,14 @@ namespace UniGit
 			var status = statusTree.GetStatus(path);
 			if (status != null)
 			{
+				Object assetObject = AssetDatabase.LoadMainAssetAtPath(path);
+				if (ProjectWindowUtil.IsFolder(assetObject.GetInstanceID()))
+				{
+					//exclude the Assets folder
+					if(status.Depth == 0) return;
+					//todo cache expandedProjectWindowItems into a HashSet for faster Contains
+					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(assetObject.GetInstanceID())) return;
+				}
 				DrawFileIcon(rect, GetDiffTypeIcon(status.State,rect.height <= 16));
 			}
 		}
@@ -493,16 +499,22 @@ namespace UniGit
 				string pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
 
 				//should a state change be marked at this level (inverse depth)
-				bool markState = Settings.ProjectStatusOverlayDepth < 0 || (Mathf.Abs(currentPathArray.Length - entryNameIndex)) <= Math.Max(1, Settings.ProjectStatusOverlayDepth);
+				//bool markState = Settings.ProjectStatusOverlayDepth < 0 || (Mathf.Abs(currentPathArray.Length - entryNameIndex)) <= Math.Max(1, Settings.ProjectStatusOverlayDepth);
+				//markState = true;
 				if (entries.TryGetValue(pathChunk, out entry))
 				{
-					if(markState) entry.State = entry.State.SetFlags(currentStatus, true);
+					entry.State = entry.State.SetFlags(currentStatus, true);
 				}
 				else
 				{
-					entry = new StatusTreeEntry();
-					if (markState) entry.State = entry.State.SetFlags(currentStatus);
+					entry = new StatusTreeEntry(entryNameIndex);
+					entry.State = entry.State.SetFlags(currentStatus);
 					entries.Add(pathChunk, entry);
+				}
+				//check if it's at a allowed depth for status forcing on folders
+				if (currentPathArray.Length - entryNameIndex < (Settings.ProjectStatusOverlayDepth+1))
+				{
+					entry.forceStatus = true;
 				}
 				if (entryNameIndex < currentPathArray.Length - 1)
 				{
@@ -543,7 +555,24 @@ namespace UniGit
 		public class StatusTreeEntry
 		{
 			private Dictionary<string, StatusTreeEntry> subEntiEntries = new Dictionary<string, StatusTreeEntry>();
+			internal bool forceStatus;
+			private int depth;
 			public FileStatus State { get; set; }
+
+			public StatusTreeEntry(int depth)
+			{
+				this.depth = depth;
+			}
+
+			public int Depth
+			{
+				get { return depth; }
+			}
+
+			public bool ForceStatus
+			{
+				get { return forceStatus; }
+			}
 
 			public Dictionary<string, StatusTreeEntry> SubEntiEntries
 			{
