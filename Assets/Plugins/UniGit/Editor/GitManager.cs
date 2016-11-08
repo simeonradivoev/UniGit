@@ -124,9 +124,9 @@ namespace UniGit
 			{
 				try
 				{
-					AutoFetchChanges();
+					needsFetch = AutoFetchChanges();
 				}
-				finally
+				catch(Exception e)
 				{
 					needsFetch = false;
 				}
@@ -286,30 +286,28 @@ namespace UniGit
 		}
 
 		#region Auto Fetching
-		private static void AutoFetchChanges()
+		private static bool AutoFetchChanges()
 		{
-			if (!IsValidRepo || !Settings.AutoFetch) return;
-			using (Repository repository = new Repository(RepoPath))
+			if (repository == null || !IsValidRepo || !Settings.AutoFetch) return false;
+			Remote remote = repository.Network.Remotes.FirstOrDefault();
+			if (remote == null) return false;
+			Profiler.BeginSample("Git automatic fetching");
+			try
 			{
-				Remote remote = repository.Network.Remotes.FirstOrDefault();
-				if (remote == null) return;
-				Profiler.BeginSample("Git automatic fetching");
-				try
-				{
 
-					repository.Network.Fetch(remote, new FetchOptions() {CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler,OnTransferProgress = FetchTransferProgressHandler });
-				}
-				catch (Exception e)
-				{
-					Debug.LogErrorFormat("Automatic Fetching from remote: {0} with URL: {1} Failed!", remote.Name, remote.Url);
-					Debug.LogException(e);
-				}
-				finally
-				{
-					EditorUtility.ClearProgressBar();
-				}
-				Profiler.EndSample();
+				repository.Network.Fetch(remote, new FetchOptions() { CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler, OnTransferProgress = FetchTransferProgressHandler });
 			}
+			catch (Exception e)
+			{
+				Debug.LogErrorFormat("Automatic Fetching from remote: {0} with URL: {1} Failed!", remote.Name, remote.Url);
+				Debug.LogException(e);
+			}
+			finally
+			{
+				EditorUtility.ClearProgressBar();
+			}
+			Profiler.EndSample();
+			return true;
 		}
 		#endregion
 
