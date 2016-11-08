@@ -230,6 +230,10 @@ namespace UniGit
 			{
 				return small ? icons.renamedIconSmall : icons.renamedIcon;
 			}
+			if (type.IsFlagSet(FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir))
+			{
+				return small ? icons.deletedIconSmall : icons.deletedIcon;
+			}
 			return new GUIContent();
 		}
 
