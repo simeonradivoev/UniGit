@@ -2,7 +2,7 @@
 An open source GIT Unity3D editor plugin.
 
 [![GitHub release](https://img.shields.io/github/release/simeonradivoev/UniGit.svg)](https://github.com/simeonradivoev/UniGit/releases)
-![AGPL](https://img.shields.io/badge/license-AGPL-blue.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/simeonradivoev/UniGit/blob/master/LICENSE.md)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4A4LQGA69LQ5A)
 
 ![UniGit Icon](https://github.com/simeonradivoev/UniGit/raw/master/Assets/Editor Default Resources/UniGit/Textures/UnityGitIcon.png)
