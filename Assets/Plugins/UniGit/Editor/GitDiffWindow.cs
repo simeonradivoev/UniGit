@@ -133,6 +133,7 @@ namespace UniGit
 				return;
 			}
 
+			if (GitManager.Repository == null) return;
 			RepositoryInformation repoInfo = GitManager.Repository.Info;
 			GUILayout.BeginArea(CommitRect);
 			DoCommit(repoInfo);

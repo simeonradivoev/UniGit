@@ -434,6 +434,16 @@ namespace UniGit
 		}
 		#endregion
 
+		public static void DisablePostprocessing()
+		{
+			EditorPrefs.SetBool("UniGit_DisablePostprocess",true);
+		}
+
+		public static void EnablePostprocessing()
+		{
+			EditorPrefs.SetBool("UniGit_DisablePostprocess", false);
+		}
+
 		#region Getters and Setters
 		public static Signature Signature
 		{
@@ -586,6 +596,7 @@ namespace UniGit
 	{
 		private static string[] OnWillSaveAssets(string[] paths)
 		{
+			if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return paths;
 			if (GitManager.Settings != null && GitManager.Settings.AutoStage)
 			{
 				string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
@@ -600,6 +611,7 @@ namespace UniGit
 	{
 		static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 		{
+			if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return;
 			if (GitManager.Repository != null)
 			{
 				if (GitManager.Settings != null && GitManager.Settings.AutoStage)

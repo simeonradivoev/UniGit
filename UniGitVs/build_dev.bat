@@ -9,4 +9,4 @@ for /f "tokens=2*" %%A in ('reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Win
 	)
 )
 
-pause
+exit
