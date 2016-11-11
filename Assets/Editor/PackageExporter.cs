@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Xml;
+using System.Xml.XPath;
 using UniGit;
 using UnityEditor;
 
 public class PackageExporter
 {
 	public const string PackageName = "UniGit";
+	public const string SourceFilesPath = "Assets/Plugins/UniGit";
 
 	public static readonly string[] AssetFolders =
 	{
@@ -31,43 +34,122 @@ public class PackageExporter
 	{
 		EditorApplication.LockReloadAssemblies();
 		GitManager.DisablePostprocessing();
-		ProcessStartInfo ProcStartInfo = new ProcessStartInfo("cmd");
-		ProcStartInfo.RedirectStandardOutput = false;
-		ProcStartInfo.UseShellExecute = false;
-		ProcStartInfo.CreateNoWindow = false;
-		ProcStartInfo.RedirectStandardError = false;
-		Process MyProcess = new Process();
-		ProcStartInfo.Arguments = "/c cd UniGitVs & start /wait build_dev.bat";
-		MyProcess.StartInfo = ProcStartInfo;
-		MyProcess.Start();
-		MyProcess.WaitForExit();
 
-		List<string> paths = new List<string>(AssetFiles);
-		foreach (var folder in AssetFolders)
+		try
 		{
-			paths.AddRange(GetAssetAt(folder));
+			UpdateVSProject();
+
+			ProcessStartInfo ProcStartInfo = new ProcessStartInfo("cmd");
+			ProcStartInfo.RedirectStandardOutput = false;
+			ProcStartInfo.UseShellExecute = false;
+			ProcStartInfo.CreateNoWindow = false;
+			ProcStartInfo.RedirectStandardError = false;
+			Process MyProcess = new Process();
+			ProcStartInfo.Arguments = "/c cd UniGitVs & start /wait build_dev.bat";
+			MyProcess.StartInfo = ProcStartInfo;
+			MyProcess.Start();
+			MyProcess.WaitForExit();
+
+			List<string> paths = new List<string>(AssetFiles);
+			foreach (var folder in AssetFolders)
+			{
+				paths.AddRange(GetAssetAt(folder));
+			}
+
+			UnityEngine.Debug.Log("---- Paths to be exported ----");
+			foreach (var path in paths)
+			{
+				UnityEngine.Debug.Log(path);
+			}
+			UnityEngine.Debug.Log("---- ------------------- ----");
+
+			File.Copy(Application.dataPath.Replace("Assets", "UniGitVs") + "\\bin\\Debug\\Plugins\\UniGit\\Editor\\UniGitVs.dll", Application.dataPath + "\\Plugins\\UniGit\\Editor\\UniGitVs.dll");
+			File.Copy(Application.dataPath.Replace("Assets", "UniGitVs") + "\\bin\\Debug\\Plugins\\UniGit\\Editor\\UniGitVs.pdb", Application.dataPath + "\\Plugins\\UniGit\\Editor\\UniGitVs.pdb");
+			//double refresh so that Unity generates the UniGitVs.dll.mdb file
+			AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+			AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+			AssetDatabase.ExportPackage(paths.ToArray(), PackageName + ".unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.IncludeDependencies);
+
+			AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.dll");
+			AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.pdb");
+			AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.dll.mdb");
+		}
+		catch (Exception)
+		{
+
+			throw;
+		}
+		finally
+		{
+			EditorApplication.UnlockReloadAssemblies();
+			GitManager.EnablePostprocessing();
+		}
+	}
+
+	private static void UpdateVSProject()
+	{
+		var projectPath = Application.dataPath.Replace("Assets", "UniGitVs") + "/UniGitVs.csproj";
+		var editorDllPath = EditorApplication.applicationPath.Replace("Unity.exe", "Data\\Managed\\UnityEditor.dll").Replace("/", "\\");
+		var engineDllPath = EditorApplication.applicationPath.Replace("Unity.exe", "Data\\Managed\\UnityEngine.dll").Replace("/", "\\");
+
+		XmlDocument doc = new XmlDocument();
+		doc.Load(projectPath);
+		XmlNamespaceManager xmlnsManager = new XmlNamespaceManager(doc.NameTable);
+		string ns = doc.DocumentElement.NamespaceURI;
+		xmlnsManager.AddNamespace("def", ns);
+		#region References
+		var RefItemGroup = doc.DocumentElement.GetElementsByTagName("ItemGroup")[0];
+		var editorNode = RefItemGroup.SelectSingleNode("//def:Reference[@Include='UnityEditor']/def:HintPath", xmlnsManager);
+		if (editorNode != null)
+		{
+			editorNode.InnerText = editorDllPath;
+		}
+		else
+		{
+			throw new Exception("Missing Editor Reference Node");
+		}
+		var engineNode = RefItemGroup.SelectSingleNode("//def:Reference[@Include='UnityEngine']/def:HintPath", xmlnsManager);
+		if (engineNode != null)
+		{
+			engineNode.InnerText = engineDllPath;
+		}
+		else
+		{
+			throw new Exception("Missing Engine Reference Node");
+		}
+		#endregion
+		#region Links
+		var LinksItemGroup = doc.DocumentElement.GetElementsByTagName("ItemGroup")[1];
+		LinksItemGroup.InnerXml = "";
+		string[] sourceFiles = AssetDatabase.FindAssets("t:script",new []{ SourceFilesPath }).Select(g => AssetDatabase.GUIDToAssetPath(g)).Select(p => p.Replace("/","\\")).ToArray();
+		foreach (var file in sourceFiles)
+		{
+			var child = doc.CreateElement("Compile", ns);
+			var link = doc.CreateElement("Link", ns);
+			child.SetAttribute("Include", "..\\" + file);
+			link.InnerText = Path.GetFileName(file);
+			child.AppendChild(link);
+			LinksItemGroup.AppendChild(child);
 		}
 
-		UnityEngine.Debug.Log("---- Paths to be exported ----");
-		foreach (var path in paths)
-		{
-			UnityEngine.Debug.Log(path);
-		}
-		UnityEngine.Debug.Log("---- ------------------- ----");
+		var assemblyInfo = doc.CreateElement("Compile", ns);
+		assemblyInfo.SetAttribute("Include", "Properties\\AssemblyInfo.cs");
+		LinksItemGroup.AppendChild(assemblyInfo);
+		var resources = doc.CreateElement("Compile", ns);
+		resources.SetAttribute("Include", "Properties\\Resources.Designer.cs");
+		var tmp = doc.CreateElement("AutoGen", ns);
+		tmp.InnerText = "True";
+		resources.AppendChild(tmp);
+		tmp = doc.CreateElement("DesignTime", ns);
+		tmp.InnerText = "True";
+		resources.AppendChild(tmp);
+		tmp = doc.CreateElement("DependentUpon", ns);
+		tmp.InnerText = "Resources.resx";
+		resources.AppendChild(tmp);
+		LinksItemGroup.AppendChild(resources);
 
-		File.Copy(Application.dataPath.Replace("Assets", "UniGitVs") + "\\bin\\Debug\\Plugins\\UniGit\\Editor\\UniGitVs.dll", Application.dataPath + "\\Plugins\\UniGit\\Editor\\UniGitVs.dll");
-		File.Copy(Application.dataPath.Replace("Assets", "UniGitVs") + "\\bin\\Debug\\Plugins\\UniGit\\Editor\\UniGitVs.pdb", Application.dataPath + "\\Plugins\\UniGit\\Editor\\UniGitVs.pdb");
-		//double refresh so that Unity generates the UniGitVs.dll.mdb file
-		AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
-		AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
-		AssetDatabase.ExportPackage(paths.ToArray(), PackageName + ".unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.IncludeDependencies);
-
-		AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.dll");
-		AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.pdb");
-		AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.dll.mdb");
-
-		EditorApplication.UnlockReloadAssemblies();
-		GitManager.EnablePostprocessing();
+		#endregion
+		doc.Save(projectPath);
 	}
 
 	private static void CopyFilesTo(string from, string to)

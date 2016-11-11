@@ -54,41 +54,41 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEditor">
-      <HintPath>..\..\..\..\..\..\..\Program Files\Unity\Editor\Data\Managed\UnityEditor.dll</HintPath>
+      <HintPath>D:\Program Files\Unity\Editor\Data\Managed\UnityEditor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\..\..\..\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>D:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\GitExtensionsAdapter.cs">
-      <Link>Adapters\GitExtensionsAdapter.cs</Link>
+      <Link>GitExtensionsAdapter.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\ICredentialsAdapter.cs">
-      <Link>Adapters\ICredentialsAdapter.cs</Link>
+      <Link>ICredentialsAdapter.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\IExternalAdapter.cs">
-      <Link>Adapters\IExternalAdapter.cs</Link>
+      <Link>IExternalAdapter.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\TortoiseGitAdapter.cs">
-      <Link>Adapters\TortoiseGitAdapter.cs</Link>
+      <Link>TortoiseGitAdapter.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\WincredCredentialsAdapter.cs">
-      <Link>Adapters\WincredCredentialsAdapter.cs</Link>
+      <Link>WincredCredentialsAdapter.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Attributes\CredentialsAdapterAttribute.cs">
-      <Link>Attributes\CredentialsAdapterAttribute.cs</Link>
+      <Link>CredentialsAdapterAttribute.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Attributes\ExternalAdapterAttribute.cs">
-      <Link>Attributes\ExternalAdapterAttribute.cs</Link>
+      <Link>ExternalAdapterAttribute.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\DPAPI.cs">
       <Link>DPAPI.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Filters\GitLfsFilter.cs">
-      <Link>Filters\GitLfsFilter.cs</Link>
+      <Link>GitLfsFilter.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCommitDetailsWindow.cs">
       <Link>GitCommitDetailsWindow.cs</Link>
@@ -151,19 +151,19 @@
       <Link>GitWizardBase.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Hooks\GitLfsPrePushHook.cs">
-      <Link>Hooks\GitLfsPrePushHook.cs</Link>
+      <Link>GitLfsPrePushHook.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Hooks\GitPushHookBase.cs">
-      <Link>Hooks\GitPushHookBase.cs</Link>
+      <Link>GitPushHookBase.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Lfs\GitLfsManager.cs">
-      <Link>Lfs\GitLfsManager.cs</Link>
+      <Link>GitLfsManager.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Lfs\GitLfsTrackedInfo.cs">
-      <Link>Lfs\GitLfsTrackedInfo.cs</Link>
+      <Link>GitLfsTrackedInfo.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Lfs\GitLfsTrackPopupWindow.cs">
-      <Link>Lfs\GitLfsTrackPopupWindow.cs</Link>
+      <Link>GitLfsTrackPopupWindow.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Extensions\FlagHelper.cs">
       <Link>FlagHelper.cs</Link>
