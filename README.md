@@ -36,11 +36,11 @@ An open source GIT Unity3D editor plugin.
 ![Settings window](https://github.com/simeonradivoev/UniGit/raw/master/Assets/Editor Default Resources/UniGit/Textures/SettingsGeneralScreenshot.png)
 
 # Building
-You can create a .unitypackage by going to `UniGit > Export Package` in Unity's top menu. A manual setting of the Unity's DLL is still nececery inside the UniGitVs visual studio project.
+You can create a .unitypackage by going to `UniGit > Export Package` in Unity's top menu. Unity automatically updates all file paths and dependancy DLLs such as: UnityEngine.dll and UnityEditor.dll
 
 You can build a .dll library using the provided Visual Studio 2015 project in the *UniGitVs* folder.<br>
 There are also build scripts provided in the *UniGitVs* folder called `build_dev.bat` and `build_release`
-All you need is to change the Path to Unity's DLLs. You can check [Unity's Managed Plugins Documentation](https://docs.unity3d.com/Manual/UsingDLL.html) for more info.
+All you need is to change the Path to Unity's DLLs. You can check [Unity's Managed Plugins Documentation](https://docs.unity3d.com/Manual/UsingDLL.html) for more info or you can use the built-in UniGit package exporter as mentioned above.
 
 Once you change the path of unity's DLLs, you can build the project. Visual studio will copy all necessary files into `UniGitVs/bin/Debug` or `UniGitVs/bin/Release` folders. These files include the UniGit icons and resources, as well as the LibGit2Sharp library and it's dependencies, so that you can quickly copy all the files and put it in your project neatly wrapped in a DLL library.
 
