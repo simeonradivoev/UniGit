@@ -417,12 +417,12 @@ namespace UniGit
 					bool updateFlag = false;
 					if (GitManager.CanStage(info.State))
 					{
-						GitManager.Repository.Stage(info.Path);
+						GitManager.Repository.Stage(GitManager.GetPathWithMeta(info.Path));
 						updateFlag = true;
 					}
 					else if(GitManager.CanUnstage(info.State))
 					{
-						GitManager.Repository.Unstage(info.Path);
+						GitManager.Repository.Unstage(GitManager.GetPathWithMeta(info.Path));
 						updateFlag = true;
 					}
 
