@@ -592,7 +592,7 @@ namespace UniGit
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
 					Repository.Init(Application.dataPath.Replace("/Assets", ""));
-					TextAsset textAsset = EditorGUIUtility.Load("gitignore.txt") as TextAsset;
+					TextAsset textAsset = EditorGUIUtility.Load("UniGit/gitignore.txt") as TextAsset;
 					if (textAsset != null)
 					{
 						string textAssetPath = AssetDatabase.GetAssetPath(textAsset).Replace("Assets/", "");
