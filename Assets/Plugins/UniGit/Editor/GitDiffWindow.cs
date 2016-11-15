@@ -43,8 +43,8 @@ namespace UniGit
 		[Serializable]
 		public class Settings
 		{
-			public FileStatus showFileStatusTypeFilter;
-			public FileStatus MinimizedFileStatus;
+			public FileStatus showFileStatusTypeFilter = (FileStatus)(-1);
+			public FileStatus MinimizedFileStatus = (FileStatus)(-1);
 			public bool emptyCommit;
 			public bool amendCommit;
 			public bool prettify;
