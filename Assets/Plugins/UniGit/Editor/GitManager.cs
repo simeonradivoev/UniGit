@@ -66,7 +66,7 @@ namespace UniGit
 			}
 
 			gitCredentials = EditorGUIUtility.Load("UniGit/Git-Credentials.asset") as GitCredentials;
-			gitSettings = EditorGUIUtility.LoadRequired("UniGit/Git-Settings.asset") as GitSettings;
+			gitSettings = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
 			if (gitSettings == null)
 			{
 				gitSettings = ScriptableObject.CreateInstance<GitSettings>();

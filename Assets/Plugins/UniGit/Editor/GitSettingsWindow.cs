@@ -304,15 +304,18 @@ namespace UniGit
 		private void DoSecurity(Event current)
 		{
 			EditorGUILayout.BeginHorizontal();
-			SerializedProperty credentialsManagerProperty = serializedSettings.FindProperty("CredentialsManager");
-			int newSelectedIndex = EditorGUILayout.Popup(new GUIContent("Credentials Manager", "The name of the External program to use"), GitCredentialsManager.SelectedAdapterIndex, GitCredentialsManager.AdapterNames);
-			credentialsManagerProperty.stringValue = newSelectedIndex >= 0 && newSelectedIndex < GitCredentialsManager.AdapterIds.Length ? GitCredentialsManager.AdapterIds[newSelectedIndex] : "";
-			if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+			if (serializedSettings != null)
 			{
-				GitCredentialsManager.SetSelectedAdapter(newSelectedIndex);
-				AssetDatabase.SaveAssets();
+				SerializedProperty credentialsManagerProperty = serializedSettings.FindProperty("CredentialsManager");
+				int newSelectedIndex = EditorGUILayout.Popup(new GUIContent("Credentials Manager", "The name of the External program to use"), GitCredentialsManager.SelectedAdapterIndex, GitCredentialsManager.AdapterNames);
+				credentialsManagerProperty.stringValue = newSelectedIndex >= 0 && newSelectedIndex < GitCredentialsManager.AdapterIds.Length ? GitCredentialsManager.AdapterIds[newSelectedIndex] : "";
+				if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+				{
+					GitCredentialsManager.SetSelectedAdapter(newSelectedIndex);
+					AssetDatabase.SaveAssets();
+				}
+				GUI.enabled = newSelectedIndex >= 0;
 			}
-			GUI.enabled = newSelectedIndex >= 0;
 			if (GUILayout.Button(new GUIContent("Remove"),"minibutton",GUILayout.Width(64)))
 			{
 				if (EditorUtility.DisplayDialog("Remove Credentials Manager", "This will remove all stored passwords in the Manager. Usernames and URLs will be kept in Unity", "Remove", "Cancel"))
@@ -498,22 +501,28 @@ namespace UniGit
 
 		private void DoExternals(Event current)
 		{
+			if (serializedSettings == null) return;
 			SerializedProperty externalTypesProperty = serializedSettings.FindProperty("ExternalsType");
-			externalTypesProperty.intValue = (int)(GitSettings.ExternalsTypeEnum)EditorGUILayout.EnumMaskField(new GUIContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), (GitSettings.ExternalsTypeEnum)externalTypesProperty.intValue);
-			if (serializedSettings.ApplyModifiedProperties())
+			if (externalTypesProperty != null)
 			{
-				AssetDatabase.SaveAssets();
+				externalTypesProperty.intValue = (int) (GitSettings.ExternalsTypeEnum) EditorGUILayout.EnumMaskField(new GUIContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), (GitSettings.ExternalsTypeEnum) externalTypesProperty.intValue);
+				if (serializedSettings.ApplyModifiedProperties())
+				{
+					AssetDatabase.SaveAssets();
+				}
 			}
 
 			SerializedProperty externalProgramProperty = serializedSettings.FindProperty("ExternalProgram");
-			int newSelectedIndex = EditorGUILayout.Popup(new GUIContent("External Program", "The name of the External program to use"), GitExternalManager.SelectedAdapterIndex, GitExternalManager.AdapterNames);
-			externalProgramProperty.stringValue = GitExternalManager.AdapterNames[newSelectedIndex].text;
-			if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+			if (externalProgramProperty != null)
 			{
-				GitExternalManager.SetSelectedAdapter(newSelectedIndex);
-				AssetDatabase.SaveAssets();
+				int newSelectedIndex = EditorGUILayout.Popup(new GUIContent("External Program", "The name of the External program to use"), GitExternalManager.SelectedAdapterIndex, GitExternalManager.AdapterNames);
+				externalProgramProperty.stringValue = GitExternalManager.AdapterNames[newSelectedIndex].text;
+				if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+				{
+					GitExternalManager.SetSelectedAdapter(newSelectedIndex);
+					AssetDatabase.SaveAssets();
+				}
 			}
-
 		}
 
 		#endregion
