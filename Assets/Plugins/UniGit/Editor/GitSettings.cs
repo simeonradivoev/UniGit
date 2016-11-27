@@ -21,6 +21,8 @@ namespace UniGit
 		public int ProjectStatusOverlayDepth = 1;
 		[Tooltip("Show status for empty folder meta files and auto stage them is Auto stage is enabled.")]
 		public bool ShowEmptyFolders = false;
+		[Tooltip("Should Git status retrieval be multithreaded.")]
+		public bool GitStatusMultithreaded = true;
 
 		[Flags]
 		[SerializeField]

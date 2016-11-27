@@ -39,6 +39,7 @@ namespace UniGit
 		[SerializeField] private Settings settings;
 		private int lastSelectedIndex;
 		[SerializeField] private StatusList statusList;
+		private object statusListLock = new object();
 
 		[Serializable]
 		public class Settings
@@ -75,7 +76,7 @@ namespace UniGit
 		private void UpdateStatusList()
 		{
 			if(GitManager.Repository == null) return;
-			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, GitManager.Repository.RetrieveStatus());
+			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded);
 		}
 
 		protected override void OnInitialize()
@@ -88,10 +89,31 @@ namespace UniGit
 			
 		}
 
-		private void CreateStatusListThreaded(object statusObj)
+		private void CreateStatusListThreaded(object param)
 		{
-			statusList = new StatusList((RepositoryStatus)statusObj, settings.showFileStatusTypeFilter);
-			actionQueue.Enqueue(Repaint);
+			Monitor.Enter(statusListLock);
+			try
+			{
+				RepositoryStatus status;
+				if (param is RepositoryStatus)
+				{
+					status = (RepositoryStatus) param;
+				}
+				else
+				{
+					status = GitManager.Repository.RetrieveStatus();
+				}
+				statusList = new StatusList(status, settings.showFileStatusTypeFilter);
+				actionQueue.Enqueue(Repaint);
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+			finally
+			{
+				Monitor.Exit(statusListLock);
+			}
 		}
 
 		[UsedImplicitly]
@@ -195,10 +217,11 @@ namespace UniGit
 			{
 				if (!GitExternalManager.TakeCommit(commitMessage))
 				{
-					GitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
+					var commit = GitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
 					GitHistoryWindow.GetWindow(true);
 				}
 				GitManager.Update();
+
 			}
 			catch (Exception e)
 			{
@@ -518,8 +541,9 @@ namespace UniGit
 			{
 				menu.AddItem(new GUIContent("Add All"), false, () =>
 				{
-					GitManager.Repository.Stage(statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)));
-					GitManager.Update();
+					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
+					GitManager.Repository.Stage(paths);
+					GitManager.Update(paths);
 				});
 			}
 			else
@@ -531,8 +555,9 @@ namespace UniGit
 			{
 				menu.AddItem(new GUIContent("Remove All"), false, () =>
 				{
-					GitManager.Repository.Unstage(statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)));
-					GitManager.Update();
+					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
+					GitManager.Repository.Unstage(paths);
+					GitManager.Update(paths);
 				});
 			}
 			else
@@ -635,12 +660,12 @@ namespace UniGit
 
 		private void RevertSelectedCallback()
 		{
-			IEnumerable<string> paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path));
+			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 
 			if (GitExternalManager.TakeRevert(paths))
 			{
 				AssetDatabase.Refresh();
-				GitManager.Update();
+				GitManager.Update(paths);
 				return;
 			}
 
@@ -662,14 +687,16 @@ namespace UniGit
 
 		private void RemoveSelectedCallback()
 		{
-			GitManager.Repository.Unstage(statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)));
+			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			GitManager.Repository.Unstage(paths);
 			GitManager.Update();
 		}
 
 		private void AddSelectedCallback()
 		{
-			GitManager.Repository.Stage(statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)));
-			GitManager.Update();
+			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			GitManager.Repository.Stage(paths);
+			GitManager.Update(paths);
 		}
 		#endregion
 

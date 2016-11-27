@@ -29,6 +29,7 @@ namespace UniGit
 		private bool hasConflicts;
 		[SerializeField] private Vector2 historyScroll;
 		[SerializeField] private string selectedBranchName;
+		private object commitCachesLock = new object();
 
 		public class Styles
 		{
@@ -100,25 +101,37 @@ namespace UniGit
 
 		private void UpdateChachesThreaded(object statusObj)
 		{
-			RepositoryStatus status = (RepositoryStatus)statusObj;
-
-			//update all branches
-			cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
-
-			//update selected branch
-			UpdateSelectedBranch();
-
-			if (selectedBranch != null)
+			Monitor.Enter(commitCachesLock);
+			try
 			{
-				//update commits and limit them depending on settings
-				cachedCommits = (GitManager.Settings.MaxCommits >= 0 ? selectedBranch.LoadBranch().Commits.Take(GitManager.Settings.MaxCommits) : selectedBranch.LoadBranch().Commits).Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+				RepositoryStatus status = (RepositoryStatus) statusObj;
 
-				commitRects = new Rect[cachedCommits.Length];
+				//update all branches
+				cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
+
+				//update selected branch
+				UpdateSelectedBranch();
+
+				if (selectedBranch != null)
+				{
+					//update commits and limit them depending on settings
+					cachedCommits = (GitManager.Settings.MaxCommits >= 0 ? selectedBranch.LoadBranch().Commits.Take(GitManager.Settings.MaxCommits) : selectedBranch.LoadBranch().Commits).Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+
+					commitRects = new Rect[cachedCommits.Length];
+				}
+
+				hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
+				actionQueue.Enqueue(UpdateGitStatusIcon);
+				actionQueue.Enqueue(Repaint);
 			}
-
-			hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
-			actionQueue.Enqueue(UpdateGitStatusIcon);
-			actionQueue.Enqueue(Repaint);
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+			finally
+			{
+				Monitor.Exit(commitCachesLock);
+			}
 		}
 
 		private void UpdateGitStatusIcon()

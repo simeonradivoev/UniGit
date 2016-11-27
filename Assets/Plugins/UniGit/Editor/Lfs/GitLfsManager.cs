@@ -68,10 +68,8 @@ namespace UniGit
 		{
 			if (GlobalSettings.GetRegisteredFilters().All(f => f.Name != "lfs"))
 			{
-				var filteredFiles = new List<FilterAttributeEntry>
-			{
-				new FilterAttributeEntry("lfs")
-			};
+				var filteredFiles = new List<FilterAttributeEntry>();
+				filteredFiles.Add(new FilterAttributeEntry("lfs"));
 				var filter = new GitLfsFilter("lfs", filteredFiles);
 				GlobalSettings.RegisterFilter(filter);
 			}

@@ -30,7 +30,7 @@ namespace UniGit
 			hasFocused = true;
 		}
 
-		private void OnGitManagerUpdateInternal(RepositoryStatus status)
+		private void OnGitManagerUpdateInternal(RepositoryStatus status,string[] paths)
 		{
 			titleContent.image = GitManager.GetGitStatusIcon();
 
@@ -46,14 +46,16 @@ namespace UniGit
 			//Only initialize if the editor Window is focused
 			if (hasFocused != null && initilized == null && GitManager.Repository != null)
 			{
-				initilized = true;
-				if (!GitManager.IsValidRepo) return;
-				OnInitialize();
-				OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
-				//simulate repository loading for first initialization
-				OnRepositoryLoad(GitManager.Repository);
-				OnGitManagerUpdateInternal(GitManager.Repository.RetrieveStatus());
-				Repaint();
+				if (GitManager.LastStatus != null)
+				{
+					initilized = true;
+					if (!GitManager.IsValidRepo) return;
+					OnInitialize();
+					OnGitManagerUpdateInternal(GitManager.LastStatus,null);
+					//simulate repository loading for first initialization
+					OnRepositoryLoad(GitManager.Repository);
+					Repaint();
+				}
 			}
 
 			if (actionQueue.Count > 0)

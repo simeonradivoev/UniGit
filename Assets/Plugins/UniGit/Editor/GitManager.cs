@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -23,7 +21,7 @@ namespace UniGit
 		private static string repoPathCached;
 		public static string RepoPath { get { return repoPathCached; } }
 
-		public static event Action<RepositoryStatus> updateRepository;
+		public static event Action<RepositoryStatus,string[]> updateRepository;
 		private static Repository repository;
 		private static StatusTreeClass statusTree;
 		private static GitCredentials gitCredentials;
@@ -31,7 +29,10 @@ namespace UniGit
 		internal static Icons icons;
 		private static bool needsFetch;
 		public static event Action<Repository> onRepositoryLoad;
-		private static Queue<Action> actionQueue = new Queue<Action>(); 
+		private static Queue<Action> actionQueue = new Queue<Action>();
+		private static RepositoryStatus lastStatus;
+		private static object statusTreeLock = new object();
+		private static object statusRetriveLock = new object();
 
 		public class Icons
 		{
@@ -155,6 +156,28 @@ namespace UniGit
 			}
 		}
 
+		internal static void Update(bool reloadRepository,string[] paths)
+		{
+			if (repository == null && IsValidRepo)
+			{
+				if (repository != null) repository.Dispose();
+				repository = new Repository(RepoPath);
+				if (onRepositoryLoad != null) onRepositoryLoad.Invoke(repository);
+			}
+
+			if (repository != null)
+			{
+				if (Settings.GitStatusMultithreaded)
+				{
+					ThreadPool.QueueUserWorkItem(ReteriveStatusThreaded, paths);
+				}
+				else
+				{
+					RetreiveStatus(paths);
+				}
+			}
+		}
+
 		internal static void Update()
 		{
 			Update(false);
@@ -162,26 +185,60 @@ namespace UniGit
 
 		internal static void Update(bool reloadRepository)
 		{
-			if (reloadRepository || (repository == null && IsValidRepo))
-			{
-				if(repository != null) repository.Dispose();
-				repository = new Repository(RepoPath);
-				if(onRepositoryLoad != null) onRepositoryLoad.Invoke(repository);
-			}
+			Update(reloadRepository, null);
+		}
 
-			if (repository != null)
+		internal static void Update(string[] paths)
+		{
+			Update(false, paths);
+		}
+
+		private static void RetreiveStatus(string[] paths)
+		{
+			lastStatus = repository.RetrieveStatus();
+			if (updateRepository != null) updateRepository.Invoke(lastStatus, paths);
+			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, lastStatus);
+		}
+
+		private static void ReteriveStatusThreaded(object param)
+		{
+			Monitor.Enter(statusRetriveLock);
+			try
 			{
-				RepositoryStatus repoStatus = repository.RetrieveStatus();
-				if(updateRepository != null) updateRepository.Invoke(repoStatus);
-				ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, repoStatus);
+				lastStatus = repository.RetrieveStatus();
+				actionQueue.Enqueue(() =>
+				{
+					if (updateRepository != null) updateRepository.Invoke(lastStatus, param as string[]);
+					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, lastStatus);
+				});
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+			finally
+			{
+				Monitor.Exit(statusRetriveLock);
 			}
 		}
 
 		private static void UpdateStatusTreeThreaded(object statusObj)
 		{
-			RepositoryStatus status = (RepositoryStatus)statusObj;
-			statusTree = new StatusTreeClass(status);
-			actionQueue.Enqueue(RepaintProjectWidnow);
+			Monitor.Enter(statusTreeLock);
+			try
+			{
+				RepositoryStatus status = (RepositoryStatus) statusObj;
+				statusTree = new StatusTreeClass(status);
+				actionQueue.Enqueue(RepaintProjectWidnow);
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+			finally
+			{
+				Monitor.Exit(statusTreeLock);
+			}
 		}
 
 		public static Texture2D GetGitStatusIcon()
@@ -307,7 +364,7 @@ namespace UniGit
 				EditorUtility.ClearProgressBar();
 			}
 			Profiler.EndSample();
-			return true;
+			return false;
 		}
 		#endregion
 
@@ -475,6 +532,12 @@ namespace UniGit
 		{
 			get { return gitSettings; }
 		}
+
+		public static RepositoryStatus LastStatus
+		{
+			get { return lastStatus; }
+		}
+
 		#endregion
 
 		#region Status Tree
