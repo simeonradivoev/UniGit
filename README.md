@@ -24,6 +24,7 @@ An open source GIT Unity3D editor plugin.
 * Support for External programs like Tortoise Git
 * Support for Credential Managers like Windows Credentials Manager
 * (Beta) Support for Git LFS
+* Multi-Threaded support
 
 # Screenshots
 ### History Window
