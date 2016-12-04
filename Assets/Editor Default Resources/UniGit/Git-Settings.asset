@@ -16,6 +16,7 @@ MonoBehaviour:
   MaxCommits: 32
   ExternalsType: 0
   ExternalProgram: Tortoise Git
-  CredentialsManager: wincred
-  ProjectStatusOverlayDepth: 2
+  CredentialsManager: 
+  ProjectStatusOverlayDepth: 1
   ShowEmptyFolders: 0
+  GitStatusMultithreaded: 1

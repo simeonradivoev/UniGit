@@ -9,6 +9,7 @@ using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Tree = LibGit2Sharp.Tree;
 
 namespace UniGit

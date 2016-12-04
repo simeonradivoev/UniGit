@@ -8,6 +8,7 @@ using LibGit2Sharp;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Utils.Extensions;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -115,7 +116,7 @@ namespace UniGit
 			GitExternalManager.Load();
 			GitCredentialsManager.Load();
 
-			needsFetch = true;
+			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode;
 			EditorApplication.update += OnEditorUpdate;
 		}
 
@@ -126,6 +127,7 @@ namespace UniGit
 				try
 				{
 					needsFetch = AutoFetchChanges();
+					Debug.Log("Auto Fetch");
 				}
 				catch(Exception e)
 				{
