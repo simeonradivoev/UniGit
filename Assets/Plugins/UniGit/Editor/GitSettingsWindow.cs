@@ -62,6 +62,11 @@ namespace UniGit
 			UpdateBranches();
 		}
 
+		protected override void OnEditorUpdate()
+		{
+			
+		}
+
 		private void UpdateBranches()
 		{
 			branches = GitManager.Repository.Branches;

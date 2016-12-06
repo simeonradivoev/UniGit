@@ -17,8 +17,8 @@ namespace UniGit
 		{
 			titleContent.image = GitManager.GetGitStatusIcon();
 
-			EditorApplication.update -= OnEditorUpdate;
-			EditorApplication.update += OnEditorUpdate;
+			EditorApplication.update -= OnEditorUpdateInternal;
+			EditorApplication.update += OnEditorUpdateInternal;
 			GitManager.updateRepository -= OnGitManagerUpdateInternal;
 			GitManager.updateRepository += OnGitManagerUpdateInternal;
 			GitManager.onRepositoryLoad -= OnRepositoryLoad;
@@ -41,7 +41,7 @@ namespace UniGit
 			Repaint();
 		}
 
-		private void OnEditorUpdate()
+		private void OnEditorUpdateInternal()
 		{
 			//Only initialize if the editor Window is focused
 			if (hasFocused != null && initilized == null && GitManager.Repository != null)
@@ -56,6 +56,11 @@ namespace UniGit
 					OnRepositoryLoad(GitManager.Repository);
 					Repaint();
 				}
+			}
+
+			if (hasFocused != null)
+			{
+				OnEditorUpdate();
 			}
 		}
 
@@ -73,5 +78,6 @@ namespace UniGit
 		protected abstract void OnGitUpdate(GitRepoStatus status);
 		protected abstract void OnInitialize();
 		protected abstract void OnRepositoryLoad(Repository repository);
+		protected abstract void OnEditorUpdate();
 	}
 }

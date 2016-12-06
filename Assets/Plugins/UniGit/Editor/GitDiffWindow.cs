@@ -92,6 +92,11 @@ namespace UniGit
 			
 		}
 
+		protected override void OnEditorUpdate()
+		{
+			
+		}
+
 		private void CreateStatusListThreaded(object param)
 		{
 			Monitor.Enter(statusListLock);

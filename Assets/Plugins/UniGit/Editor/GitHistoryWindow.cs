@@ -19,7 +19,10 @@ namespace UniGit
 		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
 		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
 
-		private Dictionary<string, WWW> cachedProfilePicturesDictionary;
+		private List<string> lodingProfilePicturesToRemove; 
+		private Dictionary<string, WWW> loadingProfilePictures;
+		private Dictionary<string, Texture2D> cachedProfilePicturesDictionary;
+		[SerializeField] private List<ProfilePicture> serializedProfilePictures;
 		private static Styles styles;
 		private BranchInfo selectedBranch;
 		private BranchInfo[] cachedBranches = new BranchInfo[0];
@@ -31,7 +34,6 @@ namespace UniGit
 		[SerializeField] private Vector2 historyScroll;
 		[SerializeField] private string selectedBranchName;
 		private object commitCachesLock = new object();
-		private bool needsRepaint;
 
 		public class Styles
 		{
@@ -162,7 +164,52 @@ namespace UniGit
 
 		protected override void OnInitialize()
 		{
-			cachedProfilePicturesDictionary = new Dictionary<string, WWW>();
+			lodingProfilePicturesToRemove = new List<string>();
+			cachedProfilePicturesDictionary = new Dictionary<string, Texture2D>();
+			loadingProfilePictures = new Dictionary<string, WWW>();
+			if (serializedProfilePictures != null)
+			{
+				foreach (var picture in serializedProfilePictures)
+				{
+					cachedProfilePicturesDictionary.Add(picture.email, picture.texture);
+				}
+			}
+			else
+			{
+				serializedProfilePictures = new List<ProfilePicture>();
+			}
+		}
+
+		protected override void OnEditorUpdate()
+		{
+			if (loadingProfilePictures == null) loadingProfilePictures = new Dictionary<string, WWW>();
+			if (cachedProfilePicturesDictionary == null) cachedProfilePicturesDictionary = new Dictionary<string, Texture2D>();
+			if(lodingProfilePicturesToRemove == null) lodingProfilePicturesToRemove = new List<string>();
+
+			if (loadingProfilePictures.Count > 0)
+			{
+				foreach (var profilePicture in loadingProfilePictures)
+				{
+					if (profilePicture.Value.isDone)
+					{
+						cachedProfilePicturesDictionary.Add(profilePicture.Key,profilePicture.Value.texture);
+						serializedProfilePictures.RemoveAll(p => p.email == profilePicture.Key);
+						serializedProfilePictures.Add(new ProfilePicture(profilePicture.Value.texture, profilePicture.Key));
+						lodingProfilePicturesToRemove.Add(profilePicture.Key);
+						profilePicture.Value.Dispose();
+						Repaint();
+					}
+				}
+
+				if (lodingProfilePicturesToRemove.Count > 0)
+				{
+					foreach (var key in lodingProfilePicturesToRemove)
+					{
+						loadingProfilePictures.Remove(key);
+					}
+					lodingProfilePicturesToRemove.Clear();
+				}
+			}
 		}
 
 		protected override void OnRepositoryLoad(Repository repository)
@@ -185,10 +232,10 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnDestory()
 		{
-			foreach (var profilePicture in cachedProfilePicturesDictionary)
+			/*foreach (var profilePicture in cachedProfilePicturesDictionary)
 			{
 				profilePicture.Value.Dispose();
-			}
+			}*/
 		}
 
 		private const float helpBoxHeight = 38;
@@ -534,15 +581,30 @@ namespace UniGit
 		#region Helper Methods
 		private Texture2D GetProfilePixture(string email)
 		{
-			WWW tex;
+			Texture2D tex;
 			if (cachedProfilePicturesDictionary.TryGetValue(email, out tex))
 			{
-				return tex.isDone ? tex.texture : null;
+				return tex;
+			}
+
+			WWW texWww;
+			if (loadingProfilePictures.TryGetValue(email,out texWww))
+			{
+				if (texWww.isDone)
+				{
+					tex = texWww.texture;
+					cachedProfilePicturesDictionary.Add(email, tex);
+					serializedProfilePictures.Add(new ProfilePicture(tex,email));
+					loadingProfilePictures.Remove(email);
+					texWww.Dispose();
+				}
+				
+				return tex;
 			}
 
 			string hash = HashEmailForGravatar(email.Trim());
 			WWW loading = new WWW("https://www.gravatar.com/avatar/" + hash + "?s=32");
-			cachedProfilePicturesDictionary.Add(email, loading);
+			loadingProfilePictures.Add(email, loading);
 			return null;
 		}
 
