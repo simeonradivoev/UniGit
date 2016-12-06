@@ -58,6 +58,17 @@ namespace UniGit
 						}
 					}
 
+					//automatic deletion of previously moved asset is necessary even if AutoStage is off
+					if (movedFromAssetPaths != null && movedFromAssetPaths.Length > 0)
+					{
+						string[] movedFromAssetPathsFinal = movedFromAssetPaths.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g))).ToArray();
+						if (movedFromAssetPathsFinal.Length > 0)
+						{
+							GitManager.Repository.Unstage(movedFromAssetPathsFinal);
+							GitManager.MarkDirty(movedFromAssetPathsFinal);
+						}
+					}
+
 					//automatic deletion is necessary even if AutoStage is off
 					if (deletedAssets != null && deletedAssets.Length > 0)
 					{
