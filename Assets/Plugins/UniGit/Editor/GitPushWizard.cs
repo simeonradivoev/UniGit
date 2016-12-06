@@ -33,7 +33,7 @@ namespace UniGit
 				using (var repository = new Repository(GitManager.RepoPath))
 				{
 					repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
-					GitManager.Update();
+					GitManager.MarkDirty();
 					var window = GitHistoryWindow.GetWindow(true);
 					window.ShowNotification(new GUIContent("Push Complete"));
 				}
@@ -63,7 +63,9 @@ namespace UniGit
 			bool cancel = EditorUtility.DisplayCancelableProgressBar("Building Pack", stage.ToString(), (float)current / total);
 			if (current == total)
 			{
+#if UNITY_EDITOR
 				Debug.Log("Pack Building completed.");
+#endif
 			}
 			return !cancel;
 		}

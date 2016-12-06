@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Status;
 using UnityEditor;
 using UnityEngine;
 
@@ -54,7 +55,7 @@ namespace UniGit
 			Repaint();
 		}
 
-		protected override void OnGitUpdate(RepositoryStatus status)
+		protected override void OnGitUpdate(GitRepoStatus status)
 		{
 			if(GitManager.Repository == null) return;
 			UpdateRemotes();
@@ -174,7 +175,7 @@ namespace UniGit
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("GitStatusMultithreaded"));
 				if (serializedSettings.ApplyModifiedProperties())
 				{
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 			}
 
@@ -747,7 +748,7 @@ namespace UniGit
 				if (GUILayout.Button(new GUIContent("Add Remote")))
 				{
 					remoteCollection.Add(name, url);
-					GitManager.Update();
+					GitManager.MarkDirty();
 					GetWindow<GitSettingsWindow>().Focus();
 				}
 				GUI.enabled = true;
@@ -771,6 +772,7 @@ namespace UniGit
 			{
 				name = EditorGUILayout.TextField(new GUIContent("Name"), name);
 				url = EditorGUILayout.TextField(new GUIContent("URL"), url);
+				username = EditorGUILayout.TextField(new GUIContent("Username"), username);
 				password = EditorGUILayout.PasswordField(new GUIContent("Password"), password);
 				GUI.enabled = !string.IsNullOrEmpty(url);
 				if (GUILayout.Button(new GUIContent("Add Credential")))

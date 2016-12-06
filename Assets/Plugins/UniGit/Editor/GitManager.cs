@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Status;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -22,7 +23,7 @@ namespace UniGit
 		private static string repoPathCached;
 		public static string RepoPath { get { return repoPathCached; } }
 
-		public static event Action<RepositoryStatus,string[]> updateRepository;
+		public static event Action<GitRepoStatus, string[]> updateRepository;
 		private static Repository repository;
 		private static StatusTreeClass statusTree;
 		private static GitCredentials gitCredentials;
@@ -30,10 +31,13 @@ namespace UniGit
 		internal static Icons icons;
 		private static bool needsFetch;
 		public static event Action<Repository> onRepositoryLoad;
-		private static Queue<Action> actionQueue = new Queue<Action>();
-		private static RepositoryStatus lastStatus;
+		private readonly static Queue<Action> actionQueue = new Queue<Action>();
+		private static GitRepoStatus status;
 		private static object statusTreeLock = new object();
 		private static object statusRetriveLock = new object();
+		private static bool repositoryDirty;
+		private static bool reloadDirty;
+		private static readonly List<string> dirtyFiles = new List<string>(); 
 
 		public class Icons
 		{
@@ -116,7 +120,8 @@ namespace UniGit
 			GitExternalManager.Load();
 			GitCredentialsManager.Load();
 
-			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode;
+			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
+			repositoryDirty = true;
 			EditorApplication.update += OnEditorUpdate;
 		}
 
@@ -127,17 +132,31 @@ namespace UniGit
 				try
 				{
 					needsFetch = AutoFetchChanges();
+#if UNITY_EDITOR
 					Debug.Log("Auto Fetch");
+#endif
 				}
 				catch(Exception e)
 				{
+#if UNITY_EDITOR
+					Debug.LogException(e);
+#endif
 					needsFetch = false;
 				}
 			}
 
-			if (repository == null && IsValidRepo)
+			if (IsValidRepo && !(EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying) && !EditorApplication.isCompiling && !EditorApplication.isUpdating)
 			{
-				Update(true);
+				if ((repository == null || repositoryDirty))
+				{
+					Update(reloadDirty || repository == null, null);
+					dirtyFiles.Clear();
+				}
+				else if (dirtyFiles.Capacity > 0)
+				{
+					Update(reloadDirty || repository == null, dirtyFiles.ToArray());
+					dirtyFiles.Clear();
+				}
 			}
 
 			if (actionQueue.Count > 0)
@@ -158,7 +177,7 @@ namespace UniGit
 			}
 		}
 
-		internal static void Update(bool reloadRepository,string[] paths)
+		internal static void Update(bool reloadRepository,string[] paths = null)
 		{
 			if (repository == null && IsValidRepo)
 			{
@@ -178,28 +197,52 @@ namespace UniGit
 					RetreiveStatus(paths);
 				}
 			}
+			reloadDirty = false;
+			repositoryDirty = false;
 		}
 
-		internal static void Update()
+		public static void MarkDirty()
 		{
-			Update(false);
+			repositoryDirty = true;
 		}
 
-		internal static void Update(bool reloadRepository)
+		public static void MarkDirty(bool reloadRepo)
 		{
-			Update(reloadRepository, null);
+			repositoryDirty = true;
+			reloadDirty = reloadRepo;
 		}
 
-		internal static void Update(string[] paths)
+		public static void MarkDirty(string[] paths)
 		{
-			Update(false, paths);
+			MarkDirty((IEnumerable<string>)paths);
+		}
+
+		public static void MarkDirty(IEnumerable<string> paths)
+		{
+			dirtyFiles.AddRange(paths.Select(s => s.Replace("/","\\")));
+		}
+
+		private static void RebuildStatus(string[] paths)
+		{
+			if (paths != null && paths.Length > 0 && status != null)
+			{
+				foreach (var path in paths)
+				{
+					status.Update(path, repository.RetrieveStatus(path));
+				}
+			}
+			else
+			{
+				status = new GitRepoStatus(repository.RetrieveStatus());
+			}
+			
 		}
 
 		private static void RetreiveStatus(string[] paths)
 		{
-			lastStatus = repository.RetrieveStatus();
-			if (updateRepository != null) updateRepository.Invoke(lastStatus, paths);
-			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, lastStatus);
+			RebuildStatus(paths);
+			if (updateRepository != null) updateRepository.Invoke(status, paths);
+			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 		}
 
 		private static void ReteriveStatusThreaded(object param)
@@ -207,11 +250,12 @@ namespace UniGit
 			Monitor.Enter(statusRetriveLock);
 			try
 			{
-				lastStatus = repository.RetrieveStatus();
+				string[] paths = param as string[];
+				RebuildStatus(paths);
 				actionQueue.Enqueue(() =>
 				{
-					if (updateRepository != null) updateRepository.Invoke(lastStatus, param as string[]);
-					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, lastStatus);
+					if (updateRepository != null) updateRepository.Invoke(status, paths);
+					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 				});
 			}
 			catch (Exception e)
@@ -229,7 +273,7 @@ namespace UniGit
 			Monitor.Enter(statusTreeLock);
 			try
 			{
-				RepositoryStatus status = (RepositoryStatus) statusObj;
+				GitRepoStatus status = (GitRepoStatus) statusObj;
 				statusTree = new StatusTreeClass(status);
 				actionQueue.Enqueue(RepaintProjectWidnow);
 			}
@@ -463,13 +507,21 @@ namespace UniGit
 		{
 			if (path.EndsWith(".meta"))
 			{
-				yield return path.Substring(path.Length - 5, 5);
 				if (Path.HasExtension(path)) yield return path;
+				string assetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(path);
+				if (!string.IsNullOrEmpty(assetPath))
+				{
+					yield return assetPath;
+				}
 			}
 			else
 			{
 				if (Path.HasExtension(path)) yield return path;
-				yield return path + ".meta";
+				string metaPath = AssetDatabase.GetTextMetaFilePathFromAssetPath(path);
+				if (!string.IsNullOrEmpty(metaPath))
+				{
+					yield return metaPath;
+				}
 			}
 		}
 
@@ -486,7 +538,9 @@ namespace UniGit
 			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Received total of: {0} bytes. {1}%", progress.ReceivedBytes, (percent * 100).ToString("###")), percent);
 			if (progress.TotalObjects == progress.ReceivedObjects)
 			{
+#if UNITY_EDITOR
 				Debug.Log("Transfer Complete. Received a total of " + progress.IndexedObjects + " objects");
+#endif
 			}
 			//true to continue
 			return !cancel;
@@ -535,9 +589,14 @@ namespace UniGit
 			get { return gitSettings; }
 		}
 
-		public static RepositoryStatus LastStatus
+		public static GitRepoStatus LastStatus
 		{
-			get { return lastStatus; }
+			get { return status; }
+		}
+
+		public static Queue<Action> ActionQueue
+		{
+			get { return actionQueue; }
 		}
 
 		#endregion
@@ -550,18 +609,18 @@ namespace UniGit
 			private string[] currentPathArray;
 			private FileStatus currentStatus;
 
-			public StatusTreeClass(IEnumerable<StatusEntry> status)
+			public StatusTreeClass(IEnumerable<GitStatusEntry> status)
 			{
 				Build(status);
 			}
 
-			private void Build(IEnumerable<StatusEntry> status)
+			private void Build(IEnumerable<GitStatusEntry> status)
 			{
 				foreach (var entry in status)
 				{
-					currentPath = entry.FilePath;
-					currentPathArray = entry.FilePath.Split('\\');
-					currentStatus = !Settings.ShowEmptyFolders && IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.State;
+					currentPath = entry.Path;
+					currentPathArray = entry.Path.Split('\\');
+					currentStatus = !Settings.ShowEmptyFolders && IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.Status;
 					AddRecursive(0, entries);
 				}
 			}
@@ -655,59 +714,4 @@ namespace UniGit
 		}
 		#endregion
 	}
-
-	#region Postprocessors
-	public class GitAssetModificationPostprocessor : UnityEditor.AssetModificationProcessor
-	{
-		private static string[] OnWillSaveAssets(string[] paths)
-		{
-			if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return paths;
-			if (GitManager.Settings != null && GitManager.Settings.AutoStage)
-			{
-				string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
-				if(pathsFinal.Length > 0) GitManager.Repository.Stage(pathsFinal);
-			}
-			GitManager.Update();
-			return paths;
-		}
-	}
-
-	public class GitBrowserAssetPostprocessor : AssetPostprocessor
-	{
-		static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-		{
-			if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return;
-			if (GitManager.Repository != null)
-			{
-				if (GitManager.Settings != null && GitManager.Settings.AutoStage)
-				{
-					if (importedAssets != null && importedAssets.Length > 0)
-					{
-						string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
-						if (importedAssetsToStage.Length > 0) GitManager.Repository.Stage(importedAssetsToStage);
-					}
-
-					if (movedAssets != null && movedAssets.Length > 0)
-					{
-						string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
-						if (movedAssetsFinal.Length > 0) GitManager.Repository.Stage(movedAssetsFinal);
-					}
-				}
-
-				//automatic deletion is necessary even if AutoStage is off
-				if (deletedAssets != null && deletedAssets.Length > 0)
-				{
-					foreach (var asset in deletedAssets)
-					{
-						Debug.Log(asset);
-					}
-					string[] deletedAssetsFinal = deletedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g))).ToArray();
-					if (deletedAssetsFinal.Length > 0) GitManager.Repository.Unstage(deletedAssetsFinal);
-				}
-			}
-
-			GitManager.Update();
-		}
-	}
-	#endregion
 }

@@ -160,7 +160,7 @@ namespace UniGit
 					GitDiffWindow.GetWindow(false).commitMessage = GitManager.Repository.Info.Message;
 					break;
 			}
-			GitManager.Update();
+			GitManager.MarkDirty();
 			Debug.LogFormat("{0} Status: {1}", mergeType, result.Status);
 		}
 

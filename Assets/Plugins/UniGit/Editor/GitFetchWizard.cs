@@ -31,7 +31,9 @@ namespace UniGit
 			try
 			{
 				GitManager.Repository.Network.Fetch(remotes[selectedRemote], fetchOptions);
+#if UNITY_EDITOR
 				Debug.Log("Fetch Complete");
+#endif
 				var window = GitHistoryWindow.GetWindow(true);
 				window.ShowNotification(new GUIContent("Fetch Complete"));
 			}

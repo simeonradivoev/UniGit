@@ -1,18 +1,9 @@
-﻿using System;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using LibGit2Sharp;
-using UnityEditor;
-using UnityEngine;
-using Object = UnityEngine.Object;
+﻿using LibGit2Sharp;
 
 namespace UniGit
 {
 	public static class GitConflictsHandler
 	{
-		public static event Action<string,Object,CancelEventArgs> OnHandleConflictEvent;
-
 		public static bool CanResolveConflictsWithTool(string path)
 		{
 			if (!GitManager.IsValidRepo) return false;

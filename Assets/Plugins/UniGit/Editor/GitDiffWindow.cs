@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Status;
 using UnityEditor;
 using UnityEngine;
 using Utils.Extensions;
@@ -68,7 +69,7 @@ namespace UniGit
 			if (settings == null) settings = new Settings();
 		}
 
-		protected override void OnGitUpdate(RepositoryStatus status)
+		protected override void OnGitUpdate(GitRepoStatus status)
 		{
 			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, status);
 		}
@@ -94,17 +95,21 @@ namespace UniGit
 			Monitor.Enter(statusListLock);
 			try
 			{
-				RepositoryStatus status;
-				if (param is RepositoryStatus)
+				GitRepoStatus status;
+				if (param is GitRepoStatus)
 				{
-					status = (RepositoryStatus) param;
+					status = (GitRepoStatus) param;
+				}
+				else if(GitManager.LastStatus != null)
+				{
+					status = GitManager.LastStatus;
 				}
 				else
 				{
-					status = GitManager.Repository.RetrieveStatus();
+					status = new GitRepoStatus(GitManager.Repository.RetrieveStatus());
 				}
 				statusList = new StatusList(status, settings.showFileStatusTypeFilter);
-				actionQueue.Enqueue(Repaint);
+				GitManager.ActionQueue.Enqueue(Repaint);
 			}
 			catch (Exception e)
 			{
@@ -137,7 +142,7 @@ namespace UniGit
 				styles = new Styles();
 				styles.commitTextArea = new GUIStyle("sv_iconselector_labelselection") {margin = new RectOffset(4, 4, 4, 4), normal = {textColor = Color.black}, alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 6, 4, 4)};
 				styles.assetIcon = new GUIStyle("NotificationBackground") {contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter,imagePosition = ImagePosition.ImageOnly,padding = new RectOffset(4,4,4,4),border = new RectOffset(12,12,12,12)};
-				styles.diffScrollHeader = new GUIStyle("AnimationCurveEditorBackground") {contentOffset = new Vector2(48,0),alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = {textColor = Color.white * 0.9f},padding = new RectOffset(12,12,12,12),imagePosition = ImagePosition.ImageLeft};
+				styles.diffScrollHeader = new GUIStyle("CurveEditorBackground") {contentOffset = new Vector2(48,0),alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = {textColor = Color.white * 0.9f},padding = new RectOffset(12,12,12,12),imagePosition = ImagePosition.ImageLeft};
 				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) {fontSize = 12,onNormal = new GUIStyleState() {textColor = Color.white * 0.95f,background = Texture2D.blackTexture} };
 				styles.diffElementPath = new GUIStyle(EditorStyles.label) {onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture } };
 				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 0,border = new RectOffset(8,8,8,8)};
@@ -217,10 +222,10 @@ namespace UniGit
 			{
 				if (!GitExternalManager.TakeCommit(commitMessage))
 				{
-					var commit = GitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
+					GitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
 					GitHistoryWindow.GetWindow(true);
 				}
-				GitManager.Update();
+				GitManager.MarkDirty();
 
 			}
 			catch (Exception e)
@@ -438,14 +443,17 @@ namespace UniGit
 				if (current.button == 0 && stageToggleRect.Contains(current.mousePosition))
 				{
 					bool updateFlag = false;
+					string[] paths = null;
 					if (GitManager.CanStage(info.State))
 					{
-						GitManager.Repository.Stage(GitManager.GetPathWithMeta(info.Path));
+						paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+						GitManager.Repository.Stage(paths);
 						updateFlag = true;
 					}
 					else if(GitManager.CanUnstage(info.State))
 					{
-						GitManager.Repository.Unstage(GitManager.GetPathWithMeta(info.Path));
+						paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+						GitManager.Repository.Unstage(paths);
 						updateFlag = true;
 					}
 
@@ -453,7 +461,7 @@ namespace UniGit
 					{
 						Repaint();
 						current.Use();
-						UpdateStatusList();
+						if(paths != null && paths.Length > 0) GitManager.MarkDirty(paths);
 					}
 				}
 			}
@@ -543,7 +551,7 @@ namespace UniGit
 				{
 					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
 					GitManager.Repository.Stage(paths);
-					GitManager.Update(paths);
+					GitManager.MarkDirty(paths);
 				});
 			}
 			else
@@ -557,7 +565,7 @@ namespace UniGit
 				{
 					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
 					GitManager.Repository.Unstage(paths);
-					GitManager.Update(paths);
+					GitManager.MarkDirty(paths);
 				});
 			}
 			else
@@ -630,7 +638,7 @@ namespace UniGit
 
 		private void ReloadCallback()
 		{
-			GitManager.Update(true);
+			GitManager.MarkDirty(true);
 		}
 
 		private void ResolveConflictsTheirsCallback(object path)
@@ -665,7 +673,7 @@ namespace UniGit
 			if (GitExternalManager.TakeRevert(paths))
 			{
 				AssetDatabase.Refresh();
-				GitManager.Update(paths);
+				GitManager.MarkDirty(paths);
 				return;
 			}
 
@@ -680,7 +688,7 @@ namespace UniGit
 			if (currentSteps >= totalSteps)
 			{
 				EditorUtility.ClearProgressBar();
-				GitManager.Update();
+				GitManager.MarkDirty();
 				GetWindow<GitDiffWindow>().ShowNotification(new GUIContent("Revert Complete!"));
 			}
 		}
@@ -689,14 +697,14 @@ namespace UniGit
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 			GitManager.Repository.Unstage(paths);
-			GitManager.Update();
+			GitManager.MarkDirty(paths);
 		}
 
 		private void AddSelectedCallback()
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 			GitManager.Repository.Stage(paths);
-			GitManager.Update(paths);
+			GitManager.MarkDirty(paths);
 		}
 		#endregion
 
@@ -756,19 +764,19 @@ namespace UniGit
 			[SerializeField]
 			private List<StatusListEntry> entires;
 
-			public StatusList(IEnumerable<StatusEntry> enumerable, FileStatus filter)
+			public StatusList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter)
 			{
 				entires = new List<StatusListEntry>();
 				BuildList(enumerable, filter);
 			}
 
-			private void BuildList(IEnumerable<StatusEntry> enumerable, FileStatus filter)
+			private void BuildList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter)
 			{
-				foreach (var entry in enumerable.Where(e => filter.IsFlagSet(e.State)))
+				foreach (var entry in enumerable.Where(e => filter.IsFlagSet(e.Status)))
 				{
-					if (entry.FilePath.EndsWith(".meta"))
+					if (entry.Path.EndsWith(".meta"))
 					{
-						string mainAssetPath = entry.FilePath.Substring(0, entry.FilePath.Length - 5);
+						string mainAssetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(entry.Path);
 						if (!GitManager.Settings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) continue;;
 						
 						StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
@@ -778,19 +786,19 @@ namespace UniGit
 						}
 						else
 						{
-							entires.Add(new StatusListEntry(mainAssetPath, entry.State, MetaChangeEnum.Meta));
+							entires.Add(new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta));
 						}
 					}
 					else
 					{
-						StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.FilePath);
+						StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.Path);
 						if (ent != null)
 						{
-							ent.State = entry.State;
+							ent.State = entry.Status;
 						}
 						else
 						{
-							entires.Add(new StatusListEntry(entry.FilePath, entry.State, MetaChangeEnum.Object));
+							entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
 						}
 					}
 				}

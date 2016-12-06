@@ -14,27 +14,31 @@ namespace UniGit
 		[MenuItem("Assets/Git/Add", priority = 50), UsedImplicitly]
 		private static void AddSelected()
 		{
-			GitManager.Repository.Stage(Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => g.EndsWith(".meta") ? new[] { g } : new[] { g, g + ".meta" }));
-			GitManager.Update();
+			string[] paths = Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			GitManager.Repository.Stage(paths);
+			GitManager.MarkDirty(paths);
 		}
 
 		[MenuItem("Assets/Git/Add", true, priority = 50), UsedImplicitly]
 		private static bool AddSelectedValidate()
 		{
-			return Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).Any(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g)));
+			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			return paths.Any(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g)));
 		}
 
 		[MenuItem("Assets/Git/Remove", priority = 50), UsedImplicitly]
 		private static void RemoveSelected()
 		{
-			GitManager.Repository.Unstage(Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)));
-			GitManager.Update();
+			string[] paths = Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			GitManager.Repository.Unstage(paths);
+			GitManager.MarkDirty(paths);
 		}
 
 		[MenuItem("Assets/Git/Remove", true, priority = 50), UsedImplicitly]
 		private static bool RemoveSelectedValidate()
 		{
-			return Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).Any(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g)));
+			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			return paths.Any(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g)));
 		}
 
 		[MenuItem("Assets/Git/Difference", priority = 65), UsedImplicitly]
@@ -72,18 +76,18 @@ namespace UniGit
 		[MenuItem("Assets/Git/Revert", priority = 80), UsedImplicitly]
 		private static void Revet()
 		{
-			var paths = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e));
+			var paths = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e)).ToArray();
 			if (GitExternalManager.TakeRevert(paths))
 			{
 				AssetDatabase.Refresh();
-				GitManager.Update();
+				GitManager.MarkDirty(paths);
 				return;
 			}
 
 			GitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress});
 			EditorUtility.ClearProgressBar();
-			GitManager.Update();
 			AssetDatabase.Refresh();
+			GitManager.MarkDirty(paths);
 		}
 
 		[MenuItem("Assets/Git/Revert",true, priority = 80), UsedImplicitly]
@@ -98,7 +102,7 @@ namespace UniGit
 			EditorUtility.DisplayProgressBar("Reverting File", string.Format("Reverting file {0} {1}%", path, (percent * 100).ToString("####")), percent);
 			if (currentSteps >= totalSteps)
 			{
-				GitManager.Update();
+				GitManager.MarkDirty();
 				Type type = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
 				EditorWindow.GetWindow(type).ShowNotification(new GUIContent("Revert Complete!"));
 			}

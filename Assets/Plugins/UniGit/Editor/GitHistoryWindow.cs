@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Status;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -95,7 +96,7 @@ namespace UniGit
 			}
 		}
 
-		protected override void OnGitUpdate(RepositoryStatus status)
+		protected override void OnGitUpdate(GitRepoStatus status)
 		{
 			ThreadPool.QueueUserWorkItem(UpdateChachesThreaded, status);
 		}
@@ -105,7 +106,7 @@ namespace UniGit
 			Monitor.Enter(commitCachesLock);
 			try
 			{
-				RepositoryStatus status = (RepositoryStatus) statusObj;
+				GitRepoStatus status = (GitRepoStatus) statusObj;
 
 				//update all branches
 				cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
@@ -121,9 +122,9 @@ namespace UniGit
 					commitRects = new Rect[cachedCommits.Length];
 				}
 
-				hasConflicts = status.Any(s => s.State == FileStatus.Conflicted);
-				actionQueue.Enqueue(UpdateGitStatusIcon);
-				actionQueue.Enqueue(Repaint);
+				hasConflicts = status.Any(s => s.Status == FileStatus.Conflicted);
+				GitManager.ActionQueue.Enqueue(UpdateGitStatusIcon);
+				GitManager.ActionQueue.Enqueue(Repaint);
 			}
 			catch (Exception e)
 			{
@@ -228,7 +229,7 @@ namespace UniGit
 			{
 				if (GitExternalManager.TakePush())
 				{
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 				else
 				{
@@ -246,7 +247,7 @@ namespace UniGit
 				if (GitExternalManager.TakePull())
 				{
 					AssetDatabase.Refresh();
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 				else
 				{
@@ -262,7 +263,7 @@ namespace UniGit
 				Branch branch = selectedBranch.LoadBranch();
 				if (GitExternalManager.TakeFetch(branch.Remote.Name))
 				{
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 				else
 				{
@@ -277,7 +278,7 @@ namespace UniGit
 			{
 				if (GitExternalManager.TakeMerge())
 				{
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 				else
 				{
@@ -309,7 +310,7 @@ namespace UniGit
 				if (GitExternalManager.TakeSwitch())
 				{
 					AssetDatabase.Refresh();
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 
 				//todo Implement native switching
@@ -454,7 +455,7 @@ namespace UniGit
 				if (GitExternalManager.TakeReset(GitManager.Repository.Lookup<Commit>(commit.Id)))
 				{
 					AssetDatabase.Refresh();
-					GitManager.Update();
+					GitManager.MarkDirty();
 				}
 				else
 				{
@@ -617,7 +618,9 @@ namespace UniGit
 						}
 						else
 						{
+#if UNITY_EDITOR
 							Debug.Log("Git Ignore file already present");
+#endif
 						}
 					}
 					else
@@ -627,7 +630,7 @@ namespace UniGit
 					AssetDatabase.Refresh();
 					AssetDatabase.SaveAssets();
 					GitManager.Initlize();
-					GitManager.Update();
+					GitManager.MarkDirty();
 					GUIUtility.ExitGUI();
 					return;
 				}
@@ -669,7 +672,6 @@ namespace UniGit
 			{
 				EditorGUILayout.Space();
 				resetMode = (ResetMode)EditorGUILayout.EnumPopup(new GUIContent("Reset Type"), resetMode);
-				GUIContent infoContent = new GUIContent();
 				switch (resetMode)
 				{
 					case ResetMode.Soft:

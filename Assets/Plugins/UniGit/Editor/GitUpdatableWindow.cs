@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using LibGit2Sharp;
+using UniGit.Status;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,7 +12,6 @@ namespace UniGit
 		//used an object because the EditorWindow saves Booleans even if private
 		private object initilized;
 		private object hasFocused;
-		protected Queue<Action> actionQueue = new Queue<Action>();
 
 		protected virtual void OnEnable()
 		{
@@ -30,7 +30,7 @@ namespace UniGit
 			hasFocused = true;
 		}
 
-		private void OnGitManagerUpdateInternal(RepositoryStatus status,string[] paths)
+		private void OnGitManagerUpdateInternal(GitRepoStatus status,string[] paths)
 		{
 			titleContent.image = GitManager.GetGitStatusIcon();
 
@@ -57,24 +57,6 @@ namespace UniGit
 					Repaint();
 				}
 			}
-
-			if (actionQueue.Count > 0)
-			{
-				Action action = actionQueue.Dequeue();
-				if (action != null)
-				{
-					try
-					{
-						action.Invoke();
-					}
-					catch (Exception e)
-					{
-						Debug.LogException(e);
-						throw;
-					}
-				}
-				
-			}
 		}
 
 		#region Safe Controlls
@@ -88,7 +70,7 @@ namespace UniGit
 
 		#endregion
 
-		protected abstract void OnGitUpdate(RepositoryStatus status);
+		protected abstract void OnGitUpdate(GitRepoStatus status);
 		protected abstract void OnInitialize();
 		protected abstract void OnRepositoryLoad(Repository repository);
 	}
