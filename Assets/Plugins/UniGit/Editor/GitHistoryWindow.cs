@@ -584,7 +584,11 @@ namespace UniGit
 			Texture2D tex;
 			if (cachedProfilePicturesDictionary.TryGetValue(email, out tex))
 			{
-				return tex;
+				if (tex != null)
+				{
+					return tex;
+				}
+				cachedProfilePicturesDictionary.Remove(email);
 			}
 
 			WWW texWww;
@@ -594,6 +598,7 @@ namespace UniGit
 				{
 					tex = texWww.texture;
 					cachedProfilePicturesDictionary.Add(email, tex);
+					serializedProfilePictures.RemoveAll(p => p.email == email);
 					serializedProfilePictures.Add(new ProfilePicture(tex,email));
 					loadingProfilePictures.Remove(email);
 					texWww.Dispose();
