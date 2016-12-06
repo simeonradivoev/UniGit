@@ -90,6 +90,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Filters\GitLfsFilter.cs">
       <Link>GitLfsFilter.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitAssetPostprocessors.cs">
+      <Link>GitAssetPostprocessors.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCommitDetailsWindow.cs">
       <Link>GitCommitDetailsWindow.cs</Link>
     </Compile>
@@ -156,6 +159,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Hooks\GitPushHookBase.cs">
       <Link>GitPushHookBase.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Inspectors\GitSettingsInspector.cs">
+      <Link>GitSettingsInspector.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Lfs\GitLfsManager.cs">
       <Link>GitLfsManager.cs</Link>
     </Compile>
@@ -164,6 +170,15 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Lfs\GitLfsTrackPopupWindow.cs">
       <Link>GitLfsTrackPopupWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitRepoStatus.cs">
+      <Link>GitRepoStatus.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusEntry.cs">
+      <Link>GitStatusEntry.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitProfilerProxy.cs">
+      <Link>GitProfilerProxy.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Extensions\FlagHelper.cs">
       <Link>FlagHelper.cs</Link>

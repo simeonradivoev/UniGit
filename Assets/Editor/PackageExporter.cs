@@ -5,9 +5,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using System.Xml.XPath;
+using Microsoft.Win32;
 using UniGit;
 using UnityEditor;
+using Debug = UnityEngine.Debug;
 
 public class PackageExporter
 {
@@ -39,16 +40,67 @@ public class PackageExporter
 		{
 			UpdateVSProject();
 
-			ProcessStartInfo ProcStartInfo = new ProcessStartInfo("cmd");
-			ProcStartInfo.RedirectStandardOutput = false;
+			string devnetPath = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\devenv.exe", null,null).ToString();
+			if (string.IsNullOrEmpty(devnetPath))
+			{
+				Debug.LogError("Could not find devnet in registry!");
+				devnetPath = EditorUtility.OpenFilePanel("Devnet.Exe", "", "exe");
+
+				if (string.IsNullOrEmpty(devnetPath))
+				{
+					Debug.LogError("Could not find devnet!");
+					return;
+				}
+			}
+			else
+			{
+				Debug.Log("Devnet Path: " + devnetPath);
+			}
+
+			Process devnetProcess = new Process();
+			devnetProcess.StartInfo.Arguments = string.Format("{0} {1} {2} {3}","\"UniGitVs.sln\"", " /build Debug", "/project \"UniGitVs.csproj\"", "/projectconfig Debug");
+			devnetProcess.StartInfo.RedirectStandardError = true;
+			devnetProcess.StartInfo.RedirectStandardOutput = true;
+			devnetProcess.StartInfo.UseShellExecute = false;
+			devnetProcess.StartInfo.FileName = devnetPath.ToString();
+			//devnetProcess.StartInfo.Verb = "runas";
+			devnetProcess.StartInfo.WorkingDirectory = Application.dataPath.Replace("/", "\\").Replace("Assets", "UniGitVs");
+
+			devnetProcess.Start();
+			EditorUtility.DisplayProgressBar("Building Project","Building in progress",0.1f);
+			devnetProcess.WaitForExit();
+			EditorUtility.ClearProgressBar();
+
+			string logs = devnetProcess.StandardOutput.ReadToEnd();
+			string errors = devnetProcess.StandardError.ReadToEnd();
+			bool buildHasOutput = !string.IsNullOrEmpty(logs) || !string.IsNullOrEmpty(errors);
+
+			if (buildHasOutput)
+			{
+				Debug.Log("---- Build Process Output ----");
+				if (!string.IsNullOrEmpty(logs))
+				{
+					Debug.Log(logs);
+				}
+
+				if (!string.IsNullOrEmpty(errors))
+				{
+					Debug.LogError(errors);
+				}
+				Debug.Log("---- ------------------- ----");
+			}
+			
+			/*ProcessStartInfo ProcStartInfo = new ProcessStartInfo("cmd");
+			ProcStartInfo.RedirectStandardOutput = true;
 			ProcStartInfo.UseShellExecute = false;
 			ProcStartInfo.CreateNoWindow = false;
-			ProcStartInfo.RedirectStandardError = false;
+			ProcStartInfo.RedirectStandardError = true;
+			ProcStartInfo.Verb = "runas";
 			Process MyProcess = new Process();
 			ProcStartInfo.Arguments = "/c cd UniGitVs & start /wait build_dev.bat";
 			MyProcess.StartInfo = ProcStartInfo;
 			MyProcess.Start();
-			MyProcess.WaitForExit();
+			MyProcess.WaitForExit();*/
 
 			List<string> paths = new List<string>(AssetFiles);
 			foreach (var folder in AssetFolders)
@@ -56,12 +108,12 @@ public class PackageExporter
 				paths.AddRange(GetAssetAt(folder));
 			}
 
-			UnityEngine.Debug.Log("---- Paths to be exported ----");
+			Debug.Log("---- Paths to be exported ----");
 			foreach (var path in paths)
 			{
-				UnityEngine.Debug.Log(path);
+				Debug.Log(path);
 			}
-			UnityEngine.Debug.Log("---- ------------------- ----");
+			Debug.Log("---- ------------------- ----");
 
 			File.Copy(Application.dataPath.Replace("Assets", "UniGitVs") + "\\bin\\Debug\\Plugins\\UniGit\\Editor\\UniGitVs.dll", Application.dataPath + "\\Plugins\\UniGit\\Editor\\UniGitVs.dll");
 			File.Copy(Application.dataPath.Replace("Assets", "UniGitVs") + "\\bin\\Debug\\Plugins\\UniGit\\Editor\\UniGitVs.pdb", Application.dataPath + "\\Plugins\\UniGit\\Editor\\UniGitVs.pdb");
@@ -69,6 +121,7 @@ public class PackageExporter
 			AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
 			AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
 			AssetDatabase.ExportPackage(paths.ToArray(), PackageName + ".unitypackage", ExportPackageOptions.Recurse | ExportPackageOptions.IncludeDependencies);
+			Debug.Log("Unity Package created at: " + Application.dataPath.Replace("Assets", PackageName + ".unitypackage"));
 
 			AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.dll");
 			AssetDatabase.DeleteAsset("Assets/Plugins/UniGit/Editor/UniGitVs.pdb");
