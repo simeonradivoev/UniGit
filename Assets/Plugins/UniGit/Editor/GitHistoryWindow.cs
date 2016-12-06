@@ -692,7 +692,7 @@ namespace UniGit
 					{
 						GitProfilerProxy.BeginSample("Git Reset Popup",editorWindow);
 						GitManager.Repository.Reset(resetMode,commit, checkoutOptions);
-						GitManager.Update(true);
+						GitManager.MarkDirty(true);
 						editorWindow.Close();
 						GitProfilerProxy.EndSample();
 						AssetDatabase.Refresh();

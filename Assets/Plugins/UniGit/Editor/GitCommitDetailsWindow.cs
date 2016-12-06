@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Tree = LibGit2Sharp.Tree;
 
 namespace UniGit
@@ -31,16 +33,15 @@ namespace UniGit
 
 		public override Vector2 GetWindowSize()
 		{
-			return new Vector2(512, 256);
+			return new Vector2(640, 256);
 		}
 
 		public override void OnGUI(Rect rect)
 		{
 			EditorGUILayout.Space();
 			float msgHeight = commitMessageStyle.CalcHeight(new GUIContent(commit.Message), rect.width);
-			EditorGUILayout.LabelField(new GUIContent(commit.Message), commitMessageStyle,GUILayout.Height(msgHeight));
 			scroll = EditorGUILayout.BeginScrollView(scroll);
-			EditorGUILayout.Space();
+			EditorGUILayout.LabelField(new GUIContent(commit.Message), commitMessageStyle, GUILayout.Height(msgHeight));
 			if (changes != null)
 			{
 				foreach (var change in changes)
@@ -51,9 +52,23 @@ namespace UniGit
 					GUILayout.Label(new GUIContent(GitManager.GetDiffTypeIcon(change.Status, true)), GUILayout.Width(16));
 					GUILayout.Label(new GUIContent("(" + change.Status + ")"), "AboutWIndowLicenseLabel");
 					GUILayout.Space(8);
-					foreach (var chunk in change.Path.Split('\\'))
+					string[] pathChunks = change.Path.Split('\\');
+					for (int i = 0; i < pathChunks.Length; i++)
 					{
-						GUILayout.Label(new GUIContent(chunk), "GUIEditor.BreadcrumbMid");
+						string chunk = pathChunks[i];
+						if (GUILayout.Button(new GUIContent(chunk), "GUIEditor.BreadcrumbMid"))
+						{
+							string assetPath = string.Join("/", pathChunks,0,i+1);
+							if (assetPath.EndsWith(".meta"))
+							{
+								assetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(assetPath);
+							}
+							var asset = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
+							if (asset != null)
+							{
+								Selection.activeObject = asset;
+							}
+						}
 					}
 					//GUILayout.Label(new GUIContent(" (" + change.Status + ") " + change.Path));
 					EditorGUILayout.EndHorizontal();

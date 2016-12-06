@@ -149,10 +149,12 @@ namespace UniGit
 			{
 				if ((repository == null || repositoryDirty))
 				{
-					Update(reloadDirty || repository == null, null);
+					Update(reloadDirty);
+					reloadDirty = false;
+					repositoryDirty = false;
 					dirtyFiles.Clear();
 				}
-				else if (dirtyFiles.Capacity > 0)
+				else if (dirtyFiles.Count > 0)
 				{
 					Update(reloadDirty || repository == null, dirtyFiles.ToArray());
 					dirtyFiles.Clear();
@@ -177,9 +179,9 @@ namespace UniGit
 			}
 		}
 
-		internal static void Update(bool reloadRepository,string[] paths = null)
+		private static void Update(bool reloadRepository,string[] paths = null)
 		{
-			if (repository == null && IsValidRepo)
+			if ((repository == null || reloadRepository) && IsValidRepo)
 			{
 				if (repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
@@ -197,8 +199,6 @@ namespace UniGit
 					RetreiveStatus(paths);
 				}
 			}
-			reloadDirty = false;
-			repositoryDirty = false;
 		}
 
 		public static void MarkDirty()
