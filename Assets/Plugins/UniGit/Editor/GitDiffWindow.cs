@@ -7,6 +7,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 using Utils.Extensions;
@@ -140,6 +141,7 @@ namespace UniGit
 		{
 			if (styles == null)
 			{
+				GitProfilerProxy.BeginSample("Git Diff Window Style Creation",this);
 				styles = new Styles();
 				styles.commitTextArea = new GUIStyle("sv_iconselector_labelselection") {margin = new RectOffset(4, 4, 4, 4), normal = {textColor = Color.black}, alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 6, 4, 4)};
 				styles.assetIcon = new GUIStyle("NotificationBackground") {contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter,imagePosition = ImagePosition.ImageOnly,padding = new RectOffset(4,4,4,4),border = new RectOffset(12,12,12,12)};
@@ -147,6 +149,7 @@ namespace UniGit
 				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) {fontSize = 12,onNormal = new GUIStyleState() {textColor = Color.white * 0.95f,background = Texture2D.blackTexture} };
 				styles.diffElementPath = new GUIStyle(EditorStyles.label) {onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture } };
 				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 0,border = new RectOffset(8,8,8,8)};
+				GitProfilerProxy.EndSample();
 			}
 		}
 
@@ -236,7 +239,9 @@ namespace UniGit
 			{
 				if (!GitExternalManager.TakeCommit(commitMessage))
 				{
+					GitProfilerProxy.BeginSample("Git Commit");
 					GitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
+					GitProfilerProxy.EndSample();
 					GitHistoryWindow.GetWindow(true);
 				}
 				GitManager.MarkDirty();

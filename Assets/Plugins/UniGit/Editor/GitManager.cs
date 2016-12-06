@@ -6,10 +6,10 @@ using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-using UnityEngine.Profiling;
 using Utils.Extensions;
 using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
@@ -240,7 +240,9 @@ namespace UniGit
 
 		private static void RetreiveStatus(string[] paths)
 		{
+			GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 			RebuildStatus(paths);
+			GitProfilerProxy.EndSample();
 			if (updateRepository != null) updateRepository.Invoke(status, paths);
 			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 		}
@@ -394,7 +396,7 @@ namespace UniGit
 			if (repository == null || !IsValidRepo || !Settings.AutoFetch) return false;
 			Remote remote = repository.Network.Remotes.FirstOrDefault();
 			if (remote == null) return false;
-			Profiler.BeginSample("Git automatic fetching");
+			GitProfilerProxy.BeginSample("Git automatic fetching");
 			try
 			{
 
@@ -409,7 +411,7 @@ namespace UniGit
 			{
 				EditorUtility.ClearProgressBar();
 			}
-			Profiler.EndSample();
+			GitProfilerProxy.EndSample();
 			return false;
 		}
 		#endregion

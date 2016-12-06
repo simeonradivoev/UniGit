@@ -8,6 +8,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -64,7 +65,7 @@ namespace UniGit
 		{
 			if (styles == null)
 			{
-				Profiler.BeginSample("Git History Window Style Creation");
+				GitProfilerProxy.BeginSample("Git History Window Style Creation",this);
 				Texture2D blueTexture = new Texture2D(1,1) {hideFlags = HideFlags.HideAndDontSave};
 				blueTexture.SetPixel(0,0,new Color32(72,123,207,255));
 				blueTexture.Apply();
@@ -92,7 +93,7 @@ namespace UniGit
 				styles.historyHelpBox = new GUIStyle(EditorStyles.helpBox) {richText = true,padding = new RectOffset(8,8,8,8),alignment = TextAnchor.MiddleLeft,contentOffset = new Vector2(24,-2)};
 				styles.historyHelpBoxLabel = new GUIStyle("CN EntryWarn");
 				styles.commitMessage = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(6,4,4,4),clipping = TextClipping.Clip};
-				Profiler.EndSample();
+				GitProfilerProxy.EndSample();
 			}
 		}
 
@@ -211,7 +212,7 @@ namespace UniGit
 
 		private void DoToolbar(Rect rect, RepositoryInformation info)
 		{
-			Profiler.BeginSample("Git History Window Toolbar GUI");
+			GitProfilerProxy.BeginSample("Git History Window Toolbar GUI",this);
 			GUI.Box(rect, GUIContent.none, "Toolbar");
 			Rect btRect = new Rect(rect.x, rect.y, 64, rect.height);
 			GUIContent pushButtonContent = new GUIContent("Push", EditorGUIUtility.FindTexture("CollabPush"), "Push local changes to a remote repository.");
@@ -316,7 +317,7 @@ namespace UniGit
 				//todo Implement native switching
 			}
 			GUI.enabled = true;
-			Profiler.EndSample();
+			GitProfilerProxy.EndSample();
 		}
 
 		private void DoHistoryScrollRect(Rect rect, RepositoryInformation info)
@@ -333,7 +334,7 @@ namespace UniGit
 			//commit layout
 			if (current.type == EventType.Layout)
 			{
-				Profiler.BeginSample("Git History Window Scroll Rect GUI Layout");
+				GitProfilerProxy.BeginSample("Git History Window Scroll Rect GUI Layout", this);
 				Rect lastCommitRect = new Rect(32, commitSpacing, Mathf.Max(rect.width - 24, 512) - 32, 0);
 
 				if (displayWarnningBox)
@@ -349,11 +350,11 @@ namespace UniGit
 				}
 
 				historyScrollContentsRect = new Rect(0, 0, lastCommitRect.width + 32, lastCommitRect.y + lastCommitRect.height + commitSpacing*2);
-				Profiler.EndSample();
+				GitProfilerProxy.EndSample();
 			}
 			else
 			{
-				Profiler.BeginSample("Git History Window Scroll Rect GUI Other");
+				GitProfilerProxy.BeginSample("Git History Window Scroll Rect GUI Other", this);
 				historyScroll = GUI.BeginScrollView(rect, historyScroll, historyScrollContentsRect);
 
 				if (displayWarnningBox)
@@ -367,7 +368,7 @@ namespace UniGit
 				}
 
 				GUI.EndScrollView();
-				Profiler.EndSample();
+				GitProfilerProxy.EndSample();
 			}
 			
 		}
@@ -383,7 +384,7 @@ namespace UniGit
 
 		private void DoCommit(Rect rect,Rect scrollRect,CommitInfo commit)
 		{
-			Profiler.BeginSample("Git History Window Commit GUI");
+			GitProfilerProxy.BeginSample("Git History Window Commit GUI",this);
 			Event current = Event.current;
 
 			if (rect.y > scrollRect.height + historyScroll.y || rect.y + scrollRect.height < historyScroll.y)
@@ -479,7 +480,7 @@ namespace UniGit
 					current.Use();
 				}
 			}
-			Profiler.EndSample();
+			GitProfilerProxy.EndSample();
 		}
 
 		private void DoWarningBox(Rect rect, RepositoryInformation info)
@@ -689,11 +690,11 @@ namespace UniGit
 				{
 					if (EditorUtility.DisplayDialog("Reset", "Are you sure you want to reset to the selected commit", "Reset", "Cancel"))
 					{
-						Profiler.BeginSample("Git Reset Popup");
+						GitProfilerProxy.BeginSample("Git Reset Popup",editorWindow);
 						GitManager.Repository.Reset(resetMode,commit, checkoutOptions);
 						GitManager.Update(true);
 						editorWindow.Close();
-						Profiler.EndSample();
+						GitProfilerProxy.EndSample();
 						AssetDatabase.Refresh();
 					}
 				}
