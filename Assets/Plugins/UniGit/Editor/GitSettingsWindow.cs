@@ -173,6 +173,7 @@ namespace UniGit
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("ProjectStatusOverlayDepth"));
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("ShowEmptyFolders"));
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("GitStatusMultithreaded"));
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("UseGavatar"));
 				if (serializedSettings.ApplyModifiedProperties())
 				{
 					GitManager.MarkDirty();

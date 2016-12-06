@@ -57,6 +57,7 @@ namespace UniGit
 			public GUIContent deletedIconSmall;
 			public GUIContent renamedIcon;
 			public GUIContent renamedIconSmall;
+			public GUIContent loadingIconSmall;
 		}
 
 		private static GUIStyle IconStyle;
@@ -109,7 +110,8 @@ namespace UniGit
 					deletedIcon = EditorGUIUtility.IconContent("UniGit/deleted"),
 					deletedIconSmall = EditorGUIUtility.IconContent("UniGit/deleted_small"),
 					renamedIcon = EditorGUIUtility.IconContent("UniGit/renamed"),
-					renamedIconSmall = EditorGUIUtility.IconContent("UniGit/renamed_small")
+					renamedIconSmall = EditorGUIUtility.IconContent("UniGit/renamed_small"),
+					loadingIconSmall = EditorGUIUtility.IconContent("UniGit/loading")
 				};
 			}
 

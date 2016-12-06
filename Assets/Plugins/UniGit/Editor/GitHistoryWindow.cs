@@ -11,8 +11,6 @@ using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Profiling;
-using Tree = LibGit2Sharp.Tree;
 
 namespace UniGit
 {
@@ -22,7 +20,7 @@ namespace UniGit
 		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
 
 		private Dictionary<string, WWW> cachedProfilePicturesDictionary;
-		private Styles styles;
+		private static Styles styles;
 		private BranchInfo selectedBranch;
 		private BranchInfo[] cachedBranches = new BranchInfo[0];
 		private CommitInfo[] cachedCommits = new CommitInfo[0];
@@ -33,6 +31,7 @@ namespace UniGit
 		[SerializeField] private Vector2 historyScroll;
 		[SerializeField] private string selectedBranchName;
 		private object commitCachesLock = new object();
+		private bool needsRepaint;
 
 		public class Styles
 		{
@@ -48,6 +47,8 @@ namespace UniGit
 			public GUIStyle historyHelpBox;
 			public GUIStyle historyHelpBoxLabel;
 			public GUIStyle commitMessage;
+			public GUIStyle avatar;
+			public GUIStyle avatarName;
 		}
 
 		[MenuItem("Window/GIT History")]
@@ -93,6 +94,8 @@ namespace UniGit
 				styles.historyHelpBox = new GUIStyle(EditorStyles.helpBox) {richText = true,padding = new RectOffset(8,8,8,8),alignment = TextAnchor.MiddleLeft,contentOffset = new Vector2(24,-2)};
 				styles.historyHelpBoxLabel = new GUIStyle("CN EntryWarn");
 				styles.commitMessage = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(6,4,4,4),clipping = TextClipping.Clip};
+				styles.avatar = new GUIStyle("ShurikenEffectBg") {contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter,clipping = TextClipping.Clip,imagePosition = ImagePosition.ImageOnly};
+				styles.avatarName = new GUIStyle("ShurikenEffectBg") {contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.TextOnly, fontSize = 28, fontStyle = FontStyle.Bold, normal = {textColor = Color.white}};
 				GitProfilerProxy.EndSample();
 			}
 		}
@@ -412,12 +415,31 @@ namespace UniGit
 				y += 4;
 			}
 
-			Texture2D avatar = GetProfilePixture(commit.Committer.Email);
-			GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), GUIContent.none, "ShurikenEffectBg");
-			if (avatar != null)
+			if (GitManager.Settings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
 			{
-				GUI.DrawTexture(new Rect(rect.x + x, rect.y + y, 32, 32), avatar);
+				Texture2D avatar = GetProfilePixture(commit.Committer.Email);
+				if (avatar != null)
+				{
+					GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), new GUIContent(avatar), styles.avatar);
+				}
+				else
+				{
+					GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), GitManager.icons.loadingIconSmall, styles.avatar);
+				}
 			}
+			else
+			{
+				UnityEngine.Random.InitState(commit.Committer.Name.GetHashCode());
+				GUI.contentColor = UnityEngine.Random.ColorHSV(0, 1, 0.6f, 0.6f, 0.8f, 1, 1, 1);
+				GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), new GUIContent(commit.Committer.Name.Substring(0,1).ToUpper()), styles.avatarName);
+				GUI.contentColor = Color.white;
+			}
+			
+			
+			//if (avatar != null)
+			//{
+				//GUI.DrawTexture(new Rect(rect.x + x, rect.y + y, 32, 32), avatar);
+			//}
 			x += 38;
 			EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), new GUIContent(commit.Committer.Name), EditorStyles.boldLabel);
 			y += 16;
