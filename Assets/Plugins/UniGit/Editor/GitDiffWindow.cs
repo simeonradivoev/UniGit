@@ -28,7 +28,7 @@ namespace UniGit
 			return GetWindow<GitDiffWindow>("Git Diff", focus);
 		}
 
-		public Rect CommitRect { get { return new Rect(0,0,position.width,120);} }
+		public Rect CommitRect { get { return new Rect(0,0,position.width, commitMaximized ? 120 : 46);} }
 		public Rect DiffToolbarRect { get { return new Rect(0, CommitRect.height, position.width, 18); } }
 		public Rect DiffRect { get { return new Rect(0,CommitRect.height + DiffToolbarRect.height, position.width,position.height - CommitRect.height - DiffToolbarRect.height);} }
 		
@@ -41,6 +41,7 @@ namespace UniGit
 		private int lastSelectedIndex;
 		[SerializeField] private StatusList statusList;
 		private object statusListLock = new object();
+		[SerializeField] private bool commitMaximized = true;
 
 		[Serializable]
 		public class Settings
@@ -184,20 +185,33 @@ namespace UniGit
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
 				GUILayout.Label(new GUIContent("Merge"), "AssetLabel");
-			GUILayout.Label(new GUIContent("Commit Message: "));
-			EditorGUILayout.EndHorizontal();
-			commitMessage = EditorGUILayout.TextArea(commitMessage, GUILayout.Height(70));
-			EditorGUILayout.BeginHorizontal();
-			if (GUILayout.Button(new GUIContent("Commit")))
+			commitMaximized = GUILayout.Toggle(commitMaximized, new GUIContent("Commit Message: "), "IN Foldout",GUILayout.Width(116));
+			if (!commitMaximized)
 			{
-				Commit();
+				commitMessage = EditorGUILayout.TextArea(commitMessage);
+			}
+			EditorGUILayout.EndHorizontal();
+			if (commitMaximized)
+			{
+				commitMessage = EditorGUILayout.TextArea(commitMessage, GUILayout.Height(70));
+			}
+			EditorGUILayout.BeginHorizontal();
+			
+			if (GUILayout.Button(new GUIContent("Commit"), "DropDownButton"))
+			{
+				GenericMenu commitMenu = new GenericMenu();
+				commitMenu.AddItem(new GUIContent("Commit"),false, CommitCallback);
+				if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit))
+				{
+					commitMenu.AddItem(new GUIContent("Commit And Push"), false, CommitAndPushCallback);
+				}
+				else
+				{
+					commitMenu.AddDisabledItem(new GUIContent("Commit And Push"));
+				}
+				commitMenu.ShowAsContext();
 			}
 			GUI.enabled = !GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit);
-			if (GUILayout.Button(new GUIContent("Commit and Push")))
-			{
-				Commit();
-				ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
-			}
 			settings.emptyCommit = GUILayout.Toggle(settings.emptyCommit,new GUIContent("Empty Commit", "Commit the message only without changes"));
 			EditorGUI.BeginChangeCheck();
 			settings.amendCommit = GUILayout.Toggle(settings.amendCommit,new GUIContent("Amend Commit", "Amend previous commit."));
@@ -215,7 +229,7 @@ namespace UniGit
 			EditorGUILayout.Space();
 		}
 
-		private void Commit()
+		private bool Commit()
 		{
 			Signature signature = GitManager.Signature;
 			try
@@ -226,7 +240,7 @@ namespace UniGit
 					GitHistoryWindow.GetWindow(true);
 				}
 				GitManager.MarkDirty();
-
+				return true;
 			}
 			catch (Exception e)
 			{
@@ -238,6 +252,26 @@ namespace UniGit
 				commitMessage = string.Empty;
 				//reset amend commit so the user will have to enable it again to load the last commit message
 				settings.amendCommit = false;
+			}
+			return false;
+		}
+
+		private void CommitCallback()
+		{
+			if (EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes?", "Commit","Cancel"))
+			{
+				Commit();
+			}
+		}
+
+		private void CommitAndPushCallback()
+		{
+			if (EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
+			{
+				if (Commit())
+				{
+					ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
+				}
 			}
 		}
 
