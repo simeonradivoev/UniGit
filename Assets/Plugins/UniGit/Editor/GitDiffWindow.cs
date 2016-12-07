@@ -40,9 +40,10 @@ namespace UniGit
 		private Styles styles;
 		[SerializeField] private Settings settings;
 		private int lastSelectedIndex;
-		[SerializeField] private StatusList statusList;
+		private StatusList statusList;
 		private object statusListLock = new object();
 		[SerializeField] private bool commitMaximized = true;
+		[SerializeField] private string filter;
 
 		[Serializable]
 		public class Settings
@@ -294,7 +295,7 @@ namespace UniGit
 		private void DoDiffScroll(Event current)
 		{
 			float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-			float elementsTotalHeight = (statusList.Count(i => settings.MinimizedFileStatus.IsFlagSet(i.State)) + totalTypesCount)  * elementHeight;
+			float elementsTotalHeight = (statusList.Count(i => IsVisible(i)) + totalTypesCount)  * elementHeight;
 
 			GUILayout.BeginArea(DiffToolbarRect, GUIContent.none, "Toolbar");
 			EditorGUILayout.BeginHorizontal();
@@ -330,6 +331,19 @@ namespace UniGit
 				genericMenu.ShowAsContext();
 			}
 			GUILayout.FlexibleSpace();
+			filter = EditorGUILayout.TextField(GUIContent.none, filter, "ToolbarSeachTextField");
+			if (string.IsNullOrEmpty(filter))
+			{
+				GUILayout.Box(GUIContent.none, "ToolbarSeachCancelButtonEmpty");
+			}
+			else
+			{
+				if (GUILayout.Button(GUIContent.none, "ToolbarSeachCancelButton"))
+				{
+					filter = "";
+					GUI.FocusControl("");
+				}
+			}
 			EditorGUILayout.EndHorizontal();
 			GUILayout.EndArea();
 
@@ -343,7 +357,7 @@ namespace UniGit
 			foreach (var info in statusList)
 			{
 				FileStatus mergedStatus = GetMergedStatus(info.State);
-				bool isExpanded = settings.MinimizedFileStatus.IsFlagSet(mergedStatus);
+				bool isExpanded = IsVisible(info);
 				Rect elementRect;
 
 				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
@@ -413,7 +427,7 @@ namespace UniGit
 			if (current.type == EventType.Repaint)
 			{
 				string filePath = info.Path;
-				string fileName = Path.GetFileName(filePath);
+				string fileName = info.Name;
 
 				Object asset = null;
 				if (filePath.EndsWith(".meta"))
@@ -472,9 +486,16 @@ namespace UniGit
 				x = rect.x + elementSideMargin + iconSize + 8;
 				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitManager.GetDiffTypeIcon(info.State, false), GUIStyle.none);
 				x += 25;
+				if (info.MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
+				{
+					GUIContent objIconContent = GitManager.icons.objectIconSmall;
+					objIconContent.tooltip = "main asset file changed";
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), objIconContent, GUIStyle.none);
+					x += 25;
+				}
 				if (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta))
 				{
-					GUIContent metaIconContent = EditorGUIUtility.IconContent("UniGit/meta");
+					GUIContent metaIconContent = GitManager.icons.metaIconSmall;
 					metaIconContent.tooltip = ".meta file changed";
 					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), metaIconContent, GUIStyle.none);
 					x += 25;
@@ -582,6 +603,11 @@ namespace UniGit
 					}
 				}
 			}
+		}
+
+		private bool IsVisible(StatusListEntry entry)
+		{
+			return settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State)) && (entry.Name == null || entry.Name.Contains(filter));
 		}
 
 		#region Menu Callbacks
@@ -802,10 +828,8 @@ namespace UniGit
 		#endregion
 
 		#region Status List
-		[Serializable]
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
-			[SerializeField]
 			private List<StatusListEntry> entires;
 
 			public StatusList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter)
@@ -889,6 +913,8 @@ namespace UniGit
 			[SerializeField]
 			private string path;
 			[SerializeField]
+			private string name;
+			[SerializeField]
 			private MetaChangeEnum metaChange;
 			[SerializeField]
 			private FileStatus state;
@@ -898,6 +924,7 @@ namespace UniGit
 			public StatusListEntry(string path, FileStatus state, MetaChangeEnum metaChange)
 			{
 				this.path = path;
+				this.name = System.IO.Path.GetFileName(path);
 				this.state = state;
 				this.metaChange = metaChange;
 			}
@@ -911,6 +938,11 @@ namespace UniGit
 			public string Path
 			{
 				get { return path; }
+			}
+
+			public string Name
+			{
+				get { return name; }
 			}
 
 			public MetaChangeEnum MetaChange

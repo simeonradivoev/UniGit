@@ -58,6 +58,10 @@ namespace UniGit
 			public GUIContent renamedIcon;
 			public GUIContent renamedIconSmall;
 			public GUIContent loadingIconSmall;
+			public GUIContent objectIcon;
+			public GUIContent objectIconSmall;
+			public GUIContent metaIcon;
+			public GUIContent metaIconSmall;
 		}
 
 		private static GUIStyle IconStyle;
@@ -111,7 +115,11 @@ namespace UniGit
 					deletedIconSmall = EditorGUIUtility.IconContent("UniGit/deleted_small"),
 					renamedIcon = EditorGUIUtility.IconContent("UniGit/renamed"),
 					renamedIconSmall = EditorGUIUtility.IconContent("UniGit/renamed_small"),
-					loadingIconSmall = EditorGUIUtility.IconContent("UniGit/loading")
+					loadingIconSmall = EditorGUIUtility.IconContent("UniGit/loading"),
+					objectIcon = EditorGUIUtility.IconContent("UniGit/object"),
+					objectIconSmall = EditorGUIUtility.IconContent("UniGit/object_small"),
+					metaIcon = EditorGUIUtility.IconContent("UniGit/meta"),
+					metaIconSmall = EditorGUIUtility.IconContent("UniGit/meta_small")
 				};
 			}
 
@@ -311,35 +319,43 @@ namespace UniGit
 
 		public static GUIContent GetDiffTypeIcon(FileStatus type,bool small)
 		{
+			GUIContent content = null;
+
 			if (type.IsFlagSet(FileStatus.ModifiedInWorkdir | FileStatus.ModifiedInIndex))
 			{
-				return small ? icons.modifiedIconSmall : icons.modifiedIcon;
+				content = small ? icons.modifiedIconSmall : icons.modifiedIcon;
 			}
 			if (type.IsFlagSet(FileStatus.NewInIndex))
 			{
-				return small ? icons.addedIconSmall : icons.addedIcon;
+				content = small ? icons.addedIconSmall : icons.addedIcon;
 			}
 			if (type.IsFlagSet(FileStatus.NewInWorkdir))
 			{
-				return small ? icons.untrackedIconSmall : icons.untrackedIcon;
+				content = small ? icons.untrackedIconSmall : icons.untrackedIcon;
 			}
 			if (type.IsFlagSet(FileStatus.Ignored))
 			{
-				return small ? icons.ignoredIconSmall : icons.ignoredIcon;
+				content = small ? icons.ignoredIconSmall : icons.ignoredIcon;
 			}
 			if (type.IsFlagSet(FileStatus.Conflicted))
 			{
-				return small ? icons.conflictIconSmall : icons.conflictIcon;
+				content = small ? icons.conflictIconSmall : icons.conflictIcon;
 			}
 			if (type.IsFlagSet(FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir))
 			{
-				return small ? icons.renamedIconSmall : icons.renamedIcon;
+				content = small ? icons.renamedIconSmall : icons.renamedIcon;
 			}
 			if (type.IsFlagSet(FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir))
 			{
-				return small ? icons.deletedIconSmall : icons.deletedIcon;
+				content = small ? icons.deletedIconSmall : icons.deletedIcon;
 			}
-			return new GUIContent();
+			return SetupTooltip(content, type) ?? new GUIContent(type.ToString());
+		}
+
+		private static GUIContent SetupTooltip(GUIContent content,FileStatus type)
+		{
+			content.tooltip = type.ToString();
+			return content;
 		}
 
 		public static GUIContent GetDiffTypeIcon(ChangeKind type,bool small)
