@@ -277,7 +277,7 @@ namespace UniGit
 
 		private void CommitAndPushCallback()
 		{
-			if (EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
+			if (GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
 			{
 				if (Commit())
 				{
