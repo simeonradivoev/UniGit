@@ -43,7 +43,7 @@ namespace UniGit
 		private StatusList statusList;
 		private object statusListLock = new object();
 		[SerializeField] private bool commitMaximized = true;
-		[SerializeField] private string filter;
+		[SerializeField] private string filter = "";
 
 		[Serializable]
 		public class Settings
@@ -607,7 +607,7 @@ namespace UniGit
 
 		private bool IsVisible(StatusListEntry entry)
 		{
-			return settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State)) && (entry.Name == null || entry.Name.Contains(filter));
+			return settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State)) && (entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.Contains(filter));
 		}
 
 		#region Menu Callbacks

@@ -22,7 +22,7 @@ namespace UniGit
 
 		internal static void Load()
 		{
-			adapters = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(IExternalAdapter).IsAssignableFrom(t) && t.IsClass &&  !t.IsAbstract)).Select(t => Activator.CreateInstance(t)).Cast<IExternalAdapter>().ToArray();
+			adapters = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(IExternalAdapter).IsAssignableFrom(t) && t.IsClass &&  !t.IsAbstract)).Select(t => Activator.CreateInstance(t)).Cast<IExternalAdapter>().OrderByDescending(a => GetAdapterPriority(a)).ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 		}
 
@@ -68,16 +68,28 @@ namespace UniGit
 
 		#endregion
 
+		private static ExternalAdapterAttribute GetAdapterAttribute(IExternalAdapter adapter)
+		{
+			return adapter.GetType().GetCustomAttributes(typeof(ExternalAdapterAttribute), false).FirstOrDefault() as ExternalAdapterAttribute;
+		}
+
 		private static string GetAdapterName(IExternalAdapter adapter)
 		{
-			ExternalAdapterAttribute attribute = adapter.GetType().GetCustomAttributes(typeof (ExternalAdapterAttribute),false).FirstOrDefault() as ExternalAdapterAttribute;
+			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapter);
 			if (attribute == null) return null;
 			return attribute.FriendlyName;
 		}
 
+		private static int GetAdapterPriority(IExternalAdapter adapter)
+		{
+			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapter);
+			if (attribute == null) return 0;
+			return attribute.Priority;
+		}
+
 		private static bool Exists(IExternalAdapter adapterInfo)
 		{
-			ExternalAdapterAttribute attribute = adapterInfo.GetType().GetCustomAttributes(typeof(ExternalAdapterAttribute), false).FirstOrDefault() as ExternalAdapterAttribute;
+			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapterInfo);
 			if (attribute == null) return false;
 			return attribute.ProcessNames.All(p => ExistsOnPath(p));
 		}

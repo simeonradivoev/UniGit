@@ -349,7 +349,7 @@ namespace UniGit
 			{
 				content = small ? icons.deletedIconSmall : icons.deletedIcon;
 			}
-			return SetupTooltip(content, type) ?? new GUIContent(type.ToString());
+			return content != null ? SetupTooltip(content, type) : GUIContent.none;
 		}
 
 		private static GUIContent SetupTooltip(GUIContent content,FileStatus type)

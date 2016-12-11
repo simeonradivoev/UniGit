@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace UniGit.Adapters
 {
-	[ExternalAdapter("Tortoise Git", "TortoiseGitMerge.exe", "TortoiseGitIDiff.exe", "TortoiseGitProc.exe")]
+	[ExternalAdapter("Tortoise Git", "TortoiseGitMerge.exe", "TortoiseGitIDiff.exe", "TortoiseGitProc.exe",Priority = 10)]
 	public class TortoiseGitAdapter : IExternalAdapter
 	{
 		public bool Push()

@@ -7,6 +7,7 @@ namespace UniGit.Attributes
 	{
 		public string[] ProcessNames { get; private set; }
 		public string FriendlyName { get; private set; }
+		public int Priority { get; set; }
 
 		public ExternalAdapterAttribute(string friendlyName,params string[] processNames)
 		{

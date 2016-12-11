@@ -5,7 +5,7 @@ using UniGit.Attributes;
 
 namespace UniGit.Adapters
 {
-	[ExternalAdapter("Git Extensions", "GitExtensions.exe")]
+	[ExternalAdapter("Git Extensions", "GitExtensions.exe",Priority = 5)]
 	public class GitExtensionsAdapter : IExternalAdapter
 	{
 		public bool Push()
