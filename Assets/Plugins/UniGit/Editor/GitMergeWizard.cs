@@ -1,6 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,10 +26,10 @@ namespace UniGit
 
 		protected override bool DrawWizardGUI()
 		{
-			prune = EditorGUILayout.Toggle(new GUIContent("Prune", "Prune all unreachable objects from the object database"), prune);
-			commitOnSuccess = EditorGUILayout.Toggle(new GUIContent("Commit on success"), commitOnSuccess);
-			fastForwardStrategy = (FastForwardStrategy)EditorGUILayout.EnumPopup(new GUIContent("Fast Forward Strategy"), fastForwardStrategy);
-			mergeFileFavor = (ConflictMergeType)EditorGUILayout.EnumPopup(new GUIContent("File Merge Favor"), mergeFileFavor);
+			prune = EditorGUILayout.Toggle(GitGUI.GetTempContent("Prune", "Prune all unreachable objects from the object database"), prune);
+			commitOnSuccess = EditorGUILayout.Toggle(GitGUI.GetTempContent("Commit on success"), commitOnSuccess);
+			fastForwardStrategy = (FastForwardStrategy)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Fast Forward Strategy"), fastForwardStrategy);
+			mergeFileFavor = (ConflictMergeType)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("File Merge Favor"), mergeFileFavor);
 			return false;
 		}
 

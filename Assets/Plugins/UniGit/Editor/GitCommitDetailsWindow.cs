@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -39,9 +40,9 @@ namespace UniGit
 		public override void OnGUI(Rect rect)
 		{
 			EditorGUILayout.Space();
-			float msgHeight = commitMessageStyle.CalcHeight(new GUIContent(commit.Message), rect.width);
+			float msgHeight = commitMessageStyle.CalcHeight(GitGUI.GetTempContent(commit.Message), rect.width);
 			scroll = EditorGUILayout.BeginScrollView(scroll);
-			EditorGUILayout.LabelField(new GUIContent(commit.Message), commitMessageStyle, GUILayout.Height(msgHeight));
+			EditorGUILayout.LabelField(GitGUI.GetTempContent(commit.Message), commitMessageStyle, GUILayout.Height(msgHeight));
 			if (changes != null)
 			{
 				foreach (var change in changes)
@@ -55,7 +56,7 @@ namespace UniGit
 					for (int i = 0; i < pathChunks.Length; i++)
 					{
 						string chunk = pathChunks[i];
-						if (GUILayout.Button(new GUIContent(chunk), "GUIEditor.BreadcrumbMid"))
+						if (GUILayout.Button(GitGUI.GetTempContent(chunk), "GUIEditor.BreadcrumbMid"))
 						{
 							string assetPath = string.Join("/", pathChunks,0,i+1);
 							if (assetPath.EndsWith(".meta"))

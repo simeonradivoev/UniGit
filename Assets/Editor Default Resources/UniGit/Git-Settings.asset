@@ -21,3 +21,4 @@ MonoBehaviour:
   ShowEmptyFolders: 0
   GitStatusMultithreaded: 1
   UseGavatar: 1
+  MaxCommitTextAreaSize: 120

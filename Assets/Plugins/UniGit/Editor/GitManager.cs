@@ -202,6 +202,7 @@ namespace UniGit
 			{
 				if (Settings.GitStatusMultithreaded)
 				{
+					EditorApplication.LockReloadAssemblies();
 					ThreadPool.QueueUserWorkItem(ReteriveStatusThreaded, paths);
 				}
 				else
@@ -254,6 +255,7 @@ namespace UniGit
 			RebuildStatus(paths);
 			GitProfilerProxy.EndSample();
 			if (updateRepository != null) updateRepository.Invoke(status, paths);
+			EditorApplication.LockReloadAssemblies();
 			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 		}
 
@@ -267,6 +269,7 @@ namespace UniGit
 				actionQueue.Enqueue(() =>
 				{
 					if (updateRepository != null) updateRepository.Invoke(status, paths);
+					EditorApplication.LockReloadAssemblies();
 					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 				});
 			}
@@ -277,6 +280,7 @@ namespace UniGit
 			finally
 			{
 				Monitor.Exit(statusRetriveLock);
+				actionQueue.Enqueue(EditorApplication.UnlockReloadAssemblies);
 			}
 		}
 
@@ -296,6 +300,7 @@ namespace UniGit
 			finally
 			{
 				Monitor.Exit(statusTreeLock);
+				actionQueue.Enqueue(EditorApplication.UnlockReloadAssemblies);
 			}
 		}
 

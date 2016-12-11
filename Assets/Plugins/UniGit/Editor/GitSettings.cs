@@ -23,8 +23,10 @@ namespace UniGit
 		public bool ShowEmptyFolders = false;
 		[Tooltip("Should Git status retrieval be multithreaded.")]
 		public bool GitStatusMultithreaded = true;
-		[Tooltip("Load Gavatars based on the committer's email address")]
+		[Tooltip("Load Gavatars based on the committer's email address.")]
 		public bool UseGavatar = true;
+		[Tooltip("The maximum height the commit text area can expand to.")]
+		public float MaxCommitTextAreaSize = 120;
 
 		[Flags]
 		[SerializeField]
