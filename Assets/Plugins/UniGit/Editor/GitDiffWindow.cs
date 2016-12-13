@@ -14,7 +14,6 @@ using UnityEngine;
 using Utils.Extensions;
 using Object = UnityEngine.Object;
 using Debug = UnityEngine.Debug;
-using TextEditor = UnityEditor.UI.TextEditor;
 
 namespace UniGit
 {

@@ -177,6 +177,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusEntry.cs">
       <Link>GitStatusEntry.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitGUI.cs">
+      <Link>GitGUI.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitProfilerProxy.cs">
       <Link>GitProfilerProxy.cs</Link>
     </Compile>
