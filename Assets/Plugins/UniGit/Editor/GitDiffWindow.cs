@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
@@ -37,9 +38,14 @@ namespace UniGit
 		private const string CommitMessageKey = "UniGitCommitMessage";
 		private const string CommitMessageUndoGroup = "Commit Message Change";
 
-		private SerializedObject editoSerializedObject;
 		[SerializeField] private Vector2 diffScroll;
 		[SerializeField] public string commitMessage;
+		[SerializeField] private bool commitMessageDirty;
+		[SerializeField] private bool commitMaximized = true;
+		[SerializeField] private string filter = "";
+		[SerializeField] private Vector2 commitScroll;
+
+		private SerializedObject editoSerializedObject;
 		private Rect commitsRect;
 		private Styles styles;
 		[SerializeField] private Settings settings;
@@ -49,9 +55,6 @@ namespace UniGit
 		//cached data path for threading purposes
 		private static string cachedDataPath;
 		private char commitMessageLastChar;
-		[SerializeField] private bool commitMaximized = true;
-		[SerializeField] private string filter = "";
-		[SerializeField] private Vector2 commitScroll;
 
 		[Serializable]
 		public class Settings
@@ -81,7 +84,7 @@ namespace UniGit
 			base.OnEnable();
 			editoSerializedObject = new SerializedObject(this);
 			if (settings == null) settings = new Settings();
-			commitMessage = EditorPrefs.GetString(CommitMessageKey);
+			ReadCommitMessage();
 			if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
 			{
 				Undo.RegisterFullObjectHierarchyUndo(this, "Commit Message Changed");
@@ -112,7 +115,15 @@ namespace UniGit
 
 		protected override void OnEditorUpdate()
 		{
-			
+			if (commitMessageDirty)
+			{
+				//save commit message on every major event
+				if ((EditorApplication.isCompiling && EditorApplication.isUpdating && !EditorApplication.isPlaying && EditorApplication.isPlayingOrWillChangePlaymode && commitMessageDirty))
+				{
+					Debug.Log("Saved Commit Message In Update");
+					SaveCommitMessage();
+				}
+			}
 		}
 
 		private void CreateStatusListThreaded(object param)
@@ -216,10 +227,11 @@ namespace UniGit
 			if (!commitMaximized)
 			{
 				EditorGUI.BeginChangeCheck();
+				GUI.SetNextControlName("Commit Message Field");
 				commitMessage = EditorGUILayout.TextArea(commitMessage, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 				if (EditorGUI.EndChangeCheck())
 				{
-					SaveCommitMessage();
+					commitMessageDirty = true;
 				}
 			}
 			EditorGUILayout.EndHorizontal();
@@ -227,6 +239,7 @@ namespace UniGit
 			{
 				commitScroll = EditorGUILayout.BeginScrollView(commitScroll, GUILayout.Height(CalculateCommitTextHeight()));
 				EditorGUI.BeginChangeCheck();
+				GUI.SetNextControlName("Commit Message Field");
 				string newCommitMessage = EditorGUILayout.TextArea(commitMessage,GUILayout.ExpandHeight(true));
 				if (EditorGUI.EndChangeCheck())
 				{
@@ -240,10 +253,17 @@ namespace UniGit
 					commitMessageLastChar = Event.current.character;
 					Undo.RecordObject(this, CommitMessageUndoGroup);
 					commitMessage = newCommitMessage;
-					SaveCommitMessage();
+					commitMessageDirty = true;
 				}
 				EditorGUILayout.EndScrollView();
 			}
+
+			if (commitMessageDirty && GUI.GetNameOfFocusedControl() != "Commit Message Field")
+			{
+				Debug.Log("Commit Message saved in GUI");
+				SaveCommitMessage();
+			}
+
 			EditorGUILayout.BeginHorizontal();
 			
 			if (GUILayout.Button(GitGUI.GetTempContent("Commit"), "DropDownButton"))
@@ -259,7 +279,16 @@ namespace UniGit
 					commitMenu.AddDisabledItem(new GUIContent("Commit And Push"));
 				}
 				commitMenu.AddSeparator("");
-				commitMenu.AddItem(new GUIContent("Clear Message"),false, ClearCommitMessage);
+				commitMenu.AddItem(new GUIContent("Commit Message/Clear"),false, ClearCommitMessage);
+				if (File.Exists(CommitMessageFilePath))
+				{
+					commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
+				}
+				else
+				{
+					commitMenu.AddDisabledItem(new GUIContent("Commit Message/Open File"));
+				}
+				commitMenu.AddItem(new GUIContent("Commit Message/Reload"),false,ReadCommitMessage);
 				commitMenu.ShowAsContext();
 			}
 			GUI.enabled = !GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit);
@@ -313,6 +342,14 @@ namespace UniGit
 				settings.amendCommit = false;
 			}
 			return false;
+		}
+
+		private void OpenCommitMessageFile()
+		{
+			if (File.Exists(CommitMessageFilePath))
+			{
+				System.Diagnostics.Process.Start(CommitMessageFilePath);
+			}
 		}
 
 		private void ClearCommitMessage()
@@ -671,9 +708,63 @@ namespace UniGit
 			return settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State)) && (entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.Contains(filter));
 		}
 
+		private void ReadCommitMessage()
+		{
+			//load commit from previous versions and remove the key
+			if (EditorPrefs.HasKey(CommitMessageKey))
+			{
+				commitMessage = EditorPrefs.GetString(CommitMessageKey);
+				EditorPrefs.DeleteKey(CommitMessageKey);
+			}
+			else
+			{
+				if (File.Exists(CommitMessageFilePath))
+				{
+					using (var commiFileStream = File.Open(CommitMessageFilePath, FileMode.Open, FileAccess.Read))
+					using (var reader = new StreamReader(commiFileStream))
+					{
+						commitMessage = reader.ReadToEnd();
+					}
+				}
+			}
+		}
+
 		private void SaveCommitMessage()
 		{
-			EditorPrefs.SetString(CommitMessageKey,commitMessage);
+			commitMessageDirty = false;
+
+			try
+			{
+				if (!Directory.Exists(Application.dataPath.Replace("Assets", "UniGit/Settings")))
+				{
+					Directory.CreateDirectory(Application.dataPath.Replace("Assets", "UniGit/Settings"));
+				}
+
+				File.WriteAllText(CommitMessageFilePath,commitMessage);
+			}
+			catch (Exception e)
+			{
+#if UNITY_EDITOR
+				Debug.LogError("Could not save commit message to file. Saving to EditorPrefs");
+				Debug.LogException(e);
+#endif
+
+				EditorPrefs.SetString(CommitMessageKey,commitMessage);
+			}
+		}
+
+		private string CommitMessageFilePath
+		{
+			get { return Application.dataPath.Replace("Assets", "UniGit") + "/Settings/CommitMessage.txt"; }
+		}
+
+		[UsedImplicitly]
+		private void OnDisable()
+		{
+			if (commitMessageDirty)
+			{
+				SaveCommitMessage();
+			}
 		}
 
 		#region Menu Callbacks

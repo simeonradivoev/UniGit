@@ -10,6 +10,7 @@
 /Assets/Plugins/UniGit*
 /Assets/Editor Default Resources/Icons/UniGit*
 /Assets/Editor Default Resources/UniGit*
+/UniGit/
 
 # UniGit credentials file must be ignored if you don't want any passwords or tokens to be stored in git
 Git-Credentials*
