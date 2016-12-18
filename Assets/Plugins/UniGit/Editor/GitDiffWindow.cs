@@ -219,6 +219,8 @@ namespace UniGit
 
 		private void DoCommit(RepositoryInformation repoInfo)
 		{
+			bool forceCommitMessageSave = false;
+
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
@@ -232,6 +234,11 @@ namespace UniGit
 				if (EditorGUI.EndChangeCheck())
 				{
 					commitMessageDirty = true;
+					//save on enter
+					if (Event.current.character == '\n')
+					{
+						forceCommitMessageSave = true;
+					}
 				}
 			}
 			EditorGUILayout.EndHorizontal();
@@ -254,11 +261,16 @@ namespace UniGit
 					Undo.RecordObject(this, CommitMessageUndoGroup);
 					commitMessage = newCommitMessage;
 					commitMessageDirty = true;
+					//save on enter
+					if (Event.current.character == '\n')
+					{
+						forceCommitMessageSave = true;
+					}
 				}
 				EditorGUILayout.EndScrollView();
 			}
 
-			if (commitMessageDirty && GUI.GetNameOfFocusedControl() != "Commit Message Field")
+			if (commitMessageDirty && (GUI.GetNameOfFocusedControl() != "Commit Message Field" || forceCommitMessageSave))
 			{
 				SaveCommitMessage();
 			}
@@ -728,6 +740,8 @@ namespace UniGit
 					}
 				}
 			}
+
+			GUI.FocusControl("");
 		}
 
 		private void SaveCommitMessage()
