@@ -102,7 +102,7 @@ namespace UniGit
 			}
 		}
 
-		protected override void OnGitUpdate(GitRepoStatus status)
+		protected override void OnGitUpdate(GitRepoStatus status,string[] path)
 		{
 			ThreadPool.QueueUserWorkItem(UpdateChachesThreaded, status);
 		}

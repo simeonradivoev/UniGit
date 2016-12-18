@@ -37,7 +37,7 @@ namespace UniGit
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
 			if (initilized == null || !GitManager.IsValidRepo) return;
-			OnGitUpdate(status);
+			OnGitUpdate(status, paths);
 			Repaint();
 		}
 
@@ -75,7 +75,7 @@ namespace UniGit
 
 		#endregion
 
-		protected abstract void OnGitUpdate(GitRepoStatus status);
+		protected abstract void OnGitUpdate(GitRepoStatus status,string[] paths);
 		protected abstract void OnInitialize();
 		protected abstract void OnRepositoryLoad(Repository repository);
 		protected abstract void OnEditorUpdate();

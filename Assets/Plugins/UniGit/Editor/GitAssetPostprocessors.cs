@@ -14,7 +14,7 @@ namespace UniGit
 			private static string[] OnWillSaveAssets(string[] paths)
 			{
 				if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return paths;
-				if (GitManager.Settings != null && GitManager.Settings.AutoStage && paths != null && paths.Length > 0)
+				if (GitManager.Settings != null && GitManager.Settings.AutoStage && GitManager.Repository != null && paths != null && paths.Length > 0)
 				{
 					string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))).ToArray();
 					if (pathsFinal.Length > 0)

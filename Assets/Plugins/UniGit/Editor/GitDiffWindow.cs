@@ -92,7 +92,7 @@ namespace UniGit
 			cachedDataPath = Application.dataPath;
 		}
 
-		protected override void OnGitUpdate(GitRepoStatus status)
+		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
 			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, status);
 		}
@@ -100,7 +100,7 @@ namespace UniGit
 		private void UpdateStatusList()
 		{
 			if(GitManager.Repository == null) return;
-			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded);
+			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, GitManager.LastStatus);
 		}
 
 		protected override void OnInitialize()
@@ -131,20 +131,8 @@ namespace UniGit
 			Monitor.Enter(statusListLock);
 			try
 			{
-				GitRepoStatus status;
-				if (param is GitRepoStatus)
-				{
-					status = (GitRepoStatus) param;
-				}
-				else if(GitManager.LastStatus != null)
-				{
-					status = GitManager.LastStatus;
-				}
-				else
-				{
-					status = new GitRepoStatus(GitManager.Repository.RetrieveStatus());
-				}
-				statusList = new StatusList(status, settings.showFileStatusTypeFilter,settings.sortType,settings.sortDir);
+				GitRepoStatus status = (GitRepoStatus)param ?? new GitRepoStatus(GitManager.Repository.RetrieveStatus());
+				statusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir);
 				GitManager.ActionQueue.Enqueue(Repaint);
 			}
 			catch (Exception e)
@@ -1014,40 +1002,65 @@ namespace UniGit
 				BuildList(enumerable, filter);
 			}
 
-			private void BuildList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter)
+			public void Update(IEnumerable<GitStatusEntry> enumerable,string[] paths, FileStatus fileStatus,SortType sortType,SortDir sortDir)
 			{
-				foreach (var entry in enumerable.Where(e => filter.IsFlagSet(e.Status)))
+				this.sortType = sortType;
+				this.sortDir = sortDir;
+
+				entires.RemoveAll(e => paths.Contains(e.Path.EndsWith(".meta") ? AssetDatabase.GetAssetPathFromTextMetaFilePath(e.Path) : e.Path));
+
+				var entries = enumerable as GitStatusEntry[] ?? enumerable.ToArray();
+				foreach (var path in paths)
 				{
-					if (entry.Path.EndsWith(".meta"))
+					var p = path;
+					foreach (var entry in entries.Where(e => e.Path.StartsWith(p) && fileStatus.IsFlagSet(e.Status)))
 					{
-						string mainAssetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(entry.Path);
-						if (!GitManager.Settings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) continue;;
-						
-						StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
-						if (ent != null)
-						{
-							ent.MetaChange |= MetaChangeEnum.Meta;
-						}
-						else
-						{
-							entires.Add(new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta));
-						}
-					}
-					else
-					{
-						StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.Path);
-						if (ent != null)
-						{
-							ent.State = entry.Status;
-						}
-						else
-						{
-							entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
-						}
+						Add(entry);
 					}
 				}
 
 				entires.Sort(SortHandler);
+			}
+
+			private void BuildList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter)
+			{
+				foreach (var entry in enumerable.Where(e => filter.IsFlagSet(e.Status)))
+				{
+					Add(entry);
+				}
+
+				entires.Sort(SortHandler);
+			}
+
+			private void Add(GitStatusEntry entry)
+			{
+				if (entry.Path.EndsWith(".meta"))
+				{
+					string mainAssetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(entry.Path);
+					if (!GitManager.Settings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) return;
+
+					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
+					if (ent != null)
+					{
+						ent.MetaChange |= MetaChangeEnum.Meta;
+					}
+					else
+					{
+						entires.Add(new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta));
+					}
+				}
+				else
+				{
+					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.Path);
+					if (ent != null)
+					{
+						ent.State = entry.Status;
+					}
+					else
+					{
+						entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
+					}
+				}
 			}
 
 			private int SortHandler(StatusListEntry left, StatusListEntry right)

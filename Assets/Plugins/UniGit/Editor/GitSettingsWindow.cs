@@ -36,7 +36,7 @@ namespace UniGit
 			base.OnFocus();
 			LoseFocus();
 			if (!GitManager.IsValidRepo) return;
-			OnGitUpdate(null);
+			OnGitUpdate(null,null);
 		}
 
 		[UsedImplicitly]
@@ -48,7 +48,7 @@ namespace UniGit
 		protected override void OnInitialize()
 		{
 			serializedSettings = new SerializedObject(GitManager.Settings);
-			OnGitUpdate(null);
+			OnGitUpdate(null,null);
 		}
 
 		protected override void OnRepositoryLoad(Repository repository)
@@ -56,7 +56,7 @@ namespace UniGit
 			Repaint();
 		}
 
-		protected override void OnGitUpdate(GitRepoStatus status)
+		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
 			if(GitManager.Repository == null) return;
 			UpdateRemotes();
