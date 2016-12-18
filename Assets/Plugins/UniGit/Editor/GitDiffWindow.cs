@@ -260,7 +260,6 @@ namespace UniGit
 
 			if (commitMessageDirty && GUI.GetNameOfFocusedControl() != "Commit Message Field")
 			{
-				Debug.Log("Commit Message saved in GUI");
 				SaveCommitMessage();
 			}
 
@@ -715,6 +714,8 @@ namespace UniGit
 			{
 				commitMessage = EditorPrefs.GetString(CommitMessageKey);
 				EditorPrefs.DeleteKey(CommitMessageKey);
+
+				SaveCommitMessage();
 			}
 			else
 			{
