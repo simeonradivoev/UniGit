@@ -18,7 +18,7 @@ namespace UniGit
 		public string CredentialsManager;
 		[Tooltip("The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit")]
 		[Delayed]
-		public int ProjectStatusOverlayDepth = 1;
+		public int ProjectStatusOverlayDepth = 2;
 		[Tooltip("Show status for empty folder meta files and auto stage them is Auto stage is enabled.")]
 		public bool ShowEmptyFolders = false;
 		[Tooltip("Should Git status retrieval be multithreaded.")]

@@ -120,14 +120,23 @@ namespace UniGit
 				//update selected branch
 				UpdateSelectedBranch();
 
+				int commitCount = 0;
 				if (selectedBranch != null)
 				{
 					//update commits and limit them depending on settings
-					cachedCommits = (GitManager.Settings.MaxCommits >= 0 ? selectedBranch.LoadBranch().Commits.Take(GitManager.Settings.MaxCommits) : selectedBranch.LoadBranch().Commits).Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
-
-					commitRects = new Rect[cachedCommits.Length];
+					var loadedBranch = selectedBranch.LoadBranch();
+					if (loadedBranch != null && loadedBranch.Commits != null)
+					{
+						IEnumerable<Commit> commits = GitManager.Settings.MaxCommits >= 0 ? loadedBranch.Commits.Take(GitManager.Settings.MaxCommits) : loadedBranch.Commits;
+						if (commits != null)
+						{
+							cachedCommits = commits.Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+							commitCount = cachedCommits.Length;
+						}
+					}
 				}
 
+				commitRects = new Rect[commitCount];
 				hasConflicts = status.Any(s => s.Status == FileStatus.Conflicted);
 				GitManager.ActionQueue.Enqueue(UpdateGitStatusIcon);
 				GitManager.ActionQueue.Enqueue(Repaint);
@@ -819,7 +828,11 @@ namespace UniGit
 
 			public Branch LoadBranch()
 			{
-				return GitManager.Repository.Branches[CanonicalName];
+				if (GitManager.Repository != null && GitManager.Repository.Branches != null)
+				{
+					return GitManager.Repository.Branches[CanonicalName];
+				}
+				return null;
 			}
 		}
 
