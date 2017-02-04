@@ -19,10 +19,11 @@ namespace UniGit
 
 			EditorApplication.update -= OnEditorUpdateInternal;
 			EditorApplication.update += OnEditorUpdateInternal;
-			GitManager.updateRepository -= OnGitManagerUpdateInternal;
-			GitManager.updateRepository += OnGitManagerUpdateInternal;
-			GitManager.onRepositoryLoad -= OnRepositoryLoad;
-			GitManager.onRepositoryLoad += OnRepositoryLoad;
+
+			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			GitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
+			GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
+			GitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
 		}
 
 		protected virtual void OnFocus()

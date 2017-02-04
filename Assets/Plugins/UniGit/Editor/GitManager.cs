@@ -23,14 +23,12 @@ namespace UniGit
 		private static string repoPathCached;
 		public static string RepoPath { get { return repoPathCached; } }
 
-		public static event Action<GitRepoStatus, string[]> updateRepository;
 		private static Repository repository;
 		private static StatusTreeClass statusTree;
 		private static GitCredentials gitCredentials;
 		private static GitSettings gitSettings;
 		internal static Icons icons;
 		private static bool needsFetch;
-		public static event Action<Repository> onRepositoryLoad;
 		private readonly static Queue<Action> actionQueue = new Queue<Action>();
 		private static GitRepoStatus status;
 		private static object statusTreeLock = new object();
@@ -195,7 +193,7 @@ namespace UniGit
 			{
 				if (repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
-				if (onRepositoryLoad != null) onRepositoryLoad.Invoke(repository);
+				GitCallbacks.IssueOnRepositoryLoad(repository);
 			}
 
 			if (repository != null)
@@ -253,7 +251,7 @@ namespace UniGit
 			GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 			RebuildStatus(paths);
 			GitProfilerProxy.EndSample();
-			if (updateRepository != null) updateRepository.Invoke(status, paths);
+			GitCallbacks.IssueUpdateRepository(status,paths);
 			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 		}
 
@@ -266,7 +264,7 @@ namespace UniGit
 				RebuildStatus(paths);
 				actionQueue.Enqueue(() =>
 				{
-					if (updateRepository != null) updateRepository.Invoke(status, paths);
+					GitCallbacks.IssueUpdateRepository(status, paths);
 					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 				});
 			}
