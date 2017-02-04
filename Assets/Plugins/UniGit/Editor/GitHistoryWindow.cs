@@ -301,28 +301,40 @@ namespace UniGit
 			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("CollabPull").image, "Pull", hasConflicts ? "Must resolve conflicts before pulling" : "Pull changes from remote repository by fetching them and then merging them. This is the same as calling Fetch then Merge."), "toolbarbutton"))
 			{
 				Branch branch = selectedBranch.LoadBranch();
-				if (GitExternalManager.TakePull())
+				if (branch != null)
 				{
-					AssetDatabase.Refresh();
-					GitManager.MarkDirty();
+					if (GitExternalManager.TakePull())
+					{
+						AssetDatabase.Refresh();
+						GitManager.MarkDirty();
+					}
+					else
+					{
+						ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(branch);
+					}
 				}
-				else
-				{
-					ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(branch);
-				}
+				else Debug.LogError("Could Not Load Branch");
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("UniGit/GitFetch").image, "Fetch", "Get changes from remote repository but do not merge them."), "toolbarbutton"))
 			{
 				Branch branch = selectedBranch.LoadBranch();
-				if (GitExternalManager.TakeFetch(branch.Remote.Name))
+				if (branch != null)
 				{
-					GitManager.MarkDirty();
+					if (branch.Remote != null)
+					{
+						if (GitExternalManager.TakeFetch(branch.Remote.Name))
+						{
+							GitManager.MarkDirty();
+						}
+						else
+						{
+							ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
+						}
+					}
+					else Debug.LogError("Branch does not have a remote");
 				}
-				else
-				{
-					ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
-				}
+				else Debug.LogError("Could not Load Branch");
 			}
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("UniGit/GitMerge").image, "Merge", hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), "toolbarbutton"))
