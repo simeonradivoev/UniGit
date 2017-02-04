@@ -17,8 +17,8 @@ namespace UniGit
 		{
 			titleContent.image = GitManager.GetGitStatusIcon();
 
-			EditorApplication.update -= OnEditorUpdateInternal;
-			EditorApplication.update += OnEditorUpdateInternal;
+			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
+			GitCallbacks.EditorUpdate += OnEditorUpdateInternal;
 
 			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 			GitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
@@ -63,6 +63,13 @@ namespace UniGit
 			{
 				OnEditorUpdate();
 			}
+		}
+
+		protected void OnDestroy()
+		{
+			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
+			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
 		}
 
 		#region Safe Controlls

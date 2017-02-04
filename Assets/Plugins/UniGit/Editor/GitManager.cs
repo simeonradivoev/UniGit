@@ -31,8 +31,8 @@ namespace UniGit
 		private static bool needsFetch;
 		private readonly static Queue<Action> actionQueue = new Queue<Action>();
 		private static GitRepoStatus status;
-		private static object statusTreeLock = new object();
-		private static object statusRetriveLock = new object();
+		private static readonly object statusTreeLock = new object();
+		private static readonly object statusRetriveLock = new object();
 		private static bool repositoryDirty;
 		private static bool reloadDirty;
 		private static readonly List<string> dirtyFiles = new List<string>(); 
@@ -130,7 +130,7 @@ namespace UniGit
 
 			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 			repositoryDirty = true;
-			EditorApplication.update += OnEditorUpdate;
+			GitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
 
 		internal static void OnEditorUpdate()
