@@ -236,14 +236,23 @@ namespace UniGit
 			{
 				foreach (var path in paths)
 				{
-					status.Update(path, repository.RetrieveStatus(path));
+					status.Update(path,repository.RetrieveStatus(path));
 				}
 			}
 			else
 			{
-				status = new GitRepoStatus(repository.RetrieveStatus());
+				status = new GitRepoStatus(repository.RetrieveStatus(GetStatusOptions()));
 			}
 			
+		}
+
+		private static StatusOptions GetStatusOptions()
+		{
+			return new StatusOptions()
+			{
+				DetectRenamesInIndex = Settings.DetectRenames,
+				DetectRenamesInWorkDir = Settings.DetectRenames
+			};
 		}
 
 		private static void RetreiveStatus(string[] paths)

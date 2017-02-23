@@ -181,6 +181,7 @@ namespace UniGit
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("GitStatusMultithreaded"));
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("UseGavatar"));
 				EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommitTextAreaSize"));
+				EditorGUILayout.PropertyField(serializedSettings.FindProperty("DetectRenames"));
 				if (serializedSettings.ApplyModifiedProperties())
 				{
 					GitManager.MarkDirty();

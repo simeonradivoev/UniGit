@@ -27,6 +27,8 @@ namespace UniGit
 		public bool UseGavatar = true;
 		[Tooltip("The maximum height the commit text area can expand to.")]
 		public float MaxCommitTextAreaSize = 120;
+		[Tooltip("Detect Renames")]
+		public bool DetectRenames = true;
 
 		[Flags]
 		[SerializeField]
