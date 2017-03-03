@@ -39,8 +39,6 @@ namespace UniGit
 		private const string CommitMessageUndoGroup = "Commit Message Change";
 
 		[SerializeField] private Vector2 diffScroll;
-		[SerializeField] public string commitMessage;
-		[SerializeField] private bool commitMessageDirty;
 		[SerializeField] private bool commitMaximized = true;
 		[SerializeField] private string filter = "";
 		[SerializeField] private Vector2 commitScroll;
@@ -66,6 +64,10 @@ namespace UniGit
 			public bool emptyCommit;
 			public bool amendCommit;
 			public bool prettify;
+			public bool readFromFile;
+			public string commitMessage;
+			public string commitMessageFromFile;
+			public DateTime lastMessageUpdate;
 		}
 
 		private class Styles
@@ -85,6 +87,7 @@ namespace UniGit
 			editoSerializedObject = new SerializedObject(this);
 			if (settings == null) settings = new Settings();
 			ReadCommitMessage();
+			ReadCommitMessageFromFile();
 			if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
 			{
 				Undo.RegisterFullObjectHierarchyUndo(this, "Commit Message Changed");
@@ -115,15 +118,7 @@ namespace UniGit
 
 		protected override void OnEditorUpdate()
 		{
-			if (commitMessageDirty)
-			{
-				//save commit message on every major event
-				if ((EditorApplication.isCompiling && EditorApplication.isUpdating && !EditorApplication.isPlaying && EditorApplication.isPlayingOrWillChangePlaymode && commitMessageDirty))
-				{
-					Debug.Log("Saved Commit Message In Update");
-					SaveCommitMessage();
-				}
-			}
+			
 		}
 
 		private void CreateStatusListThreaded(object param)
@@ -157,6 +152,20 @@ namespace UniGit
 		{
 			base.OnFocus();
 			GUI.FocusControl(null);
+
+			if (settings.readFromFile)
+			{
+				if (File.Exists(CommitMessageFilePath))
+				{
+					var lastWriteTime = File.GetLastWriteTime(CommitMessageFilePath);
+					if (lastWriteTime.CompareTo(settings.lastMessageUpdate) != 0)
+					{
+						settings.lastMessageUpdate = lastWriteTime;
+						ReadCommitMessageFromFile();
+						EditorGUI.FocusTextInControl("");
+					}
+				}
+			}
 		}
 
 		private void CreateStyles()
@@ -207,60 +216,57 @@ namespace UniGit
 
 		private void DoCommit(RepositoryInformation repoInfo)
 		{
-			bool forceCommitMessageSave = false;
-
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
 				GUILayout.Label(GitGUI.GetTempContent("Merge"), "AssetLabel");
-			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent("Commit Message: "), "IN Foldout",GUILayout.Width(116));
+			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(settings.readFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), "IN Foldout",GUILayout.Width(settings.readFromFile ? 210 : 116));
 			if (!commitMaximized)
 			{
-				EditorGUI.BeginChangeCheck();
-				GUI.SetNextControlName("Commit Message Field");
-				commitMessage = EditorGUILayout.TextArea(commitMessage, GUILayout.Height(EditorGUIUtility.singleLineHeight));
-				if (EditorGUI.EndChangeCheck())
+				if (!settings.readFromFile)
 				{
-					commitMessageDirty = true;
-					//save on enter
-					if (Event.current.character == '\n')
+					EditorGUI.BeginChangeCheck();
+					GUI.SetNextControlName("Commit Message Field");
+					settings.commitMessage = EditorGUILayout.TextArea(settings.commitMessage, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+					if (EditorGUI.EndChangeCheck())
 					{
-						forceCommitMessageSave = true;
+						SaveCommitMessage();
 					}
+				}
+				else
+				{
+					GUILayout.Label(new GUIContent(settings.commitMessageFromFile), GUI.skin.textArea, GUILayout.ExpandHeight(true));
 				}
 			}
 			EditorGUILayout.EndHorizontal();
 			if (commitMaximized)
 			{
 				commitScroll = EditorGUILayout.BeginScrollView(commitScroll, GUILayout.Height(CalculateCommitTextHeight()));
-				EditorGUI.BeginChangeCheck();
-				GUI.SetNextControlName("Commit Message Field");
-				string newCommitMessage = EditorGUILayout.TextArea(commitMessage,GUILayout.ExpandHeight(true));
-				if (EditorGUI.EndChangeCheck())
+				if (!settings.readFromFile)
 				{
-					if ((Event.current.character == ' ' || Event.current.character == '\0') && !(commitMessageLastChar == ' ' || commitMessageLastChar == '\0'))
+					EditorGUI.BeginChangeCheck();
+					GUI.SetNextControlName("Commit Message Field");
+					string newCommitMessage = EditorGUILayout.TextArea(settings.commitMessage, GUILayout.ExpandHeight(true));
+					if (EditorGUI.EndChangeCheck())
 					{
-						if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
+						if ((Event.current.character == ' ' || Event.current.character == '\0') && !(commitMessageLastChar == ' ' || commitMessageLastChar == '\0'))
 						{
-							Undo.IncrementCurrentGroup();
+							if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
+							{
+								Undo.IncrementCurrentGroup();
+							}
 						}
-					}
-					commitMessageLastChar = Event.current.character;
-					Undo.RecordObject(this, CommitMessageUndoGroup);
-					commitMessage = newCommitMessage;
-					commitMessageDirty = true;
-					//save on enter
-					if (Event.current.character == '\n')
-					{
-						forceCommitMessageSave = true;
+						commitMessageLastChar = Event.current.character;
+						Undo.RecordObject(this, CommitMessageUndoGroup);
+						settings.commitMessage = newCommitMessage;
+						SaveCommitMessage();
 					}
 				}
+				else
+				{
+					GUILayout.Label(new GUIContent(settings.commitMessageFromFile), GUI.skin.textArea,GUILayout.ExpandHeight(true));
+				}
 				EditorGUILayout.EndScrollView();
-			}
-
-			if (commitMessageDirty && (GUI.GetNameOfFocusedControl() != "Commit Message Field" || forceCommitMessageSave))
-			{
-				SaveCommitMessage();
 			}
 
 			EditorGUILayout.BeginHorizontal();
@@ -279,6 +285,7 @@ namespace UniGit
 				}
 				commitMenu.AddSeparator("");
 				commitMenu.AddItem(new GUIContent("Commit Message/Clear"),false, ClearCommitMessage);
+				commitMenu.AddItem(new GUIContent("Commit Message/Read from file"),settings.readFromFile, ToggleReadFromFile);
 				if (File.Exists(CommitMessageFilePath))
 				{
 					commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
@@ -296,9 +303,19 @@ namespace UniGit
 			settings.amendCommit = GUILayout.Toggle(settings.amendCommit, GitGUI.GetTempContent("Amend Commit", "Amend previous commit."));
 			if (EditorGUI.EndChangeCheck())
 			{
-				if (settings.amendCommit && string.IsNullOrEmpty(commitMessage))
+				if (settings.amendCommit)
 				{
-					commitMessage = GitManager.Repository.Head.Tip.Message;
+					if (string.IsNullOrEmpty(settings.commitMessage))
+					{
+						settings.commitMessage = GitManager.Repository.Head.Tip.Message;
+						SaveCommitMessage();
+					}
+
+					if (string.IsNullOrEmpty(settings.commitMessageFromFile))
+					{
+						settings.commitMessageFromFile = GitManager.Repository.Head.Tip.Message;
+						SaveCommitMessageToFile();
+					}
 				}
 			}
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
@@ -310,6 +327,7 @@ namespace UniGit
 
 		private float CalculateCommitTextHeight()
 		{
+			string commitMessage = GetActiveCommitMessage(false);
 			return Mathf.Clamp(GUI.skin.textArea.CalcHeight(GitGUI.GetTempContent(commitMessage), position.width) + EditorGUIUtility.singleLineHeight, 50, GitManager.Settings.MaxCommitTextAreaSize);
 		}
 
@@ -318,6 +336,7 @@ namespace UniGit
 			Signature signature = GitManager.Signature;
 			try
 			{
+				string commitMessage = GetActiveCommitMessage(true);
 				if (!GitExternalManager.TakeCommit(commitMessage))
 				{
 					GitProfilerProxy.BeginSample("Git Commit");
@@ -335,12 +354,46 @@ namespace UniGit
 			finally
 			{
 				GUI.FocusControl("");
-				commitMessage = string.Empty;
-				SaveCommitMessage();
+				ClearCommitMessage();
 				//reset amend commit so the user will have to enable it again to load the last commit message
 				settings.amendCommit = false;
 			}
 			return false;
+		}
+
+		private string GetActiveCommitMessage(bool forceUpdate)
+		{
+			if (settings.readFromFile)
+			{
+				if (forceUpdate)
+				{
+					ReadCommitMessageFromFile();
+				}
+				return settings.commitMessageFromFile;
+				
+			}
+			else
+			{
+				if (forceUpdate)
+				{
+					ReadCommitMessage();
+				}
+				return settings.commitMessage;
+			}
+		}
+
+		private void ToggleReadFromFile()
+		{
+			if (settings.readFromFile)
+			{
+				settings.readFromFile = false;
+				ReadCommitMessage();
+			}
+			else
+			{
+				settings.readFromFile = true;
+				ReadCommitMessageFromFile();
+			}
 		}
 
 		private void OpenCommitMessageFile()
@@ -353,7 +406,9 @@ namespace UniGit
 
 		private void ClearCommitMessage()
 		{
-			commitMessage = string.Empty;
+			settings.commitMessage = string.Empty;
+			settings.commitMessageFromFile = string.Empty;
+			SaveCommitMessageToFile();
 			SaveCommitMessage();
 		}
 
@@ -707,35 +762,40 @@ namespace UniGit
 			return settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State)) && (entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.Contains(filter));
 		}
 
+		private void ReadCommitMessageFromFile()
+		{
+			if (File.Exists(CommitMessageFilePath))
+			{
+				using (var commiFileStream = File.Open(CommitMessageFilePath, FileMode.Open, FileAccess.Read))
+				using (var reader = new StreamReader(commiFileStream))
+				{
+					settings.commitMessageFromFile = reader.ReadToEnd();
+				}
+			}
+			else
+			{
+				Debug.LogWarning("Commit message file missing. Creating new file.");
+				SaveCommitMessageToFile();
+			}
+		}
+
 		private void ReadCommitMessage()
 		{
 			//load commit from previous versions and remove the key
 			if (EditorPrefs.HasKey(CommitMessageKey))
 			{
-				commitMessage = EditorPrefs.GetString(CommitMessageKey);
-				EditorPrefs.DeleteKey(CommitMessageKey);
-
-				SaveCommitMessage();
+				settings.commitMessage = EditorPrefs.GetString(CommitMessageKey);
 			}
 			else
 			{
-				if (File.Exists(CommitMessageFilePath))
-				{
-					using (var commiFileStream = File.Open(CommitMessageFilePath, FileMode.Open, FileAccess.Read))
-					using (var reader = new StreamReader(commiFileStream))
-					{
-						commitMessage = reader.ReadToEnd();
-					}
-				}
+				settings.commitMessage = "";
 			}
 
 			GUI.FocusControl("");
 		}
 
-		private void SaveCommitMessage()
+		private void SaveCommitMessageToFile()
 		{
-			commitMessageDirty = false;
-
 			try
 			{
 				if (!Directory.Exists(Application.dataPath.Replace("Assets", "UniGit/Settings")))
@@ -743,7 +803,7 @@ namespace UniGit
 					Directory.CreateDirectory(Application.dataPath.Replace("Assets", "UniGit/Settings"));
 				}
 
-				File.WriteAllText(CommitMessageFilePath,commitMessage);
+				File.WriteAllText(CommitMessageFilePath, settings.commitMessageFromFile);
 			}
 			catch (Exception e)
 			{
@@ -751,9 +811,17 @@ namespace UniGit
 				Debug.LogError("Could not save commit message to file. Saving to EditorPrefs");
 				Debug.LogException(e);
 #endif
-
-				EditorPrefs.SetString(CommitMessageKey,commitMessage);
 			}
+		}
+
+		private void SaveCommitMessage()
+		{
+			EditorPrefs.SetString(CommitMessageKey, settings.commitMessage);
+		}
+
+		public void SetCommitMessage(string commitMessage)
+		{
+			settings.commitMessage = commitMessage;
 		}
 
 		private string CommitMessageFilePath
@@ -764,7 +832,7 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnDisable()
 		{
-			if (commitMessageDirty)
+			if (!settings.readFromFile)
 			{
 				SaveCommitMessage();
 			}

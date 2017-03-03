@@ -15,7 +15,14 @@ namespace UniGit
 		protected override void OnEnable()
 		{
 			base.OnEnable();
-			fetchOptions = new FetchOptions() { CredentialsProvider = CredentialsHandler, OnProgress = FetchProgress, OnTransferProgress = GitManager.FetchTransferProgressHandler, Prune = prune, RepositoryOperationCompleted = FetchOperationCompleted, RepositoryOperationStarting = FetchOperationStarting };
+			fetchOptions = new FetchOptions()
+			{
+				CredentialsProvider = CredentialsHandler,
+				OnProgress = FetchProgress,
+				OnTransferProgress = GitManager.FetchTransferProgressHandler,
+				Prune = prune, RepositoryOperationCompleted = FetchOperationCompleted,
+				RepositoryOperationStarting = FetchOperationStarting 
+			};
 		}
 
 		protected override bool DrawWizardGUI()

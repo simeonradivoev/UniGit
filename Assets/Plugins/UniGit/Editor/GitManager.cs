@@ -140,15 +140,10 @@ namespace UniGit
 				try
 				{
 					needsFetch = AutoFetchChanges();
-#if UNITY_EDITOR
-					Debug.Log("Auto Fetch");
-#endif
 				}
 				catch(Exception e)
 				{
-#if UNITY_EDITOR
 					Debug.LogException(e);
-#endif
 					needsFetch = false;
 				}
 			}
@@ -424,8 +419,17 @@ namespace UniGit
 			GitProfilerProxy.BeginSample("Git automatic fetching");
 			try
 			{
-
-				repository.Network.Fetch(remote, new FetchOptions() { CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler, OnTransferProgress = FetchTransferProgressHandler });
+				repository.Network.Fetch(remote, new FetchOptions()
+				{
+					CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler,
+					OnTransferProgress = FetchTransferProgressHandler,
+					RepositoryOperationStarting = (context) =>
+					{
+						Debug.Log("Repository Operation Starting");
+						return true;
+					}
+				});
+				Debug.LogFormat("Auto Fetch From remote: {0} - ({1}) successful.", remote.Name, remote.Url);
 			}
 			catch (Exception e)
 			{

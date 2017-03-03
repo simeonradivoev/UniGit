@@ -19,7 +19,7 @@ namespace UniGit
 		[Tooltip("The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit")]
 		[Delayed]
 		public int ProjectStatusOverlayDepth = 2;
-		[Tooltip("Show status for empty folder meta files and auto stage them is Auto stage is enabled.")]
+		[Tooltip("Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled.")]
 		public bool ShowEmptyFolders = false;
 		[Tooltip("Should Git status retrieval be multithreaded.")]
 		public bool GitStatusMultithreaded = true;
@@ -27,7 +27,7 @@ namespace UniGit
 		public bool UseGavatar = true;
 		[Tooltip("The maximum height the commit text area can expand to.")]
 		public float MaxCommitTextAreaSize = 120;
-		[Tooltip("Detect Renames")]
+		[Tooltip("Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works.")]
 		public bool DetectRenames = true;
 
 		[Flags]

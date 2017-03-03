@@ -151,14 +151,14 @@ namespace UniGit
 					break;
 				case MergeStatus.NonFastForward:
 					GitDiffWindow.GetWindow(true).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
-					GitDiffWindow.GetWindow(false).commitMessage = GitManager.Repository.Info.Message;
+					GitDiffWindow.GetWindow(false).SetCommitMessage(GitManager.Repository.Info.Message);
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = EditorGUIUtility.IconContent("console.warnicon");
 					content.text = "There are merge conflicts!";
 					GitDiffWindow.GetWindow(true).ShowNotification(content);
-					GitDiffWindow.GetWindow(false).commitMessage = GitManager.Repository.Info.Message;
+					GitDiffWindow.GetWindow(false).SetCommitMessage(GitManager.Repository.Info.Message);
 					break;
 			}
 			GitManager.MarkDirty();

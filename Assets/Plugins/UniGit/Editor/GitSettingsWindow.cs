@@ -455,6 +455,8 @@ namespace UniGit
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
+
+			EditorGUILayout.HelpBox("UniGit does encrypts passwords but, a Security Credentials Manager is always recommended. As it provides more security.", MessageType.Info);
 		}
 
 		private void DoBranches(Event current)
@@ -534,6 +536,8 @@ namespace UniGit
 					AssetDatabase.SaveAssets();
 				}
 			}
+
+			EditorGUILayout.HelpBox("Using external programs is always recommended as UniGit is still in development.",MessageType.Info);
 		}
 
 		#endregion
@@ -546,60 +550,64 @@ namespace UniGit
 		{
 			if (!GitLfsManager.Installed)
 			{
-				EditorGUILayout.HelpBox("Git LFS not installed",MessageType.Warning);
+				EditorGUILayout.HelpBox("Git LFS not installed", MessageType.Warning);
 				if (GUILayout.Button(GitGUI.GetTempContent("Download")))
 				{
 					Application.OpenURL("https://git-lfs.github.com/");
 				}
-				return;
 			}
-
-			if (!GitLfsManager.CheckInitialized())
+			else
 			{
-				EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
-				if (GUILayout.Button(GitGUI.GetTempContent("Initialize")))
+				if (!GitLfsManager.CheckInitialized())
 				{
-					GitLfsManager.Initialize();
+					EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
+					if (GUILayout.Button(GitGUI.GetTempContent("Initialize")))
+					{
+						GitLfsManager.Initialize();
+					}
 				}
-				return;
-			}
-
-			GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
-
-
-			string url = GitManager.Repository.Config.GetValueOrDefault("lfs.url", "");
-			if (string.IsNullOrEmpty(url))
-			{
-				EditorGUILayout.HelpBox("You should specify a LFS server URL",MessageType.Warning);
-			}
-
-			DoConfigStringField(GitGUI.GetTempContent("URL"), "lfs.url", "");
-
-			EditorGUILayout.Space();
-
-			foreach (var info in GitLfsManager.TrackedInfo)
-			{
-				GUILayout.Label(GitGUI.GetTempContent(info.Extension),"ShurikenModuleTitle");
-				GUI.SetNextControlName(info.GetHashCode() + " Extension");
-				info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"),info.Extension);
-				GUI.SetNextControlName(info.GetHashCode() + " Type");
-				info.Type = (GitLfsTrackedInfo.TrackType)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
-
-				if (info.IsDirty)
+				else
 				{
-					GitLfsManager.SaveTracking();
-					break;
+					GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
+
+
+					string url = GitManager.Repository.Config.GetValueOrDefault("lfs.url", "");
+					if (string.IsNullOrEmpty(url))
+					{
+						EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
+					}
+
+					DoConfigStringField(GitGUI.GetTempContent("URL"), "lfs.url", "");
+
+					EditorGUILayout.Space();
+
+					foreach (var info in GitLfsManager.TrackedInfo)
+					{
+						GUILayout.Label(GitGUI.GetTempContent(info.Extension), "ShurikenModuleTitle");
+						GUI.SetNextControlName(info.GetHashCode() + " Extension");
+						info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"), info.Extension);
+						GUI.SetNextControlName(info.GetHashCode() + " Type");
+						info.Type = (GitLfsTrackedInfo.TrackType) EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
+
+						if (info.IsDirty)
+						{
+							GitLfsManager.SaveTracking();
+							break;
+						}
+					}
+
+					if (GUILayout.Button("Track File"))
+					{
+						PopupWindow.Show(trackFileRect, new GitLfsTrackPopupWindow(this));
+					}
+					if (current.type == EventType.Repaint)
+					{
+						trackFileRect = GUILayoutUtility.GetLastRect();
+					}
 				}
 			}
 
-			if (GUILayout.Button("Track File"))
-			{
-				PopupWindow.Show(trackFileRect,new GitLfsTrackPopupWindow(this));
-			}
-			if (current.type == EventType.Repaint)
-			{
-				trackFileRect = GUILayoutUtility.GetLastRect();
-			}
+			EditorGUILayout.HelpBox("Git LFS is still in development, and is recommended to use an external program for handling it.",MessageType.Info);
 		}
 		#endregion
 
