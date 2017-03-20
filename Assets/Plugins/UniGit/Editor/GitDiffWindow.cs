@@ -821,7 +821,13 @@ namespace UniGit
 
 		public void SetCommitMessage(string commitMessage)
 		{
+			if (settings.readFromFile)
+			{
+				settings.commitMessageFromFile = commitMessage;
+				SaveCommitMessageToFile();
+			}
 			settings.commitMessage = commitMessage;
+			SaveCommitMessage();
 		}
 
 		private string CommitMessageFilePath
