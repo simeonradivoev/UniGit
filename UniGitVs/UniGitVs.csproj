@@ -93,6 +93,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitAssetPostprocessors.cs">
       <Link>GitAssetPostprocessors.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCallbacks.cs">
+      <Link>GitCallbacks.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCommitDetailsWindow.cs">
       <Link>GitCommitDetailsWindow.cs</Link>
     </Compile>
