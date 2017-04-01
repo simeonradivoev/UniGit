@@ -475,6 +475,20 @@ namespace UniGit
 			return false;
 		}
 
+		public static string AssetPathFromMeta(string metaPath)
+		{
+			if (metaPath.EndsWith(".meta"))
+			{
+				return metaPath.Substring(0, metaPath.Length - 5);
+			}
+			return metaPath;
+		}
+
+		public static string MetaPathFromAsset(string assetPath)
+		{
+			return assetPath + ".meta";
+		}
+
 		public static bool CanStage(FileStatus fileStatus)
 		{
 			return fileStatus.IsFlagSet(FileStatus.ModifiedInWorkdir | FileStatus.NewInWorkdir | FileStatus.RenamedInWorkdir | FileStatus.TypeChangeInWorkdir | FileStatus.DeletedFromWorkdir);
@@ -539,7 +553,7 @@ namespace UniGit
 			if (path.EndsWith(".meta"))
 			{
 				if (Path.HasExtension(path)) yield return path;
-				string assetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(path);
+				string assetPath = AssetPathFromMeta(path);
 				if (!string.IsNullOrEmpty(assetPath))
 				{
 					yield return assetPath;
@@ -548,7 +562,7 @@ namespace UniGit
 			else
 			{
 				if (Path.HasExtension(path)) yield return path;
-				string metaPath = AssetDatabase.GetTextMetaFilePathFromAssetPath(path);
+				string metaPath = MetaPathFromAsset(path);
 				if (!string.IsNullOrEmpty(metaPath))
 				{
 					yield return metaPath;

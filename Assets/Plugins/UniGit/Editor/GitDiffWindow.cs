@@ -1110,7 +1110,7 @@ namespace UniGit
 			{
 				if (entry.Path.EndsWith(".meta"))
 				{
-					string mainAssetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(entry.Path);
+					string mainAssetPath = GitManager.AssetPathFromMeta(entry.Path);
 					if (!GitManager.Settings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) return;
 
 					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
