@@ -53,6 +53,34 @@ namespace UniGit
 			}
 		}
 
+		public static string SelectedAdapterName
+		{
+			get
+			{
+				if (!initiazlitedSelected)
+				{
+					InitializeSelectedAdapter();
+				}
+				if (selectedAdapterIndex >= 0 && selectedAdapterIndex < adapterNames.Length)
+				{
+					return adapterNames[selectedAdapterIndex].text;
+				}
+				return "No Manager";
+			}
+		}
+
+		public static bool IsAdapterSelected
+		{
+			get
+			{
+				if (!initiazlitedSelected)
+				{
+					InitializeSelectedAdapter();
+				}
+				return selectedAdapterIndex >= 0;
+			}
+		}
+
 		private static void InitializeSelectedAdapter()
 		{
 			SetSelectedAdapter(Array.IndexOf(adapters, adapters.FirstOrDefault(a => IsValid(a))));
@@ -76,7 +104,7 @@ namespace UniGit
 
 		private static void ResetSelectedAdapter(ICredentialsAdapter lastAdapter)
 		{
-			if(lastAdapter == null) return;
+			if(lastAdapter == null || GitManager.GitCredentials == null) return;
 			foreach (var credential in GitManager.GitCredentials)
 			{
 				lastAdapter.DeleteCredentials(credential.URL);
@@ -211,7 +239,10 @@ namespace UniGit
 			entry = new GitCredentials.Entry() {URL = url};
 			entry.SetUsername(username);
 			GitManager.GitCredentials.AddEntry(entry);
-			SetNewPassword(url,username,password);
+			if (!string.IsNullOrEmpty(password))
+			{
+				SetNewPassword(url, username, password);
+			}
 			return entry;
 		}
 

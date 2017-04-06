@@ -168,7 +168,7 @@ namespace UniGit
 		private void DoGeneral(Event current)
 		{
 			//todo cache general settings to reduce lookup
-			GUILayout.Box(new GUIContent("Unity Settings"), "ProjectBrowserHeaderBgTop");
+			GUILayout.Box(new GUIContent("Unity Settings"), "IN BigTitle",GUILayout.ExpandWidth(true));
 
 			if (serializedSettings != null)
 			{
@@ -188,7 +188,7 @@ namespace UniGit
 				}
 			}
 
-			GUILayout.Box(GitGUI.GetTempContent("Git Settings"), "ProjectBrowserHeaderBgMiddle");
+			GUILayout.Box(GitGUI.GetTempContent("Git Settings"), "IN BigTitle",GUILayout.ExpandWidth(true));
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("User"), EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1;
@@ -363,7 +363,7 @@ namespace UniGit
 				EditorGUILayout.TextField(GitGUI.GetTempContent("URL"), gitCredential.URL);
 				GUI.enabled = true;
 				EditorGUILayout.Space();
-				GUILayout.Label(GUIContent.none, "ShurikenLine");
+				GUILayout.Label(GUIContent.none, "sv_iconselector_sep");
 				EditorGUILayout.Space();
 				bool newIsToken = gitCredential.IsToken;
 				newIsToken = EditorGUILayout.Toggle(GitGUI.GetTempContent("Is Token", "Are credentials used as a token, like in GitHub."), newIsToken);
@@ -395,8 +395,12 @@ namespace UniGit
 					}
 					GUI.SetNextControlName(gitCredential.URL + " Credential New Password");
 					gitCredential.NewPassword = EditorGUILayout.PasswordField(GitGUI.GetTempContent("New Password"), gitCredential.NewPassword);
+					if (GitCredentialsManager.IsAdapterSelected && GUI.GetNameOfFocusedControl() == gitCredential.URL + " Credential New Password")
+					{
+						EditorGUILayout.HelpBox("Password will be set in the current credentials manager: " + GitCredentialsManager.SelectedAdapterName, MessageType.Info);
+					}
 
-					if (!gitCredential.HasPassword)
+					if (!gitCredential.HasPassword && !GitCredentialsManager.IsAdapterSelected)
 					{
 						EditorGUILayout.HelpBox("Credential has no set Password", MessageType.Warning);
 					}
@@ -410,7 +414,7 @@ namespace UniGit
 				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewPassword);
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
-				if (GUILayout.Button(GitGUI.GetTempContent("Change Password"), "minibuttonleft"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Set Password"), "minibuttonleft"))
 				{
 					GitCredentialsManager.SetNewPassword(gitCredential.URL,gitCredential.Username,gitCredential.NewPassword);
 					gitCredential.NewPassword = "";
@@ -461,13 +465,38 @@ namespace UniGit
 
 		private void DoBranches(Event current)
 		{
-			foreach (var branch in branches)
+			DoBranch(GitManager.Repository.Head);
+
+			EditorGUILayout.Space();
+			GUILayout.Label(GUIContent.none, "sv_iconselector_sep");
+			EditorGUILayout.Space();
+
+			if (branches != null)
 			{
-				GUILayout.Label(GitGUI.GetTempContent(branch.FriendlyName), "ShurikenModuleTitle");
-				int selectedRemote = Array.IndexOf(remoteCacheList, branch.Remote);
-				EditorGUI.BeginChangeCheck();
+				foreach (var branch in branches)
+				{
+					if(branch.IsCurrentRepositoryHead) continue;
+					DoBranch(branch);
+				}
+			}
+
+			EditorGUILayout.Space();
+			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), GUI.skin.button);
+			if (GUI.Button(createBranchRect, GitGUI.GetTempContent("Create Branch")))
+			{
+				PopupWindow.Show(createBranchRect, new CreateBranchPopup(this,GitManager.Repository.Commits.FirstOrDefault(),()=> { branches = null; }));
+			}
+		}
+
+		private void DoBranch(Branch branch)
+		{
+			GUILayout.Label(GitGUI.GetTempContent(branch.FriendlyName), branch.IsCurrentRepositoryHead ? "IN BigTitle" : "ShurikenModuleTitle",GUILayout.ExpandWidth(true));
+			int selectedRemote = Array.IndexOf(remoteCacheList, branch.Remote);
+			if (remoteNames != null)
+			{
 				EditorGUILayout.BeginHorizontal();
 				EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Remote"));
+				EditorGUI.BeginChangeCheck();
 				int newSelectedRemote = EditorGUILayout.Popup(selectedRemote, remoteNames);
 				EditorGUILayout.EndHorizontal();
 				if (EditorGUI.EndChangeCheck() && selectedRemote != newSelectedRemote)
@@ -475,39 +504,67 @@ namespace UniGit
 					branches.Update(branch, (u) =>
 					{
 						u.Remote = remoteCacheList[newSelectedRemote].Name;
-						u.UpstreamBranch = branch.CanonicalName; 
-					});
-				}
-				EditorGUILayout.TextField(GitGUI.GetTempContent("Upstream Branch"), branch.UpstreamBranchCanonicalName);
-				EditorGUILayout.BeginHorizontal();
-				GUILayout.FlexibleSpace();
-				if (GUILayout.Button("Save","minibuttonleft"))
-				{
-					branches.Update(branch, (u) =>
-					{
-						u.Remote = remoteCacheList[selectedRemote].Name;
 						u.UpstreamBranch = branch.CanonicalName;
 					});
 				}
-				GUI.enabled = !branch.IsRemote && branch.IsCurrentRepositoryHead;
-				if (GUILayout.Button("Switch", "minibuttonmid"))
+			}
+
+			EditorGUILayout.TextField(GitGUI.GetTempContent("Upstream Branch"), branch.UpstreamBranchCanonicalName);
+			EditorGUILayout.BeginHorizontal();
+			GUILayout.FlexibleSpace();
+			GUI.enabled = remoteCacheList != null && remoteCacheList.Length < selectedRemote;
+			if (GUILayout.Button(GitGUI.GetTempContent("Save", "Send branch changes to selected remote."), "minibuttonleft"))
+			{
+				branches.Update(branch, (u) =>
 				{
-					Debug.LogException(new NotImplementedException("Branch Checkout not implemented"));
+					u.Remote = remoteCacheList[selectedRemote].Name;
+					u.UpstreamBranch = branch.CanonicalName;
+				});
+			}
+			GUI.enabled = !branch.IsRemote && branch.IsCurrentRepositoryHead;
+			if (GUILayout.Button("Switch", "minibuttonmid"))
+			{
+				if (GitExternalManager.TakeSwitch())
+				{
+					AssetDatabase.Refresh();
+					GitManager.MarkDirty();
+				}
+				else
+				{
+					Debug.LogException(new NotImplementedException("Branch Checkout not implemented. Use External program for branch switching."));
 					//todo implement branch checkout
 				}
-				GUI.enabled = !branch.IsRemote;
-				if (GUILayout.Button("Reset", "minibuttonright"))
-				{
-					branches.Update(branch, (u) =>
-					{
-						u.Remote = "";
-						u.UpstreamBranch = "";
-					});
-				}
-				GUI.enabled = true;
-				GUILayout.FlexibleSpace();
-				EditorGUILayout.EndHorizontal();
 			}
+			GUI.enabled = !branch.IsCurrentRepositoryHead;
+			if (GUILayout.Button(GitGUI.GetTempContent("Delete", branch.IsCurrentRepositoryHead ? "Can not delete head branch" : ""), "minibuttonmid"))
+			{
+				if (EditorUtility.DisplayDialog("Delete Branch", "Are you sure you want do delete a branch? This action can not be undone.", "Delete", "Cancel"))
+				{
+					try
+					{
+						GitManager.Repository.Branches.Remove(branch);
+						branches = null;
+						GitManager.MarkDirty(true);
+					}
+					catch (Exception e)
+					{
+						Debug.Log("Could not delete branch: " + branch.CanonicalName);
+						Debug.LogException(e);
+					}
+				}
+			}
+			GUI.enabled = !branch.IsRemote;
+			if (GUILayout.Button(GitGUI.GetTempContent("Reset", "Reset branch properties."), "minibuttonright"))
+			{
+				branches.Update(branch, (u) =>
+				{
+					u.Remote = "";
+					u.UpstreamBranch = "";
+				});
+			}
+			GUI.enabled = true;
+			GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
 		}
 
 		#region Externals
@@ -782,7 +839,7 @@ namespace UniGit
 
 			public override Vector2 GetWindowSize()
 			{
-				return new Vector2(300, 80);
+				return new Vector2(300, 100);
 			}
 
 			public override void OnGUI(Rect rect)
@@ -808,6 +865,62 @@ namespace UniGit
 					}
 				}
 				GUI.enabled = true;
+			}
+		}
+
+		public class CreateBranchPopup : PopupWindowContent
+		{
+			private string name = "";
+			private Commit commit;
+			private EditorWindow parentWindow;
+			private Action onCreated;
+
+			public CreateBranchPopup(EditorWindow parentWindow,Commit commit,Action onCreated)
+			{
+				this.parentWindow = parentWindow;
+				this.commit = commit;
+				this.onCreated = onCreated;
+			}
+
+			public override Vector2 GetWindowSize()
+			{
+				return new Vector2(300, 80);
+			}
+
+			public override void OnGUI(Rect rect)
+			{
+				EditorGUILayout.Space();
+				if (commit != null)
+				{
+					name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name"), name);
+					EditorGUILayout.LabelField(GitGUI.GetTempContent("Commit SHA"), new GUIContent(commit.Sha));
+				}
+				else
+				{
+					EditorGUILayout.HelpBox("No selected commit.",MessageType.Warning);
+				}
+				
+				GUI.enabled = !string.IsNullOrEmpty(name) && commit != null;
+				if (GUILayout.Button(GitGUI.GetTempContent("Create Branch")))
+				{
+					try
+					{
+						var branch = GitManager.Repository.CreateBranch(name, commit);
+						editorWindow.Close();
+						parentWindow.ShowNotification(new GUIContent(string.Format("Branch '{0}' created",branch.CanonicalName)));
+						if (onCreated != null)
+						{
+							onCreated.Invoke();
+						}
+						GitManager.MarkDirty(true);
+					}
+					catch (Exception e)
+					{
+						Debug.LogError("Could not create branch!");
+						Debug.LogException(e);
+					}
+				}
+				GUI.enabled = false;
 			}
 		}
 		#endregion

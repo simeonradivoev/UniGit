@@ -32,10 +32,17 @@ namespace UniGit
 			{
 				using (var repository = new Repository(GitManager.RepoPath))
 				{
-					repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
-					GitManager.MarkDirty();
-					var window = GitHistoryWindow.GetWindow(true);
-					window.ShowNotification(new GUIContent("Push Complete"));
+					if (branchNames.Length > 0 && branchNames.Length < selectedBranch)
+					{
+						repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
+						GitManager.MarkDirty();
+						var window = GitHistoryWindow.GetWindow(true);
+						window.ShowNotification(new GUIContent("Push Complete"));
+					}
+					else
+					{
+						Debug.LogWarning("No Branch Selected.");
+					}
 				}
 			}
 			catch (Exception e)

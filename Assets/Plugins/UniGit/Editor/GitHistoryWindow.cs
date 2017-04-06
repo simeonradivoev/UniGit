@@ -31,6 +31,7 @@ namespace UniGit
 		private Rect historyScrollContentsRect;
 		private Rect warningBoxRect;
 		private bool hasConflicts;
+		private Queue<KeyValuePair<Rect, PopupWindowContent>> popupsQueue = new Queue<KeyValuePair<Rect, PopupWindowContent>>();
 		[SerializeField] private Vector2 historyScroll;
 		[SerializeField] private string selectedBranchName;
 		private object commitCachesLock = new object();
@@ -104,6 +105,7 @@ namespace UniGit
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] path)
 		{
+			Repaint();
 			ThreadPool.QueueUserWorkItem(UpdateChachesThreaded, status);
 		}
 
@@ -267,10 +269,23 @@ namespace UniGit
 			EditorGUILayout.Space();
 
 			DoHistoryScrollRect(scorllRect, repoInformation);
+
+			if (popupsQueue.Count > 0)
+			{
+				var content = popupsQueue.Dequeue();
+				PopupWindow.Show(content.Key, content.Value);
+			}
 		}
 
 		private void DoToolbar(Rect rect, RepositoryInformation info)
 		{
+			Branch branch = selectedBranch.LoadBranch();
+			if (branch == null)
+			{
+				EditorGUILayout.HelpBox(string.Format("Invalid Branch: '{0}'", selectedBranch.CanonicalName),MessageType.Warning,true);
+				return;
+			}
+
 			GitProfilerProxy.BeginSample("Git History Window Toolbar GUI",this);
 			GUI.Box(rect, GUIContent.none, "Toolbar");
 			Rect btRect = new Rect(rect.x, rect.y, 64, rect.height);
@@ -285,6 +300,11 @@ namespace UniGit
 				GUI.enabled = false;
 				pushButtonContent.tooltip = "Resolve conflicts before pushing.";
 			}
+			else if (selectedBranch == null)
+			{
+				GUI.enabled = false;
+				pushButtonContent.tooltip = "No Selected branch. Create a new branch or create atleast one commit.";
+			}
 			if (GUI.Button(btRect, pushButtonContent, "toolbarbutton"))
 			{
 				if (GitExternalManager.TakePush())
@@ -293,49 +313,42 @@ namespace UniGit
 				}
 				else
 				{
-					ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(selectedBranch.LoadBranch());
+					ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(branch);
 				}
 			}
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			GUI.enabled = !hasConflicts;
 			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("CollabPull").image, "Pull", hasConflicts ? "Must resolve conflicts before pulling" : "Pull changes from remote repository by fetching them and then merging them. This is the same as calling Fetch then Merge."), "toolbarbutton"))
 			{
-				Branch branch = selectedBranch.LoadBranch();
-				if (branch != null)
+				if (GitExternalManager.TakePull())
 				{
-					if (GitExternalManager.TakePull())
-					{
-						AssetDatabase.Refresh();
-						GitManager.MarkDirty();
-					}
-					else
-					{
-						ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(branch);
-					}
+					AssetDatabase.Refresh();
+					GitManager.MarkDirty();
 				}
-				else Debug.LogError("Could Not Load Branch");
+				else
+				{
+					ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(branch);
+				}
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("UniGit/GitFetch").image, "Fetch", "Get changes from remote repository but do not merge them."), "toolbarbutton"))
+			GUIContent fetchContent = new GUIContent("Fetch", EditorGUIUtility.IconContent("UniGit/GitFetch").image, "Get changes from remote repository but do not merge them.");
+			if (branch.Remote == null)
 			{
-				Branch branch = selectedBranch.LoadBranch();
-				if (branch != null)
-				{
-					if (branch.Remote != null)
-					{
-						if (GitExternalManager.TakeFetch(branch.Remote.Name))
-						{
-							GitManager.MarkDirty();
-						}
-						else
-						{
-							ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
-						}
-					}
-					else Debug.LogError("Branch does not have a remote");
-				}
-				else Debug.LogError("Could not Load Branch");
+				fetchContent.tooltip = "Branch does not have a remote.";
+				GUI.enabled = false;
 			}
+			if (GUI.Button(btRect, fetchContent, "toolbarbutton"))
+			{
+				if (GitExternalManager.TakeFetch(branch.Remote.Name))
+				{
+					GitManager.MarkDirty();
+				}
+				else
+				{
+					ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
+				}
+			}
+			GUI.enabled = true;
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("UniGit/GitMerge").image, "Merge", hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), "toolbarbutton"))
 			{
@@ -350,12 +363,12 @@ namespace UniGit
 			}
 			GUI.enabled = true;
 			btRect = new Rect(rect.x + rect.width - 64, btRect.y, 64, btRect.height);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(string.IsNullOrEmpty(selectedBranchName) ? "Branch" : selectedBranch.FriendlyName), "ToolbarDropDown"))
+			if (GUI.Button(btRect, GitGUI.GetTempContent(string.IsNullOrEmpty(selectedBranchName) ? "Branch" : selectedBranch.CanonicalName), "ToolbarDropDown"))
 			{
 				GenericMenu selectBranchMenu = new GenericMenu();
-				foreach (var branch in cachedBranches)
+				foreach (var cachedBranch in cachedBranches)
 				{
-					selectBranchMenu.AddItem(new GUIContent(branch.FriendlyName), false, (b) =>
+					selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), false, (b) =>
 					{
 						selectedBranchName = (string)b;
 						UpdateSelectedBranch();
@@ -405,7 +418,10 @@ namespace UniGit
 				for (int i = 0; i < cachedCommits.Length; i++)
 				{
 					lastCommitRect = LayoutCommit(lastCommitRect, cachedCommits[i]);
-					commitRects[i] = lastCommitRect;
+					if (i < commitRects.Length)
+					{
+						commitRects[i] = lastCommitRect;
+					}
 				}
 
 				historyScrollContentsRect = new Rect(0, 0, lastCommitRect.width + 32, lastCommitRect.y + lastCommitRect.height + commitSpacing*2);
@@ -423,7 +439,10 @@ namespace UniGit
 
 				for (int i = 0; i < cachedCommits.Length; i++)
 				{
-					DoCommit(commitRects[i], rect, cachedCommits[i]);
+					if (i < commitRects.Length)
+					{
+						DoCommit(commitRects[i], rect, cachedCommits[i]);
+					}
 				}
 
 				GUI.EndScrollView();
@@ -528,18 +547,34 @@ namespace UniGit
 			x += GUI.skin.label.CalcSize(GitGUI.GetTempContent(commit.Id.Sha)).x + 8;
 			Rect buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
 			x += 64;
-			GUI.enabled = selectedBranch.IsCurrentRepositoryHead && !isHead;
-			if (GUI.Button(buttonRect, GitGUI.GetTempContent("Reset", "Reset changes made up to this commit"), "minibuttonleft"))
+			if (GUI.Button(buttonRect, GitGUI.GetTempContent("Options"), "minibuttonleft"))
 			{
-				if (GitExternalManager.TakeReset(GitManager.Repository.Lookup<Commit>(commit.Id)))
+				GenericMenu menu = new GenericMenu();
+
+				if (selectedBranch.IsCurrentRepositoryHead && !isHead)
 				{
-					AssetDatabase.Refresh();
-					GitManager.MarkDirty();
+					menu.AddItem(new GUIContent("Reset"), false, () =>
+					{
+						if (GitExternalManager.TakeReset(GitManager.Repository.Lookup<Commit>(commit.Id)))
+						{
+							AssetDatabase.Refresh();
+							GitManager.MarkDirty();
+						}
+						else
+						{
+							PopupWindow.Show(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id)));
+						}
+					});
 				}
 				else
 				{
-					PopupWindow.Show(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id)));
+					menu.AddDisabledItem(new GUIContent("Reset"));
 				}
+				menu.AddItem(new GUIContent("Branch Out"), false, () =>
+				{
+					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new GitSettingsWindow.CreateBranchPopup(this, GitManager.Repository.Lookup<Commit>(commit.Id),null)));
+				});
+				menu.DropDown(buttonRect);
 			}
 			GUI.enabled = true;
 			buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
@@ -698,6 +733,14 @@ namespace UniGit
 			GUILayout.Box(GitGUI.GetTempContent("Not a GIT Repository"), "NotificationBackground");
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
+
+			EditorGUILayout.BeginHorizontal();
+			GUILayout.FlexibleSpace();
+			//initialization tips
+			EditorGUILayout.HelpBox("If you have an existing remote repository and want to clone it, you will have to do so outside of the editor.", MessageType.Info);
+			GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
+
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
@@ -840,10 +883,18 @@ namespace UniGit
 
 			public Branch LoadBranch()
 			{
-				if (GitManager.Repository != null && GitManager.Repository.Branches != null)
+				if (GitManager.Repository != null)
 				{
-					return GitManager.Repository.Branches[CanonicalName];
+					if (GitManager.Repository.Head.CanonicalName == CanonicalName)
+					{
+						return GitManager.Repository.Head;
+					}
+					if (GitManager.Repository.Branches != null)
+					{
+						return GitManager.Repository.Branches[CanonicalName];
+					}
 				}
+				
 				return null;
 			}
 		}

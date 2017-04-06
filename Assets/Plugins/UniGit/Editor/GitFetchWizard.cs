@@ -27,9 +27,11 @@ namespace UniGit
 
 		protected override bool DrawWizardGUI()
 		{
-			bool hasChanged = base.DrawWizardGUI();
+			EditorGUI.BeginChangeCheck();
+			DrawRemoteSelection();
+			DrawCredentials();
 			prune = EditorGUILayout.Toggle(new GUIContent("Prune", "Prune all unreachable objects from the object database"), prune);
-			return hasChanged;
+			return EditorGUI.EndChangeCheck();
 		}
 
 		[UsedImplicitly]
@@ -43,6 +45,7 @@ namespace UniGit
 #endif
 				var window = GitHistoryWindow.GetWindow(true);
 				window.ShowNotification(new GUIContent("Fetch Complete"));
+				GitManager.MarkDirty(true);
 			}
 			catch (Exception e)
 			{

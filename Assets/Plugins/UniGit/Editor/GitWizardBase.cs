@@ -37,10 +37,14 @@ namespace UniGit
 
 		public void Init(Branch branch)
 		{
+			if(branch == null) return;
+
 			branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
 
-			selectedRemote = Array.IndexOf(remotes, branch.Remote);
-			selectedBranch = Array.IndexOf(branchNames, branch.CanonicalName);
+			if(remotes != null && branch.Remote != null)
+				selectedRemote = Array.IndexOf(remotes, branch.Remote);
+			if (branchNames != null && !string.IsNullOrEmpty(branch.CanonicalName))
+				selectedBranch = Array.IndexOf(branchNames, branch.CanonicalName);
 		}
 
 		protected void DrawRemoteSelection()

@@ -30,6 +30,62 @@ public class PackageExporter
 		"Assets/Plugins/UniGit/Editor/UniGitVs.dll.mdb"
 	};
 
+	[MenuItem("UniGit/Build DLL")]
+	public static void BuildDLL()
+	{
+		UpdateVSProject();
+
+		string devnetPath = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\devenv.exe", null, null).ToString();
+		if (string.IsNullOrEmpty(devnetPath))
+		{
+			Debug.LogError("Could not find devnet in registry!");
+			devnetPath = EditorUtility.OpenFilePanel("Devnet.Exe", "", "exe");
+
+			if (string.IsNullOrEmpty(devnetPath))
+			{
+				Debug.LogError("Could not find devnet!");
+				return;
+			}
+		}
+		else
+		{
+			Debug.Log("Devnet Path: " + devnetPath);
+		}
+
+		Process devnetProcess = new Process();
+		devnetProcess.StartInfo.Arguments = string.Format("{0} {1} {2} {3}", "\"UniGitVs.sln\"", " /build Debug", "/project \"UniGitVs.csproj\"", "/projectconfig Debug");
+		devnetProcess.StartInfo.RedirectStandardError = true;
+		devnetProcess.StartInfo.RedirectStandardOutput = true;
+		devnetProcess.StartInfo.UseShellExecute = false;
+		devnetProcess.StartInfo.FileName = devnetPath.ToString();
+		//devnetProcess.StartInfo.Verb = "runas";
+		devnetProcess.StartInfo.WorkingDirectory = Application.dataPath.Replace("/", "\\").Replace("Assets", "UniGitVs");
+
+		devnetProcess.Start();
+		EditorUtility.DisplayProgressBar("Building Project", "Building in progress", 0.1f);
+		devnetProcess.WaitForExit();
+		EditorUtility.ClearProgressBar();
+
+		string logs = devnetProcess.StandardOutput.ReadToEnd();
+		string errors = devnetProcess.StandardError.ReadToEnd();
+		bool buildHasOutput = !string.IsNullOrEmpty(logs) || !string.IsNullOrEmpty(errors);
+
+		if (buildHasOutput)
+		{
+			Debug.Log("---- Build Process Output ----");
+			if (!string.IsNullOrEmpty(logs))
+			{
+				Debug.Log(logs);
+			}
+
+			if (!string.IsNullOrEmpty(errors))
+			{
+				Debug.LogError(errors);
+			}
+			Debug.Log("---- ------------------- ----");
+		}
+	}
+
 	[MenuItem("UniGit/Export As Package")]
 	public static void GeneratePackage()
 	{
@@ -38,58 +94,8 @@ public class PackageExporter
 
 		try
 		{
-			UpdateVSProject();
+			BuildDLL();
 
-			string devnetPath = Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\devenv.exe", null,null).ToString();
-			if (string.IsNullOrEmpty(devnetPath))
-			{
-				Debug.LogError("Could not find devnet in registry!");
-				devnetPath = EditorUtility.OpenFilePanel("Devnet.Exe", "", "exe");
-
-				if (string.IsNullOrEmpty(devnetPath))
-				{
-					Debug.LogError("Could not find devnet!");
-					return;
-				}
-			}
-			else
-			{
-				Debug.Log("Devnet Path: " + devnetPath);
-			}
-
-			Process devnetProcess = new Process();
-			devnetProcess.StartInfo.Arguments = string.Format("{0} {1} {2} {3}","\"UniGitVs.sln\"", " /build Debug", "/project \"UniGitVs.csproj\"", "/projectconfig Debug");
-			devnetProcess.StartInfo.RedirectStandardError = true;
-			devnetProcess.StartInfo.RedirectStandardOutput = true;
-			devnetProcess.StartInfo.UseShellExecute = false;
-			devnetProcess.StartInfo.FileName = devnetPath.ToString();
-			//devnetProcess.StartInfo.Verb = "runas";
-			devnetProcess.StartInfo.WorkingDirectory = Application.dataPath.Replace("/", "\\").Replace("Assets", "UniGitVs");
-
-			devnetProcess.Start();
-			EditorUtility.DisplayProgressBar("Building Project","Building in progress",0.1f);
-			devnetProcess.WaitForExit();
-			EditorUtility.ClearProgressBar();
-
-			string logs = devnetProcess.StandardOutput.ReadToEnd();
-			string errors = devnetProcess.StandardError.ReadToEnd();
-			bool buildHasOutput = !string.IsNullOrEmpty(logs) || !string.IsNullOrEmpty(errors);
-
-			if (buildHasOutput)
-			{
-				Debug.Log("---- Build Process Output ----");
-				if (!string.IsNullOrEmpty(logs))
-				{
-					Debug.Log(logs);
-				}
-
-				if (!string.IsNullOrEmpty(errors))
-				{
-					Debug.LogError(errors);
-				}
-				Debug.Log("---- ------------------- ----");
-			}
-			
 			/*ProcessStartInfo ProcStartInfo = new ProcessStartInfo("cmd");
 			ProcStartInfo.RedirectStandardOutput = true;
 			ProcStartInfo.UseShellExecute = false;
