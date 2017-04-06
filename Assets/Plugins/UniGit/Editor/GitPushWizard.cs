@@ -32,7 +32,7 @@ namespace UniGit
 			{
 				using (var repository = new Repository(GitManager.RepoPath))
 				{
-					if (branchNames.Length > 0 && branchNames.Length < selectedBranch)
+					if (branchNames.Length > 0 && selectedBranch < branchNames.Length)
 					{
 						repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
 						GitManager.MarkDirty();
