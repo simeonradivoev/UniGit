@@ -921,8 +921,26 @@ namespace UniGit
 				}
 				else
 				{
-					editMenu.AddItem(new GUIContent("Difference"), false, SeeDifferenceSelectedCallback, entries[0].Path);
-					editMenu.AddItem(new GUIContent("Difference with previous version"),false, SeeDifferencePrevSelectedCallback, entries[0].Path);
+					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
+					{
+						editMenu.AddItem(new GUIContent("Difference/Asset"), false, () => { SeeDifferenceObject(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference/Meta"), false, () => { SeeDifferenceMeta(entries[0]); });
+					}
+					else
+					{
+						editMenu.AddItem(new GUIContent("Difference"), false, () => { SeeDifferenceAuto(entries[0]); });
+					}
+
+					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
+					{
+						editMenu.AddItem(new GUIContent("Difference with previous version/Asset"), false, () => { SeeDifferencePrevObject(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference with previous version/Meta"), false, () => { SeeDifferencePrevMeta(entries[0]); });
+					}
+					else
+					{
+						editMenu.AddItem(new GUIContent("Difference with previous version"), false, () => { SeeDifferencePrevAuto(entries[0]); });
+					}
+					
 				}
 			}
 			editMenu.AddSeparator("");
@@ -960,14 +978,48 @@ namespace UniGit
 			GitConflictsHandler.ResolveConflicts((string)path, MergeFileFavor.Normal);
 		}
 
-		private void SeeDifferenceSelectedCallback(object path)
+		private void SeeDifferenceAuto(StatusListEntry entry)
 		{
-			GitManager.ShowDiff((string)path);
+			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
+			{
+				SeeDifferenceObject(entry);
+			}
+			else
+			{
+				SeeDifferenceMeta(entry);
+			}
 		}
 
-		private void SeeDifferencePrevSelectedCallback(object path)
+		private void SeeDifferenceObject(StatusListEntry entry)
 		{
-			GitManager.ShowDiffPrev((string)path);
+			GitManager.ShowDiff(entry.Path);
+		}
+
+		private void SeeDifferenceMeta(StatusListEntry entry)
+		{
+			GitManager.ShowDiff(GitManager.MetaPathFromAsset(entry.Path));
+		}
+
+		private void SeeDifferencePrevAuto(StatusListEntry entry)
+		{
+			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
+			{
+				SeeDifferencePrevObject(entry);
+			}
+			else
+			{
+				SeeDifferencePrevMeta(entry);
+			}
+		}
+
+		private void SeeDifferencePrevObject(StatusListEntry entry)
+		{
+			GitManager.ShowDiffPrev(entry.Path);
+		}
+
+		private void SeeDifferencePrevMeta(StatusListEntry entry)
+		{
+			GitManager.ShowDiffPrev(GitManager.MetaPathFromAsset(entry.Path));
 		}
 
 		private void RevertSelectedCallback()
