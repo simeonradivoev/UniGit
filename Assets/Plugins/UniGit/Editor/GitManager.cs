@@ -36,7 +36,8 @@ namespace UniGit
 		private static bool repositoryDirty;
 		private static bool reloadDirty;
 		private static bool isUpdating;
-		private static readonly List<string> dirtyFiles = new List<string>(); 
+		private static readonly HashSet<string> dirtyFiles = new HashSet<string>();
+		private static readonly List<string> updatingFiles = new List<string>();
 
 		[InitializeOnLoadMethod]
 		internal static void Initlize()
@@ -175,7 +176,7 @@ namespace UniGit
 				}
 			}
 
-			if (IsValidRepo && !(EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying) && !EditorApplication.isCompiling && !EditorApplication.isUpdating)
+			if (IsValidRepo && !(EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying) && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !isUpdating)
 			{
 				if ((repository == null || repositoryDirty))
 				{
@@ -211,7 +212,7 @@ namespace UniGit
 
 		private static void Update(bool reloadRepository,string[] paths = null)
 		{
-			StartUpdating();
+			StartUpdating(paths);
 
 			if ((repository == null || reloadRepository) && IsValidRepo)
 			{
@@ -251,7 +252,13 @@ namespace UniGit
 
 		public static void MarkDirty(IEnumerable<string> paths)
 		{
-			dirtyFiles.AddRange(paths.Select(s => s.Replace("/","\\")));
+			foreach (var path in paths)
+			{
+				string fixedPath = path.Replace("/", "\\");
+				if(!dirtyFiles.Contains(fixedPath))
+					dirtyFiles.Add(fixedPath);
+			}
+			
 		}
 
 		private static void RebuildStatus(string[] paths)
@@ -341,16 +348,30 @@ namespace UniGit
 			}
 		}
 
-		private static void StartUpdating()
+		private static void StartUpdating(string[] paths)
 		{
 			isUpdating = true;
+			updatingFiles.Clear();
+			if(paths != null)
+				updatingFiles.AddRange(paths);
 			GitCallbacks.IssueUpdateRepositoryStart();
 		}
 
 		private static void FinishUpdating()
 		{
 			isUpdating = false;
+			updatingFiles.Clear();
 			GitCallbacks.IssueUpdateRepositoryFinish();
+		}
+
+		internal static bool IsFileUpdating(string path)
+		{
+			if (isUpdating)
+			{
+				if (updatingFiles.Count <= 0) return true;
+				return updatingFiles.Contains(path);
+			}
+			return false;
 		}
 
 		public static Texture2D GetGitStatusIcon()

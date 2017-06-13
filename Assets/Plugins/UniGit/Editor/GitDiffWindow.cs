@@ -518,8 +518,6 @@ namespace UniGit
 			EditorGUILayout.EndHorizontal();
 			GUILayout.EndArea();
 
-			GitGUI.StartEnable(!GitManager.IsUpdating);
-
 			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,512), elementsTotalHeight);
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
 
@@ -531,6 +529,7 @@ namespace UniGit
 			{
 				FileStatus mergedStatus = GetMergedStatus(info.State);
 				bool isExpanded = IsVisible(info);
+				bool isUpdating = GitManager.IsFileUpdating(info.Path);
 				Rect elementRect;
 
 				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
@@ -571,13 +570,12 @@ namespace UniGit
 
 				if (!isExpanded) continue;
 				elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-				DoFileDiff(elementRect,info);
-				DoFileDiffSelection(elementRect,info,index);
+				DoFileDiff(elementRect,info, isUpdating);
+				DoFileDiffSelection(elementRect,info,index, isUpdating);
 				infoX += elementRect.height;
 				index++;
 			}
 			GUI.EndScrollView();
-			GitGUI.EndEnable();
 
 			if (Event.current.type == EventType.mouseDrag && DiffRect.Contains(Event.current.mousePosition))
 			{
@@ -586,16 +584,16 @@ namespace UniGit
 			}
 		}
 
-		private void DoFileDiff(Rect rect,StatusListEntry info)
+		private void DoFileDiff(Rect rect,StatusListEntry info,bool isUpdating)
 		{
 			Event current = Event.current;
-
 			
 			if (rect.y > DiffRect.height + diffScroll.y || rect.y + rect.height < diffScroll.y)
 			{
 				return;
 			}
 
+			GitGUI.StartEnable(!isUpdating);
 			Rect stageToggleRect = new Rect(rect.x + rect.width - 64, rect.y + 16, 32, 32);
 			bool canUnstage = GitManager.CanUnstage(info.State);
 			bool canStage = GitManager.CanStage(info.State);
@@ -657,7 +655,17 @@ namespace UniGit
 					x += 25;
 				}
 
-				styles.diffElementPath.Draw(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 7 , rect.width - elementSideMargin - iconSize - rect.height*2, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(filePath),false, info.Selected, info.Selected, false);
+
+				float pathMinWidth,pathMaxWidth;
+				styles.diffElementPath.CalcMinMaxWidth(GitGUI.GetTempContent(filePath), out pathMinWidth, out pathMaxWidth);
+				Rect pathRect = new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 7, pathMinWidth, EditorGUIUtility.singleLineHeight);
+				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(filePath),false, info.Selected, info.Selected, false);
+				x += pathRect.width + 4;
+
+				if (isUpdating)
+				{
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(EditorGUIUtility.FindTexture("WaitSpin00")),GUIStyle.none);
+				}
 			}
 
 			if (canUnstage || canStage)
@@ -690,13 +698,14 @@ namespace UniGit
 					}
 				}
 			}
+			GitGUI.EndEnable();
 		}
 
-		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index)
+		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool isUpdating)
 		{
 			Event current = Event.current;
 
-			if (elementRect.Contains(current.mousePosition))
+			if (elementRect.Contains(current.mousePosition) && !isUpdating)
 			{
 				if (current.type == EventType.ContextClick)
 				{
