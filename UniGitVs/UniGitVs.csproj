@@ -189,9 +189,6 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\GitCredentialsJson.cs">
       <Link>GitCredentialsJson.cs</Link>
     </Compile>
-    <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\ICredential.cs">
-      <Link>ICredential.cs</Link>
-    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitRepoStatus.cs">
       <Link>GitRepoStatus.cs</Link>
     </Compile>
