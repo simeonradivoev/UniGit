@@ -13,7 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AutoStage: 1
   AutoFetch: 1
-  MaxCommits: 32
+  MaxCommits: 16
   ExternalsType: 0
   ExternalProgram: Tortoise Git
   CredentialsManager: wincred

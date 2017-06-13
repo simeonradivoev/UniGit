@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using UniGit.Utils;
+using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
@@ -16,7 +17,7 @@ namespace UniGit
 		public override void OnGUI(Rect rect)
 		{
 			extension = EditorGUILayout.TextField(new GUIContent("Extension"), extension);
-			GUI.enabled = !string.IsNullOrEmpty(extension);
+			GitGUI.StartEnable(!string.IsNullOrEmpty(extension));
 			if (GUILayout.Button(new GUIContent("Track")))
 			{
 				GitLfsManager.Track(extension);
@@ -24,7 +25,7 @@ namespace UniGit
 				focusWindow.ShowNotification(new GUIContent(extension + " now tracked by LFS."));
 				GitLfsManager.Update();
 			}
-			GUI.enabled = true;
+			GitGUI.EndEnable();
 		}
 	}
 }

@@ -1,9 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Security;
 using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Attributes;
+using UniGit.Security;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -18,12 +20,99 @@ namespace UniGit
 		private static ICredentialsAdapter selectedAdapter;
 		private static int selectedAdapterIndex = -1;
 		private static bool initiazlitedSelected;
+		private static GitCredentialsJson gitCredentials;
 
 		internal static void Load()
 		{
 			adapters = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(ICredentialsAdapter).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).Select(t => Activator.CreateInstance(t)).Cast<ICredentialsAdapter>().ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
-			adapterIds = adapters.Select(a => GetAdapterId(a)).ToArray();
+			adapterIds = adapters.Select(GetAdapterId).ToArray();
+
+			EditorApplication.update += EditorUpdate;
+
+			LoadGitCredentials();
+		}
+
+		private static void EditorUpdate()
+		{
+			if (gitCredentials.IsDirty)
+			{
+				gitCredentials.ResetDirty();
+				SaveCredentialsToFile(gitCredentials);
+			}
+		}
+
+		private static void LoadGitCredentials()
+		{
+			string credentialsFilePath = CredentialsFilePath;
+			GitCredentialsJson credentialsJson = null;
+			if (File.Exists(credentialsFilePath))
+			{
+				try
+				{
+					credentialsJson = JsonUtility.FromJson<GitCredentialsJson>(File.ReadAllText(credentialsFilePath));
+				}
+				catch (Exception e)
+				{
+					Debug.LogError("Could not deserialize git settings. Creating new settings.");
+					Debug.LogException(e);
+				}
+			}
+
+			if (credentialsJson == null)
+			{
+				credentialsJson = new GitCredentialsJson();
+				var oldCredentialsFile = EditorGUIUtility.Load("UniGit/Git-Credentials.asset") as GitCredentials;
+				if (oldCredentialsFile != null)
+				{
+					//must be delayed call for unity to deserialize credentials file properly
+					EditorApplication.delayCall += ImportFromOldCredentials;
+				}
+				else
+				{
+					SaveCredentialsToFile(credentialsJson);
+				}
+				
+			}
+
+			gitCredentials = credentialsJson;
+		}
+
+		private static void ImportFromOldCredentials()
+		{
+			var oldCredentialsFile = EditorGUIUtility.Load("UniGit/Git-Credentials.asset") as GitCredentials;
+			if (oldCredentialsFile != null)
+			{
+				gitCredentials.Copy(oldCredentialsFile);
+				Debug.Log("Old Git Credentials transferred to new json credentials file. Old credentials file can now safely be removed.");
+			}
+			SaveCredentialsToFile(gitCredentials);
+		}
+
+		private static void SaveCredentialsToFile(GitCredentialsJson credentials)
+		{
+			ValidateCredentialsPath();
+			string credentialsFilePath = CredentialsFilePath;
+
+			try
+			{
+				string json = JsonUtility.ToJson(credentials);
+				File.WriteAllText(credentialsFilePath, json);
+			}
+			catch (Exception e)
+			{
+				Debug.LogError("Could not serialize GitCredentialsJson to json file at: " + credentialsFilePath);
+				Debug.LogException(e);
+			}
+		}
+
+		private static void ValidateCredentialsPath()
+		{
+			string settingsFileDirectory = Path.Combine(GitManager.GitFolderPath, "UniGit");
+			if (!Directory.Exists(settingsFileDirectory))
+			{
+				Directory.CreateDirectory(settingsFileDirectory);
+			}
 		}
 
 		#region Selection
@@ -104,8 +193,8 @@ namespace UniGit
 
 		private static void ResetSelectedAdapter(ICredentialsAdapter lastAdapter)
 		{
-			if(lastAdapter == null || GitManager.GitCredentials == null) return;
-			foreach (var credential in GitManager.GitCredentials)
+			if(lastAdapter == null || gitCredentials == null) return;
+			foreach (var credential in gitCredentials)
 			{
 				lastAdapter.DeleteCredentials(credential.URL);
 				credential.SetHasPassword(false);
@@ -167,7 +256,7 @@ namespace UniGit
 
 		internal static void LoadCredentials(string url,ref string username, ref string password, bool addEntryIfMissing)
 		{
-			var entry = GitManager.GitCredentials.GetEntry(url);
+			var entry = gitCredentials.GetEntry(url);
 
 			if (addEntryIfMissing && entry == null)
 			{
@@ -175,8 +264,7 @@ namespace UniGit
 				entry.URL = url;
 				entry.SetUsername(username);
 				entry.Name = url;
-				EditorUtility.SetDirty(GitManager.GitCredentials);
-				AssetDatabase.SaveAssets();
+				gitCredentials.MarkDirty();
 			}
 			else if (entry != null)
 			{
@@ -187,7 +275,7 @@ namespace UniGit
 
 		internal static void DeleteCredentials(string url)
 		{
-			var entry = GitManager.GitCredentials.GetEntry(url);
+			var entry = gitCredentials.GetEntry(url);
 
 			if (SeletedAdapter != null)
 			{
@@ -204,13 +292,13 @@ namespace UniGit
 
 			if (entry != null)
 			{
-				GitManager.GitCredentials.RemoveEntry(entry);
+				gitCredentials.RemoveEntry(entry);
 			}
 		}
 
 		internal static void ClearCredentialPassword(string url)
 		{
-			var entry = GitManager.GitCredentials.GetEntry(url);
+			var entry = gitCredentials.GetEntry(url);
 
 			if (SeletedAdapter != null)
 			{
@@ -232,13 +320,13 @@ namespace UniGit
 			}
 		}
 
-		internal static GitCredentials.Entry CreatEntry(string url,string username,string password)
+		internal static GitCredential CreatEntry(string url,string username,string password)
 		{
-			GitCredentials.Entry entry = GitManager.GitCredentials.GetEntry(url);
+			GitCredential entry = gitCredentials.GetEntry(url);
 			if (entry != null) return null;
-			entry = new GitCredentials.Entry() {URL = url};
+			entry = new GitCredential() {URL = url};
 			entry.SetUsername(username);
-			GitManager.GitCredentials.AddEntry(entry);
+			gitCredentials.AddEntry(entry);
 			if (!string.IsNullOrEmpty(password))
 			{
 				SetNewPassword(url, username, password);
@@ -246,7 +334,7 @@ namespace UniGit
 			return entry;
 		}
 
-		internal static string LoadPassword(GitCredentials.Entry entry)
+		internal static string LoadPassword(GitCredential entry)
 		{
 			string pass = null;
 
@@ -288,18 +376,17 @@ namespace UniGit
 				}
 			}
 
-			var entry = GitManager.GitCredentials.GetEntry(url);
+			var entry = gitCredentials.GetEntry(url);
 			if (entry != null)
 			{
 				entry.SetUsername(user);
-				EditorUtility.SetDirty(GitManager.GitCredentials);
-				AssetDatabase.SaveAssets();
+				gitCredentials.MarkDirty();
 			}
 		}
 
 		internal static void SetNewPassword(string url,string user, string password)
 		{
-			var entry = GitManager.GitCredentials.GetEntry(url);
+			var entry = gitCredentials.GetEntry(url);
 
 			if (SeletedAdapter != null)
 			{
@@ -328,8 +415,21 @@ namespace UniGit
 			if (entry != null)
 			{
 				entry.EncryptPassword(password);
-				EditorUtility.SetDirty(GitManager.GitCredentials);
-				AssetDatabase.SaveAssets();
+				gitCredentials.MarkDirty();
+			}
+		}
+
+		public static GitCredentialsJson GitCredentials
+		{
+			get { return gitCredentials; }
+			internal set { gitCredentials = value; }
+		}
+
+		public static string CredentialsFilePath
+		{
+			get
+			{
+				return Path.Combine(GitManager.GitFolderPath, "UniGit/Credentials.json");
 			}
 		}
 

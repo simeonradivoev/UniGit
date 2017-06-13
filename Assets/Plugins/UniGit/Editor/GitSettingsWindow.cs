@@ -18,7 +18,6 @@ namespace UniGit
 		private string[] remoteNames;
 		private Rect addRepositoryButtonRect;
 		[SerializeField] private SettingTabEnum tab;
-		private SerializedObject serializedSettings;
 
 		[MenuItem("Window/GIT Settings")]
 		public static void CreateEditor()
@@ -47,7 +46,6 @@ namespace UniGit
 
 		protected override void OnInitialize()
 		{
-			serializedSettings = new SerializedObject(GitManager.Settings);
 			OnGitUpdate(null,null);
 		}
 
@@ -98,12 +96,12 @@ namespace UniGit
 			{
 				tab = SettingTabEnum.General;
 			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.Externals, GitGUI.GetTempContent("Externals"), "toolbarbutton");
+			value = GUILayout.Toggle(tab == SettingTabEnum.Externals, GitGUI.GetTempContent("Externals","External Programs Helpers"), "toolbarbutton");
 			if (value)
 			{
 				tab = SettingTabEnum.Externals;
 			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.Remotes, GitGUI.GetTempContent("Remotes"), "toolbarbutton");
+			value = GUILayout.Toggle(tab == SettingTabEnum.Remotes, GitGUI.GetTempContent("Remotes","Remote Repositories"), "toolbarbutton");
 			if (value)
 			{
 				tab = SettingTabEnum.Remotes;
@@ -113,7 +111,7 @@ namespace UniGit
 			{
 				tab = SettingTabEnum.Branches;
 			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.LFS, GitGUI.GetTempContent("LFS"), "toolbarbutton");
+			value = GUILayout.Toggle(tab == SettingTabEnum.LFS, GitGUI.GetTempContent("LFS","Git Large File Storage (beta)"), "toolbarbutton");
 			if (value)
 			{
 				tab = SettingTabEnum.LFS;
@@ -125,6 +123,10 @@ namespace UniGit
 			}
 			if(EditorGUI.EndChangeCheck()) LoseFocus();
 			GUILayout.FlexibleSpace();
+			if (GUILayout.Button(EditorGUIUtility.IconContent("_Help"), "IconButton"))
+			{
+				Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Setup#configuration");
+			}
 			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.Space();
@@ -167,24 +169,36 @@ namespace UniGit
 
 		private void DoGeneral(Event current)
 		{
+			GitSettingsJson settings = GitManager.Settings;
+
 			//todo cache general settings to reduce lookup
 			GUILayout.Box(new GUIContent("Unity Settings"), "IN BigTitle",GUILayout.ExpandWidth(true));
 
-			if (serializedSettings != null)
+			if (settings != null)
 			{
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoStage"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("AutoFetch"));
-				serializedSettings.ApplyModifiedProperties();
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommits"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("ProjectStatusOverlayDepth"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("ShowEmptyFolders"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("GitStatusMultithreaded"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("UseGavatar"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("MaxCommitTextAreaSize"));
-				EditorGUILayout.PropertyField(serializedSettings.FindProperty("DetectRenames"));
-				if (serializedSettings.ApplyModifiedProperties())
+				bool save = false;
+
+				EditorGUI.BeginChangeCheck();
+				settings.AutoStage = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Stage","Auto stage changes for committing when an asset is modified"),settings.AutoStage);
+				settings.AutoFetch = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Fetch","Auto fetch repository changes when possible. This will tell you about changes to the remote repository without having to pull. This only works with the Credentials Manager."),settings.AutoFetch);
+				save = EditorGUI.EndChangeCheck();
+				EditorGUI.BeginChangeCheck();
+				settings.MaxCommits = EditorGUILayout.DelayedIntField(GitGUI.GetTempContent("Max Commits","The Maximum amount of commits show in the Git History Window. Use -1 for infinite commits."),settings.MaxCommits);
+				settings.ProjectStatusOverlayDepth = EditorGUILayout.DelayedIntField(GitGUI.GetTempContent("Project Status Overlay Depth", "The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit"),settings.ProjectStatusOverlayDepth);
+				settings.ShowEmptyFolders = EditorGUILayout.Toggle(new GUIContent("Show Empty Folders","Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled."),settings.ShowEmptyFolders);
+				settings.GitStatusMultithreaded = EditorGUILayout.Toggle(GitGUI.GetTempContent("Git Status Multithreaded","Should Git status retrieval be multithreaded."),settings.GitStatusMultithreaded);
+				settings.UseGavatar = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Gavatar","Load Gavatars based on the committer's email address."),settings.UseGavatar);
+				settings.MaxCommitTextAreaSize = EditorGUILayout.DelayedFloatField(GitGUI.GetTempContent("Max Commit Text Area Size","The maximum height the commit text area can expand to."),settings.MaxCommitTextAreaSize);
+				settings.DetectRenames = EditorGUILayout.Toggle(GitGUI.GetTempContent("Detect Renames","Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works."),settings.DetectRenames);
+				if (EditorGUI.EndChangeCheck())
 				{
+					save = true;
 					GitManager.MarkDirty();
+				}
+
+				if (save)
+				{
+					settings.MarkDirty();
 				}
 			}
 
@@ -192,38 +206,38 @@ namespace UniGit
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("User"), EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1;
-			DoConfigStringField(GitGUI.GetTempContent("Name"), "user.name", "");
-			DoConfigStringField(GitGUI.GetTempContent("Email"), "user.email", "");
+			DoConfigStringField(GitGUI.GetTempContent("Name", "Your full name to be recorded in any newly created commits."), "user.name", "");
+			DoConfigStringField(GitGUI.GetTempContent("Email", "Your email address to be recorded in any newly created commits."), "user.email", "");
 			EditorGUI.indentLevel = 0;
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("Core"),EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1; 
-			DoConfigToggle(GitGUI.GetTempContent("Auto LF line endings"), "core.autocrlf", true);
-			DoConfigToggle(GitGUI.GetTempContent("Bare"), "core.bare",false);
-			DoConfigToggle(GitGUI.GetTempContent("Symlinks"), "core.symlinks",false);
-			DoConfigToggle(GitGUI.GetTempContent("Ignore Case"), "core.ignorecase",true);
-			DoConfigToggle(GitGUI.GetTempContent("Logal Reference Updates"), "core.logallrefupdates",true);
-			DoConfigIntSlider(GitGUI.GetTempContent("Compression"), -1,9, "core.compression",-1);
-			DoConfigStringField(GitGUI.GetTempContent("Big File Threshold"), "core.bigFileThreshold","512m");
+			DoConfigToggle(GitGUI.GetTempContent("Auto LF line endings", "Setting this variable to 'true' is the same as setting the text attribute to 'auto' on all files and core.eol to 'crlf'. Set to true if you want to have CRLF line endings in your working directory and the repository has LF line endings. "), "core.autocrlf", true);
+			DoConfigToggle(GitGUI.GetTempContent("Bare", "If true this repository is assumed to be bare and has no working directory associated with it. If this is the case a number of commands that require a working directory will be disabled, such as git-add[1] or git-merge[1]."), "core.bare",false);
+			DoConfigToggle(GitGUI.GetTempContent("Symlinks", "If false, symbolic links are checked out as small plain files that contain the link text. git-update-index[1] and git-add[1] will not change the recorded type to regular file. Useful on filesystems like FAT that do not support symbolic links."), "core.symlinks",false);
+			DoConfigToggle(GitGUI.GetTempContent("Ignore Case", "If true, this option enables various workarounds to enable Git to work better on filesystems that are not case sensitive, like FAT. For example, if a directory listing finds 'makefile' when Git expects 'Makefile', Git will assume it is really the same file, and continue to remember it as 'Makefile'."), "core.ignorecase",true);
+			DoConfigToggle(GitGUI.GetTempContent("Logal Reference Updates", "Enable the reflog."), "core.logallrefupdates",true);
+			DoConfigIntSlider(GitGUI.GetTempContent("Compression", "An integer -1..9, indicating a default compression level. -1 is the zlib default. 0 means no compression, and 1..9 are various speed/size tradeoffs, 9 being slowest."), -1,9, "core.compression",-1);
+			DoConfigStringField(GitGUI.GetTempContent("Big File Threshold", "Files larger than this size are stored deflated, without attempting delta compression. Storing large files without delta compression avoids excessive memory usage, at the slight expense of increased disk usage. Additionally files larger than this size are always treated as binary."), "core.bigFileThreshold","512m");
 			EditorGUI.indentLevel = 0;
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("Branch"), EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1;
-			DoConfigStringsField(GitGUI.GetTempContent("Auto Setup Rebase"), "branch.autoSetupRebase", autoRebaseOptions, "never");
+			DoConfigStringsField(GitGUI.GetTempContent("Auto Setup Rebase", "When a new branch is created with git branch or git checkout that tracks another branch, this variable tells Git to set up pull to rebase instead of merge."), "branch.autoSetupRebase", autoRebaseOptions, "never");
 			EditorGUI.indentLevel = 0;
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("Diff"), EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1;
-			DoConfigToggle(GitGUI.GetTempContent("Renames"), "diff.renames", true);
-			DoConfigIntField(GitGUI.GetTempContent("Rename Limit"), "diff.renameLimit", -1);
+			DoConfigToggle(GitGUI.GetTempContent("Renames", "Whether and how Git detects renames. If set to 'false', rename detection is disabled. If set to 'true', basic rename detection is enabled. "), "diff.renames", true);
+			DoConfigIntField(GitGUI.GetTempContent("Rename Limit", "The number of files to consider when performing the copy/rename detection. Use -1 for unlimited"), "diff.renameLimit", -1);
 			EditorGUI.indentLevel = 0;
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("HTTP"), EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1;
-			DoConfigToggle(GitGUI.GetTempContent("Verify SSL Crtificate"), "http.sslVerify",true);
+			DoConfigToggle(GitGUI.GetTempContent("Verify SSL Crtificate", "Whether to verify the SSL certificate when fetching or pushing over HTTPS."), "http.sslVerify",true);
 			string oldPath = GitManager.Repository.Config.GetValueOrDefault<string>("http.sslCAInfo");
 			EditorGUILayout.BeginHorizontal();
-			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("SSL Certificate File"));
+			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("SSL Certificate File", "File containing the certificates to verify the peer with when fetching or pushing over HTTPS."));
 			if (GUILayout.Button(GitGUI.GetTempContent(oldPath), "TE ToolbarDropDown"))
 			{
 				EditorGUI.BeginChangeCheck();
@@ -235,6 +249,17 @@ namespace UniGit
 			}
 			EditorGUILayout.EndHorizontal();
 			EditorGUI.indentLevel = 0;
+
+			GUILayout.Box(new GUIContent("Git Ignore"), "IN BigTitle", GUILayout.ExpandWidth(true));
+
+			EditorGUILayout.BeginHorizontal();
+			GUILayout.FlexibleSpace();
+			if (GUILayout.Button("Open Git Ignore File"))
+			{
+				Application.OpenURL(Path.Combine(GitManager.RepoPath,".gitignore"));
+			}
+			GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
 		}
 
 		private void DoConfigStringsField(GUIContent content, string key,string[] options, string def)
@@ -315,15 +340,16 @@ namespace UniGit
 		private void DoSecurity(Event current)
 		{
 			EditorGUILayout.BeginHorizontal();
-			if (serializedSettings != null)
+			GitSettingsJson settings = GitManager.Settings;
+			if (settings != null)
 			{
-				SerializedProperty credentialsManagerProperty = serializedSettings.FindProperty("CredentialsManager");
+				EditorGUI.BeginChangeCheck();
 				int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("Credentials Manager", "The name of the External program to use"), GitCredentialsManager.SelectedAdapterIndex, GitCredentialsManager.AdapterNames);
-				credentialsManagerProperty.stringValue = newSelectedIndex >= 0 && newSelectedIndex < GitCredentialsManager.AdapterIds.Length ? GitCredentialsManager.AdapterIds[newSelectedIndex] : "";
-				if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
+				settings.CredentialsManager = newSelectedIndex >= 0 && newSelectedIndex < GitCredentialsManager.AdapterIds.Length ? GitCredentialsManager.AdapterIds[newSelectedIndex] : "";
+				if (EditorGUI.EndChangeCheck())
 				{
 					GitCredentialsManager.SetSelectedAdapter(newSelectedIndex);
-					AssetDatabase.SaveAssets();
+					settings.MarkDirty();
 				}
 				GUI.enabled = newSelectedIndex >= 0;
 			}
@@ -337,20 +363,13 @@ namespace UniGit
 			GUI.enabled = true;
 			EditorGUILayout.EndHorizontal();
 
-			if (GitManager.GitCredentials == null)
+			if (GitCredentialsManager.GitCredentials == null)
 			{
 				EditorGUILayout.HelpBox("No Git Credentials",MessageType.Warning);
-				if (GUILayout.Button("Create Credentials File"))
-				{
-					GitManager.GitCredentials = CreateInstance<GitCredentials>();
-					if(!Directory.Exists("Assets/Editor Default Resources/UniGit")) AssetDatabase.CreateFolder("Assets/Editor Default Resources", "UniGit");
-					AssetDatabase.CreateAsset(GitManager.GitCredentials, "Assets/Editor Default Resources/UniGit/Git-Credentials.asset");
-					AssetDatabase.SaveAssets();
-				}
 				return;
 			}
 
-			foreach (var gitCredential in GitManager.GitCredentials)
+			foreach (var gitCredential in GitCredentialsManager.GitCredentials)
 			{
 				GUILayout.Label(GitGUI.GetTempContent(gitCredential.Name), "ShurikenModuleTitle");
 				EditorGUILayout.Space();
@@ -408,7 +427,7 @@ namespace UniGit
 				
 				if (EditorGUI.EndChangeCheck())
 				{
-					EditorUtility.SetDirty(GitManager.GitCredentials);
+					GitCredentialsManager.GitCredentials.MarkDirty();
 				}
 
 				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewPassword);
@@ -418,7 +437,7 @@ namespace UniGit
 				{
 					GitCredentialsManager.SetNewPassword(gitCredential.URL,gitCredential.Username,gitCredential.NewPassword);
 					gitCredential.NewPassword = "";
-					EditorUtility.SetDirty(GitManager.GitCredentials);
+					GitCredentialsManager.GitCredentials.MarkDirty();
 					GUI.FocusControl("");
 					EditorUtility.DisplayDialog("Password Changed", "Password successfully changed", "Ok");
 				}
@@ -426,20 +445,17 @@ namespace UniGit
 				if (GUILayout.Button(GitGUI.GetTempContent("Clear Password"), "minibuttonmid"))
 				{
 					GitCredentialsManager.ClearCredentialPassword(gitCredential.URL);
-					EditorUtility.SetDirty(GitManager.GitCredentials);
-					AssetDatabase.SaveAssets();
+					GitCredentialsManager.GitCredentials.MarkDirty();
 				}
 				GUI.enabled = true;
 				if (GUILayout.Button(GitGUI.GetTempContent("Save"), "minibuttonmid"))
 				{
-					EditorUtility.SetDirty(GitManager.GitCredentials);
-					AssetDatabase.SaveAssets();
+					GitCredentialsManager.GitCredentials.MarkDirty();
 				}
 				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), "minibuttonright"))
 				{
-					GitCredentialsManager.DeleteCredentials(gitCredential.URL);
+					GitCredentialsManager.GitCredentials.MarkDirty();
 					GUIUtility.ExitGUI();
-					return;
 				}
 				GUILayout.FlexibleSpace();
 				EditorGUILayout.EndHorizontal();
@@ -571,27 +587,23 @@ namespace UniGit
 
 		private void DoExternals(Event current)
 		{
-			if (serializedSettings == null) return;
-			SerializedProperty externalTypesProperty = serializedSettings.FindProperty("ExternalsType");
-			if (externalTypesProperty != null)
+			GitSettingsJson settings = GitManager.Settings;
+			if (settings == null) return;
+
+			EditorGUI.BeginChangeCheck();
+			settings.ExternalsType = (GitSettings.ExternalsTypeEnum)EditorGUILayout.EnumMaskField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), settings.ExternalsType);
+			if (EditorGUI.EndChangeCheck())
 			{
-				externalTypesProperty.intValue = (int) (GitSettings.ExternalsTypeEnum) EditorGUILayout.EnumMaskField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), (GitSettings.ExternalsTypeEnum) externalTypesProperty.intValue);
-				if (serializedSettings.ApplyModifiedProperties())
-				{
-					AssetDatabase.SaveAssets();
-				}
+				settings.MarkDirty();
 			}
 
-			SerializedProperty externalProgramProperty = serializedSettings.FindProperty("ExternalProgram");
-			if (externalProgramProperty != null)
+			EditorGUI.BeginChangeCheck();
+			int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), GitExternalManager.SelectedAdapterIndex, GitExternalManager.AdapterNames);
+			settings.ExternalProgram = GitExternalManager.AdapterNames[newSelectedIndex].text;
+			if (EditorGUI.EndChangeCheck())
 			{
-				int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), GitExternalManager.SelectedAdapterIndex, GitExternalManager.AdapterNames);
-				externalProgramProperty.stringValue = GitExternalManager.AdapterNames[newSelectedIndex].text;
-				if (serializedSettings.ApplyModifiedPropertiesWithoutUndo())
-				{
-					GitExternalManager.SetSelectedAdapter(newSelectedIndex);
-					AssetDatabase.SaveAssets();
-				}
+				GitExternalManager.SetSelectedAdapter(newSelectedIndex);
+				settings.MarkDirty();
 			}
 
 			EditorGUILayout.HelpBox("Using external programs is always recommended as UniGit is still in development.",MessageType.Info);
@@ -668,6 +680,7 @@ namespace UniGit
 		}
 		#endregion
 
+		#region Remotes
 		private void DoRemotes(Event current)
 		{
 			int remoteCount = remotes.Count();
@@ -724,6 +737,7 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
 		}
+		#endregion
 
 		private class RemoteEntry
 		{
@@ -793,7 +807,8 @@ namespace UniGit
 			Remotes,
 			Branches,
 			LFS,
-			Security
+			Security,
+			Ignore
 		}
 
 		#region Popup Windows
@@ -855,8 +870,7 @@ namespace UniGit
 					if (entry != null)
 					{
 						entry.Name = name;
-						EditorUtility.SetDirty(GitManager.GitCredentials);
-						AssetDatabase.SaveAssets();
+						GitCredentialsManager.GitCredentials.MarkDirty();
 						GetWindow<GitSettingsWindow>().Focus();
 					}
 					else
@@ -900,7 +914,7 @@ namespace UniGit
 					EditorGUILayout.HelpBox("No selected commit.",MessageType.Warning);
 				}
 				
-				GUI.enabled = !string.IsNullOrEmpty(name) && commit != null;
+				GitGUI.StartEnable(!string.IsNullOrEmpty(name) && commit != null);
 				if (GUILayout.Button(GitGUI.GetTempContent("Create Branch")))
 				{
 					try
@@ -920,7 +934,7 @@ namespace UniGit
 						Debug.LogException(e);
 					}
 				}
-				GUI.enabled = false;
+				GitGUI.EndEnable();
 			}
 		}
 		#endregion

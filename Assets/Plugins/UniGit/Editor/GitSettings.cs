@@ -44,4 +44,53 @@ namespace UniGit
 			Revert = 1 << 7
 		}
 	}
+
+	[Serializable]
+	public class GitSettingsJson
+	{
+		public bool AutoStage = true;
+		public bool AutoFetch = true;
+		public int MaxCommits = 32;
+		public GitSettings.ExternalsTypeEnum ExternalsType;
+		public string ExternalProgram;
+		public string CredentialsManager;
+		public int ProjectStatusOverlayDepth = 2;
+		public bool ShowEmptyFolders = false;
+		public bool GitStatusMultithreaded = true;
+		public bool UseGavatar = true;
+		public float MaxCommitTextAreaSize = 120;
+		public bool DetectRenames = true;
+		private bool isDirty;
+
+		public void Copy(GitSettings settings)
+		{
+			AutoStage = settings.AutoStage;
+			AutoFetch = settings.AutoFetch;
+			MaxCommits = settings.MaxCommits;
+			ExternalsType = settings.ExternalsType;
+			ExternalProgram = settings.ExternalProgram;
+			CredentialsManager = settings.CredentialsManager;
+			ProjectStatusOverlayDepth = settings.ProjectStatusOverlayDepth;
+			ShowEmptyFolders = settings.ShowEmptyFolders;
+			GitStatusMultithreaded = settings.GitStatusMultithreaded;
+			UseGavatar = settings.UseGavatar;
+			MaxCommitTextAreaSize = settings.MaxCommitTextAreaSize;
+			DetectRenames = settings.DetectRenames;
+		}
+
+		internal void MarkDirty()
+		{
+			isDirty = true;
+		}
+
+		internal void ResetDirty()
+		{
+			isDirty = false;
+		}
+
+		internal bool IsDirty
+		{
+			get { return isDirty; }
+		}
+	}
 }

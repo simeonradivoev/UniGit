@@ -24,6 +24,12 @@ namespace UniGit
 			GitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
 			GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
 			GitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
+
+			GitCallbacks.UpdateRepositoryStart -= UpdateTitleIcon;
+			GitCallbacks.UpdateRepositoryStart += UpdateTitleIcon;
+
+			GitCallbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
+			GitCallbacks.UpdateRepositoryFinish += UpdateTitleIcon;
 		}
 
 		protected virtual void OnFocus()
@@ -33,12 +39,17 @@ namespace UniGit
 
 		private void OnGitManagerUpdateInternal(GitRepoStatus status,string[] paths)
 		{
-			titleContent.image = GitManager.GetGitStatusIcon();
+			UpdateTitleIcon();
 
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
 			if (initilized == null || !GitManager.IsValidRepo) return;
 			OnGitUpdate(status, paths);
+		}
+
+		private void UpdateTitleIcon()
+		{
+			titleContent.image = GitManager.GetGitStatusIcon();
 			Repaint();
 		}
 
@@ -70,6 +81,8 @@ namespace UniGit
 			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
 			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 			GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
+			GitCallbacks.UpdateRepositoryStart -= UpdateTitleIcon;
+			GitCallbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
 		}
 
 		#region Safe Controlls

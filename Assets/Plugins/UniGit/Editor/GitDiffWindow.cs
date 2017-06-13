@@ -297,7 +297,7 @@ namespace UniGit
 				commitMenu.AddItem(new GUIContent("Commit Message/Reload"),false,ReadCommitMessage);
 				commitMenu.ShowAsContext();
 			}
-			GUI.enabled = !GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit);
+			GitGUI.StartEnable(!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit));
 			settings.emptyCommit = GUILayout.Toggle(settings.emptyCommit, GitGUI.GetTempContent("Empty Commit", "Commit the message only without changes"));
 			EditorGUI.BeginChangeCheck();
 			settings.amendCommit = GUILayout.Toggle(settings.amendCommit, GitGUI.GetTempContent("Amend Commit", "Amend previous commit."));
@@ -319,8 +319,12 @@ namespace UniGit
 				}
 			}
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
-			GUI.enabled = true;
+			GitGUI.EndEnable();
 			GUILayout.FlexibleSpace();
+			if (GUILayout.Button(EditorGUIUtility.IconContent("_Help"),"IconButton"))
+			{
+				Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage#file-difference-and-committing");
+			}
 			EditorGUILayout.EndHorizontal();
 			EditorGUILayout.Space();
 		}
@@ -514,6 +518,8 @@ namespace UniGit
 			EditorGUILayout.EndHorizontal();
 			GUILayout.EndArea();
 
+			GitGUI.StartEnable(!GitManager.IsUpdating);
+
 			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,512), elementsTotalHeight);
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
 
@@ -535,7 +541,7 @@ namespace UniGit
 					if (current.type == EventType.Repaint)
 					{
 						styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false,false,false,false);
-						GUI.Box(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(GitManager.GetDiffTypeIcon(info.State, false).image), GUIStyle.none);
+						GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(GitOverlay.GetDiffTypeIcon(info.State, false).image),false,false,false,false);
 						((GUIStyle) "ProjectBrowserSubAssetExpandBtn").Draw(new Rect(elementRect.x + elementRect.width + 32, elementRect.y, 24, 24), GUIContent.none, false, isExpanded, isExpanded, false);
 					}
 
@@ -571,6 +577,7 @@ namespace UniGit
 				index++;
 			}
 			GUI.EndScrollView();
+			GitGUI.EndEnable();
 
 			if (Event.current.type == EventType.mouseDrag && DiffRect.Contains(Event.current.mousePosition))
 			{
@@ -637,16 +644,16 @@ namespace UniGit
 				styles.diffElementName.Draw(new Rect(x, rect.y + elementTopBottomMargin + 2, rect.width - elementSideMargin - iconSize - rect.height, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(fileName), false, info.Selected, info.Selected, false);
 
 				x = rect.x + elementSideMargin + iconSize + 8;
-				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitManager.GetDiffTypeIcon(info.State, false), GUIStyle.none);
+				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitOverlay.GetDiffTypeIcon(info.State, false), GUIStyle.none);
 				x += 25;
 				if (info.MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitManager.icons.objectIconSmall.image,string.Empty, "main asset file changed"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.objectIconSmall.image,string.Empty, "main asset file changed"), GUIStyle.none);
 					x += 25;
 				}
 				if (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitManager.icons.metaIconSmall.image,string.Empty, ".meta file changed"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.metaIconSmall.image,string.Empty, ".meta file changed"), GUIStyle.none);
 					x += 25;
 				}
 
@@ -656,6 +663,7 @@ namespace UniGit
 			if (canUnstage || canStage)
 			{
 				EditorGUI.BeginChangeCheck();
+				EditorGUIUtility.AddCursorRect(stageToggleRect,MouseCursor.Link);
 				EditorGUI.Toggle(stageToggleRect,canUnstage, styles.toggle);
 				if (EditorGUI.EndChangeCheck())
 				{
@@ -798,9 +806,9 @@ namespace UniGit
 		{
 			try
 			{
-				if (!Directory.Exists(Application.dataPath.Replace("Assets", "UniGit/Settings")))
+				if (!Directory.Exists(Path.Combine(GitManager.GitFolderPath, "UniGit/Settings")))
 				{
-					Directory.CreateDirectory(Application.dataPath.Replace("Assets", "UniGit/Settings"));
+					Directory.CreateDirectory(Path.Combine(GitManager.GitFolderPath, "UniGit/Settings"));
 				}
 
 				File.WriteAllText(CommitMessageFilePath, settings.commitMessageFromFile);
@@ -832,7 +840,7 @@ namespace UniGit
 
 		private string CommitMessageFilePath
 		{
-			get { return Application.dataPath.Replace("Assets", "UniGit") + "/Settings/CommitMessage.txt"; }
+			get { return Path.Combine(GitManager.GitFolderPath, "UniGit/Settings/CommitMessage.txt"); }
 		}
 
 		[UsedImplicitly]
@@ -946,6 +954,10 @@ namespace UniGit
 			editMenu.AddSeparator("");
 			editMenu.AddItem(new GUIContent("Revert"), false, RevertSelectedCallback);
 			editMenu.AddSeparator("");
+			if (entries.Length == 1)
+			{
+				editMenu.AddItem(new GUIContent("Show In Explorer"), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
+			}
 			editMenu.AddItem(new GUIContent("Reload"), false, ReloadCallback);
 		}
 

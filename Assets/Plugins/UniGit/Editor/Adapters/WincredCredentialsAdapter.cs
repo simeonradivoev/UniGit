@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UniGit.Attributes;
+using UniGit.Security;
 
 namespace UniGit.Adapters
 {
@@ -11,9 +14,10 @@ namespace UniGit.Adapters
 	{
 		public void DeleteCredentials(string url)
 		{
-			using (var credential = new Credential(null, null, url))
+			var credentialSet = new CredentialSet(url);
+			foreach (var c in credentialSet)
 			{
-				credential.Delete();
+				c.Delete();
 			}
 		}
 
@@ -60,6 +64,12 @@ namespace UniGit.Adapters
 				}
 			}
 			return false;
+		}
+
+		public bool Exists(string url)
+		{
+			var credentialSet = new CredentialSet(url);
+			return credentialSet.Count > 0;
 		}
 	}
 #endif

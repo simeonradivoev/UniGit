@@ -1,0 +1,7 @@
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\bin\Release\UniGitResources.dll
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\bin\Release\UniGitResources.pdb
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\obj\Release\UniGitResources.csprojResolveAssemblyReference.cache
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\obj\Release\UniGitResources.Properties.Resources.resources
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\obj\Release\UniGitResources.csproj.GenerateResource.Cache
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\obj\Release\UniGitResources.dll
+D:\My Documents\My Pictures\My Art\Games\UniGit\UniGitResourcesVs\obj\Release\UniGitResources.pdb

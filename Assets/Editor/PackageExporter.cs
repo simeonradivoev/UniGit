@@ -30,7 +30,7 @@ public class PackageExporter
 		"Assets/Plugins/UniGit/Editor/UniGitVs.dll.mdb"
 	};
 
-	[MenuItem("UniGit/Build DLL")]
+	[MenuItem("UniGit/Dev/Build DLL")]
 	public static void BuildDLL()
 	{
 		UpdateVSProject();
@@ -86,7 +86,7 @@ public class PackageExporter
 		}
 	}
 
-	[MenuItem("UniGit/Export As Package")]
+	[MenuItem("UniGit/Dev/Export As Package")]
 	public static void GeneratePackage()
 	{
 		EditorApplication.LockReloadAssemblies();

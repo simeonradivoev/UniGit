@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Security;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
@@ -18,16 +19,15 @@ namespace UniGit
 {
 	public static class GitManager
 	{
-		public const string GitDirectory = @"C:\Program Files\Git";
+		public const string Version = "1.1.0";
 
 		private static string repoPathCached;
+		private static string gitPathCached;
 		public static string RepoPath { get { return repoPathCached; } }
 
 		private static Repository repository;
 		private static StatusTreeClass statusTree;
-		private static GitCredentials gitCredentials;
-		private static GitSettings gitSettings;
-		internal static Icons icons;
+		private static GitSettingsJson gitSettings;
 		private static bool needsFetch;
 		private readonly static Queue<Action> actionQueue = new Queue<Action>();
 		private static GitRepoStatus status;
@@ -35,106 +35,133 @@ namespace UniGit
 		private static readonly object statusRetriveLock = new object();
 		private static bool repositoryDirty;
 		private static bool reloadDirty;
+		private static bool isUpdating;
 		private static readonly List<string> dirtyFiles = new List<string>(); 
-
-		public class Icons
-		{
-			public GUIContent validIcon;
-			public GUIContent validIconSmall;
-			public GUIContent modifiedIcon;
-			public GUIContent modifiedIconSmall;
-			public GUIContent addedIcon;
-			public GUIContent addedIconSmall;
-			public GUIContent untrackedIcon;
-			public GUIContent untrackedIconSmall;
-			public GUIContent ignoredIcon;
-			public GUIContent ignoredIconSmall;
-			public GUIContent conflictIcon;
-			public GUIContent conflictIconSmall;
-			public GUIContent deletedIcon;
-			public GUIContent deletedIconSmall;
-			public GUIContent renamedIcon;
-			public GUIContent renamedIconSmall;
-			public GUIContent loadingIconSmall;
-			public GUIContent objectIcon;
-			public GUIContent objectIconSmall;
-			public GUIContent metaIcon;
-			public GUIContent metaIconSmall;
-		}
-
-		private static GUIStyle IconStyle;
 
 		[InitializeOnLoadMethod]
 		internal static void Initlize()
 		{
 			repoPathCached = Application.dataPath.Replace("/Assets", "").Replace("/", "\\");
+			gitPathCached = Application.dataPath.Replace("Assets", ".git");
 
 			if (!IsValidRepo)
 			{
 				return;
 			}
 
-			gitCredentials = EditorGUIUtility.Load("UniGit/Git-Credentials.asset") as GitCredentials;
-			gitSettings = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
-			if (gitSettings == null)
-			{
-				gitSettings = ScriptableObject.CreateInstance<GitSettings>();
-				AssetDatabase.CreateAsset(gitSettings, "Assets/Editor Default Resources/UniGit/Git-Settings.asset");
-				AssetDatabase.SaveAssets();
-			}
+			LoadGitSettings();
 
-			if (IconStyle == null)
-			{
-				IconStyle = new GUIStyle
-				{
-					imagePosition = ImagePosition.ImageOnly,
-					alignment = TextAnchor.LowerLeft,
-					padding = new RectOffset(2, 2, 2, 2)
-				};
-			}
-
-			if (icons == null)
-			{
-				icons = new Icons()
-				{
-					validIcon = EditorGUIUtility.IconContent("UniGit/success") ,
-					validIconSmall = EditorGUIUtility.IconContent("UniGit/success_small"),
-					modifiedIcon = EditorGUIUtility.IconContent("UniGit/error"),
-					modifiedIconSmall = EditorGUIUtility.IconContent("UniGit/error_small"),
-					addedIcon = EditorGUIUtility.IconContent("UniGit/add"),
-					addedIconSmall = EditorGUIUtility.IconContent("UniGit/add_small"),
-					untrackedIcon = EditorGUIUtility.IconContent("UniGit/info"),
-					untrackedIconSmall = EditorGUIUtility.IconContent("UniGit/info_small"),
-					ignoredIcon = EditorGUIUtility.IconContent("UniGit/minus"),
-					ignoredIconSmall = EditorGUIUtility.IconContent("UniGit/minus_small"),
-					conflictIcon = EditorGUIUtility.IconContent("UniGit/warning"),
-					conflictIconSmall = EditorGUIUtility.IconContent("UniGit/warning_small"),
-					deletedIcon = EditorGUIUtility.IconContent("UniGit/deleted"),
-					deletedIconSmall = EditorGUIUtility.IconContent("UniGit/deleted_small"),
-					renamedIcon = EditorGUIUtility.IconContent("UniGit/renamed"),
-					renamedIconSmall = EditorGUIUtility.IconContent("UniGit/renamed_small"),
-					loadingIconSmall = EditorGUIUtility.IconContent("UniGit/loading"),
-					objectIcon = EditorGUIUtility.IconContent("UniGit/object"),
-					objectIconSmall = EditorGUIUtility.IconContent("UniGit/object_small"),
-					metaIcon = EditorGUIUtility.IconContent("UniGit/meta"),
-					metaIconSmall = EditorGUIUtility.IconContent("UniGit/meta_small")
-				};
-			}
-
-			EditorApplication.projectWindowItemOnGUI += CustomIcons;
-
+			GitResourceManager.Initilize();
+			GitCredentialsManager.Load();
+			GitOverlay.Initlize();
 			GitLfsManager.Load();
 			GitHookManager.Load();
 			GitExternalManager.Load();
-			GitCredentialsManager.Load();
 
 			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 			repositoryDirty = true;
 			GitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
 
+		internal static void InitilizeRepository()
+		{
+			Repository.Init(Application.dataPath.Replace("/Assets", ""));
+			string newGitIgnoreFile = Path.Combine(Application.dataPath.Replace("Assets", "").Replace("Contents", ""), ".gitignore");
+			if (!File.Exists(newGitIgnoreFile))
+			{
+				File.WriteAllText(Path.Combine(Application.dataPath, newGitIgnoreFile), GitIgnoreTemplate.Template);
+			}
+			else
+			{
+				Debug.Log("Git Ignore file already present");
+			}
+			AssetDatabase.Refresh();
+			AssetDatabase.SaveAssets();
+			Initlize();
+			MarkDirty();
+		}
+
+		private static void SaveSettingsToFile(GitSettingsJson settings)
+		{
+			ValidateSettingsPath();
+			string settingsFilePath = SettingsFilePath;
+
+			try
+			{
+				string json = JsonUtility.ToJson(settings);
+				File.WriteAllText(settingsFilePath, json);
+			}
+			catch (Exception e)
+			{
+				Debug.LogError("Could not serialize GitSettingsJson to json file at: " + settingsFilePath);
+				Debug.LogException(e);
+			}
+		}
+
+		private static void ValidateSettingsPath()
+		{
+			string settingsFileDirectory = Path.Combine(gitPathCached,"UniGit");
+			if (!Directory.Exists(settingsFileDirectory))
+			{
+				Directory.CreateDirectory(settingsFileDirectory);
+			}
+		}
+
+		private static void LoadGitSettings()
+		{
+			string settingsFilePath = SettingsFilePath;
+			GitSettingsJson settingsJson = null;
+			if (File.Exists(settingsFilePath))
+			{
+				try
+				{
+					settingsJson = JsonUtility.FromJson<GitSettingsJson>(File.ReadAllText(settingsFilePath));
+				}
+				catch (Exception e)
+				{
+					Debug.LogError("Could not deserialize git settings. Creating new settings.");
+					Debug.LogException(e);
+				}
+			}
+
+			if(settingsJson == null)
+			{
+				settingsJson = new GitSettingsJson();
+				var oldSettingsFile = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
+				if (oldSettingsFile != null)
+				{
+					//must be delayed call for unity to deserialize settings file properly
+					EditorApplication.delayCall += LoadOldSettingsFile;
+				}
+				else
+				{
+					SaveSettingsToFile(settingsJson);
+				}
+			}
+
+			gitSettings = settingsJson;
+		}
+
+		private static void LoadOldSettingsFile()
+		{
+			var oldSettingsFile = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
+			if (oldSettingsFile != null)
+			{
+				gitSettings.Copy(oldSettingsFile);
+				Debug.Log("Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
+			}
+			SaveSettingsToFile(gitSettings);
+			MarkDirty(true);
+		}
+
 		internal static void OnEditorUpdate()
 		{
+			if (gitSettings.IsDirty)
+			{
+				SaveSettingsToFile(gitSettings);
+				gitSettings.ResetDirty();
+			}
+
 			if (needsFetch)
 			{
 				try
@@ -184,6 +211,8 @@ namespace UniGit
 
 		private static void Update(bool reloadRepository,string[] paths = null)
 		{
+			StartUpdating();
+
 			if ((repository == null || reloadRepository) && IsValidRepo)
 			{
 				if (repository != null) repository.Dispose();
@@ -252,11 +281,20 @@ namespace UniGit
 
 		private static void RetreiveStatus(string[] paths)
 		{
-			GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
-			RebuildStatus(paths);
-			GitProfilerProxy.EndSample();
-			GitCallbacks.IssueUpdateRepository(status,paths);
-			ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
+			try
+			{
+				GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
+				RebuildStatus(paths);
+				GitProfilerProxy.EndSample();
+				GitCallbacks.IssueUpdateRepository(status, paths);
+				ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
+			}
+			catch (Exception e)
+			{
+				FinishUpdating();
+				Debug.LogError("Could not retrive Git Status");
+				Debug.LogException(e);
+			}
 		}
 
 		private static void ReteriveStatusThreaded(object param)
@@ -275,6 +313,7 @@ namespace UniGit
 			catch (Exception e)
 			{
 				Debug.LogException(e);
+				actionQueue.Enqueue(FinishUpdating);
 			}
 			finally
 			{
@@ -298,13 +337,27 @@ namespace UniGit
 			finally
 			{
 				Monitor.Exit(statusTreeLock);
+				actionQueue.Enqueue(FinishUpdating);
 			}
+		}
+
+		private static void StartUpdating()
+		{
+			isUpdating = true;
+			GitCallbacks.IssueUpdateRepositoryStart();
+		}
+
+		private static void FinishUpdating()
+		{
+			isUpdating = false;
+			GitCallbacks.IssueUpdateRepositoryFinish();
 		}
 
 		public static Texture2D GetGitStatusIcon()
 		{
 			if (!IsValidRepo) return EditorGUIUtility.FindTexture("CollabNew");
 			if (Repository == null) return EditorGUIUtility.FindTexture("Collab");
+			if (isUpdating) return EditorGUIUtility.FindTexture("WaitSpin00");
 			if (Repository.Index.Conflicts.Any()) return EditorGUIUtility.FindTexture("CollabConflict");
 			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
 			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
@@ -317,97 +370,6 @@ namespace UniGit
 				return EditorGUIUtility.FindTexture("CollabPush");
 			}
 			return EditorGUIUtility.FindTexture("Collab");
-		}
-
-		public static GUIContent GetDiffTypeIcon(FileStatus type,bool small)
-		{
-			GUIContent content = null;
-
-			if (type.IsFlagSet(FileStatus.ModifiedInWorkdir | FileStatus.ModifiedInIndex))
-			{
-				content = small ? icons.modifiedIconSmall : icons.modifiedIcon;
-			}
-			if (type.IsFlagSet(FileStatus.NewInIndex))
-			{
-				content = small ? icons.addedIconSmall : icons.addedIcon;
-			}
-			if (type.IsFlagSet(FileStatus.NewInWorkdir))
-			{
-				content = small ? icons.untrackedIconSmall : icons.untrackedIcon;
-			}
-			if (type.IsFlagSet(FileStatus.Ignored))
-			{
-				content = small ? icons.ignoredIconSmall : icons.ignoredIcon;
-			}
-			if (type.IsFlagSet(FileStatus.Conflicted))
-			{
-				content = small ? icons.conflictIconSmall : icons.conflictIcon;
-			}
-			if (type.IsFlagSet(FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir))
-			{
-				content = small ? icons.renamedIconSmall : icons.renamedIcon;
-			}
-			if (type.IsFlagSet(FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir))
-			{
-				content = small ? icons.deletedIconSmall : icons.deletedIcon;
-			}
-			return content != null ? SetupTooltip(content, type) : GUIContent.none;
-		}
-
-		private static GUIContent SetupTooltip(GUIContent content,FileStatus type)
-		{
-			content.tooltip = type.ToString();
-			return content;
-		}
-
-		public static GUIContent GetDiffTypeIcon(ChangeKind type,bool small)
-		{
-			switch (type)
-			{
-				case ChangeKind.Unmodified:
-					return small ? icons.validIconSmall : icons.validIcon;
-				case ChangeKind.Added:
-					return small ? icons.addedIconSmall : icons.addedIcon;
-				case ChangeKind.Deleted:
-					return small ? icons.deletedIconSmall : icons.deletedIcon;
-				case ChangeKind.Modified:
-					return small ? icons.modifiedIconSmall : icons.modifiedIcon;
-				case ChangeKind.Ignored:
-					return small ? icons.ignoredIconSmall : icons.ignoredIcon;
-				case ChangeKind.Untracked:
-					return small ? icons.untrackedIconSmall : icons.untrackedIcon;
-				case ChangeKind.Conflicted:
-					return small ? icons.conflictIconSmall : icons.conflictIcon;
-				case ChangeKind.Renamed:
-					return small ? icons.renamedIconSmall : icons.renamedIcon;
-			}
-			return null;
-		}
-
-		private static void CustomIcons(string guid, Rect rect)
-		{
-			if(statusTree == null) return;
-			string path = AssetDatabase.GUIDToAssetPath(guid);
-			var status = statusTree.GetStatus(path);
-			if (status != null)
-			{
-				Object assetObject = AssetDatabase.LoadMainAssetAtPath(path);
-				if (assetObject != null && ProjectWindowUtil.IsFolder(assetObject.GetInstanceID()))
-				{
-					//exclude the Assets folder
-					if(status.Depth == 0) return;
-					//todo cache expandedProjectWindowItems into a HashSet for faster Contains
-					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(assetObject.GetInstanceID())) return;
-				}
-				DrawFileIcon(rect, GetDiffTypeIcon(status.State,rect.height <= 16));
-			}
-		}
-
-		private static void DrawFileIcon(Rect rect, GUIContent icon)
-		{
-			float width = Mathf.Min(rect.width, 32);
-			float height = Mathf.Min(rect.height, 32);
-			GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, IconStyle);
 		}
 
 		#region Auto Fetching
@@ -603,6 +565,12 @@ namespace UniGit
 		}
 
 		#region Getters and Setters
+
+		public static bool IsUpdating
+		{
+			get { return isUpdating; }
+		}
+
 		public static Signature Signature
 		{
 			get { return new Signature(Repository.Config.GetValueOrDefault<string>("user.name"), Repository.Config.GetValueOrDefault<string>("user.email"),DateTimeOffset.Now);}
@@ -623,15 +591,26 @@ namespace UniGit
 			get { return statusTree; }
 		}
 
-		public static GitCredentials GitCredentials
+		[Obsolete("Use GitCredentialsManager.GitCredentials instead")]
+		public static GitCredentialsJson GitCredentials
 		{
-			get { return gitCredentials; }
-			internal set { gitCredentials = value; }
+			get { return GitCredentialsManager.GitCredentials; }
+			internal set { GitCredentialsManager.GitCredentials = value; }
 		}
 
-		public static GitSettings Settings
+		public static GitSettingsJson Settings
 		{
 			get { return gitSettings; }
+		}
+
+		public static string GitFolderPath
+		{
+			get { return gitPathCached; }
+		}
+
+		public static string SettingsFilePath
+		{
+			get { return Path.Combine(gitPathCached,"UniGit/Settings.json"); }
 		}
 
 		public static GitRepoStatus LastStatus

@@ -102,9 +102,6 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitConflictsHandler.cs">
       <Link>GitConflictsHandler.cs</Link>
     </Compile>
-    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCredentials.cs">
-      <Link>GitCredentials.cs</Link>
-    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCredentialsManager.cs">
       <Link>GitCredentialsManager.cs</Link>
     </Compile>
@@ -135,6 +132,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitMergeWizard.cs">
       <Link>GitMergeWizard.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitOverlay.cs">
+      <Link>GitOverlay.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitProjectContextMenus.cs">
       <Link>GitProjectContextMenus.cs</Link>
     </Compile>
@@ -144,11 +144,17 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitPushWizard.cs">
       <Link>GitPushWizard.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitResourceManager.cs">
+      <Link>GitResourceManager.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettings.cs">
       <Link>GitSettings.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettingsWindow.cs">
       <Link>GitSettingsWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitUnityMenu.cs">
+      <Link>GitUnityMenu.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitUpdatableWindow.cs">
       <Link>GitUpdatableWindow.cs</Link>
@@ -174,14 +180,32 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Lfs\GitLfsTrackPopupWindow.cs">
       <Link>GitLfsTrackPopupWindow.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\GitCredential.cs">
+      <Link>GitCredential.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\GitCredentials.cs">
+      <Link>GitCredentials.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\GitCredentialsJson.cs">
+      <Link>GitCredentialsJson.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\ICredential.cs">
+      <Link>ICredential.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitRepoStatus.cs">
       <Link>GitRepoStatus.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusEntry.cs">
       <Link>GitStatusEntry.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAboutWindow.cs">
+      <Link>GitAboutWindow.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitGUI.cs">
       <Link>GitGUI.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitIgnoreTemplate.cs">
+      <Link>GitIgnoreTemplate.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitProfilerProxy.cs">
       <Link>GitProfilerProxy.cs</Link>

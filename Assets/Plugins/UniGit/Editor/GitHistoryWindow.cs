@@ -286,6 +286,7 @@ namespace UniGit
 				return;
 			}
 
+			GitGUI.StartEnable();
 			GitProfilerProxy.BeginSample("Git History Window Toolbar GUI",this);
 			GUI.Box(rect, GUIContent.none, "Toolbar");
 			Rect btRect = new Rect(rect.x, rect.y, 64, rect.height);
@@ -331,7 +332,7 @@ namespace UniGit
 				}
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
-			GUIContent fetchContent = new GUIContent("Fetch", EditorGUIUtility.IconContent("UniGit/GitFetch").image, "Get changes from remote repository but do not merge them.");
+			GUIContent fetchContent = new GUIContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
 			if (branch.Remote == null)
 			{
 				fetchContent.tooltip = "Branch does not have a remote.";
@@ -350,7 +351,7 @@ namespace UniGit
 			}
 			GUI.enabled = true;
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("UniGit/GitMerge").image, "Merge", hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), "toolbarbutton"))
+			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.merge.image, "Merge", hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), "toolbarbutton"))
 			{
 				if (GitExternalManager.TakeMerge())
 				{
@@ -376,9 +377,10 @@ namespace UniGit
 				}
 				selectBranchMenu.ShowAsContext();
 			}
+			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
-			GUI.enabled = GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("UniGit/GitCheckout").image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), "toolbarbutton"))
+			GitGUI.StartEnable(GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
+			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.fetch.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), "toolbarbutton"))
 			{
 				if (GitExternalManager.TakeSwitch())
 				{
@@ -388,7 +390,7 @@ namespace UniGit
 
 				//todo Implement native switching
 			}
-			GUI.enabled = true;
+			GitGUI.EndEnable();
 			GitProfilerProxy.EndSample();
 		}
 
@@ -499,7 +501,7 @@ namespace UniGit
 				}
 				else
 				{
-					GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), GitManager.icons.loadingIconSmall, styles.avatar);
+					GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), GitOverlay.icons.loadingIconSmall, styles.avatar);
 				}
 			}
 			else
@@ -748,31 +750,7 @@ namespace UniGit
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					Repository.Init(Application.dataPath.Replace("/Assets", ""));
-					TextAsset textAsset = EditorGUIUtility.Load("UniGit/gitignore.txt") as TextAsset;
-					if (textAsset != null)
-					{
-						string textAssetPath = AssetDatabase.GetAssetPath(textAsset).Replace("Assets/", "");
-						string newGitIgnoreFile = Path.Combine(Application.dataPath.Replace("Assets", "").Replace("Contents", ""), ".gitignore");
-						if (!File.Exists(newGitIgnoreFile))
-						{
-							File.Copy(Path.Combine(Application.dataPath, textAssetPath), newGitIgnoreFile);
-						}
-						else
-						{
-#if UNITY_EDITOR
-							Debug.Log("Git Ignore file already present");
-#endif
-						}
-					}
-					else
-					{
-						Debug.LogError("Missing default gitignore.txt in resources");
-					}
-					AssetDatabase.Refresh();
-					AssetDatabase.SaveAssets();
-					GitManager.Initlize();
-					GitManager.MarkDirty();
+					GitManager.InitilizeRepository();
 					GUIUtility.ExitGUI();
 					return;
 				}

@@ -1,4 +1,7 @@
-﻿namespace UniGit.Adapters
+﻿using System.Collections.Generic;
+using UniGit.Security;
+
+namespace UniGit.Adapters
 {
 	public interface ICredentialsAdapter
 	{

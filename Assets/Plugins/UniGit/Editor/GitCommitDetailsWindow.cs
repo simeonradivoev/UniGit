@@ -50,7 +50,7 @@ namespace UniGit
 					//EditorGUILayout.BeginHorizontal();
 					//GUILayout.Label(change.Status.ToString(), "AssetLabel");
 					EditorGUILayout.BeginHorizontal("ProjectBrowserHeaderBgTop");
-					GUILayout.Label(new GUIContent(GitManager.GetDiffTypeIcon(change.Status, true)) {tooltip = change.Status.ToString()}, GUILayout.Width(16));
+					GUILayout.Label(new GUIContent(GitOverlay.GetDiffTypeIcon(change.Status, true)) {tooltip = change.Status.ToString()}, GUILayout.Width(16));
 					GUILayout.Space(8);
 					string[] pathChunks = change.Path.Split('\\');
 					for (int i = 0; i < pathChunks.Length; i++)
