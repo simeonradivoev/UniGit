@@ -53,8 +53,6 @@ namespace UniGit.Filters
 
 		protected override void Complete(string path, string root, Stream output)
 		{
-			var writer = new StreamWriter(output);
-
 			try
 			{
 				Process process;
@@ -108,7 +106,6 @@ namespace UniGit.Filters
 			{
 				processes.Remove(path);
 				modes.Remove(path);
-				writer.Dispose();
 			}
 		}
 
