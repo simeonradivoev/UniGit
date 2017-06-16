@@ -53,6 +53,8 @@ namespace UniGit.Filters
 
 		protected override void Complete(string path, string root, Stream output)
 		{
+			var writer = new StreamWriter(output);
+
 			try
 			{
 				Process process;
@@ -74,14 +76,14 @@ namespace UniGit.Filters
 				// finalize stdin and wait for git-lfs to finish
 				if (mode == FilterMode.Clean)
 				{
-					process.WaitForExit();
-
 					// write git-lfs pointer for 'clean' to git or file data for 'smudge' to working copy
 					process.StandardOutput.BaseStream.CopyTo(output);
 					process.StandardOutput.BaseStream.Flush();
 					process.StandardOutput.Close();
 					output.Flush();
 					output.Close();
+
+					process.WaitForExit();
 				}
 				else if (mode == FilterMode.Smudge)
 				{
@@ -96,7 +98,6 @@ namespace UniGit.Filters
 				}
 
 				process.Dispose();
-				processes.Remove(path);
 			}
 			catch (Exception e)
 			{
@@ -107,6 +108,7 @@ namespace UniGit.Filters
 			{
 				processes.Remove(path);
 				modes.Remove(path);
+				writer.Dispose();
 			}
 		}
 
