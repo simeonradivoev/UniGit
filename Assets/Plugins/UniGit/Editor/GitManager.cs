@@ -272,7 +272,9 @@ namespace UniGit
 			}
 			else
 			{
-				status = new GitRepoStatus(repository.RetrieveStatus(GetStatusOptions()));
+				var options = GetStatusOptions();
+				var s = repository.RetrieveStatus(options);
+				status = new GitRepoStatus(s);
 			}
 			
 		}
@@ -316,6 +318,10 @@ namespace UniGit
 					GitCallbacks.IssueUpdateRepository(status, paths);
 					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 				});
+			}
+			catch (ThreadAbortException)
+			{
+				actionQueue.Enqueue(FinishUpdating);
 			}
 			catch (Exception e)
 			{

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using LibGit2Sharp;
 using Debug = UnityEngine.Debug;
 
@@ -96,6 +97,10 @@ namespace UniGit.Filters
 				}
 
 				process.Dispose();
+			}
+			catch (ThreadAbortException)
+			{
+				
 			}
 			catch (Exception e)
 			{
