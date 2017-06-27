@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UnityEditor;
@@ -57,7 +58,15 @@ namespace UniGit
 		private void LoadFileLines()
 		{
 			var asset = AssetDatabase.LoadAssetAtPath<MonoScript>(blamePath);
-			lines = asset.text.Split(new [] { Environment.NewLine },StringSplitOptions.None);
+			if (asset != null)
+			{
+				lines = asset.text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+			}
+			else
+			{
+				lines = File.ReadAllLines(blamePath);
+			}
+			
 			commitLog = GitManager.Repository.Commits.QueryBy(blamePath).Where(e => blameHunk.Any(h => h.FinalCommit.Sha == e.Commit.Sha)).ToArray();
 		}
 

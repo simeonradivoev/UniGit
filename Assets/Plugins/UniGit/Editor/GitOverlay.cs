@@ -35,6 +35,7 @@ namespace UniGit
 			public GUIContent fetch;
 			public GUIContent merge;
 			public GUIContent checkout;
+			public GUIContent loadingCircle;
 		}
 
 		internal static Icons icons;
@@ -82,6 +83,7 @@ namespace UniGit
 					fetch = new GUIContent(GitResourceManager.GetTexture("GitFetch")),
 					merge = new GUIContent(GitResourceManager.GetTexture("GitMerge")),
 					checkout = new GUIContent(GitResourceManager.GetTexture("GitCheckout")),
+					loadingCircle = new GUIContent(GitResourceManager.GetTexture("loading_circle"))
 				};
 			}
 		}

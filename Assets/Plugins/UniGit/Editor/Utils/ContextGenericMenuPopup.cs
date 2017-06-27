@@ -9,6 +9,7 @@ namespace UniGit.Utils
 	public class ContextGenericMenuPopup : PopupWindowContent, IGenericMenu
 	{
 		private const float AnimationTime = 0.4f;
+		private const float HoverPressTime = 0.5f;
 		private class Element
 		{
 			public Element parent;
@@ -20,6 +21,8 @@ namespace UniGit.Utils
 			public bool isSeparator;
 			public bool isDisabled;
 			public List<Element> children;
+
+			public bool IsParent { get { return children != null && children.Count > 0; } }
 		}
 		private List<Element> elements;
 		private GUIStyle elementStyle;
@@ -29,6 +32,9 @@ namespace UniGit.Utils
 		private bool animatingToCurrentElement;
 		private double lastAnimationTime;
 		private int animDir = 1;
+		private bool isClickHovering;
+		private int lastHoverControlId;
+		private double lastHoverStartTime;
 
 		public ContextGenericMenuPopup()
 		{
@@ -163,18 +169,31 @@ namespace UniGit.Utils
 			if (drawBack)
 			{
 				Rect backRect = new Rect(rect.x, rect.y + height, rect.width, elementStyle.fixedHeight);
+				int backControlId = GUIUtility.GetControlID(new GUIContent("Back"), FocusType.Passive, backRect);
 				if (Event.current.type == EventType.Repaint)
 				{
 					EditorGUIUtility.AddCursorRect(backRect, MouseCursor.Link);
 					elementStyle.Draw(backRect, new GUIContent("Back"), false, false, backRect.Contains(Event.current.mousePosition), false);
 					((GUIStyle)"AC LeftArrow").Draw(new Rect(backRect.x,backRect.y + ((backRect.height - 16) / 2f),16,16),GUIContent.none, false,false,false,false);
+
+					if (backRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)
+					{
+						if (lastHoverControlId != backControlId)
+						{
+							lastHoverControlId = backControlId;
+							lastHoverStartTime = EditorApplication.timeSinceStartup;
+						}
+						isClickHovering = true;
+						DrawHoverClickIndicator();
+					}
 				}
-				else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && backRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement && currentElement != null)
+				else if (((Event.current.type == EventType.MouseDown && Event.current.button == 0 && backRect.Contains(Event.current.mousePosition)) || (lastHoverControlId == backControlId && EditorApplication.timeSinceStartup > lastHoverStartTime + HoverPressTime)) && !animatingToCurrentElement && currentElement != null)
 				{
 					lastElement = currentElement;
 					currentElement = currentElement.parent;
 					animatingToCurrentElement = true;
 					lastAnimationTime = EditorApplication.timeSinceStartup + AnimationTime;
+					lastHoverStartTime = EditorApplication.timeSinceStartup;
 					animDir = -1;
 				}
 				height = elementStyle.fixedHeight;
@@ -183,6 +202,9 @@ namespace UniGit.Utils
 			for (int i = 0; i < elements.Count; i++)
 			{
 				var element = elements[i];
+
+				Rect elementRect = new Rect(rect.x, rect.y + height, rect.width, elementStyle.fixedHeight);
+				int controlId = GUIUtility.GetControlID(element.Content, FocusType.Passive, elementRect);
 
 				if (element.isSeparator)
 				{
@@ -197,7 +219,6 @@ namespace UniGit.Utils
 				}
 				else
 				{
-					Rect elementRect = new Rect(rect.x, rect.y + height, rect.width, elementStyle.fixedHeight);
 					if (Event.current.type == EventType.Repaint)
 					{
 						GUI.enabled = !element.isDisabled;
@@ -205,22 +226,45 @@ namespace UniGit.Utils
 						{
 							EditorGUIUtility.AddCursorRect(elementRect, MouseCursor.Link);
 						}
-						int controlId = GUIUtility.GetControlID(element.Content, FocusType.Passive, elementRect);
+						
 						elementStyle.Draw(elementRect, element.Content, controlId, elementRect.Contains(Event.current.mousePosition));
 						if(element.children != null)
 							((GUIStyle)"AC RightArrow").Draw(new Rect(elementRect.x + elementRect.width - 21, elementRect.y + ((elementRect.height - 21) / 2f), 21, 21),GUIContent.none,false,false,false,false);
+
+						if (elementRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)
+						{
+							if (element.IsParent)
+							{
+								if (lastHoverControlId != controlId)
+								{
+									lastHoverControlId = controlId;
+									lastHoverStartTime = EditorApplication.timeSinceStartup;
+								}
+								isClickHovering = true;
+								DrawHoverClickIndicator();
+							}
+							else
+							{
+								lastHoverControlId = controlId;
+								lastHoverStartTime = EditorApplication.timeSinceStartup;
+								isClickHovering = false;
+							}
+						}
+					}
+					else if (element.IsParent && ((lastHoverControlId == controlId && EditorApplication.timeSinceStartup > lastHoverStartTime + HoverPressTime) || (Event.current.type == EventType.MouseDown && elementRect.Contains(Event.current.mousePosition))))
+					{
+						lastElement = currentElement;
+						currentElement = element;
+						animatingToCurrentElement = true;
+						lastAnimationTime = EditorApplication.timeSinceStartup + AnimationTime;
+						lastHoverStartTime = EditorApplication.timeSinceStartup;
+						animDir = 1;
+						editorWindow.Repaint();
 					}
 					else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && elementRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)
 					{
-						if (element.children != null && element.children.Count > 0)
-						{
-							lastElement = currentElement;
-							currentElement = element;
-							animatingToCurrentElement = true;
-							lastAnimationTime = EditorApplication.timeSinceStartup + AnimationTime;
-							animDir = 1;
-						}
-						else if (element.Func != null)
+						editorWindow.Close();
+						if (element.Func != null)
 						{
 							element.Func.Invoke();
 						}
@@ -237,14 +281,19 @@ namespace UniGit.Utils
 		public override void OnGUI(Rect rect)
 		{
 			if (elementStyle == null) InitStyles();
-			if ((Event.current.type == EventType.MouseMove && rect.Contains(Event.current.mousePosition)) || animatingToCurrentElement) editorWindow.Repaint();
+			if ((Event.current.type == EventType.MouseMove && rect.Contains(Event.current.mousePosition)) || animatingToCurrentElement || isClickHovering) editorWindow.Repaint();
+
+			if (Event.current.type == EventType.Repaint)
+			{
+				isClickHovering = false;
+			}
 
 			if (animatingToCurrentElement)
 			{
 				float animationTime = ApplyEasing((float)(lastAnimationTime - EditorApplication.timeSinceStartup) / AnimationTime);
 
 				Rect lastElementRect = new Rect(rect.x - (rect.width * (1 - animationTime) * animDir), rect.y,rect.width,rect.height);
-				if (lastElement != null && lastElement.children != null)
+				if (lastElement != null && lastElement.IsParent)
 				{
 					DrawElementList(lastElementRect,lastElement.children,true);
 				}
@@ -253,7 +302,7 @@ namespace UniGit.Utils
 					DrawElementList(lastElementRect, elements,false);
 				}
 				Rect currentElementRect = new Rect(rect.x + (rect.width * animationTime) * animDir, rect.y, rect.width, rect.height);
-				if (currentElement != null && currentElement.children != null)
+				if (currentElement != null && currentElement.IsParent)
 				{
 					DrawElementList(currentElementRect, currentElement.children, true);
 				}
@@ -277,6 +326,18 @@ namespace UniGit.Utils
 				{
 					DrawElementList(rect,elements,false);
 				}
+			}
+		}
+
+		private void DrawHoverClickIndicator()
+		{
+			if (Event.current.type == EventType.Repaint)
+			{
+				GUI.color = new Color(1,1,1,0.3f);
+				var tex = GitOverlay.icons.loadingCircle.image;
+				int index = Mathf.RoundToInt(Mathf.Lerp(0, 7, (float) (EditorApplication.timeSinceStartup - lastHoverStartTime) / HoverPressTime));
+				GUI.DrawTextureWithTexCoords(new Rect(Event.current.mousePosition - new Vector2(12,5),new Vector2(34,34)), tex,new Rect((index % 4 / 4f), 0.5f - Mathf.FloorToInt(index / 4f) * 0.5f, 1/4f,0.5f));
+				GUI.color = Color.white;
 			}
 		}
 

@@ -909,7 +909,7 @@ namespace UniGit
 			StatusListEntry[] entries = statusList.Where(e => e.Selected).ToArray();
 			FileStatus selectedFlags = entries.Select(e => e.State).CombineFlags();
 
-			GUIContent addContent = new GUIContent("Stage", EditorGUIUtility.FindTexture("CollabPush"),"Stage File and meta to index.");
+			GUIContent addContent = new GUIContent("Stage", EditorGUIUtility.FindTexture("CollabPush"));
 			if (GitManager.CanStage(selectedFlags))
 			{
 				editMenu.AddItem(addContent, false, AddSelectedCallback);
@@ -918,7 +918,7 @@ namespace UniGit
 			{
 				editMenu.AddDisabledItem(addContent);
 			}
-			GUIContent removeContent = new GUIContent("Unstage", EditorGUIUtility.FindTexture("CollabPull"),"Remove file and meta from index");
+			GUIContent removeContent = new GUIContent("Unstage", EditorGUIUtility.FindTexture("CollabPull"));
 			if (GitManager.CanUnstage(selectedFlags))
 			{
 				editMenu.AddItem(removeContent, false, RemoveSelectedCallback);
@@ -943,50 +943,68 @@ namespace UniGit
 					{
 						editMenu.AddDisabledItem(new GUIContent("Resolve Conflicts"));
 					}
-					editMenu.AddItem(new GUIContent("Resolve (Using Ours)","Resolve using our own version of the file or meta"), false, ResolveConflictsOursCallback, entries[0].Path);
-					editMenu.AddItem(new GUIContent("Resolve (Using Theirs)","Resolve by using their version of the file or meta"), false, ResolveConflictsTheirsCallback, entries[0].Path);
+					editMenu.AddItem(new GUIContent("Resolve (Using Ours)"), false, ResolveConflictsOursCallback, entries[0].Path);
+					editMenu.AddItem(new GUIContent("Resolve (Using Theirs)"), false, ResolveConflictsTheirsCallback, entries[0].Path);
 				}
 				else
 				{
 					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 					{
-						editMenu.AddItem(new GUIContent("Difference/Asset", diffIcon, "Show changes between the working tree and the index or a tree"), false, () => { SeeDifferenceObject(entries[0]); });
-						editMenu.AddItem(new GUIContent("Difference/Meta", diffIcon, "Show changes between the working tree and the index or a tree"), false, () => { SeeDifferenceMeta(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference/Asset", diffIcon), false, () => { SeeDifferenceObject(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference/Meta", diffIcon), false, () => { SeeDifferenceMeta(entries[0]); });
 					}
 					else
 					{
-						editMenu.AddItem(new GUIContent("Difference", diffIcon, "Show changes between the working tree and the index or a tree"), false, () => { SeeDifferenceAuto(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference", diffIcon), false, () => { SeeDifferenceAuto(entries[0]); });
 					}
 
 					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 					{
-						editMenu.AddItem(new GUIContent("Difference with previous version/Asset", diffIcon, "Show changes between the working tree and the previous commit"), false, () => { SeeDifferencePrevObject(entries[0]); });
-						editMenu.AddItem(new GUIContent("Difference with previous version/Meta", diffIcon, "Show changes between the working tree and the previous commit"), false, () => { SeeDifferencePrevMeta(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference with previous version/Asset", diffIcon), false, () => { SeeDifferencePrevObject(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference with previous version/Meta", diffIcon), false, () => { SeeDifferencePrevMeta(entries[0]); });
 					}
 					else
 					{
-						editMenu.AddItem(new GUIContent("Difference with previous version", diffIcon, "Show changes between the working tree and the previous commit"), false, () => { SeeDifferencePrevAuto(entries[0]); });
+						editMenu.AddItem(new GUIContent("Difference with previous version", diffIcon), false, () => { SeeDifferencePrevAuto(entries[0]); });
 					}
 					
 				}
 			}
 			editMenu.AddSeparator("");
-			editMenu.AddItem(new GUIContent("Revert", EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow"),"Revert any changes made to the file or meta"), false, RevertSelectedCallback);
+			editMenu.AddItem(new GUIContent("Revert", EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow")), false, RevertSelectedCallback);
 			editMenu.AddSeparator("");
-			if (GitManager.CanBlame(entries[0].State))
+			if (entries.Length == 1)
 			{
-				editMenu.AddItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView"), "Annotates each line in the given file with information from the revision which last modified the line. "), false, BlameSelectedCallback);
-			}
-			else
-			{
-				editMenu.AddDisabledItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")));
+				if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
+				{
+					if (GitManager.CanBlame(entries[0].State))
+					{
+						editMenu.AddItem(new GUIContent("Blame/Object", EditorGUIUtility.FindTexture("UnityEditor.GameView")), false, ()=> {BlameObject(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame/Meta", EditorGUIUtility.FindTexture("UnityEditor.GameView")), false, ()=> {BlameMeta(entries[0]);});
+					}
+					else
+					{
+						editMenu.AddDisabledItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")));
+					}
+				}
+				else
+				{
+					if (GitManager.CanBlame(entries[0].State))
+					{
+						editMenu.AddItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")), false, ()=> {BlameAuto(entries[0]);});
+					}
+					else
+					{
+						editMenu.AddDisabledItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")));
+					}
+				}
 			}
 			editMenu.AddSeparator("");
 			if (entries.Length == 1)
 			{
-				editMenu.AddItem(new GUIContent("Show In Explorer", EditorGUIUtility.FindTexture("Folder Icon"),"Show file in the native Explorer"), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
+				editMenu.AddItem(new GUIContent("Show In Explorer", EditorGUIUtility.FindTexture("Folder Icon")), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
 			}
-			editMenu.AddItem(new GUIContent("Reload", EditorGUIUtility.FindTexture("RotateTool"),"Force a reload of the repository"), false, ReloadCallback);
+			editMenu.AddItem(new GUIContent("Reload", EditorGUIUtility.FindTexture("RotateTool")), false, ReloadCallback);
 		}
 
 		private void SelectFilteredCallback(object filter)
@@ -1077,10 +1095,26 @@ namespace UniGit
 			EditorUtility.ClearProgressBar();
 		}
 
-		private void BlameSelectedCallback()
+		private void BlameAuto(StatusListEntry entry)
 		{
-			string firstPath = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).FirstOrDefault();
-			GitManager.ShowBlameWizard(firstPath);
+			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
+			{
+				GitManager.ShowBlameWizard(entry.Path);
+			}
+			else
+			{
+				GitManager.ShowBlameWizard(AssetDatabase.GetTextMetaFilePathFromAssetPath(entry.Path));
+			}
+		}
+
+		private void BlameMeta(StatusListEntry entry)
+		{
+			GitManager.ShowBlameWizard(AssetDatabase.GetTextMetaFilePathFromAssetPath(entry.Path));
+		}
+
+		private void BlameObject(StatusListEntry entry)
+		{
+			GitManager.ShowBlameWizard(entry.Path);
 		}
 
 		private void OnRevertProgress(string path,int currentSteps,int totalSteps)
