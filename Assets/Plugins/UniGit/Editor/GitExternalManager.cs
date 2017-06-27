@@ -130,6 +130,12 @@ namespace UniGit
 			return SelectedAdatapter.Reset(commit);
 		}
 
+		public static bool TakeBlame(string path)
+		{
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Blame) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Blame(path);
+		}
+
 		public static void HandleConflict(string path)
 		{
 			if (SelectedAdatapter == null)

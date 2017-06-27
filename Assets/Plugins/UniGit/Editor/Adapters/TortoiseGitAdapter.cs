@@ -77,6 +77,12 @@ namespace UniGit.Adapters
 			return true;
 		}
 
+		public bool Blame(string path)
+		{
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "blame", path);
+			return true;
+		}
+
 		public bool Switch()
 		{
 			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", GitManager.RepoPath);

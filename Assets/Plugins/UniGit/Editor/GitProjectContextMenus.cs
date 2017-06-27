@@ -107,5 +107,33 @@ namespace UniGit
 				EditorWindow.GetWindow(type).ShowNotification(new GUIContent("Revert Complete!"));
 			}
 		}
+
+		[MenuItem("Assets/Git/Blame/Object", priority = 100), UsedImplicitly]
+		private static void BlameObject()
+		{
+			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).FirstOrDefault();
+			GitManager.ShowBlameWizard(path);
+		}
+
+		[MenuItem("Assets/Git/Blame/Object", priority = 100,validate = true), UsedImplicitly]
+		private static bool BlameObjectValidate()
+		{
+			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).FirstOrDefault();
+			return GitManager.CanBlame(path);
+		}
+
+		[MenuItem("Assets/Git/Blame/Meta", priority = 100), UsedImplicitly]
+		private static void BlameMeta()
+		{
+			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).Select(e => AssetDatabase.GetTextMetaFilePathFromAssetPath(e)).FirstOrDefault();
+			GitManager.ShowBlameWizard(path);
+		}
+
+		[MenuItem("Assets/Git/Blame/Meta", priority = 100,validate = true), UsedImplicitly]
+		private static bool BlameMetaValidate()
+		{
+			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).Select(e => AssetDatabase.GetTextMetaFilePathFromAssetPath(e)).FirstOrDefault();
+			return GitManager.CanBlame(path);
+		}
 	}
 }

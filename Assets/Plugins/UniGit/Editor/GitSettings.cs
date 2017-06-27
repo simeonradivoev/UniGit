@@ -29,6 +29,7 @@ namespace UniGit
 		public float MaxCommitTextAreaSize = 120;
 		[Tooltip("Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works.")]
 		public bool DetectRenames = true;
+		
 
 		[Flags]
 		[SerializeField]
@@ -41,7 +42,8 @@ namespace UniGit
 			Commit = 1 << 4,
 			Switch = 1 << 5,
 			Reset = 1 << 6,
-			Revert = 1 << 7
+			Revert = 1 << 7,
+			Blame = 1 << 8
 		}
 	}
 
@@ -60,6 +62,7 @@ namespace UniGit
 		public bool UseGavatar = true;
 		public float MaxCommitTextAreaSize = 120;
 		public bool DetectRenames = true;
+		public bool UseSimpleContextMenus;
 		private bool isDirty;
 
 		public void Copy(GitSettings settings)

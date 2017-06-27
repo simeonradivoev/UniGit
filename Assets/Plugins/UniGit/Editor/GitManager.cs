@@ -533,6 +533,30 @@ namespace UniGit
 			}
 			EditorUtility.InvokeDiffTool(Path.GetFileName(path) + " - " + entry.Target.Sha, newPath, Path.GetFileName(path) + " - Working Tree", path, "", "");
 		}
+
+		public static void ShowBlameWizard(string path)
+		{
+			if (!string.IsNullOrEmpty(path))
+			{
+				if (GitExternalManager.TakeBlame(path))
+				{
+					return;
+				}
+
+				var blameWizard = EditorWindow.GetWindow<GitBlameWizard>(true);
+				blameWizard.SetBlamePath(path);
+			}
+		}
+
+		public static bool CanBlame(FileStatus fileStatus)
+		{
+			return fileStatus.AreNotSet(FileStatus.NewInIndex, FileStatus.Ignored,FileStatus.NewInWorkdir);
+		}
+
+		public static bool CanBlame(string path)
+		{
+			return repository.Head[path] != null;
+		}
 		#endregion
 
 		#region Enumeration helpers

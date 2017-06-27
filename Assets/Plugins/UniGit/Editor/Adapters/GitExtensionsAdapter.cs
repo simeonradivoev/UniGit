@@ -58,6 +58,11 @@ namespace UniGit.Adapters
 			return GitExternalManager.CallProccess("GitExtensions.exe", "filehistory " + path);
 		}
 
+		public bool Blame(string path)
+		{
+			return GitExternalManager.CallProccess("GitExtensions.exe", "blame " + path);
+		}
+
 		public bool Revert(IEnumerable<string> paths)
 		{
 			string path = paths.FirstOrDefault();

@@ -30,6 +30,11 @@ namespace Utils.Extensions
 				throw new ArgumentException(string.Format("Type '{0}' doesn't have the 'Flags' attribute", typeof(T).FullName));
 		}
 
+		public static bool AreNotSet<T>(this T value, params T[] flags) where T : struct
+		{
+			return flags.All(f => !IsFlagSet(value, f));
+		}
+
 		public static bool IsFlagSet<T>(this T value, T flag) where T : struct
 		{
 			CheckIsEnum<T>(true);

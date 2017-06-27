@@ -18,6 +18,7 @@ namespace UniGit.Adapters
 		bool Diff(string path,string path2);
 		bool Diff(string path, Commit start,Commit end);
 		bool Revert(IEnumerable<string> paths);
+		bool Blame(string path);
 		bool Switch();
 	}
 }
