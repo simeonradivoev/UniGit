@@ -49,6 +49,14 @@ UniGitVs/[Bb]in/
 UniGitVs/[Oo]bj/
 UniGitVs/[Ll]og/
 
+UniGitResourcesVs/[Dd]ebug/
+UniGitResourcesVs/[Dd]ebugPublic/
+UniGitResourcesVs/[Rr]elease/
+UniGitResourcesVs/[Rr]eleases/
+UniGitResourcesVs/[Bb]in/
+UniGitResourcesVs/[Oo]bj/
+UniGitResourcesVs/[Ll]og/
+
 # User-specific files
 *.suo
 *.user

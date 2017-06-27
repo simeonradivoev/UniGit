@@ -362,6 +362,12 @@ namespace UniGit
 					ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
 				}
 			}
+			GUI.enabled = GitManager.IsValidRepo;
+			btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
+			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.stashIcon.image,"Stash"), "toolbarbutton"))
+			{
+				PopupWindow.Show(btRect,new GitStashWindow());
+			}
 			GUI.enabled = true;
 			btRect = new Rect(rect.x + rect.width - 64, btRect.y, 64, btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(string.IsNullOrEmpty(selectedBranchName) ? "Branch" : selectedBranch.CanonicalName), "ToolbarDropDown"))

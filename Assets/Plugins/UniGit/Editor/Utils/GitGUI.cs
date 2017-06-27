@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UniGit.Utils
@@ -36,6 +37,14 @@ namespace UniGit.Utils
 		{
 			tmpContent.text = label;
 			tmpContent.tooltip = tooltip;
+			tmpContent.image = tex;
+			return tmpContent;
+		}
+
+		public static GUIContent GetTempContent(Texture tex, string label)
+		{
+			tmpContent.text = label;
+			tmpContent.tooltip = String.Empty;
 			tmpContent.image = tex;
 			return tmpContent;
 		}
