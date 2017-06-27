@@ -93,6 +93,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitAssetPostprocessors.cs">
       <Link>GitAssetPostprocessors.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitBlameWizard.cs">
+      <Link>GitBlameWizard.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCallbacks.cs">
       <Link>GitCallbacks.cs</Link>
     </Compile>
@@ -153,6 +156,12 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettingsWindow.cs">
       <Link>GitSettingsWindow.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitStashSaveWizard.cs">
+      <Link>GitStashSaveWizard.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitStashWindow.cs">
+      <Link>GitStashWindow.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitUnityMenu.cs">
       <Link>GitUnityMenu.cs</Link>
     </Compile>
@@ -195,6 +204,12 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusEntry.cs">
       <Link>GitStatusEntry.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\ContextGenericMenuPopup.cs">
+      <Link>ContextGenericMenuPopup.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GenericMenuWrapper.cs">
+      <Link>GenericMenuWrapper.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAboutWindow.cs">
       <Link>GitAboutWindow.cs</Link>
     </Compile>
@@ -206,6 +221,9 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitProfilerProxy.cs">
       <Link>GitProfilerProxy.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\IGenericMenu.cs">
+      <Link>IGenericMenu.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Extensions\FlagHelper.cs">
       <Link>FlagHelper.cs</Link>
