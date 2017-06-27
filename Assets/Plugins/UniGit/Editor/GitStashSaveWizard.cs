@@ -26,6 +26,7 @@ namespace UniGit
 		private void OnWizardCreate()
 		{
 			GitManager.Repository.Stashes.Add(GitManager.Signature, stashMessage, stashModifiers);
+			GitManager.MarkDirty(true);
 		}
 	}
 }

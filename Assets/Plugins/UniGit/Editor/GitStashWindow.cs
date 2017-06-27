@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
@@ -9,15 +10,15 @@ namespace UniGit
 	public class GitStashWindow : PopupWindowContent
 	{
 		private StashCollection stashCollection;
-		private string[] stashSim;
 		private Vector2 stashScroll;
 		private int selectedStash;
+		private GUIStyle stashStyle;
 
 		public override void OnOpen()
 		{
 			base.OnOpen();
 			stashCollection = GitManager.Repository.Stashes;
-			stashSim = new[] {"Test Stash", "Another Stash"};
+			stashStyle = new GUIStyle("MenuItem") {wordWrap = true,fixedHeight = 0,normal = {background = ((GUIStyle)"ProjectBrowserHeaderBgTop").normal.background }};
 		}
 
 		public override void OnGUI(Rect rect)
@@ -36,12 +37,14 @@ namespace UniGit
 			int stashId = 0;
 			foreach (var stash in stashCollection)
 			{
-				GUIContent stashContent = new GUIContent(stash.FriendlyName);
-				Rect stastRect = GUILayoutUtility.GetRect(stashContent, "MenuItem");
+				string msg = stash.Message;
+				GUIContent stashContent = new GUIContent(msg);
+				Rect stastRect = GUILayoutUtility.GetRect(stashContent, stashStyle);
 				if (Event.current.type == EventType.Repaint)
 				{
-					((GUIStyle)"MenuItem").Draw(stastRect, stashContent, stastRect.Contains(Event.current.mousePosition) || stashId == selectedStash, false, false, false);
-				}else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && stastRect.Contains(Event.current.mousePosition))
+					stashStyle.Draw(stastRect, stashContent, stastRect.Contains(Event.current.mousePosition) || stashId == selectedStash, false, false, false);
+				}
+				else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && stastRect.Contains(Event.current.mousePosition))
 				{
 					selectedStash = stashId;
 				}
@@ -58,6 +61,8 @@ namespace UniGit
 				if (EditorUtility.DisplayDialog("Apply Stash: " + selectedStash,"Are you sure you want to apply stash ? This will override your current working directory!","Apply","Cancel"))
 				{
 					stashCollection.Apply(selectedStash);
+					GitManager.MarkDirty(true);
+					AssetDatabase.Refresh();
 				}
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Pop","Remove and apply stash to working directory."), "minibuttonmid"))
@@ -65,6 +70,8 @@ namespace UniGit
 				if (EditorUtility.DisplayDialog("Pop Stash: " + selectedStash, "Are you sure you want to pop the stash ? This will override your current working directory and remove the stash from the list.", "Pop and Apply", "Cancel"))
 				{
 					stashCollection.Pop(selectedStash);
+					GitManager.MarkDirty(true);
+					AssetDatabase.Refresh();
 				}
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Remove","Remove stash from list"), "minibuttonright"))
