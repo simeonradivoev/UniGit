@@ -105,6 +105,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitConflictsHandler.cs">
       <Link>GitConflictsHandler.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCreateBranchWindow.cs">
+      <Link>GitCreateBranchWindow.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCredentialsManager.cs">
       <Link>GitCredentialsManager.cs</Link>
     </Compile>
@@ -198,6 +201,27 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Security\GitCredentialsJson.cs">
       <Link>GitCredentialsJson.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitBranchesSettingsTab.cs">
+      <Link>GitBranchesSettingsTab.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitExternalsSettingsTab.cs">
+      <Link>GitExternalsSettingsTab.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitGeneralSettingsTab.cs">
+      <Link>GitGeneralSettingsTab.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitLFSSettingsTab.cs">
+      <Link>GitLFSSettingsTab.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitRemotesSettingsTab.cs">
+      <Link>GitRemotesSettingsTab.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitSecuritySettingsTab.cs">
+      <Link>GitSecuritySettingsTab.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitSettingsTab.cs">
+      <Link>GitSettingsTab.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitRepoStatus.cs">
       <Link>GitRepoStatus.cs</Link>
     </Compile>
@@ -212,6 +236,12 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAboutWindow.cs">
       <Link>GitAboutWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAsyncManager.cs">
+      <Link>GitAsyncManager.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAsyncOperation.cs">
+      <Link>GitAsyncOperation.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitGUI.cs">
       <Link>GitGUI.cs</Link>
