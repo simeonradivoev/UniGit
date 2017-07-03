@@ -19,7 +19,7 @@ namespace UniGit
 					string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 					if (pathsFinal.Length > 0)
 					{
-						if(autoStage) GitManager.Repository.Stage(pathsFinal.Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))));
+						if(autoStage) GitManager.Repository.Stage(pathsFinal);
 						GitManager.MarkDirty(pathsFinal);
 					}
 				}
@@ -44,7 +44,7 @@ namespace UniGit
 							string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (importedAssetsToStage.Length > 0)
 							{
-								if(autoStage) GitManager.Repository.Stage(importedAssetsToStage.Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))));
+								if(autoStage) GitManager.Repository.Stage(importedAssetsToStage);
 								GitManager.MarkDirty(importedAssetsToStage);
 							}
 						}
@@ -54,7 +54,7 @@ namespace UniGit
 							string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (movedAssetsFinal.Length > 0)
 							{
-								if(autoStage) GitManager.Repository.Stage(movedAssetsFinal.Where(g => GitManager.CanStage(GitManager.Repository.RetrieveStatus(g))));
+								if(autoStage) GitManager.Repository.Stage(movedAssetsFinal);
 								GitManager.MarkDirty(movedAssetsFinal);
 							}
 						}
@@ -66,7 +66,7 @@ namespace UniGit
 						string[] movedFromAssetPathsFinal = movedFromAssetPaths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 						if (movedFromAssetPathsFinal.Length > 0)
 						{
-							GitManager.Repository.Unstage(movedFromAssetPathsFinal.Where(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g))));
+							GitManager.Repository.Unstage(movedFromAssetPathsFinal);
 							GitManager.MarkDirty(movedFromAssetPathsFinal);
 						}
 					}
@@ -77,7 +77,7 @@ namespace UniGit
 						string[] deletedAssetsFinal = deletedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 						if (deletedAssetsFinal.Length > 0)
 						{
-							GitManager.Repository.Unstage(deletedAssetsFinal.Where(g => GitManager.CanUnstage(GitManager.Repository.RetrieveStatus(g))));
+							GitManager.Repository.Unstage(deletedAssetsFinal);
 							GitManager.MarkDirty(deletedAssetsFinal);
 						}
 					}

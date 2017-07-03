@@ -120,5 +120,78 @@ namespace UniGit.Utils
 
 			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadinCricleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
 		}
+
+		#region Config Fields
+		internal static void DoConfigStringsField(GUIContent content, string key, string[] options, string def)
+		{
+			string oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
+			EditorGUI.BeginChangeCheck();
+			EditorGUILayout.BeginHorizontal();
+			EditorGUILayout.PrefixLabel(content);
+			GUI.SetNextControlName(key + " Config Popup");
+			int newValueIndex = EditorGUILayout.Popup(Array.IndexOf(options, oldValue), options);
+			string newValue;
+			if (newValueIndex >= 0 && newValueIndex < options.Length)
+			{
+				newValue = options[newValueIndex];
+			}
+			else
+			{
+				newValue = def;
+			}
+			EditorGUILayout.EndHorizontal();
+			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
+			{
+				GitManager.Repository.Config.Set(key, newValue);
+			}
+		}
+
+		internal static void DoConfigStringField(GUIContent content, string key, string def)
+		{
+			string oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
+			EditorGUI.BeginChangeCheck();
+			GUI.SetNextControlName(key + " Config String");
+			string newValue = EditorGUILayout.DelayedTextField(content, oldValue);
+			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
+			{
+				GitManager.Repository.Config.Set(key, newValue);
+			}
+		}
+
+		internal static void DoConfigIntField(GUIContent content, string key, int def)
+		{
+			int oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
+			EditorGUI.BeginChangeCheck();
+			GUI.SetNextControlName(key + " Config Int");
+			int newValue = EditorGUILayout.DelayedIntField(content, oldValue);
+			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
+			{
+				GitManager.Repository.Config.Set(key, newValue);
+			}
+		}
+
+		internal static void DoConfigIntSlider(GUIContent content, int min, int max, string key, int def)
+		{
+			int oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
+			EditorGUI.BeginChangeCheck();
+			GUI.SetNextControlName(key + " Config Int");
+			int newValue = EditorGUILayout.IntSlider(content, oldValue, min, max);
+			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
+			{
+				GitManager.Repository.Config.Set(key, newValue);
+			}
+		}
+
+		internal static void DoConfigToggle(GUIContent content, string key, bool def)
+		{
+			bool oldValue = GitManager.Repository.Config.GetValueOrDefault(key, def);
+			GUI.SetNextControlName(key + " Config Toggle");
+			bool newValue = EditorGUILayout.Toggle(content, oldValue);
+			if (oldValue != newValue)
+			{
+				GitManager.Repository.Config.Set(key, newValue);
+			}
+		}
+		#endregion
 	}
 }
