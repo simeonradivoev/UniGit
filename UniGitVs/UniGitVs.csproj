@@ -42,16 +42,9 @@
       <HintPath>..\Assets\Plugins\LibGit2Sharp\Editor\LibGit2Sharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Moq">
-      <HintPath>..\Assets\Plugins\LibGit2Sharp\Editor\Moq.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEditor">
       <HintPath>D:\Program Files\Unity\Editor\Data\Managed\UnityEditor.dll</HintPath>
@@ -279,9 +272,7 @@ xcopy "$(SolutionDir)$(OutDir)$(TargetName).dll" "$(SolutionDir)$(OutDir)Plugins
 xcopy "$(SolutionDir)$(OutDir)$(TargetName).pdb" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y/i/r
 del "$(SolutionDir)$(OutDir)$(TargetName).dll" "$(SolutionDir)$(OutDir)$(TargetName).pdb"
 xcopy "$(SolutionDir)..\Assets\Plugins\LibGit2Sharp" "$(SolutionDir)$(OutDir)Plugins\LibGit2Sharp\" /s/h/e/k/f/c/y
-xcopy "$(SolutionDir)..\Assets\Plugins\WindowsCredentialManagement" "$(SolutionDir)$(OutDir)Plugins\WindowsCredentialManagement\" /s/h/e/k/f/c/y
-xcopy "$(SolutionDir)..\Assets\Editor Default Resources\Icons" "$(SolutionDir)$(OutDir)Editor Default Resources\Icons\" /s/h/e/k/f/c/y
-xcopy "$(SolutionDir)..\Assets\Editor Default Resources\UniGit\gitignore.txt" "$(SolutionDir)$(OutDir)Editor Default Resources\UniGit\" /f/y/i</PostBuildEvent>
+xcopy "$(SolutionDir)..\Assets\Plugins\WindowsCredentialManagement" "$(SolutionDir)$(OutDir)Plugins\WindowsCredentialManagement\" /s/h/e/k/f/c/y</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>rmdir "$(TargetDir)" /s/q</PreBuildEvent>
