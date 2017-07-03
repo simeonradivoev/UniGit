@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitSettingsWindow : GitUpdatableWindow
+	public class GitSettingsWindow : GitUpdatableWindow, IHasCustomMenu
 	{
 		private RemoteCollection remotes;
 		private BranchCollection branches;
@@ -125,7 +125,7 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button(EditorGUIUtility.IconContent("_Help"), "IconButton"))
 			{
-				Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Setup#configuration");
+				GoToHelp();
 			}
 			EditorGUILayout.EndHorizontal();
 
@@ -161,6 +161,11 @@ namespace UniGit
 			{
 				LoseFocus();
 			}
+		}
+
+		private void GoToHelp()
+		{
+			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Setup#configuration");
 		}
 
 		#region General
@@ -257,10 +262,15 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button("Open Git Ignore File"))
 			{
-				Application.OpenURL(Path.Combine(GitManager.RepoPath,".gitignore"));
+				OpenGitIgnore();
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
+		}
+
+		private void OpenGitIgnore()
+		{
+			Application.OpenURL(Path.Combine(GitManager.RepoPath, ".gitignore"));
 		}
 
 		private void DoConfigStringsField(GUIContent content, string key,string[] options, string def)
@@ -738,6 +748,16 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
 		}
+		#endregion
+
+		#region IHasCustomMenu
+
+		public void AddItemsToMenu(GenericMenu menu)
+		{
+			menu.AddItem(new GUIContent("Open Git Ignore File"),false,OpenGitIgnore);
+			menu.AddItem(new GUIContent("Help"),false, GoToHelp);
+		}
+
 		#endregion
 
 		private class RemoteEntry

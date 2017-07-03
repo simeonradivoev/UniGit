@@ -18,7 +18,7 @@ using Debug = UnityEngine.Debug;
 
 namespace UniGit
 {
-	public class GitDiffWindow : GitUpdatableWindow
+	public class GitDiffWindow : GitUpdatableWindow, IHasCustomMenu
 	{
 		[MenuItem("Window/GIT Diff Window")]
 		public static void CreateEditor()
@@ -274,27 +274,7 @@ namespace UniGit
 			if (GUILayout.Button(GitGUI.GetTempContent("Commit"), "DropDownButton"))
 			{
 				GenericMenu commitMenu = new GenericMenu();
-				commitMenu.AddItem(new GUIContent("Commit"),false, CommitCallback);
-				if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit))
-				{
-					commitMenu.AddItem(new GUIContent("Commit And Push"), false, CommitAndPushCallback);
-				}
-				else
-				{
-					commitMenu.AddDisabledItem(new GUIContent("Commit And Push"));
-				}
-				commitMenu.AddSeparator("");
-				commitMenu.AddItem(new GUIContent("Commit Message/Clear"),false, ClearCommitMessage);
-				commitMenu.AddItem(new GUIContent("Commit Message/Read from file"),settings.readFromFile, ToggleReadFromFile);
-				if (File.Exists(CommitMessageFilePath))
-				{
-					commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
-				}
-				else
-				{
-					commitMenu.AddDisabledItem(new GUIContent("Commit Message/Open File"));
-				}
-				commitMenu.AddItem(new GUIContent("Commit Message/Reload"),false,ReadCommitMessage);
+				BuildCommitMenu(commitMenu);
 				commitMenu.ShowAsContext();
 			}
 			GitGUI.StartEnable(!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit));
@@ -323,10 +303,40 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button(EditorGUIUtility.IconContent("_Help"),"IconButton"))
 			{
-				Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage#file-difference-and-committing");
+				GoToHelp();
 			}
 			EditorGUILayout.EndHorizontal();
 			EditorGUILayout.Space();
+		}
+
+		private void BuildCommitMenu(GenericMenu commitMenu)
+		{
+			commitMenu.AddItem(new GUIContent("Commit"), false, CommitCallback);
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Commit))
+			{
+				commitMenu.AddItem(new GUIContent("Commit And Push"), false, CommitAndPushCallback);
+			}
+			else
+			{
+				commitMenu.AddDisabledItem(new GUIContent("Commit And Push"));
+			}
+			commitMenu.AddSeparator("");
+			commitMenu.AddItem(new GUIContent("Commit Message/Clear"), false, ClearCommitMessage);
+			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), settings.readFromFile, ToggleReadFromFile);
+			if (File.Exists(CommitMessageFilePath))
+			{
+				commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
+			}
+			else
+			{
+				commitMenu.AddDisabledItem(new GUIContent("Commit Message/Open File"));
+			}
+			commitMenu.AddItem(new GUIContent("Commit Message/Reload"), false, ReadCommitMessage);
+		}
+
+		private void GoToHelp()
+		{
+			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Committing");
 		}
 
 		private float CalculateCommitTextHeight()
@@ -869,6 +879,16 @@ namespace UniGit
 				SaveCommitMessage();
 			}
 		}
+
+		#region IHasCustomMenu
+
+		public void AddItemsToMenu(GenericMenu menu)
+		{
+			BuildCommitMenu(menu);
+			menu.AddItem(new GUIContent("Help"),false, GoToHelp);
+		}
+
+		#endregion
 
 		#region Menu Callbacks
 

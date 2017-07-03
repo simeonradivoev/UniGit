@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitHistoryWindow : GitUpdatableWindow
+	public class GitHistoryWindow : GitUpdatableWindow, IHasCustomMenu
 	{
 		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
 		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
@@ -308,28 +308,13 @@ namespace UniGit
 			}
 			if (GUI.Button(btRect, pushButtonContent, "toolbarbutton"))
 			{
-				if (GitExternalManager.TakePush())
-				{
-					GitManager.MarkDirty();
-				}
-				else
-				{
-					ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(branch);
-				}
+				GoToPush();
 			}
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			GUI.enabled = !hasConflicts;
 			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("CollabPull").image, "Pull", hasConflicts ? "Must resolve conflicts before pulling" : "Pull changes from remote repository by fetching them and then merging them. This is the same as calling Fetch then Merge."), "toolbarbutton"))
 			{
-				if (GitExternalManager.TakePull())
-				{
-					AssetDatabase.Refresh();
-					GitManager.MarkDirty();
-				}
-				else
-				{
-					ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(branch);
-				}
+				GoToPull();
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 			GUIContent fetchContent = new GUIContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
@@ -340,27 +325,13 @@ namespace UniGit
 			}
 			if (GUI.Button(btRect, fetchContent, "toolbarbutton"))
 			{
-				if (GitExternalManager.TakeFetch(branch.Remote.Name))
-				{
-					GitManager.MarkDirty();
-				}
-				else
-				{
-					ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
-				}
+				GoToFetch();
 			}
 			GUI.enabled = true;
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.merge.image, "Merge", hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), "toolbarbutton"))
 			{
-				if (GitExternalManager.TakeMerge())
-				{
-					GitManager.MarkDirty();
-				}
-				else
-				{
-					ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
-				}
+				GoToMerge();
 			}
 			GUI.enabled = GitManager.IsValidRepo;
 			btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
@@ -369,6 +340,7 @@ namespace UniGit
 				PopupWindow.Show(btRect,new GitStashWindow());
 			}
 			GUI.enabled = true;
+
 			btRect = new Rect(rect.x + rect.width - 64, btRect.y, 64, btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(string.IsNullOrEmpty(selectedBranchName) ? "Branch" : selectedBranch.CanonicalName), "ToolbarDropDown"))
 			{
@@ -397,7 +369,67 @@ namespace UniGit
 				//todo Implement native switching
 			}
 			GitGUI.EndEnable();
+			btRect = new Rect(btRect.x - 21, btRect.y+1, 21, btRect.height);
+			if (GUI.Button(btRect, EditorGUIUtility.IconContent("_Help"), "IconButton"))
+			{
+				GoToHelp();
+			}
 			GitProfilerProxy.EndSample();
+		}
+
+		private void GoToMerge()
+		{
+			if (GitExternalManager.TakeMerge())
+			{
+				GitManager.MarkDirty();
+			}
+			else
+			{
+				ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
+			}
+		}
+
+		private void GoToFetch()
+		{
+			var branch = selectedBranch.LoadBranch();
+			if (GitExternalManager.TakeFetch(branch.Remote.Name))
+			{
+				GitManager.MarkDirty();
+			}
+			else
+			{
+				ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
+			}
+		}
+
+		private void GoToPull()
+		{
+			if (GitExternalManager.TakePull())
+			{
+				AssetDatabase.Refresh();
+				GitManager.MarkDirty();
+			}
+			else
+			{
+				ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(selectedBranch.LoadBranch());
+			}
+		}
+
+		private void GoToPush()
+		{
+			if (GitExternalManager.TakePush())
+			{
+				GitManager.MarkDirty();
+			}
+			else
+			{
+				ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(selectedBranch.LoadBranch());
+			}
+		}
+
+		private void GoToHelp()
+		{
+			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Commit-History");
 		}
 
 		private void DoHistoryScrollRect(Rect rect, RepositoryInformation info)
@@ -628,6 +660,16 @@ namespace UniGit
 		}
 
 		#region Menus
+
+		public void AddItemsToMenu(GenericMenu menu)
+		{
+			menu.AddItem(new GUIContent("Push"), false, GoToPush);
+			menu.AddItem(new GUIContent("Pull"),false,GoToPull);
+			menu.AddItem(new GUIContent("Fetch"), false, GoToFetch);
+			menu.AddItem(new GUIContent("Merge"), false, GoToMerge);
+			menu.AddItem(new GUIContent("Help"),false, GoToHelp);
+		}
+
 		#endregion
 
 		#region Helper Methods
