@@ -12,10 +12,11 @@
 //
 // Copyright (C) 2003 Obviex(TM). All rights reserved.
 //
+
 using System;
-using System.Text;
-using System.Runtime.InteropServices;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Text;
 
 /// <summary>
 /// Encrypts and decrypts data using DPAPI functions.

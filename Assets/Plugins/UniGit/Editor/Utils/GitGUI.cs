@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 namespace UniGit.Utils
@@ -8,6 +9,7 @@ namespace UniGit.Utils
 	{
 		private static GUIContent tmpContent = new GUIContent();
 		private static Stack<bool> enableStack = new Stack<bool>(); 
+		private static Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>(); 
 
 		public static GUIContent GetTempContent(Texture tex)
 		{
@@ -15,6 +17,29 @@ namespace UniGit.Utils
 			tmpContent.tooltip = string.Empty;
 			tmpContent.image = tex;
 			return tmpContent;
+		}
+
+		public static Texture IconContentTex(string name)
+		{
+			return EditorGUIUtility.IconContent(name).image;
+		}
+
+		public static GUIContent IconContent(string name)
+		{
+			var original = EditorGUIUtility.IconContent(name);
+			return original;
+		}
+
+		public static GUIContent IconContent(string name, string text)
+		{
+			var original = EditorGUIUtility.IconContent(name);
+			return new GUIContent(original) {text = text};
+		}
+
+		public static GUIContent IconContent(string name, string text,string tooltip)
+		{
+			var original = EditorGUIUtility.IconContent(name);
+			return new GUIContent(original) { text = text,tooltip = tooltip};
 		}
 
 		public static GUIContent GetTempContent(string label)
@@ -63,6 +88,37 @@ namespace UniGit.Utils
 		public static void EndEnable()
 		{
 			GUI.enabled = enableStack.Pop();
+		}
+
+		public static void PushMatrix()
+		{
+			if (matrixStack.Count > 1000)
+			{
+				Debug.LogError("Matrix Stack Overflow");
+				matrixStack.Clear();
+			}
+			matrixStack.Push(GUI.matrix);
+		}
+
+		public static void PopMatrix()
+		{
+			GUI.matrix = matrixStack.Pop();
+		}
+
+		public static void DrawLoading(Rect rect,GUIContent loadinContent)
+		{
+			const float loadinCricleSize = 24;
+			Vector2 loadingLabelWidth = EditorStyles.largeLabel.CalcSize(loadinContent);
+			float totalWidth = loadinCricleSize + loadingLabelWidth.x + 8;
+			float totalHeight = Mathf.Max(loadingLabelWidth.y, loadinCricleSize);
+
+			GitGUI.PushMatrix();
+			Rect loadinCircleRect = new Rect(rect.x + rect.width / 2 - totalWidth / 2, rect.y + rect.height / 2 - totalHeight / 2, loadinCricleSize, loadinCricleSize);
+			GUIUtility.RotateAroundPivot((float)EditorApplication.timeSinceStartup * 300, loadinCircleRect.center);
+			GUI.DrawTexture(loadinCircleRect, EditorGUIUtility.FindTexture("CollabProgress"));
+			GitGUI.PopMatrix();
+
+			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadinCricleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
 		}
 	}
 }

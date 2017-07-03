@@ -5,7 +5,6 @@ using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
-using Utils.Extensions;
 
 namespace UniGit
 {

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Security;
 using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Attributes;
 using UniGit.Security;
 using UnityEditor;
-using UnityEditor.Animations;
 using UnityEngine;
 
 namespace UniGit

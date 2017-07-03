@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using System.Collections;
 
 namespace UniGit
 {
@@ -52,7 +51,6 @@ namespace UniGit
 	{
 		public bool AutoStage = true;
 		public bool AutoFetch = true;
-		public int MaxCommits = 32;
 		public GitSettings.ExternalsTypeEnum ExternalsType;
 		public string ExternalProgram;
 		public string CredentialsManager;
@@ -69,7 +67,6 @@ namespace UniGit
 		{
 			AutoStage = settings.AutoStage;
 			AutoFetch = settings.AutoFetch;
-			MaxCommits = settings.MaxCommits;
 			ExternalsType = settings.ExternalsType;
 			ExternalProgram = settings.ExternalProgram;
 			CredentialsManager = settings.CredentialsManager;

@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using CredentialManagement;
 using UniGit.Attributes;
-using UniGit.Security;
 
 namespace UniGit.Adapters
 {
 #if UNITY_EDITOR_WIN
-	using CredentialManagement;
-
+	
 	[CredentialsAdapter("wincred","Windows Credentials Manager")]
 	public class WincredCredentialsAdapter : ICredentialsAdapter
 	{

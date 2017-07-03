@@ -1,5 +1,4 @@
-﻿using System;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;

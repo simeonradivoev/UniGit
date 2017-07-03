@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -49,8 +50,7 @@ namespace UniGit
 			{
 				if (e is NonFastForwardException)
 				{
-					GUIContent content = EditorGUIUtility.IconContent("console.warnicon");
-					content.text = "Could not push changes to remote. Merge changes with remote before pushing.";
+					GUIContent content = GitGUI.IconContent("console.warnicon", "Could not push changes to remote. Merge changes with remote before pushing.");
 					GetWindow<GitHistoryWindow>().ShowNotification(content);
 				}
 				Debug.LogException(e);

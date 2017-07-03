@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,6 +15,9 @@ namespace UniGit
 {
 	public class GitHistoryWindow : GitUpdatableWindow, IHasCustomMenu
 	{
+		private const int CommitsPerExpand = 8;
+		private const int MaxFirstCommitCount = 16;
+
 		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
 		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
 
@@ -34,7 +36,9 @@ namespace UniGit
 		private Queue<KeyValuePair<Rect, PopupWindowContent>> popupsQueue = new Queue<KeyValuePair<Rect, PopupWindowContent>>();
 		[SerializeField] private Vector2 historyScroll;
 		[SerializeField] private string selectedBranchName;
+		[SerializeField] private int maxCommitsCount;
 		private object commitCachesLock = new object();
+		private GitAsyncOperation loadingCommits;
 
 		public class Styles
 		{
@@ -63,6 +67,15 @@ namespace UniGit
 		public static GitHistoryWindow GetWindow(bool focus)
 		{
 			return GetWindow<GitHistoryWindow>("Git History", focus);
+		}
+
+		protected override void OnEnable()
+		{
+			base.OnEnable();
+			if (maxCommitsCount <= 0)
+			{
+				maxCommitsCount = MaxFirstCommitCount;
+			}
 		}
 
 		private void CreateStyles()
@@ -106,16 +119,19 @@ namespace UniGit
 		protected override void OnGitUpdate(GitRepoStatus status,string[] path)
 		{
 			Repaint();
-			ThreadPool.QueueUserWorkItem(UpdateChachesThreaded, status);
+			StartUpdateChaches(status);
 		}
 
-		private void UpdateChachesThreaded(object statusObj)
+		private void StartUpdateChaches(GitRepoStatus status)
+		{
+			loadingCommits = GitAsyncManager.QueueWorker(UpdateChachesThreaded, status, "Loading Commits");
+		}
+
+		private void UpdateChachesThreaded(GitRepoStatus status)
 		{
 			Monitor.Enter(commitCachesLock);
 			try
 			{
-				GitRepoStatus status = (GitRepoStatus) statusObj;
-
 				//update all branches
 				cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
 
@@ -129,10 +145,10 @@ namespace UniGit
 					var loadedBranch = selectedBranch.LoadBranch();
 					if (loadedBranch != null && loadedBranch.Commits != null)
 					{
-						IEnumerable<Commit> commits = GitManager.Settings.MaxCommits >= 0 ? loadedBranch.Commits.Take(GitManager.Settings.MaxCommits) : loadedBranch.Commits;
+						IEnumerable<Commit> commits = maxCommitsCount >= 0 ? loadedBranch.Commits.Take(maxCommitsCount) : loadedBranch.Commits;
 						if (commits != null)
 						{
-							cachedCommits = commits.Take(GitManager.Settings.MaxCommits).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
+							cachedCommits = commits.Take(maxCommitsCount).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
 							commitCount = cachedCommits.Length;
 						}
 					}
@@ -312,7 +328,7 @@ namespace UniGit
 			}
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
 			GUI.enabled = !hasConflicts;
-			if (GUI.Button(btRect, GitGUI.GetTempContent(EditorGUIUtility.IconContent("CollabPull").image, "Pull", hasConflicts ? "Must resolve conflicts before pulling" : "Pull changes from remote repository by fetching them and then merging them. This is the same as calling Fetch then Merge."), "toolbarbutton"))
+			if (GUI.Button(btRect, GitGUI.IconContent("CollabPull", "Pull", hasConflicts ? "Must resolve conflicts before pulling" : "Pull changes from remote repository by fetching them and then merging them. This is the same as calling Fetch then Merge."), "toolbarbutton"))
 			{
 				GoToPull();
 			}
@@ -370,7 +386,7 @@ namespace UniGit
 			}
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 21, btRect.y+1, 21, btRect.height);
-			if (GUI.Button(btRect, EditorGUIUtility.IconContent("_Help"), "IconButton"))
+			if (GUI.Button(btRect, GitGUI.IconContent("_Help"), "IconButton"))
 			{
 				GoToHelp();
 			}
@@ -434,7 +450,13 @@ namespace UniGit
 
 		private void DoHistoryScrollRect(Rect rect, RepositoryInformation info)
 		{
-			
+			if (loadingCommits != null && !loadingCommits.IsDone)
+			{
+				Repaint();
+				GitGUI.DrawLoading(rect, new GUIContent("Loading Commit History"));
+				return;
+			}
+
 			Event current = Event.current;
 
 			GUI.Box(new Rect(14, rect.y + 2, 2, rect.height), GUIContent.none, "AppToolbar");
@@ -465,6 +487,7 @@ namespace UniGit
 				}
 
 				historyScrollContentsRect = new Rect(0, 0, lastCommitRect.width + 32, lastCommitRect.y + lastCommitRect.height + commitSpacing*2);
+				historyScrollContentsRect.height += EditorGUIUtility.singleLineHeight*3;
 				GitProfilerProxy.EndSample();
 			}
 			else
@@ -485,6 +508,32 @@ namespace UniGit
 					}
 				}
 
+				Rect commitsCountRect = new Rect(32, historyScrollContentsRect.height - EditorGUIUtility.singleLineHeight * 4, historyScrollContentsRect.width - 64, EditorGUIUtility.singleLineHeight);
+
+				GUI.Label(commitsCountRect,GitGUI.GetTempContent(cachedCommits.Length + " / " + maxCommitsCount),EditorStyles.centeredGreyMiniLabel);
+
+				Rect resetRect = new Rect(historyScrollContentsRect.width / 2, historyScrollContentsRect.height - EditorGUIUtility.singleLineHeight * 3, 64, EditorGUIUtility.singleLineHeight);
+				Rect loadMoreRect = new Rect(historyScrollContentsRect.width / 2 - 64, historyScrollContentsRect.height - EditorGUIUtility.singleLineHeight * 3, 64, EditorGUIUtility.singleLineHeight);
+				if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More"), "ButtonLeft"))
+				{
+					maxCommitsCount += CommitsPerExpand;
+					StartUpdateChaches(GitManager.LastStatus);
+				}
+				GitGUI.StartEnable(maxCommitsCount != MaxFirstCommitCount);
+				if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset"), "ButtonRight"))
+				{
+					if (MaxFirstCommitCount < maxCommitsCount)
+					{
+						maxCommitsCount = MaxFirstCommitCount;
+						Array.Resize(ref cachedCommits, maxCommitsCount);
+					}
+					else
+					{
+						maxCommitsCount = MaxFirstCommitCount;
+						StartUpdateChaches(GitManager.LastStatus);
+					}
+				}
+				GitGUI.EndEnable();
 				GUI.EndScrollView();
 				GitProfilerProxy.EndSample();
 			}

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
@@ -14,7 +13,6 @@ using UnityEditor;
 using UnityEngine;
 using Utils.Extensions;
 using Object = UnityEngine.Object;
-using Debug = UnityEngine.Debug;
 
 namespace UniGit
 {
@@ -37,6 +35,7 @@ namespace UniGit
 
 		private const string CommitMessageKey = "UniGitCommitMessage";
 		private const string CommitMessageUndoGroup = "Commit Message Change";
+		private const string BuildngStatusOperationName = "BuildingStatus";
 
 		[SerializeField] private Vector2 diffScroll;
 		[SerializeField] private bool commitMaximized = true;
@@ -53,6 +52,7 @@ namespace UniGit
 		//cached data path for threading purposes
 		private static string cachedDataPath;
 		private char commitMessageLastChar;
+		private GitAsyncOperation buildingStatus;
 
 		[Serializable]
 		public class Settings
@@ -97,13 +97,13 @@ namespace UniGit
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
-			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, status);
+			buildingStatus = GitAsyncManager.QueueWorker(CreateStatusListThreaded, status,BuildngStatusOperationName);
 		}
 
 		private void UpdateStatusList()
 		{
 			if(GitManager.Repository == null) return;
-			ThreadPool.QueueUserWorkItem(CreateStatusListThreaded, GitManager.LastStatus);
+			buildingStatus = GitAsyncManager.QueueWorker(CreateStatusListThreaded, GitManager.LastStatus, BuildngStatusOperationName);
 		}
 
 		protected override void OnInitialize()
@@ -121,12 +121,12 @@ namespace UniGit
 			
 		}
 
-		private void CreateStatusListThreaded(object param)
+		private void CreateStatusListThreaded(GitRepoStatus param)
 		{
 			Monitor.Enter(statusListLock);
 			try
 			{
-				GitRepoStatus status = (GitRepoStatus)param ?? new GitRepoStatus(GitManager.Repository.RetrieveStatus());
+				GitRepoStatus status = param ?? new GitRepoStatus(GitManager.Repository.RetrieveStatus());
 				statusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir);
 				GitManager.ActionQueue.Enqueue(Repaint);
 			}
@@ -180,7 +180,7 @@ namespace UniGit
 				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) {fontSize = 12,onNormal = new GUIStyleState() {textColor = Color.white * 0.95f,background = Texture2D.blackTexture} };
 				styles.diffElementPath = new GUIStyle(EditorStyles.label) {onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture } };
 				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 0,border = new RectOffset(8,8,8,8)};
-				styles.toggle = new GUIStyle("IN Toggle") {normal = {background = (Texture2D)EditorGUIUtility.IconContent("toggle@2x").image },onNormal = {background = (Texture2D)EditorGUIUtility.IconContent("toggle on@2x").image },active = {background = (Texture2D)EditorGUIUtility.IconContent("toggle act@2x").image}, onActive = { background = (Texture2D)EditorGUIUtility.IconContent("toggle on act@2x").image }, fixedHeight = 0,fixedWidth = 0,border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset()};
+				styles.toggle = new GUIStyle("IN Toggle") {normal = {background = (Texture2D)GitGUI.IconContentTex("toggle@2x") },onNormal = {background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") },active = {background = (Texture2D)GitGUI.IconContentTex("toggle act@2x")}, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0,fixedWidth = 0,border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset()};
 				GitProfilerProxy.EndSample();
 			}
 		}
@@ -202,8 +202,15 @@ namespace UniGit
 			DoCommit(repoInfo);
 			GUILayout.EndArea();
 
-			if (statusList == null) return;
-			DoDiffScroll(Event.current);
+			if (buildingStatus != null && !buildingStatus.IsDone)
+			{
+				Repaint();
+				GitGUI.DrawLoading(GUILayoutUtility.GetRect(GUIContent.none,GUIStyle.none, GUILayout.ExpandHeight(true),GUILayout.ExpandWidth(true)),new GUIContent("Building File Status Tree"));
+			}
+			else if(statusList != null)
+			{
+				DoDiffScroll(Event.current);
+			}
 
 			editoSerializedObject.ApplyModifiedProperties();
 
@@ -301,7 +308,7 @@ namespace UniGit
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
 			GitGUI.EndEnable();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(EditorGUIUtility.IconContent("_Help"),"IconButton"))
+			if (GUILayout.Button(GitGUI.IconContent("_Help"),"IconButton"))
 			{
 				GoToHelp();
 			}
@@ -630,7 +637,7 @@ namespace UniGit
 				GUIContent tmpContent = GUIContent.none;
 				if (string.IsNullOrEmpty(extension))
 				{
-					tmpContent = GitGUI.GetTempContent(EditorGUIUtility.IconContent("Folder Icon").image, string.Empty, "Folder");
+					tmpContent = GitGUI.IconContent("Folder Icon", string.Empty, "Folder");
 				}
 
 				if (tmpContent.image == null)
@@ -641,7 +648,7 @@ namespace UniGit
 					}
 					else
 					{
-						tmpContent = GitGUI.GetTempContent(EditorGUIUtility.IconContent("DefaultAsset Icon").image, string.Empty, "Unknown Type");
+						tmpContent = GitGUI.IconContent("DefaultAsset Icon", string.Empty, "Unknown Type");
 					}
 				}
 

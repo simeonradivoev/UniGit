@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -109,7 +109,7 @@ namespace UniGit
 			{
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
-				GUILayout.Label(EditorGUIUtility.IconContent("WaitSpin00"));
+				GUILayout.Label(GitGUI.IconContent("WaitSpin00"));
 				GUILayout.FlexibleSpace();
 				EditorGUILayout.EndHorizontal();
 				EditorGUILayout.LabelField(new GUIContent("Checking Blame..."),EditorStyles.centeredGreyMiniLabel);
@@ -179,7 +179,7 @@ namespace UniGit
 					{
 						int controlId = GUIUtility.GetControlID(commitContent, FocusType.Passive, commitRect);
 						styles.hunkStyle.Draw(commitRect, commitContent, controlId, selectedCommit == entry.Commit.Sha);
-						GUIStyle.none.Draw(commitInfoRect, EditorGUIUtility.IconContent("SubAssetCollapseButton"), false,false,false,false);
+						GUIStyle.none.Draw(commitInfoRect, GitGUI.IconContent("SubAssetCollapseButton"), false,false,false,false);
 					}
 					else if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
 					{

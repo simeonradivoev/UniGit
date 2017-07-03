@@ -9,11 +9,8 @@ using UniGit.Security;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 using Utils.Extensions;
-using Debug = UnityEngine.Debug;
-using Object = UnityEngine.Object;
 
 namespace UniGit
 {

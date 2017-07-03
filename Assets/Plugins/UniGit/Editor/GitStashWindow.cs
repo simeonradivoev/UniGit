@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;

@@ -1,11 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 using Tree = LibGit2Sharp.Tree;
 
 namespace UniGit

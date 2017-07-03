@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
@@ -159,8 +155,7 @@ namespace UniGit
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
-					GUIContent content = EditorGUIUtility.IconContent("console.warnicon");
-					content.text = "There are merge conflicts!";
+					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
 					GitDiffWindow.GetWindow(true).ShowNotification(content);
 					GitDiffWindow.GetWindow(false).SetCommitMessage(GitManager.Repository.Info.Message);
 					break;
