@@ -580,7 +580,7 @@ namespace UniGit
 				}
 				menu.AddItem(new GUIContent("Branch Out"), false, () =>
 				{
-					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new GitSettingsWindow.CreateBranchPopup(this, GitManager.Repository.Lookup<Commit>(commit.Id),null)));
+					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new GitCreateBranchWindow(this, GitManager.Repository.Lookup<Commit>(commit.Id),null)));
 				});
 				menu.DropDown(buttonRect);
 			}
