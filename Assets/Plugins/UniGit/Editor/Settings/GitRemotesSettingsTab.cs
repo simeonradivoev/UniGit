@@ -65,7 +65,7 @@ namespace UniGit.Settings
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.GetTempContent("Add Remote"), "LargeButton"))
+			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Remote"), "AC Button"))
 			{
 				PopupWindow.Show(addRepositoryButtonRect, new AddRepositoryPopup(remotes));
 			}

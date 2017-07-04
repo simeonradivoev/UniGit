@@ -384,7 +384,7 @@ namespace UniGit
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
 			GitGUI.StartEnable(GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
-			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.fetch.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), "toolbarbutton"))
+			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.checkout.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), "toolbarbutton"))
 			{
 				if (GitExternalManager.TakeSwitch())
 				{

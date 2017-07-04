@@ -38,7 +38,7 @@ namespace UniGit.Settings
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
 			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), "AC Button");
-			if (GUI.Button(createBranchRect, GitGUI.GetTempContent("Create Branch"), "AC Button"))
+			if (GUI.Button(createBranchRect, GitGUI.IconContent("ol plus", "Create Branch"), "AC Button"))
 			{
 				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(settingsWindow, GitManager.Repository.Commits.FirstOrDefault(), () =>
 				{
@@ -96,7 +96,7 @@ namespace UniGit.Settings
 			}
 			GUI.enabled = !branch.IsRemote && !isHead;
 			Rect switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), "minibuttonmid");
-			if (GUI.Button(switchButtonRect,"Switch", "minibuttonmid"))
+			if (GUI.Button(switchButtonRect,GitGUI.GetTempContent("Switch"), "minibuttonmid"))
 			{
 				if (GitExternalManager.TakeSwitch())
 				{

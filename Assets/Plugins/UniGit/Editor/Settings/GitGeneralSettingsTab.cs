@@ -16,7 +16,7 @@ namespace UniGit.Settings
 
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			//todo cache general settings to reduce lookup
-			GUILayout.Box(new GUIContent("Unity Settings"), "IN BigTitle", GUILayout.ExpandWidth(true));
+			GUILayout.Box(GitGUI.IconContent("SceneAsset Icon", "Unity Settings"), "IN BigTitle", GUILayout.ExpandWidth(true),GUILayout.Height(EditorGUIUtility.singleLineHeight*1.6f));
 
 			if (settings != null)
 			{
@@ -46,7 +46,7 @@ namespace UniGit.Settings
 				}
 			}
 
-			GUILayout.Box(GitGUI.GetTempContent("Git Settings"), "IN BigTitle", GUILayout.ExpandWidth(true));
+			GUILayout.Box(GitGUI.IconContent("ListIcon","Git Settings"), "IN BigTitle", GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
 
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("User"), EditorStyles.boldLabel);
 			EditorGUI.indentLevel = 1;
@@ -94,11 +94,11 @@ namespace UniGit.Settings
 			EditorGUILayout.EndHorizontal();
 			EditorGUI.indentLevel = 0;
 
-			GUILayout.Box(new GUIContent("Git Ignore"), "IN BigTitle", GUILayout.ExpandWidth(true));
+			GUILayout.Box(GitGUI.IconContent("IN LockButton on", "Git Ignore"), "IN BigTitle", GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button("Open Git Ignore File"))
+			if (GUILayout.Button(GitGUI.IconContent("IN LockButton on","Open Git Ignore File")))
 			{
 				OpenGitIgnore();
 			}

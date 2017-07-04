@@ -139,7 +139,7 @@ namespace UniGit.Settings
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.GetTempContent("Add Credentials")))
+			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Credentials"), "AC Button"))
 			{
 				PopupWindow.Show(addCredentialsRect, new AddCredentialPopup());
 			}
