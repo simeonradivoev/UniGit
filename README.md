@@ -25,6 +25,7 @@ An open source GIT Unity3D editor plugin.
 * Support for Credential Managers like Windows Credentials Manager
 * (Beta) Support for Git LFS
 * Multi-Threaded support
+* Branch Switching and Creation
 
 # Screenshots
 ### History Window
@@ -50,6 +51,5 @@ Once you change the path of unity's DLLs, you can build the project. Visual stud
 * Pushing only works with HTTP (libgit2sharp limitation)
 
 ## Not implemented yet
-* Branch Switching
 * Unity scene/prefab merging
 * Rebasing (with inbuilt tools)
