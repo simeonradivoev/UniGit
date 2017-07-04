@@ -14,7 +14,7 @@ An open source GIT Unity3D editor plugin.
 * [Limitations](#limitations)
 * [Not implemented yet](#not-implemented-yet)
 
-# Features:
+# [Features:](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage)
 * Pull, Push, Merge, Fetch changes
 * Remote Management
 * Secure Credentials Manager
@@ -26,6 +26,8 @@ An open source GIT Unity3D editor plugin.
 * (Beta) Support for Git LFS
 * Multi-Threaded support
 * Branch Switching and Creation
+
+For more info on all the fetures and how to use them, chek out the [wiki](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage).
 
 # Screenshots
 ### History Window
