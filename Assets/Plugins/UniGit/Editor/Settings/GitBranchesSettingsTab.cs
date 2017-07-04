@@ -10,55 +10,77 @@ namespace UniGit.Settings
 {
 	public class GitBranchesSettingsTab : GitSettingsTab
 	{
-		private BranchCollection branches;
 		private string[] remoteNames;
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
+		private Vector2 scroll;
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
-			DoBranch(GitManager.Repository.Head);
+			var branches = GitManager.Repository.Branches;
+			DoBranch(GitManager.Repository.Head, branches);
 
 			EditorGUILayout.Space();
 			GUILayout.Label(GUIContent.none, "sv_iconselector_sep");
 			EditorGUILayout.Space();
 
+			scroll = EditorGUILayout.BeginScrollView(scroll);
 			if (branches != null)
 			{
 				foreach (var branch in branches)
 				{
 					if (branch.IsCurrentRepositoryHead) continue;
-					DoBranch(branch);
+					DoBranch(branch, branches);
 				}
 			}
+			EditorGUILayout.EndScrollView();
 
 			EditorGUILayout.Space();
-			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), GUI.skin.button);
-			if (GUI.Button(createBranchRect, GitGUI.GetTempContent("Create Branch")))
+			EditorGUILayout.BeginHorizontal();
+			GUILayout.FlexibleSpace();
+			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), "AC Button");
+			if (GUI.Button(createBranchRect, GitGUI.GetTempContent("Create Branch"), "AC Button"))
 			{
-				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(settingsWindow, GitManager.Repository.Commits.FirstOrDefault(), () => { branches = null; }));
+				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(settingsWindow, GitManager.Repository.Commits.FirstOrDefault(), () =>
+				{
+					branches = null;
+				}));
 			}
+			GUILayout.FlexibleSpace();
+			EditorGUILayout.EndHorizontal();
 		}
 
-		private void DoBranch(Branch branch)
+		private void DoBranch(Branch branch,BranchCollection branchCollection)
 		{
-			GUILayout.Label(GitGUI.GetTempContent(branch.FriendlyName), branch.IsCurrentRepositoryHead ? "IN BigTitle" : "ShurikenModuleTitle", GUILayout.ExpandWidth(true));
+			bool isHead = branch.IsCurrentRepositoryHead;
+
+			GUIContent titleContent = GitGUI.GetTempContent(branch.FriendlyName);
+			if (isHead)
+				titleContent.text += " (HEAD)";
+			if(branch.IsRemote)
+				titleContent.image = GitGUI.IconContentTex("ToolHandleGlobal");
+
+			GUILayout.Label(titleContent, isHead ? "IN BigTitle" : "ShurikenModuleTitle", GUILayout.ExpandWidth(true));
 			int selectedRemote = Array.IndexOf(remoteCacheList, branch.Remote);
+			EditorGUILayout.BeginHorizontal();
+			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Remote"));
 			if (remoteNames != null)
 			{
-				EditorGUILayout.BeginHorizontal();
-				EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Remote"));
 				EditorGUI.BeginChangeCheck();
 				int newSelectedRemote = EditorGUILayout.Popup(selectedRemote, remoteNames);
-				EditorGUILayout.EndHorizontal();
 				if (EditorGUI.EndChangeCheck() && selectedRemote != newSelectedRemote)
 				{
-					branches.Update(branch, (u) =>
+					branchCollection.Update(branch, (u) =>
 					{
 						u.Remote = remoteCacheList[newSelectedRemote].Name;
 						u.UpstreamBranch = branch.CanonicalName;
 					});
 				}
 			}
+			else
+			{
+				GUILayout.Button(new GUIContent("No Remotes"));
+			}
+			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.TextField(GitGUI.GetTempContent("Upstream Branch"), branch.UpstreamBranchCanonicalName);
 			EditorGUILayout.BeginHorizontal();
@@ -66,14 +88,15 @@ namespace UniGit.Settings
 			GUI.enabled = remoteCacheList != null && remoteCacheList.Length < selectedRemote;
 			if (GUILayout.Button(GitGUI.GetTempContent("Save", "Send branch changes to selected remote."), "minibuttonleft"))
 			{
-				branches.Update(branch, (u) =>
+				branchCollection.Update(branch, (u) =>
 				{
 					u.Remote = remoteCacheList[selectedRemote].Name;
 					u.UpstreamBranch = branch.CanonicalName;
 				});
 			}
-			GUI.enabled = !branch.IsRemote && branch.IsCurrentRepositoryHead;
-			if (GUILayout.Button("Switch", "minibuttonmid"))
+			GUI.enabled = !branch.IsRemote && !isHead;
+			Rect switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), "minibuttonmid");
+			if (GUI.Button(switchButtonRect,"Switch", "minibuttonmid"))
 			{
 				if (GitExternalManager.TakeSwitch())
 				{
@@ -82,11 +105,10 @@ namespace UniGit.Settings
 				}
 				else
 				{
-					Debug.LogException(new NotImplementedException("Branch Checkout not implemented. Use External program for branch switching."));
-					//todo implement branch checkout
+					PopupWindow.Show(switchButtonRect,new GitCheckoutWindowPopup(branch));
 				}
 			}
-			GUI.enabled = !branch.IsCurrentRepositoryHead;
+			GUI.enabled = !isHead;
 			if (GUILayout.Button(GitGUI.GetTempContent("Delete", branch.IsCurrentRepositoryHead ? "Can not delete head branch" : ""), "minibuttonmid"))
 			{
 				if (EditorUtility.DisplayDialog("Delete Branch", "Are you sure you want do delete a branch? This action can not be undone.", "Delete", "Cancel"))
@@ -94,7 +116,6 @@ namespace UniGit.Settings
 					try
 					{
 						GitManager.Repository.Branches.Remove(branch);
-						branches = null;
 						GitManager.MarkDirty(true);
 					}
 					catch (Exception e)
@@ -107,7 +128,7 @@ namespace UniGit.Settings
 			GUI.enabled = !branch.IsRemote;
 			if (GUILayout.Button(GitGUI.GetTempContent("Reset", "Reset branch properties."), "minibuttonright"))
 			{
-				branches.Update(branch, (u) =>
+				branchCollection.Update(branch, (u) =>
 				{
 					u.Remote = "";
 					u.UpstreamBranch = "";
@@ -123,12 +144,6 @@ namespace UniGit.Settings
 			base.OnGitUpdate(status, paths);
 			if (GitManager.Repository == null) return;
 			UpdateRemotes();
-			UpdateBranches();
-		}
-
-		private void UpdateBranches()
-		{
-			branches = GitManager.Repository.Branches;
 		}
 
 		private void UpdateRemotes()

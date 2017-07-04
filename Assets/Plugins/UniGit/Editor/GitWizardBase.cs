@@ -12,6 +12,7 @@ namespace UniGit
 		protected Remote[] remotes;
 		protected GUIContent[] remoteNames;
 		protected string[] branchNames;
+		protected string[] branchFriendlyNames;
 		[SerializeField] protected Credentials credentials;
 		[SerializeField]
 		protected int selectedRemote;
@@ -24,9 +25,10 @@ namespace UniGit
 
 		protected virtual void OnEnable()
 		{
-			remotes = GitManager.Repository.Network.Remotes.ToArray();
+			remotes = GitManager.Repository.Network != null && GitManager.Repository.Network.Remotes != null ? GitManager.Repository.Network.Remotes.ToArray() : new Remote[0];
 			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
 			branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+			branchFriendlyNames = GitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
@@ -35,9 +37,12 @@ namespace UniGit
 		{
 			if(branch == null) return;
 
-			branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+			if(branchNames == null)
+				branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+			if(branchFriendlyNames == null)
+				branchFriendlyNames = GitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 
-			if(remotes != null && branch.Remote != null)
+			if (remotes != null && branch.Remote != null)
 				selectedRemote = Array.IndexOf(remotes, branch.Remote);
 			if (branchNames != null && !string.IsNullOrEmpty(branch.CanonicalName))
 				selectedBranch = Array.IndexOf(branchNames, branch.CanonicalName);
@@ -52,7 +57,7 @@ namespace UniGit
 		{
 			EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Branch"));
-			selectedBranch = EditorGUILayout.Popup(selectedBranch, branchNames);
+			selectedBranch = EditorGUILayout.Popup(selectedBranch, branchFriendlyNames);
 			EditorGUILayout.EndHorizontal();
 		}
 

@@ -34,6 +34,14 @@ namespace UniGit
 		{
 			base.OnEnable();
 
+			if (tabs == null)
+			{
+				InitTabs();
+			}
+		}
+
+		private void InitTabs()
+		{
 			generalSettingsTab = new GitGeneralSettingsTab();
 			externalsSettingsTab = new GitExternalsSettingsTab();
 			remotesSettingsTab = new GitRemotesSettingsTab();
@@ -62,6 +70,10 @@ namespace UniGit
 			base.OnFocus();
 			LoseFocus();
 			if (!GitManager.IsValidRepo) return;
+			if (tabs == null)
+			{
+				InitTabs();
+			}
 			currentTab.OnFocus();
 			OnGitUpdate(null,null);
 		}
@@ -128,7 +140,7 @@ namespace UniGit
 			if (EditorGUI.EndChangeCheck())
 			{
 				LoseFocus();
-				currentTab.OnFocus();
+				if(currentTab != null) currentTab.OnFocus();
 			}
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button(GitGUI.IconContent("_Help"), "IconButton"))
@@ -141,7 +153,7 @@ namespace UniGit
 			if (GitManager.Repository != null)
 			{
 				Rect localRect = new Rect(0, 0, position.width, position.height - EditorGUIUtility.singleLineHeight * 1.6f);
-				currentTab.OnGUI(localRect,current);
+				if(currentTab != null) currentTab.OnGUI(localRect,current);
 			}
 			EditorGUILayout.Space();
 
@@ -196,6 +208,7 @@ namespace UniGit
 		{
 			get
 			{
+				if (tabs == null) return null;
 				int tabIndex = Mathf.Max((int)tab, 0);
 				if (tabIndex < tabs.Length)
 					return tabs[tabIndex];

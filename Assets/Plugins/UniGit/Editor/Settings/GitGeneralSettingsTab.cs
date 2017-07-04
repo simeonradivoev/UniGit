@@ -8,11 +8,13 @@ namespace UniGit.Settings
 	public class GitGeneralSettingsTab : GitSettingsTab, IHasCustomMenu
 	{
 		private readonly string[] autoRebaseOptions = { "never", "local", "remote", "always" };
+		private Vector2 scroll;
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
 			GitSettingsJson settings = GitManager.Settings;
 
+			scroll = EditorGUILayout.BeginScrollView(scroll);
 			//todo cache general settings to reduce lookup
 			GUILayout.Box(new GUIContent("Unity Settings"), "IN BigTitle", GUILayout.ExpandWidth(true));
 
@@ -102,6 +104,7 @@ namespace UniGit.Settings
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
+			EditorGUILayout.EndScrollView();
 		}
 
 		private void OpenGitIgnore()

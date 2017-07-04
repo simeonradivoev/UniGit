@@ -12,6 +12,7 @@ namespace UniGit.Settings
 		private Rect addRepositoryButtonRect;
 		private RemoteCollection remotes;
 		private RemoteEntry[] remoteCacheList = new RemoteEntry[0];
+		private Vector2 scroll;
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
@@ -22,6 +23,7 @@ namespace UniGit.Settings
 				EditorGUILayout.HelpBox("No Remotes", MessageType.Info);
 			}
 
+			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var remote in remoteCacheList)
 			{
 				GUILayout.Label(GitGUI.GetTempContent(remote.Name), "ShurikenModuleTitle");
@@ -58,6 +60,7 @@ namespace UniGit.Settings
 				EditorGUILayout.EndHorizontal();
 				EditorGUILayout.EndVertical();
 			}
+			EditorGUILayout.EndScrollView();
 
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();

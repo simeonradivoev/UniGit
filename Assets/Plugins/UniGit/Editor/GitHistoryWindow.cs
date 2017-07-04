@@ -15,6 +15,8 @@ namespace UniGit
 {
 	public class GitHistoryWindow : GitUpdatableWindow, IHasCustomMenu
 	{
+		private static readonly Color headColor = new Color32(72, 123, 207, 255);
+		private static readonly Color remoteColor = new Color32(234, 141, 43, 255);
 		private const int CommitsPerExpand = 8;
 		private const int MaxFirstCommitCount = 16;
 
@@ -84,16 +86,16 @@ namespace UniGit
 			{
 				GitProfilerProxy.BeginSample("Git History Window Style Creation",this);
 				Texture2D blueTexture = new Texture2D(1,1) {hideFlags = HideFlags.HideAndDontSave};
-				blueTexture.SetPixel(0,0,new Color32(72,123,207,255));
+				blueTexture.SetPixel(0,0, headColor);
 				blueTexture.Apply();
 
 				Texture2D orangeTexture = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-				orangeTexture.SetPixel(0, 0, new Color32(234, 141, 43, 255));
+				orangeTexture.SetPixel(0, 0, remoteColor);
 				orangeTexture.Apply();
 
 				styles = new Styles();
-				styles.historyKnobNormal = new GUIStyle("CN CountBadge");
-				styles.historyKnobNormal.border = new RectOffset(8, 8, 8, 8);
+				styles.historyKnobNormal = new GUIStyle("sv_iconselector_labelselection");
+				styles.historyKnobNormal.border = new RectOffset(6, 6, 6, 6);
 				styles.historyKnobNormal.margin = new RectOffset(0, 0, 0, 0);
 				styles.historyKnobNormal.fixedHeight = 0;
 				styles.historyKnobHead = new GUIStyle() {border = new RectOffset(6,6,6,6),fixedHeight = 0,normal = new GUIStyleState() {background = EditorGUIUtility.FindTexture("sv_label_1") } };
@@ -104,7 +106,7 @@ namespace UniGit
 				styles.remoteCommitTag = new GUIStyle("AssetLabel");
 				styles.remoteCommitTag.normal.background = EditorGUIUtility.FindTexture("sv_label_5");
 				styles.otherCommitTag = new GUIStyle("AssetLabel");
-				styles.otherCommitTag.normal.background = EditorGUIUtility.FindTexture("sv_label_2");
+				styles.otherCommitTag.normal.background = ((GUIStyle)"sv_iconselector_labelselection").normal.background;
 				styles.commitLineHead = new GUIStyle() {normal = new GUIStyleState() { background = blueTexture } };
 				styles.commitLineRemote = new GUIStyle() { normal = new GUIStyleState() { background = orangeTexture } };
 				styles.historyHelpBox = new GUIStyle(EditorStyles.helpBox) {richText = true,padding = new RectOffset(8,8,8,8),alignment = TextAnchor.MiddleLeft,contentOffset = new Vector2(24,-2)};
@@ -136,7 +138,7 @@ namespace UniGit
 				cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
 
 				//update selected branch
-				UpdateSelectedBranch();
+				SetSelectedBranch(selectedBranchName);
 
 				int commitCount = 0;
 				if (selectedBranch != null)
@@ -174,9 +176,10 @@ namespace UniGit
 			titleContent.image = GitManager.GetGitStatusIcon();
 		}
 
-		private void UpdateSelectedBranch()
+		private void SetSelectedBranch(string canonicalName)
 		{
-			var tmpBranch = GitManager.Repository.Branches.FirstOrDefault(b => b.CanonicalName == selectedBranchName);
+			selectedBranchName = canonicalName;
+			var tmpBranch = GitManager.Repository.Branches.FirstOrDefault(b => b.CanonicalName == canonicalName);
 			if (tmpBranch != null)
 			{
 				selectedBranch = new BranchInfo(tmpBranch);
@@ -357,17 +360,24 @@ namespace UniGit
 			}
 			GUI.enabled = true;
 
-			btRect = new Rect(rect.x + rect.width - 64, btRect.y, 64, btRect.height);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(string.IsNullOrEmpty(selectedBranchName) ? "Branch" : selectedBranch.CanonicalName), "ToolbarDropDown"))
+			GUIContent branchNameContent = GitGUI.GetTempContent(string.IsNullOrEmpty(selectedBranchName) ? "Branch" : selectedBranch.FriendlyName);
+			if (selectedBranch.IsRemote)
+				branchNameContent.image = GitGUI.IconContentTex("ToolHandleGlobal");
+			else if (!selectedBranch.IsCurrentRepositoryHead)
+				branchNameContent.image = GitGUI.IconContentTex("IN LockButton on");
+
+			float branchNameWidth = ((GUIStyle) "ToolbarDropDown").CalcSize(branchNameContent).x;
+			btRect = new Rect(rect.x + rect.width - branchNameWidth, btRect.y, branchNameWidth, btRect.height);
+			if (GUI.Button(btRect, branchNameContent, "ToolbarDropDown"))
 			{
 				GenericMenu selectBranchMenu = new GenericMenu();
 				foreach (var cachedBranch in cachedBranches)
 				{
-					selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), false, (b) =>
+					selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), selectedBranchName == cachedBranch.CanonicalName, (b) =>
 					{
-						selectedBranchName = (string)b;
-						UpdateSelectedBranch();
-					}, branch.FriendlyName);
+						SetSelectedBranch((string)b);
+						StartUpdateChaches(GitManager.LastStatus);
+					}, cachedBranch.CanonicalName);
 				}
 				selectBranchMenu.ShowAsContext();
 			}
@@ -381,8 +391,10 @@ namespace UniGit
 					AssetDatabase.Refresh();
 					GitManager.MarkDirty();
 				}
-
-				//todo Implement native switching
+				else
+				{
+					PopupWindow.Show(btRect,new GitCheckoutWindowPopup(selectedBranch.LoadBranch()));
+				}
 			}
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 21, btRect.y+1, 21, btRect.height);
@@ -463,7 +475,7 @@ namespace UniGit
 
 			//behind,ahead and merge checking
 
-			bool displayWarnningBox = DoWarningBoxValidate(info);
+			bool displayWarnningBox = DoWarningBoxValidate(info,selectedBranch);
 
 			//commit layout
 			if (current.type == EventType.Layout)
@@ -497,7 +509,7 @@ namespace UniGit
 
 				if (displayWarnningBox)
 				{
-					DoWarningBox(warningBoxRect, info);
+					DoWarningBox(warningBoxRect, info,selectedBranch);
 				}
 
 				for (int i = 0; i < cachedCommits.Length; i++)
@@ -514,13 +526,13 @@ namespace UniGit
 
 				Rect resetRect = new Rect(historyScrollContentsRect.width / 2, historyScrollContentsRect.height - EditorGUIUtility.singleLineHeight * 3, 64, EditorGUIUtility.singleLineHeight);
 				Rect loadMoreRect = new Rect(historyScrollContentsRect.width / 2 - 64, historyScrollContentsRect.height - EditorGUIUtility.singleLineHeight * 3, 64, EditorGUIUtility.singleLineHeight);
-				if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More"), "ButtonLeft"))
+				if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More","Show more commits."), "ButtonLeft"))
 				{
 					maxCommitsCount += CommitsPerExpand;
 					StartUpdateChaches(GitManager.LastStatus);
 				}
 				GitGUI.StartEnable(maxCommitsCount != MaxFirstCommitCount);
-				if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset"), "ButtonRight"))
+				if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset","Reset the number of commits show."), "ButtonRight"))
 				{
 					if (MaxFirstCommitCount < maxCommitsCount)
 					{
@@ -542,7 +554,7 @@ namespace UniGit
 
 		private Rect LayoutCommit(Rect lastCommitRect, CommitInfo commit)
 		{
-			bool isHeadOrRemote = commit.IsHead || commit.IsRemote;
+			bool isHeadOrRemote = commit.IsRemote || commit.Branches != null;
 			float commitHeight = 7 * EditorGUIUtility.singleLineHeight;
 			if (isHeadOrRemote) commitHeight += EditorGUIUtility.singleLineHeight;
 			Rect commitRect = new Rect(lastCommitRect.x, lastCommitRect.y + lastCommitRect.height + commitSpacing, lastCommitRect.width, commitHeight);
@@ -563,8 +575,31 @@ namespace UniGit
 			bool isHead = commit.IsHead;
 			bool isRemote = commit.IsRemote;
 
-			GUI.Box(new Rect(8, rect.y + 6, 16, 16), GUIContent.none, "AC LeftArrow");
-			GUI.Box(new Rect(8, rect.y + 6, 16, 16), GUIContent.none, branches != null && branches.Length > 0 ? isHead ? styles.historyKnobHead : isRemote ? styles.historyKnobRemote : styles.historyKnobOther : styles.historyKnobNormal);
+			Color branchColor = Color.white;
+			if (branches != null)
+			{
+				foreach (var branch in branches)
+				{
+					if (branch.IsRemote)
+					{
+						branchColor = remoteColor;
+						break;
+					}
+					if (branch.IsCurrentRepositoryHead)
+					{
+						branchColor = headColor;
+						break;
+					}
+					UnityEngine.Random.InitState(branch.CanonicalName.GetHashCode());
+					branchColor = UnityEngine.Random.ColorHSV(0, 1, 0, 1);
+				}
+			}
+
+			GUI.backgroundColor = new Color(1,1,1,0.4f);
+			GUI.Box(new Rect(24, rect.y + 5, 16, 16), GUIContent.none, "AC LeftArrow");
+			GUI.backgroundColor = branchColor;
+			GUI.Box(new Rect(9, rect.y + 6, 12, 12), GUIContent.none, styles.historyKnobNormal);
+			GUI.backgroundColor = Color.white;
 
 			float y = 8;
 			float x = 12;
@@ -620,11 +655,38 @@ namespace UniGit
 				}
 				foreach (var branch in branches)
 				{
-					GUIStyle style = branch.IsRemote ? styles.remoteCommitTag : branch.IsCurrentRepositoryHead ? styles.headCommitTag : styles.otherCommitTag;
-					GUIContent labelContent = GitGUI.GetTempContent(branch.FriendlyName);
+					GUIStyle style = styles.otherCommitTag;
+					if (branch.IsRemote)
+					{
+						GUI.backgroundColor = remoteColor;
+					}
+					else if (branch.IsCurrentRepositoryHead)
+					{
+						GUI.backgroundColor = headColor;
+					}
+					else
+					{
+						UnityEngine.Random.InitState(branch.CanonicalName.GetHashCode());
+						GUI.backgroundColor = UnityEngine.Random.ColorHSV(0, 1, 0, 1);
+					}
+					GUIContent labelContent = GitGUI.GetTempContent(branch.FriendlyName, branch.CanonicalName);
 					float labelWidth = style.CalcSize(labelContent).x;
-					GUI.Label(new Rect(rect.x + x, rect.y + y, labelWidth, EditorGUIUtility.singleLineHeight), labelContent, style);
+					Rect branchIconRect = new Rect(rect.x + x, rect.y + y, labelWidth, EditorGUIUtility.singleLineHeight);
+					GUI.Label(branchIconRect, labelContent, style);
 					x += labelWidth + 4;
+					GUI.backgroundColor = Color.white;
+
+					if (Event.current.type == EventType.ContextClick && branchIconRect.Contains(Event.current.mousePosition))
+					{
+						GenericMenu branchContextMenu = new GenericMenu();
+						BranchInfo b = branch;
+						branchContextMenu.AddItem(new GUIContent("View branch"),false,()=> { ViewBranchCallback(b); });
+						if(!b.IsRemote && !b.IsCurrentRepositoryHead)
+							branchContextMenu.AddItem(new GUIContent("Switch To Branch"), false,()=> { SwitchToBranchCallback(b, new Rect(branchIconRect.x - historyScroll.x, branchIconRect.y - historyScroll.y, branchIconRect.width, branchIconRect.height)); });
+						else
+							branchContextMenu.AddDisabledItem(new GUIContent("Switch To Branch"));
+						branchContextMenu.ShowAsContext();
+					}
 				}
 			}
 
@@ -651,7 +713,7 @@ namespace UniGit
 						}
 						else
 						{
-							PopupWindow.Show(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id)));
+							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id))));
 						}
 					});
 				}
@@ -685,7 +747,18 @@ namespace UniGit
 			GitProfilerProxy.EndSample();
 		}
 
-		private void DoWarningBox(Rect rect, RepositoryInformation info)
+		private void ViewBranchCallback(BranchInfo branch)
+		{
+			SetSelectedBranch(branch.CanonicalName);
+			StartUpdateChaches(GitManager.LastStatus);
+		}
+
+		private void SwitchToBranchCallback(BranchInfo branch,Rect rect)
+		{
+			popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect,new GitCheckoutWindowPopup(branch.LoadBranch())));
+		}
+
+		private void DoWarningBox(Rect rect, RepositoryInformation info, BranchInfo branch)
 		{
 			int? behindBy = selectedBranch.TrackingDetails.BehindBy;
 			GUIContent content = GUIContent.none;
@@ -697,15 +770,23 @@ namespace UniGit
 			{
 				content = GitGUI.GetTempContent(string.Format("Branch <b>{0}</b> behind tracked branch <b>{1}</b>", selectedBranch.FriendlyName, selectedBranch.TrackedBranch));
 			}
+			else if (branch.IsRemote)
+			{
+				content = GitGUI.GetTempContent("Viewing a remote branch. Showing local history of remote branch.");
+			}
+			else if (!branch.IsCurrentRepositoryHead)
+			{
+				content = GitGUI.GetTempContent("Viewing a branch that is not the HEAD.");
+			}
 
 			GUI.Box(rect, content, styles.historyHelpBox);
 			GUI.Box(rect, GUIContent.none, styles.historyHelpBoxLabel);
 		}
 
-		private bool DoWarningBoxValidate(RepositoryInformation info)
+		private bool DoWarningBoxValidate(RepositoryInformation info,BranchInfo branchInfo)
 		{
 			int? behindBy = selectedBranch.TrackingDetails.BehindBy;
-			return (behindBy != null && behindBy.Value > 0) | info.CurrentOperation == CurrentOperation.Merge;
+			return (behindBy != null && behindBy.Value > 0) | info.CurrentOperation == CurrentOperation.Merge | !branchInfo.IsCurrentRepositoryHead | branchInfo.IsRemote;
 		}
 
 		#region Menus

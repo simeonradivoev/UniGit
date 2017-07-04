@@ -7,6 +7,7 @@ namespace UniGit.Settings
 	public class GitSecuritySettingsTab : GitSettingsTab
 	{
 		private Rect addCredentialsRect;
+		private Vector2 scroll;
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
@@ -40,6 +41,7 @@ namespace UniGit.Settings
 				return;
 			}
 
+			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var gitCredential in GitCredentialsManager.GitCredentials)
 			{
 				GUILayout.Label(GitGUI.GetTempContent(gitCredential.Name), "ShurikenModuleTitle");
@@ -132,6 +134,7 @@ namespace UniGit.Settings
 				EditorGUILayout.EndHorizontal();
 				EditorGUILayout.EndVertical();
 			}
+			EditorGUILayout.EndScrollView();
 
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
