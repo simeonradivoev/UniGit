@@ -62,6 +62,7 @@ namespace UniGit
 		public float MaxCommitTextAreaSize = 120;
 		public bool DetectRenames = true;
 		public bool UseSimpleContextMenus;
+		public bool ReadFromFile;
 		private bool isDirty;
 
 		public void Copy(GitSettings settings)

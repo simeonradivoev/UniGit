@@ -64,7 +64,6 @@ namespace UniGit
 			public bool emptyCommit;
 			public bool amendCommit;
 			public bool prettify;
-			public bool readFromFile;
 			public string commitMessage;
 			public string commitMessageFromFile;
 			public DateTime lastMessageUpdate;
@@ -153,7 +152,7 @@ namespace UniGit
 			base.OnFocus();
 			GUI.FocusControl(null);
 
-			if (settings.readFromFile)
+			if (GitManager.Settings.ReadFromFile)
 			{
 				if (File.Exists(CommitMessageFilePath))
 				{
@@ -227,10 +226,10 @@ namespace UniGit
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
 				GUILayout.Label(GitGUI.GetTempContent("Merge"), "AssetLabel");
-			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(settings.readFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), "IN Foldout",GUILayout.Width(settings.readFromFile ? 210 : 116));
+			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(GitManager.Settings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), "IN Foldout",GUILayout.Width(GitManager.Settings.ReadFromFile ? 210 : 116));
 			if (!commitMaximized)
 			{
-				if (!settings.readFromFile)
+				if (!GitManager.Settings.ReadFromFile)
 				{
 					EditorGUI.BeginChangeCheck();
 					GUI.SetNextControlName("Commit Message Field");
@@ -249,7 +248,7 @@ namespace UniGit
 			if (commitMaximized)
 			{
 				commitScroll = EditorGUILayout.BeginScrollView(commitScroll, GUILayout.Height(CalculateCommitTextHeight()));
-				if (!settings.readFromFile)
+				if (!GitManager.Settings.ReadFromFile)
 				{
 					EditorGUI.BeginChangeCheck();
 					GUI.SetNextControlName("Commit Message Field");
@@ -329,7 +328,7 @@ namespace UniGit
 			}
 			commitMenu.AddSeparator("");
 			commitMenu.AddItem(new GUIContent("Commit Message/Clear"), false, ClearCommitMessage);
-			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), settings.readFromFile, ToggleReadFromFile);
+			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), GitManager.Settings.ReadFromFile, ToggleReadFromFile);
 			if (File.Exists(CommitMessageFilePath))
 			{
 				commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
@@ -384,7 +383,7 @@ namespace UniGit
 
 		private string GetActiveCommitMessage(bool forceUpdate)
 		{
-			if (settings.readFromFile)
+			if (GitManager.Settings.ReadFromFile)
 			{
 				if (forceUpdate)
 				{
@@ -405,16 +404,18 @@ namespace UniGit
 
 		private void ToggleReadFromFile()
 		{
-			if (settings.readFromFile)
+			if (GitManager.Settings.ReadFromFile)
 			{
-				settings.readFromFile = false;
+				GitManager.Settings.ReadFromFile = false;
 				ReadCommitMessage();
 			}
 			else
 			{
-				settings.readFromFile = true;
+				GitManager.Settings.ReadFromFile = true;
 				ReadCommitMessageFromFile();
 			}
+
+			GitManager.Settings.MarkDirty();
 		}
 
 		private void OpenCommitMessageFile()
@@ -864,7 +865,7 @@ namespace UniGit
 
 		public void SetCommitMessage(string commitMessage)
 		{
-			if (settings.readFromFile)
+			if (GitManager.Settings.ReadFromFile)
 			{
 				settings.commitMessageFromFile = commitMessage;
 				SaveCommitMessageToFile();
@@ -881,7 +882,7 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnDisable()
 		{
-			if (!settings.readFromFile)
+			if (!GitManager.Settings.ReadFromFile)
 			{
 				SaveCommitMessage();
 			}
