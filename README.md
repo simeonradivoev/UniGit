@@ -26,6 +26,7 @@ An open source GIT Unity3D editor plugin.
 * (Beta) Support for Git LFS
 * Multi-Threaded support
 * Branch Switching and Creation
+* In-Editor Diff Inspection
 
 For more info on all the fetures and how to use them, chek out the [wiki](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage).
 
@@ -36,6 +37,8 @@ For more info on all the fetures and how to use them, chek out the [wiki](https:
 ![Git Diff Window](https://github.com/simeonradivoev/UniGit/raw/master/Images/DiffScreenshot.png)
 ### Project View status overlays
 ![Project View Overlays](https://github.com/simeonradivoev/UniGit/raw/master/Images/ProjectScreenshot.png)
+### Diff Inspector
+![Diff Inspector](https://github.com/simeonradivoev/UniGit/raw/master/Images/DiffInspector.png)
 ### Settings window
 ![Settings window](https://github.com/simeonradivoev/UniGit/raw/master/Images/SettingsGeneralScreenshot.png)
 
