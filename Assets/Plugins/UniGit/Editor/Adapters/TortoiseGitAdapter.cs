@@ -68,6 +68,12 @@ namespace UniGit.Adapters
 			return true;
 		}
 
+		public bool Diff(string path, Commit end)
+		{
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -endrev:\"{2}\"", "diff", path, end.Sha);
+			return true;
+		}
+
 		public bool Diff(string path, Commit start, Commit end)
 		{
 			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -startrev:\"{2}\" -endrev:\"{3}\"", "diff", path, start.Sha,end.Sha);

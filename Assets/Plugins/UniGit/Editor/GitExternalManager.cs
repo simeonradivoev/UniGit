@@ -147,37 +147,29 @@ namespace UniGit
 			SelectedAdatapter.Conflict(path);
 		}
 
-		public static void ShowDiff(string path)
+		public static bool TakeDiff(string path)
 		{
-			if (SelectedAdatapter == null)
-			{
-				Debug.LogWarning("No selected external program.");
-				return;
-			}
-
-			SelectedAdatapter.Diff(path);
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Diff(path);
 		}
 
-		public static void ShowDiff(string path,string path2)
+		public static bool TakeDiff(string path,string path2)
 		{
-			if (SelectedAdatapter == null)
-			{
-				Debug.LogWarning("No selected external program.");
-				return;
-			}
-
-			SelectedAdatapter.Diff(path, path2);
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Diff(path, path2);
 		}
 
-		public static void ShowDiff(string path, Commit start,Commit end)
+		public static bool TakeDiff(string path, Commit end)
 		{
-			if (SelectedAdatapter == null)
-			{
-				Debug.LogWarning("No selected external program.");
-				return;
-			}
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Diff(path, end);
+		}
 
-			SelectedAdatapter.Diff(path, start, end);
+
+		public static bool TakeDiff(string path, Commit start,Commit end)
+		{
+			if (!GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			return SelectedAdatapter.Diff(path, start, end);
 		}
 
 		public static bool TakeRevert(IEnumerable<string> paths)
@@ -224,6 +216,7 @@ namespace UniGit
 					// Call WaitForExit and then the using statement will close.
 					using (Process exeProcess = Process.Start(startInfo))
 					{
+						if (exeProcess == null) return false;
 						exeProcess.WaitForExit();
 						return true;
 					}

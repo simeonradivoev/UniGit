@@ -487,48 +487,36 @@ namespace UniGit
 
 		public static void ShowDiff(string path, [NotNull] Commit start,[NotNull] Commit end)
 		{
-			GitExternalManager.ShowDiff(path,start,end);
+			if (GitExternalManager.TakeDiff(path, start, end))
+			{
+				return;
+			}
+
+
 		}
 
 		public static void ShowDiff(string path)
 		{
 			if (string.IsNullOrEmpty(path) ||  Repository == null) return;
-			GitExternalManager.ShowDiff(path);
+			if (GitExternalManager.TakeDiff(path))
+			{
+				return;
+			}
+
+			EditorWindow.GetWindow<GitDiffInspector>(true).Init(path);
 		}
 
 		public static void ShowDiffPrev(string path)
 		{
 			if (string.IsNullOrEmpty(path) && Repository != null) return;
-
-			TreeEntry entry = null;
-			string lastId = null;
-			foreach (var commit in Repository.Head.Commits)
+			var lastCommit = Repository.Commits.QueryBy(path).Skip(1).FirstOrDefault();
+			if(lastCommit == null) return;
+			if (GitExternalManager.TakeDiff(path, lastCommit.Commit))
 			{
-				TreeEntry e = commit.Tree[path];
-				if (e == null) continue;
-				if (lastId == null)
-				{
-					lastId = e.Target.Sha;
-				}
-				else if (lastId != e.Target.Sha)
-				{
-					entry = e;
-					break;
-				}
+				return;
 			}
 
-			if (entry == null) return;
-			Blob blob = entry.Target as Blob;
-			if (blob == null || blob.IsBinary) return;
-			string newPath = Application.dataPath.Replace("Assets", "Temp/") + "Git-diff-tmp-file";
-			if (!string.IsNullOrEmpty(newPath))
-			{
-				using (FileStream file = File.Create(newPath))
-				{
-					blob.GetContentStream().CopyTo(file);
-				}
-			}
-			EditorUtility.InvokeDiffTool(Path.GetFileName(path) + " - " + entry.Target.Sha, newPath, Path.GetFileName(path) + " - Working Tree", path, "", "");
+			EditorWindow.GetWindow<GitDiffInspector>(true).Init(path,lastCommit.Commit);
 		}
 
 		public static void ShowBlameWizard(string path)

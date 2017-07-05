@@ -42,7 +42,8 @@ namespace UniGit
 			Switch = 1 << 5,
 			Reset = 1 << 6,
 			Revert = 1 << 7,
-			Blame = 1 << 8
+			Blame = 1 << 8,
+			Diff = 1 << 9
 		}
 	}
 
