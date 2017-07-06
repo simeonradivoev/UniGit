@@ -201,15 +201,16 @@ namespace UniGit
 			DoCommit(repoInfo);
 			GUILayout.EndArea();
 
-			if (buildingStatus != null && !buildingStatus.IsDone)
+			if (statusList == null)
 			{
 				Repaint();
-				GitGUI.DrawLoading(GUILayoutUtility.GetRect(GUIContent.none,GUIStyle.none, GUILayout.ExpandHeight(true),GUILayout.ExpandWidth(true)),new GUIContent("Building File Status Tree"));
+				GitGUI.DrawLoading(position,new GUIContent("Loading Status List..."));
 			}
-			else if(statusList != null)
+			else
 			{
 				DoDiffScroll(Event.current);
 			}
+			
 
 			editoSerializedObject.ApplyModifiedProperties();
 
