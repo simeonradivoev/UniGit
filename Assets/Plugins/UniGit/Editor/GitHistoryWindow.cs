@@ -51,8 +51,7 @@ namespace UniGit
 			public GUIStyle headCommitTag;
 			public GUIStyle remoteCommitTag;
 			public GUIStyle otherCommitTag;
-			public GUIStyle commitLineHead;
-			public GUIStyle commitLineRemote;
+			public GUIStyle commitLine;
 			public GUIStyle historyHelpBox;
 			public GUIStyle historyHelpBoxLabel;
 			public GUIStyle commitMessage;
@@ -85,13 +84,6 @@ namespace UniGit
 			if (styles == null)
 			{
 				GitProfilerProxy.BeginSample("Git History Window Style Creation",this);
-				Texture2D blueTexture = new Texture2D(1,1) {hideFlags = HideFlags.HideAndDontSave};
-				blueTexture.SetPixel(0,0, headColor);
-				blueTexture.Apply();
-
-				Texture2D orangeTexture = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-				orangeTexture.SetPixel(0, 0, remoteColor);
-				orangeTexture.Apply();
 
 				styles = new Styles();
 				styles.historyKnobNormal = new GUIStyle("sv_iconselector_labelselection");
@@ -107,8 +99,6 @@ namespace UniGit
 				styles.remoteCommitTag.normal.background = EditorGUIUtility.FindTexture("sv_label_5");
 				styles.otherCommitTag = new GUIStyle("AssetLabel");
 				styles.otherCommitTag.normal.background = ((GUIStyle)"sv_iconselector_labelselection").normal.background;
-				styles.commitLineHead = new GUIStyle() {normal = new GUIStyleState() { background = blueTexture } };
-				styles.commitLineRemote = new GUIStyle() { normal = new GUIStyleState() { background = orangeTexture } };
 				styles.historyHelpBox = new GUIStyle(EditorStyles.helpBox) {richText = true,padding = new RectOffset(8,8,8,8),alignment = TextAnchor.MiddleLeft,contentOffset = new Vector2(24,-2)};
 				styles.historyHelpBoxLabel = new GUIStyle("CN EntryWarn");
 				styles.commitMessage = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(6,4,4,4),clipping = TextClipping.Clip};
@@ -610,7 +600,9 @@ namespace UniGit
 			GUI.Box(rect, GUIContent.none, "RegionBg");
 			if (isHead || isRemote)
 			{
-				GUI.Box(new Rect(rect.x + 4, rect.y, rect.width - 8, 5), GUIContent.none, isHead ? styles.commitLineHead : styles.commitLineRemote);
+				GUI.color = branchColor;
+				GUI.DrawTexture(new Rect(rect.x + 4, rect.y, rect.width - 8, 5),Texture2D.whiteTexture);
+				GUI.color = Color.white;
 				y += 4;
 			}
 
