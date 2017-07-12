@@ -13,6 +13,7 @@ An open source GIT Unity3D editor plugin.
 * [Building](#building)
 * [Limitations](#limitations)
 * [Not implemented yet](#not-implemented-yet)
+* [Unity Thread](https://forum.unity3d.com/threads/opensource-unigit-in-editor-git-gui.440646/)
 
 # [Features:](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage)
 * Pull, Push, Merge, Fetch changes
