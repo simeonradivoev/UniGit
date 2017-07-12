@@ -13,16 +13,18 @@ public class CallbackTests
 	private int updateRepositoryCalled;
 	private int onRepositoryLoadedCalled;
 	private bool oldMultiThreaded;
+	private GitManager gitManager;
 
 	[SetUp]
 	public void Setup()
 	{
+		gitManager = GitManager.Instance;
 		updateRepositoryCalled = 0;
 		onRepositoryLoadedCalled = 0;
 		GitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
 		GitCallbacks.UpdateRepository += RepositoryUpdate;
-		oldMultiThreaded = GitManager.Settings.GitStatusMultithreaded;
-		GitManager.Settings.GitStatusMultithreaded = false;
+		oldMultiThreaded = gitManager.Settings.GitStatusMultithreaded;
+		gitManager.Settings.GitStatusMultithreaded = false;
 	}
 
 	[TearDown]
@@ -30,7 +32,7 @@ public class CallbackTests
 	{
 		GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
 		GitCallbacks.UpdateRepository -= RepositoryUpdate;
-		GitManager.Settings.GitStatusMultithreaded = oldMultiThreaded;
+		gitManager.Settings.GitStatusMultithreaded = oldMultiThreaded;
 	}
 
 	private void OnRepositoryLoad(Repository repository)
@@ -71,7 +73,7 @@ public class CallbackTests
 	[Test]
 	public void OnRepositoryLoad_OnRepositoryDirtyShouldCallRepositoryLoad_OnRepositoryLoadCalled()
 	{
-		GitManager.MarkDirty(true);
+		gitManager.MarkDirty(true);
 		ForceGitUpdate();
 		Assert.AreEqual(onRepositoryLoadedCalled,1);
 	}

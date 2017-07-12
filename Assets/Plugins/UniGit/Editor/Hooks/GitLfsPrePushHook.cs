@@ -8,6 +8,10 @@ namespace Assets.Plugins.UniGit.Editor.Hooks
 {
 	public class GitLfsPrePushHook : GitPushHookBase
 	{
+		public GitLfsPrePushHook(GitManager gitManager) : base(gitManager)
+		{
+		}
+
 		public override bool OnPrePush(IEnumerable<PushUpdate> updates)
 		{
 			if (!GitLfsManager.Installed || !GitLfsManager.CheckInitialized()) return true;
@@ -16,7 +20,7 @@ namespace Assets.Plugins.UniGit.Editor.Hooks
 			{
 				process.StartInfo.FileName = "git-lfs";
 				process.StartInfo.Arguments = "pre-push origin";
-				process.StartInfo.WorkingDirectory = GitManager.RepoPath;
+				process.StartInfo.WorkingDirectory = gitManager.RepoPath;
 				process.StartInfo.CreateNoWindow = false;
 				process.StartInfo.UseShellExecute = false;
 				process.StartInfo.RedirectStandardInput = true;

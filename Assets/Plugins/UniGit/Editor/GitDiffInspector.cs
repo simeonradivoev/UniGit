@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitDiffInspector : EditorWindow
+	public class GitDiffInspector : EditorWindow, IGitWindow
 	{
 		private float scrollVertical;
 		private float scrollHorizontalNormal;
@@ -30,6 +30,7 @@ namespace UniGit
 		private float otherFileWindowWidth = 0.5f;
 		private bool isResizingFileWindow;
 		private bool synataxHighlight;
+		private GitManager gitManager;
 
 		private class Styles
 		{
@@ -47,6 +48,11 @@ namespace UniGit
 		private const string defines = @"#.*";
 		private const string numbers = @"[\d]+\.?f?";
 		private UberRegex uberRegex;
+
+		public void Construct(GitManager gitManager)
+		{
+			this.gitManager = gitManager;
+		}
 
 		private void OnEnable()
 		{
@@ -90,15 +96,23 @@ namespace UniGit
 
 		private string[] GetLines(Commit commit)
 		{
+			PatchEntryChanges changes = null;
+
 			if (commit != null)
 			{
-				var patch = GitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { path });
-				return patch[path].Patch.Split('\n');
+				var patch = gitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { path });
+				changes = patch[path];
 			}
-			else if(GitManager.Repository.Head != null && GitManager.Repository.Head.Tip != null)
+			else if(gitManager.Repository.Head != null && gitManager.Repository.Head.Tip != null)
 			{
-				var patch = GitManager.Repository.Diff.Compare<Patch>(GitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { path });
-				return patch[path].Patch.Split('\n');
+				var patch = gitManager.Repository.Diff.Compare<Patch>(gitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { path });
+				changes = patch[path];
+			}
+
+			if (changes != null)
+			{
+				isBinary = changes.IsBinaryComparison;
+				return changes.Patch.Split('\n');
 			}
 
 			return new string[0];
@@ -107,7 +121,7 @@ namespace UniGit
 		private void BuildChangeSections(Commit commit)
 		{
 			int lastIndexFileLine = 0;
-			Stream indexFileContent = File.OpenRead(GitManager.RepoPath + "\\" + path);
+			Stream indexFileContent = File.OpenRead(gitManager.RepoPath + "\\" + path);
 			StreamReader indexFileReader = new StreamReader(indexFileContent);
 
 			var lines = GetLines(commit);
@@ -352,9 +366,9 @@ namespace UniGit
 
 			if (changeSections == null)
 			{
-				if (GitManager.Repository != null)
+				if (gitManager.Repository != null)
 				{
-					var commit = string.IsNullOrEmpty(commitSha) ? null : GitManager.Repository.Lookup<Commit>(commitSha);
+					var commit = string.IsNullOrEmpty(commitSha) ? null : gitManager.Repository.Lookup<Commit>(commitSha);
 					BuildChangeSections(commit);
 				}
 				GitGUI.DrawLoading(position,new GUIContent("Loading Changes"));
@@ -421,8 +435,8 @@ namespace UniGit
 				EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
 			}
 
-			GUI.Box(otherFileScrollRect,GUIContent.none, "LargeTextField");
-			GUI.Box(indexFileRect, GUIContent.none, "LargeTextField");
+			GUI.Box(otherFileScrollRect,GUIContent.none, EditorStyles.textArea);
+			GUI.Box(indexFileRect, GUIContent.none, EditorStyles.textArea);
 
 			DrawBlobs(false, otherFileScrollRect, indexFileRect);
 			DrawBlobs(true, indexFileRect, otherFileScrollRect);

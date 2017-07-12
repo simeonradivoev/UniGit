@@ -9,10 +9,15 @@ namespace UniGit.Settings
 		private Rect addCredentialsRect;
 		private Vector2 scroll;
 
+		public GitSecuritySettingsTab(GitManager gitManager) : base(gitManager)
+		{
+
+		}
+
 		internal override void OnGUI(Rect rect, Event current)
 		{
 			EditorGUILayout.BeginHorizontal();
-			GitSettingsJson settings = GitManager.Settings;
+			GitSettingsJson settings = gitManager.Settings;
 			if (settings != null)
 			{
 				EditorGUI.BeginChangeCheck();
@@ -179,7 +184,7 @@ namespace UniGit.Settings
 					{
 						entry.Name = name;
 						GitCredentialsManager.GitCredentials.MarkDirty();
-						EditorWindow.GetWindow<GitSettingsWindow>().Focus();
+						GitSettingsWindow.CreateEditor();
 					}
 					else
 					{

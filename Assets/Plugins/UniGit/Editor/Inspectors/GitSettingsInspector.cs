@@ -1,5 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
+#pragma warning disable 618
 
 namespace UniGit.Inspectors
 {

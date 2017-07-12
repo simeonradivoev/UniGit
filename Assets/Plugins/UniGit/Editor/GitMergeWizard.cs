@@ -37,10 +37,10 @@ namespace UniGit
 		{
 			try
 			{
-				MergeResult result = GitManager.Repository.MergeFetchedRefs(GitManager.Signature, mergeOptions);
+				MergeResult result = gitManager.Repository.MergeFetchedRefs(gitManager.Signature, mergeOptions);
 				GitHistoryWindow.GetWindow(true);
 				OnMergeComplete(result,"Merge");
-				GitManager.MarkDirty();
+				gitManager.MarkDirty();
 				AssetDatabase.Refresh();
 			}
 			catch (CheckoutConflictException e)

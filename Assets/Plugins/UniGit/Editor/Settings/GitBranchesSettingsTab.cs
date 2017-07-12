@@ -14,10 +14,14 @@ namespace UniGit.Settings
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
 		private Vector2 scroll;
 
+		public GitBranchesSettingsTab(GitManager gitManager) : base(gitManager)
+		{
+		}
+
 		internal override void OnGUI(Rect rect, Event current)
 		{
-			var branches = GitManager.Repository.Branches;
-			DoBranch(GitManager.Repository.Head, branches);
+			var branches = gitManager.Repository.Branches;
+			DoBranch(gitManager.Repository.Head, branches);
 
 			EditorGUILayout.Space();
 			GUILayout.Label(GUIContent.none, "sv_iconselector_sep");
@@ -40,10 +44,10 @@ namespace UniGit.Settings
 			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), "AC Button");
 			if (GUI.Button(createBranchRect, GitGUI.IconContent("ol plus", "Create Branch"), "AC Button"))
 			{
-				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(settingsWindow, GitManager.Repository.Commits.FirstOrDefault(), () =>
+				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(gitManager.Repository.Commits.FirstOrDefault(), () =>
 				{
 					branches = null;
-				}));
+				}, gitManager));
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
@@ -101,11 +105,11 @@ namespace UniGit.Settings
 				if (GitExternalManager.TakeSwitch())
 				{
 					AssetDatabase.Refresh();
-					GitManager.MarkDirty();
+					gitManager.MarkDirty();
 				}
 				else
 				{
-					PopupWindow.Show(switchButtonRect,new GitCheckoutWindowPopup(branch));
+					PopupWindow.Show(switchButtonRect,new GitCheckoutWindowPopup(gitManager,branch));
 				}
 			}
 			GUI.enabled = !isHead;
@@ -115,8 +119,8 @@ namespace UniGit.Settings
 				{
 					try
 					{
-						GitManager.Repository.Branches.Remove(branch);
-						GitManager.MarkDirty(true);
+						gitManager.Repository.Branches.Remove(branch);
+						gitManager.MarkDirty(true);
 					}
 					catch (Exception e)
 					{
@@ -142,13 +146,13 @@ namespace UniGit.Settings
 		public override void OnGitUpdate(GitRepoStatus status, string[] paths)
 		{
 			base.OnGitUpdate(status, paths);
-			if (GitManager.Repository == null) return;
+			if (gitManager.Repository == null) return;
 			UpdateRemotes();
 		}
 
 		private void UpdateRemotes()
 		{
-			var remotes = GitManager.Repository.Network.Remotes;
+			var remotes = gitManager.Repository.Network.Remotes;
 			remoteCacheList = remotes.Select(r => new GitRemotesSettingsTab.RemoteEntry(r)).ToArray();
 			remoteNames = remotes.Select(r => r.Name).ToArray();
 		}

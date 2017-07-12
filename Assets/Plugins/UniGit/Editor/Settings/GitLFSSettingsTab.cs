@@ -8,6 +8,10 @@ namespace UniGit.Settings
 	{
 		private Rect trackFileRect;
 
+		public GitLFSSettingsTab(GitManager gitManager) : base(gitManager)
+		{
+		}
+
 		internal override void OnGUI(Rect rect, Event current)
 		{
 			if (!GitLfsManager.Installed)
@@ -33,13 +37,13 @@ namespace UniGit.Settings
 					GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
 
 
-					string url = GitManager.Repository.Config.GetValueOrDefault("lfs.url", "");
+					string url = gitManager.Repository.Config.GetValueOrDefault("lfs.url", "");
 					if (string.IsNullOrEmpty(url))
 					{
 						EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
 					}
 
-					GitGUI.DoConfigStringField(GitGUI.GetTempContent("URL"), "lfs.url", "");
+					GitGUI.DoConfigStringField(gitManager.Repository.Config,GitGUI.GetTempContent("URL"), "lfs.url", "");
 
 					EditorGUILayout.Space();
 

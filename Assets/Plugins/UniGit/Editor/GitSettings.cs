@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace UniGit
 {
+	[Obsolete("Use 'GitSettingsJson' instead.")]
 	public class GitSettings : ScriptableObject
 	{
 		[Tooltip("Auto stage changes for committing when an asset is modified")]
@@ -52,7 +53,7 @@ namespace UniGit
 	{
 		public bool AutoStage = true;
 		public bool AutoFetch = true;
-		public GitSettings.ExternalsTypeEnum ExternalsType;
+		public ExternalsTypeEnum ExternalsType;
 		public string ExternalProgram;
 		public string CredentialsManager;
 		public int ProjectStatusOverlayDepth = 2;
@@ -65,11 +66,29 @@ namespace UniGit
 		public bool ReadFromFile;
 		private bool isDirty;
 
+		[Flags]
+		[SerializeField]
+		public enum ExternalsTypeEnum
+		{
+			Pull = 1 << 0,
+			Push = 1 << 1,
+			Fetch = 1 << 2,
+			Merge = 1 << 3,
+			Commit = 1 << 4,
+			Switch = 1 << 5,
+			Reset = 1 << 6,
+			Revert = 1 << 7,
+			Blame = 1 << 8,
+			Diff = 1 << 9
+		}
+
+#pragma warning disable 618
 		public void Copy(GitSettings settings)
+#pragma warning restore 618
 		{
 			AutoStage = settings.AutoStage;
 			AutoFetch = settings.AutoFetch;
-			ExternalsType = settings.ExternalsType;
+			ExternalsType = (ExternalsTypeEnum)settings.ExternalsType;
 			ExternalProgram = settings.ExternalProgram;
 			CredentialsManager = settings.CredentialsManager;
 			ProjectStatusOverlayDepth = settings.ProjectStatusOverlayDepth;

@@ -12,10 +12,11 @@ namespace UniGit.Filters
 	{
 		private Dictionary<string, Process> processes = new Dictionary<string, Process>();
 		private Dictionary<string, FilterMode> modes = new Dictionary<string, FilterMode>();
+		private readonly GitManager gitManager;
 
-		public GitLfsFilter(string name, IEnumerable<FilterAttributeEntry> attributes) : base(name, attributes)
+		public GitLfsFilter(string name, IEnumerable<FilterAttributeEntry> attributes,GitManager gitManager) : base(name, attributes)
 		{
-			
+			this.gitManager = gitManager;
 		}
 
 		protected override void Clean(string path, string root, Stream input, Stream output)
@@ -121,7 +122,7 @@ namespace UniGit.Filters
 				var process = new Process();
 				var startInfo = new ProcessStartInfo();
 				startInfo.FileName = "git-lfs";
-				startInfo.WorkingDirectory = GitManager.RepoPath;
+				startInfo.WorkingDirectory = gitManager.RepoPath;
 				startInfo.RedirectStandardInput = true;
 				startInfo.RedirectStandardOutput = true;
 				startInfo.RedirectStandardError = true;

@@ -31,12 +31,12 @@ namespace UniGit
 		{
 			try
 			{
-				using (var repository = new Repository(GitManager.RepoPath))
+				using (var repository = new Repository(gitManager.RepoPath))
 				{
 					if (branchNames.Length > 0 && selectedBranch < branchNames.Length)
 					{
 						repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
-						GitManager.MarkDirty();
+						gitManager.MarkDirty();
 						var window = GitHistoryWindow.GetWindow(true);
 						window.ShowNotification(new GUIContent("Push Complete"));
 					}

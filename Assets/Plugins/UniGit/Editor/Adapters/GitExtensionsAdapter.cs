@@ -8,6 +8,10 @@ namespace UniGit.Adapters
 	[ExternalAdapter("Git Extensions", "GitExtensions.exe",Priority = 5)]
 	public class GitExtensionsAdapter : IExternalAdapter
 	{
+		public GitExtensionsAdapter(GitManager gitManager)
+		{
+		}
+
 		public bool Push()
 		{
 			return GitExternalManager.CallProccess("GitExtensions.exe", "push");

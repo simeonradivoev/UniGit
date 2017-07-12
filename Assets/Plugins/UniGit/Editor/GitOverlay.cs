@@ -42,9 +42,11 @@ namespace UniGit
 
 		internal static Icons icons;
 		private static GUIStyle IconStyle;
+		private static GitManager gitManager;
 
-		internal static void Initlize()
+		internal static void Initlize(GitManager gitManager)
 		{
+			GitOverlay.gitManager = gitManager;
 			EditorApplication.projectWindowItemOnGUI += CustomIcons;
 
 			if (IconStyle == null)
@@ -159,9 +161,9 @@ namespace UniGit
 
 		private static void CustomIcons(string guid, Rect rect)
 		{
-			if (GitManager.StatusTree == null) return;
+			if (gitManager.StatusTree == null) return;
 			string path = AssetDatabase.GUIDToAssetPath(guid);
-			var status = GitManager.StatusTree.GetStatus(path);
+			var status = gitManager.StatusTree.GetStatus(path);
 			if (status != null)
 			{
 				Object assetObject = AssetDatabase.LoadMainAssetAtPath(path);

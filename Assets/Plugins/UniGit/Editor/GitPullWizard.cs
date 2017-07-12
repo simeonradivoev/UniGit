@@ -54,7 +54,7 @@ namespace UniGit
 		{
 			try
 			{
-				MergeResult mergeResult = GitManager.Repository.Network.Pull(GitManager.Signature, pullOptions);
+				MergeResult mergeResult = gitManager.Repository.Network.Pull(gitManager.Signature, pullOptions);
 				OnMergeComplete(mergeResult,"Pull");
 			}
 			catch (Exception e)

@@ -19,9 +19,11 @@ namespace UniGit
 		private static int selectedAdapterIndex = -1;
 		private static bool initiazlitedSelected;
 		private static GitCredentialsJson gitCredentials;
+		private static GitManager gitManager;
 
-		internal static void Load()
+		internal static void Load(GitManager gitManager)
 		{
+			GitCredentialsManager.gitManager = gitManager;
 			adapters = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(ICredentialsAdapter).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).Select(t => Activator.CreateInstance(t)).Cast<ICredentialsAdapter>().ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 			adapterIds = adapters.Select(GetAdapterId).ToArray();
@@ -106,7 +108,7 @@ namespace UniGit
 
 		private static void ValidateCredentialsPath()
 		{
-			string settingsFileDirectory = Path.Combine(GitManager.GitFolderPath, "UniGit");
+			string settingsFileDirectory = Path.Combine(gitManager.GitFolderPath, "UniGit");
 			if (!Directory.Exists(settingsFileDirectory))
 			{
 				Directory.CreateDirectory(settingsFileDirectory);
@@ -178,7 +180,7 @@ namespace UniGit
 		{
 			if (index >= adapters.Length || index < 0 || selectedAdapterIndex == index)
 			{
-				GitManager.Repository.Config.Set("credential.helper","");
+				gitManager.Repository.Config.Set("credential.helper","");
 				ResetSelectedAdapter(selectedAdapter);
 				selectedAdapterIndex = -1;
 				selectedAdapter = null;
@@ -186,7 +188,7 @@ namespace UniGit
 			}
 			selectedAdapterIndex = index;
 			selectedAdapter = adapters[index];
-			GitManager.Repository.Config.Set("credential.helper",GetAdapterId(selectedAdapter));
+			gitManager.Repository.Config.Set("credential.helper",GetAdapterId(selectedAdapter));
 		}
 
 		private static void ResetSelectedAdapter(ICredentialsAdapter lastAdapter)
@@ -201,7 +203,7 @@ namespace UniGit
 
 		private static void UpdateSelectedAdaptor(ICredentialsAdapter adapter)
 		{
-			foreach (var credential in GitManager.GitCredentials)
+			foreach (var credential in GitCredentials)
 			{
 				credential.ClearPassword();
 				credential.SetHasPassword(false);
@@ -214,7 +216,7 @@ namespace UniGit
 		{
 			CredentialsAdapterAttribute attribute = adapter.GetType().GetCustomAttributes(typeof(CredentialsAdapterAttribute), false).FirstOrDefault() as CredentialsAdapterAttribute;
 			if (attribute == null) return false;
-			return attribute.Id.Equals(GitManager.Settings.CredentialsManager,StringComparison.InvariantCultureIgnoreCase);
+			return attribute.Id.Equals(gitManager.Settings.CredentialsManager,StringComparison.InvariantCultureIgnoreCase);
 		}
 
 		private static string GetAdapterName(ICredentialsAdapter adapter)
@@ -235,7 +237,7 @@ namespace UniGit
 		{
 			if (supported == SupportedCredentialTypes.UsernamePassword)
 			{
-				if (GitManager.GitCredentials != null)
+				if (gitCredentials != null)
 				{
 					string username = user;
 					string password = string.Empty;
@@ -427,7 +429,7 @@ namespace UniGit
 		{
 			get
 			{
-				return Path.Combine(GitManager.GitFolderPath, "UniGit/Credentials.json");
+				return Path.Combine(gitManager.GitFolderPath, "UniGit/Credentials.json");
 			}
 		}
 

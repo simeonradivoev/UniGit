@@ -4,10 +4,16 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitStashSaveWizard : ScriptableWizard
+	public class GitStashSaveWizard : ScriptableWizard, IGitWindow
 	{
 		private string stashMessage;
 		private StashModifiers stashModifiers = StashModifiers.Default;
+		private GitManager gitManager;
+
+		public void Construct(GitManager gitManager)
+		{
+			this.gitManager = gitManager;
+		}
 
 		private void OnEnable()
 		{
@@ -25,8 +31,8 @@ namespace UniGit
 
 		private void OnWizardCreate()
 		{
-			GitManager.Repository.Stashes.Add(GitManager.Signature, stashMessage, stashModifiers);
-			GitManager.MarkDirty(true);
+			gitManager.Repository.Stashes.Add(gitManager.Signature, stashMessage, stashModifiers);
+			gitManager.MarkDirty(true);
 		}
 	}
 }

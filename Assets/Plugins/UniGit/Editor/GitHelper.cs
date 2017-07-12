@@ -4,13 +4,13 @@ namespace UniGit
 {
 	public static class GitHelper
 	{
-		public static string RunExeOutput(string exe, string arguments, string input, bool hideWindow = true)
+		public static string RunExeOutput(string repoPath,string exe, string arguments, string input, bool hideWindow = true)
 		{
 			using (Process process = new Process())
 			{
 				process.StartInfo.FileName = exe;
 				process.StartInfo.Arguments = arguments;
-				process.StartInfo.WorkingDirectory = GitManager.RepoPath;
+				process.StartInfo.WorkingDirectory = repoPath;
 				process.StartInfo.RedirectStandardInput = input != null;
 				process.StartInfo.RedirectStandardOutput = true;
 				process.StartInfo.UseShellExecute = false;

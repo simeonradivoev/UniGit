@@ -10,12 +10,12 @@ namespace UniGit
 	{
 		private string name = "";
 		private Commit commit;
-		private EditorWindow parentWindow;
 		private Action onCreated;
+		private GitManager gitManager;
 
-		public GitCreateBranchWindow(EditorWindow parentWindow, Commit commit, Action onCreated)
+		public GitCreateBranchWindow(Commit commit, Action onCreated,GitManager gitManager)
 		{
-			this.parentWindow = parentWindow;
+			this.gitManager = gitManager;
 			this.commit = commit;
 			this.onCreated = onCreated;
 		}
@@ -46,7 +46,7 @@ namespace UniGit
 			{
 				try
 				{
-					var branch = GitManager.Repository.CreateBranch(name, commit);
+					var branch = gitManager.Repository.CreateBranch(name, commit);
 					if (branch != null)
 					{
 						Debug.Log("Branch " + name + " created");
@@ -69,7 +69,7 @@ namespace UniGit
 				}
 				finally
 				{
-					GitManager.MarkDirty(true);
+					gitManager.MarkDirty(true);
 				}
 			}
 			GitGUI.EndEnable();

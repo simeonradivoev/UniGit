@@ -6,13 +6,17 @@ namespace UniGit.Settings
 {
 	public class GitExternalsSettingsTab : GitSettingsTab
 	{
+		public GitExternalsSettingsTab(GitManager gitManager) : base(gitManager)
+		{
+		}
+
 		internal override void OnGUI(Rect rect, Event current)
 		{
-			GitSettingsJson settings = GitManager.Settings;
+			GitSettingsJson settings = gitManager.Settings;
 			if (settings == null) return;
 
 			EditorGUI.BeginChangeCheck();
-			settings.ExternalsType = (GitSettings.ExternalsTypeEnum)EditorGUILayout.EnumMaskField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), settings.ExternalsType);
+			settings.ExternalsType = (GitSettingsJson.ExternalsTypeEnum)EditorGUILayout.EnumMaskField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), settings.ExternalsType);
 			if (EditorGUI.EndChangeCheck())
 			{
 				settings.MarkDirty();

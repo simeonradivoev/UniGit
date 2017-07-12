@@ -67,7 +67,9 @@ namespace UniGit
 
 		public static GitHistoryWindow GetWindow(bool focus)
 		{
-			return GetWindow<GitHistoryWindow>("Git History", focus);
+			var window = GetWindow<GitHistoryWindow>("Git History", focus);
+			window.Construct(GitManager.Instance);
+			return window;
 		}
 
 		protected override void OnEnable()
@@ -125,7 +127,7 @@ namespace UniGit
 			try
 			{
 				//update all branches
-				cachedBranches = GitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
+				cachedBranches = gitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
 
 				//update selected branch
 				SetSelectedBranch(selectedBranchName);
@@ -134,7 +136,7 @@ namespace UniGit
 				if (selectedBranch != null)
 				{
 					//update commits and limit them depending on settings
-					var loadedBranch = selectedBranch.LoadBranch();
+					var loadedBranch = selectedBranch.LoadBranch(gitManager);
 					if (loadedBranch != null && loadedBranch.Commits != null)
 					{
 						IEnumerable<Commit> commits = maxCommitsCount >= 0 ? loadedBranch.Commits.Take(maxCommitsCount) : loadedBranch.Commits;
@@ -148,8 +150,8 @@ namespace UniGit
 
 				commitRects = new Rect[commitCount];
 				hasConflicts = status.Any(s => s.Status == FileStatus.Conflicted);
-				GitManager.ActionQueue.Enqueue(UpdateGitStatusIcon);
-				GitManager.ActionQueue.Enqueue(Repaint);
+				gitManager.ActionQueue.Enqueue(UpdateGitStatusIcon);
+				gitManager.ActionQueue.Enqueue(Repaint);
 			}
 			catch (Exception e)
 			{
@@ -163,13 +165,13 @@ namespace UniGit
 
 		private void UpdateGitStatusIcon()
 		{
-			titleContent.image = GitManager.GetGitStatusIcon();
+			titleContent.image = gitManager.GetGitStatusIcon();
 		}
 
 		private void SetSelectedBranch(string canonicalName)
 		{
 			selectedBranchName = canonicalName;
-			var tmpBranch = GitManager.Repository.Branches.FirstOrDefault(b => b.CanonicalName == canonicalName);
+			var tmpBranch = gitManager.Repository.Branches.FirstOrDefault(b => b.CanonicalName == canonicalName);
 			if (tmpBranch != null)
 			{
 				selectedBranch = new BranchInfo(tmpBranch);
@@ -177,7 +179,7 @@ namespace UniGit
 			}
 			if (selectedBranch == null)
 			{
-				selectedBranch = new BranchInfo(GitManager.Repository.Head);
+				selectedBranch = new BranchInfo(gitManager.Repository.Head);
 				selectedBranchName = selectedBranch.CanonicalName;
 			}
 		}
@@ -266,14 +268,14 @@ namespace UniGit
 		{
 			CreateStyles();
 
-			if (!GitManager.IsValidRepo)
+			if (!gitManager.IsValidRepo)
 			{
-				InvalidRepoGUI();
+				InvalidRepoGUI(gitManager);
 				return;
 			}
 
-			if(GitManager.Repository == null || selectedBranch == null) return;
-			RepositoryInformation repoInformation = GitManager.Repository.Info;
+			if(gitManager.Repository == null || selectedBranch == null) return;
+			RepositoryInformation repoInformation = gitManager.Repository.Info;
 			DoToolbar(toolbarRect, repoInformation);
 			EditorGUILayout.Space();
 
@@ -288,7 +290,7 @@ namespace UniGit
 
 		private void DoToolbar(Rect rect, RepositoryInformation info)
 		{
-			Branch branch = selectedBranch.LoadBranch();
+			Branch branch = selectedBranch.LoadBranch(gitManager);
 			if (branch == null)
 			{
 				EditorGUILayout.HelpBox(string.Format("Invalid Branch: '{0}'", selectedBranch.CanonicalName),MessageType.Warning,true);
@@ -342,11 +344,11 @@ namespace UniGit
 			{
 				GoToMerge();
 			}
-			GUI.enabled = GitManager.IsValidRepo;
+			GUI.enabled = gitManager.IsValidRepo;
 			btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.stashIcon.image,"Stash"), "toolbarbutton"))
 			{
-				PopupWindow.Show(btRect,new GitStashWindow());
+				PopupWindow.Show(btRect,new GitStashWindow(gitManager));
 			}
 			GUI.enabled = true;
 
@@ -366,24 +368,24 @@ namespace UniGit
 					selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), selectedBranchName == cachedBranch.CanonicalName, (b) =>
 					{
 						SetSelectedBranch((string)b);
-						StartUpdateChaches(GitManager.LastStatus);
+						StartUpdateChaches(gitManager.LastStatus);
 					}, cachedBranch.CanonicalName);
 				}
 				selectBranchMenu.ShowAsContext();
 			}
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
-			GitGUI.StartEnable(GitManager.Settings.ExternalsType.HasFlag(GitSettings.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
+			GitGUI.StartEnable(gitSettings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
 			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.checkout.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), "toolbarbutton"))
 			{
 				if (GitExternalManager.TakeSwitch())
 				{
 					AssetDatabase.Refresh();
-					GitManager.MarkDirty();
+					gitManager.MarkDirty();
 				}
 				else
 				{
-					PopupWindow.Show(btRect,new GitCheckoutWindowPopup(selectedBranch.LoadBranch()));
+					PopupWindow.Show(btRect,new GitCheckoutWindowPopup(gitManager,selectedBranch.LoadBranch(gitManager)));
 				}
 			}
 			GitGUI.EndEnable();
@@ -399,24 +401,27 @@ namespace UniGit
 		{
 			if (GitExternalManager.TakeMerge())
 			{
-				GitManager.MarkDirty();
+				gitManager.MarkDirty();
 			}
 			else
 			{
-				ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
+				var wizard = ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
+				wizard.Construct(gitManager);
 			}
 		}
 
 		private void GoToFetch()
 		{
-			var branch = selectedBranch.LoadBranch();
+			var branch = selectedBranch.LoadBranch(gitManager);
 			if (GitExternalManager.TakeFetch(branch.Remote.Name))
 			{
-				GitManager.MarkDirty();
+				gitManager.MarkDirty();
 			}
 			else
 			{
-				ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch").Init(branch);
+				var wizard = ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch");
+				wizard.Construct(gitManager);
+				wizard.Init(branch);
 			}
 		}
 
@@ -425,11 +430,13 @@ namespace UniGit
 			if (GitExternalManager.TakePull())
 			{
 				AssetDatabase.Refresh();
-				GitManager.MarkDirty();
+				gitManager.MarkDirty();
 			}
 			else
 			{
-				ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull").Init(selectedBranch.LoadBranch());
+				var wizard = ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull");
+				wizard.Construct(gitManager);
+				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
 
@@ -437,11 +444,13 @@ namespace UniGit
 		{
 			if (GitExternalManager.TakePush())
 			{
-				GitManager.MarkDirty();
+				gitManager.MarkDirty();
 			}
 			else
 			{
-				ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push").Init(selectedBranch.LoadBranch());
+				var wizard = ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
+				wizard.Construct(gitManager);
+				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
 
@@ -519,7 +528,7 @@ namespace UniGit
 				if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More","Show more commits."), "ButtonLeft"))
 				{
 					maxCommitsCount += CommitsPerExpand;
-					StartUpdateChaches(GitManager.LastStatus);
+					StartUpdateChaches(gitManager.LastStatus);
 				}
 				GitGUI.StartEnable(maxCommitsCount != MaxFirstCommitCount);
 				if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset","Reset the number of commits show."), "ButtonRight"))
@@ -532,7 +541,7 @@ namespace UniGit
 					else
 					{
 						maxCommitsCount = MaxFirstCommitCount;
-						StartUpdateChaches(GitManager.LastStatus);
+						StartUpdateChaches(gitManager.LastStatus);
 					}
 				}
 				GitGUI.EndEnable();
@@ -606,7 +615,7 @@ namespace UniGit
 				y += 4;
 			}
 
-			if (GitManager.Settings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
+			if (gitSettings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
 			{
 				Texture2D avatar = GetProfilePixture(commit.Committer.Email);
 				if (avatar != null)
@@ -698,14 +707,14 @@ namespace UniGit
 				{
 					menu.AddItem(new GUIContent("Reset"), false, () =>
 					{
-						if (GitExternalManager.TakeReset(GitManager.Repository.Lookup<Commit>(commit.Id)))
+						if (GitExternalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
 						{
 							AssetDatabase.Refresh();
-							GitManager.MarkDirty();
+							gitManager.MarkDirty();
 						}
 						else
 						{
-							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new ResetPopupWindow(GitManager.Repository.Lookup<Commit>(commit.Id))));
+							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new ResetPopupWindow(gitManager,gitManager.Repository.Lookup<Commit>(commit.Id))));
 						}
 					});
 				}
@@ -715,7 +724,7 @@ namespace UniGit
 				}
 				menu.AddItem(new GUIContent("Branch Out"), false, () =>
 				{
-					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new GitCreateBranchWindow(this, GitManager.Repository.Lookup<Commit>(commit.Id),null)));
+					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new GitCreateBranchWindow(gitManager.Repository.Lookup<Commit>(commit.Id),null, gitManager)));
 				});
 				menu.DropDown(buttonRect);
 			}
@@ -723,7 +732,7 @@ namespace UniGit
 			buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
 			if (GUI.Button(buttonRect, GitGUI.GetTempContent("Details"), "minibuttonright"))
 			{
-				PopupWindow.Show(buttonRect, new GitCommitDetailsWindow(GitManager.Repository.Lookup<Commit>(commit.Id)));
+				PopupWindow.Show(buttonRect, new GitCommitDetailsWindow(gitManager,gitManager.Repository.Lookup<Commit>(commit.Id)));
 			}
 
 			if (rect.Contains(current.mousePosition))
@@ -742,12 +751,12 @@ namespace UniGit
 		private void ViewBranchCallback(BranchInfo branch)
 		{
 			SetSelectedBranch(branch.CanonicalName);
-			StartUpdateChaches(GitManager.LastStatus);
+			StartUpdateChaches(gitManager.LastStatus);
 		}
 
 		private void SwitchToBranchCallback(BranchInfo branch,Rect rect)
 		{
-			popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect,new GitCheckoutWindowPopup(branch.LoadBranch())));
+			popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect,new GitCheckoutWindowPopup(gitManager,branch.LoadBranch(gitManager))));
 		}
 
 		private void DoWarningBox(Rect rect, RepositoryInformation info, BranchInfo branch)
@@ -898,7 +907,7 @@ namespace UniGit
 		#endregion
 
 		#region Invalid Repo GUI
-		internal static void InvalidRepoGUI()
+		internal static void InvalidRepoGUI(GitManager gitManager)
 		{
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
@@ -920,7 +929,7 @@ namespace UniGit
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					GitManager.InitilizeRepository();
+					gitManager.InitilizeRepository();
 					GUIUtility.ExitGUI();
 					return;
 				}
@@ -936,9 +945,11 @@ namespace UniGit
 		private abstract class CommitPopupWindow : PopupWindowContent
 		{
 			protected Commit commit;
+			protected GitManager gitManager;
 
-			protected CommitPopupWindow(Commit commit)
+			protected CommitPopupWindow(GitManager gitManager,Commit commit)
 			{
+				this.gitManager = gitManager;
 				this.commit = commit;
 			}
 		}
@@ -953,7 +964,7 @@ namespace UniGit
 				return new Vector2(256,128);
 			}
 
-			public ResetPopupWindow(Commit commit) : base(commit)
+			public ResetPopupWindow(GitManager gitManager,Commit commit) : base(gitManager,commit)
 			{
 				
 			}
@@ -980,8 +991,8 @@ namespace UniGit
 					if (EditorUtility.DisplayDialog("Reset", "Are you sure you want to reset to the selected commit", "Reset", "Cancel"))
 					{
 						GitProfilerProxy.BeginSample("Git Reset Popup",editorWindow);
-						GitManager.Repository.Reset(resetMode,commit, checkoutOptions);
-						GitManager.MarkDirty(true);
+						gitManager.Repository.Reset(resetMode,commit, checkoutOptions);
+						gitManager.MarkDirty(true);
 						editorWindow.Close();
 						GitProfilerProxy.EndSample();
 						AssetDatabase.Refresh();
@@ -1029,17 +1040,17 @@ namespace UniGit
 				FriendlyName = branch.FriendlyName;
 			}
 
-			public Branch LoadBranch()
+			public Branch LoadBranch(GitManager gitManager)
 			{
-				if (GitManager.Repository != null)
+				if (gitManager.Repository != null)
 				{
-					if (GitManager.Repository.Head.CanonicalName == CanonicalName)
+					if (gitManager.Repository.Head.CanonicalName == CanonicalName)
 					{
-						return GitManager.Repository.Head;
+						return gitManager.Repository.Head;
 					}
-					if (GitManager.Repository.Branches != null)
+					if (gitManager.Repository.Branches != null)
 					{
-						return GitManager.Repository.Branches[CanonicalName];
+						return gitManager.Repository.Branches[CanonicalName];
 					}
 				}
 				

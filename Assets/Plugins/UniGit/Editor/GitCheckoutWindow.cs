@@ -30,10 +30,10 @@ namespace UniGit
 			if(force)
 				checkoutOptions.CheckoutModifiers = CheckoutModifiers.Force;
 
-			var branch = GitManager.Repository.Branches[branchNames[selectedBranch]];
+			var branch = gitManager.Repository.Branches[branchNames[selectedBranch]];
 			if (branch != null)
 			{
-				GitManager.Repository.Checkout(branch, checkoutOptions);
+				gitManager.Repository.Checkout(branch, checkoutOptions);
 			}
 			else
 			{

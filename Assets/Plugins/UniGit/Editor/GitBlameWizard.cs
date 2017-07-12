@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitBlameWizard : EditorWindow
+	public class GitBlameWizard : EditorWindow, IGitWindow
 	{
 		private const float commitLineHeight = 21;
 
@@ -23,6 +23,7 @@ namespace UniGit
 		private bool isResizingCommits;
 		private float commitsWindowHeight = 180;
 		private string invalidMessage;
+		private GitManager manager;
 
 		private class Styles
 		{
@@ -42,11 +43,16 @@ namespace UniGit
 			titleContent = new GUIContent("Git Blame: " + blamePath);
 		}
 
+		public void Construct(GitManager gitManager)
+		{
+			manager = gitManager;
+		}
+
 		private void CheckBlame()
 		{
 			try
 			{
-				blameHunk = GitManager.Repository.Blame(blamePath);
+				blameHunk = manager.Repository.Blame(blamePath);
 				invalidMessage = null;
 			}
 			catch (Exception e)
@@ -67,7 +73,7 @@ namespace UniGit
 				lines = File.ReadAllLines(blamePath);
 			}
 			
-			commitLog = GitManager.Repository.Commits.QueryBy(blamePath).Where(e => blameHunk.Any(h => h.FinalCommit.Sha == e.Commit.Sha)).ToArray();
+			commitLog = manager.Repository.Commits.QueryBy(blamePath).Where(e => blameHunk.Any(h => h.FinalCommit.Sha == e.Commit.Sha)).ToArray();
 		}
 
 		private void InitGUI()
@@ -81,7 +87,7 @@ namespace UniGit
 
 		private void Update()
 		{
-			if (!string.IsNullOrEmpty(blamePath) && blameHunk == null && GitManager.Repository != null)
+			if (!string.IsNullOrEmpty(blamePath) && blameHunk == null && manager.Repository != null)
 			{
 				CheckBlame();
 				LoadFileLines();
@@ -237,7 +243,6 @@ namespace UniGit
 
 		private void MoveToCommit(string sha)
 		{
-			int commitIndex = -1;
 			for (int j = 0; j < commitLog.Length; j++)
 			{
 				if (commitLog[j].Commit.Sha == sha)

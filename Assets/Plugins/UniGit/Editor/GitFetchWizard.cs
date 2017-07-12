@@ -39,13 +39,13 @@ namespace UniGit
 		{
 			try
 			{
-				GitManager.Repository.Network.Fetch(remotes[selectedRemote], fetchOptions);
+				gitManager.Repository.Network.Fetch(remotes[selectedRemote], fetchOptions);
 #if UNITY_EDITOR
 				Debug.Log("Fetch Complete");
 #endif
 				var window = GitHistoryWindow.GetWindow(true);
 				window.ShowNotification(new GUIContent("Fetch Complete"));
-				GitManager.MarkDirty(true);
+				gitManager.MarkDirty(true);
 			}
 			catch (Exception e)
 			{

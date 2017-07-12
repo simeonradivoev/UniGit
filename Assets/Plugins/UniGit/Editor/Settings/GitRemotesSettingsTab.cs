@@ -14,6 +14,10 @@ namespace UniGit.Settings
 		private RemoteEntry[] remoteCacheList = new RemoteEntry[0];
 		private Vector2 scroll;
 
+		public GitRemotesSettingsTab(GitManager gitManager) : base(gitManager)
+		{
+		}
+
 		internal override void OnGUI(Rect rect, Event current)
 		{
 			if(remotes == null) return;
@@ -67,7 +71,7 @@ namespace UniGit.Settings
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Remote"), "AC Button"))
 			{
-				PopupWindow.Show(addRepositoryButtonRect, new AddRepositoryPopup(remotes));
+				PopupWindow.Show(addRepositoryButtonRect, new AddRepositoryPopup(gitManager,remotes));
 			}
 			if (current.type == EventType.Repaint) addRepositoryButtonRect = GUILayoutUtility.GetLastRect();
 			GUILayout.FlexibleSpace();
@@ -77,13 +81,13 @@ namespace UniGit.Settings
 		public override void OnGitUpdate(GitRepoStatus status, string[] paths)
 		{
 			base.OnGitUpdate(status, paths);
-			if(GitManager.Repository == null) return;
+			if(gitManager.Repository == null) return;
 			UpdateRemotes();
 		}
 
 		private void UpdateRemotes()
 		{
-			remotes = GitManager.Repository.Network.Remotes;
+			remotes = gitManager.Repository.Network.Remotes;
 			remoteCacheList = remotes.Select(r => new RemoteEntry(r)).ToArray();
 		}
 
@@ -152,9 +156,11 @@ namespace UniGit.Settings
 			private RemoteCollection remoteCollection;
 			private string name = "origin";
 			private string url;
+			private GitManager gitManager;
 
-			public AddRepositoryPopup(RemoteCollection remoteCollection)
+			public AddRepositoryPopup(GitManager gitManager,RemoteCollection remoteCollection)
 			{
+				this.gitManager = gitManager;
 				this.remoteCollection = remoteCollection;
 			}
 
@@ -172,8 +178,8 @@ namespace UniGit.Settings
 				if (GUILayout.Button(GitGUI.GetTempContent("Add Remote")))
 				{
 					remoteCollection.Add(name, url);
-					GitManager.MarkDirty();
-					EditorWindow.GetWindow<GitSettingsWindow>().Focus();
+					gitManager.MarkDirty();
+					GitSettingsWindow.CreateEditor();
 				}
 				GUI.enabled = true;
 				EditorGUILayout.Space();

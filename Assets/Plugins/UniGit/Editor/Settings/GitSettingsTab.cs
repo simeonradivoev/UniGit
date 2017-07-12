@@ -10,6 +10,12 @@ namespace UniGit.Settings
 		protected SerializedObject serializedObject;
 		private bool hasFocused;
 		private bool initilized;
+		protected GitManager gitManager;
+
+		internal GitSettingsTab(GitManager gitManager)
+		{
+			this.gitManager = gitManager;
+		}
 
 		internal void OnEnable()
 		{
@@ -46,21 +52,21 @@ namespace UniGit.Settings
 		{
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
-			if (!initilized || !GitManager.IsValidRepo) return;
+			if (!initilized || !gitManager.IsValidRepo) return;
 			OnGitUpdate(status, paths);
 		}
 
 		private void OnEditorUpdateInternal()
 		{
 			//Only initialize if the editor Window is focused
-			if (hasFocused && !initilized && GitManager.Repository != null)
+			if (hasFocused && !initilized && gitManager.Repository != null)
 			{
-				if (GitManager.LastStatus != null)
+				if (gitManager.LastStatus != null)
 				{
 					initilized = true;
-					if (!GitManager.IsValidRepo) return;
+					if (!gitManager.IsValidRepo) return;
 					OnInitialize();
-					OnGitManagerUpdateInternal(GitManager.LastStatus, null);
+					OnGitManagerUpdateInternal(gitManager.LastStatus, null);
 				}
 			}
 		}

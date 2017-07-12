@@ -1,5 +1,4 @@
 ﻿using System;
-using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
@@ -11,9 +10,11 @@ namespace UniGit
 	{
 		[SerializeField] private bool force;
 		private Branch branch;
+		private GitManager gitManager;
 
-		public GitCheckoutWindowPopup(Branch branch)
+		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch)
 		{
+			this.gitManager = gitManager;
 			this.branch = branch;
 		}
 
@@ -41,7 +42,7 @@ namespace UniGit
 				{
 					try
 					{
-						GitManager.Repository.Checkout(branch, checkoutOptions);
+						gitManager.Repository.Checkout(branch, checkoutOptions);
 						Debug.Log("Switched to branch: " + branch.FriendlyName);
 					}
 					catch (Exception e)
@@ -52,7 +53,7 @@ namespace UniGit
 					finally
 					{
 						AssetDatabase.Refresh();
-						GitManager.MarkDirty(true);
+						gitManager.MarkDirty(true);
 					}
 				}
 				else

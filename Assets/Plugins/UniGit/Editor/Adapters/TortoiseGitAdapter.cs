@@ -8,33 +8,40 @@ namespace UniGit.Adapters
 	[ExternalAdapter("Tortoise Git", "TortoiseGitMerge.exe", "TortoiseGitIDiff.exe", "TortoiseGitProc.exe",Priority = 10)]
 	public class TortoiseGitAdapter : IExternalAdapter
 	{
+		private readonly GitManager gitManager;
+
+		public TortoiseGitAdapter(GitManager gitManager)
+		{
+			this.gitManager = gitManager;
+		}
+
 		public bool Push()
 		{
-			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "push", GitManager.RepoPath);
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "push", gitManager.RepoPath);
 			return true;
 		}
 
 		public bool Pull()
 		{
-			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "pull", GitManager.RepoPath);
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "pull", gitManager.RepoPath);
 			return true;
 		}
 
 		public bool Commit(string message)
 		{
-			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -logmsg:\"{2}\"", "commit", GitManager.RepoPath,message);
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -logmsg:\"{2}\"", "commit", gitManager.RepoPath,message);
 			return true;
 		}
 
 		public bool Reset(Commit commit)
 		{
-			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", GitManager.RepoPath);
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
 			return true;
 		}
 
 		public bool Merge()
 		{
-			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "merge", GitManager.RepoPath);
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "merge", gitManager.RepoPath);
 			return true;
 		}
 
@@ -88,7 +95,7 @@ namespace UniGit.Adapters
 
 		public bool Switch()
 		{
-			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", GitManager.RepoPath);
+			GitExternalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
 			return true;
 		}
 	}

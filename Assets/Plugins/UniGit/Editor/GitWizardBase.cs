@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitWizardBase : ScriptableWizard
+	public class GitWizardBase : ScriptableWizard, IGitWindow
 	{
 		protected Remote[] remotes;
 		protected GUIContent[] remoteNames;
@@ -20,15 +20,20 @@ namespace UniGit
 		protected int selectedBranch;
 		[SerializeField] protected bool credentalsExpanded;
 		private SerializedObject serializedObject;
-		
+		protected GitManager gitManager;
 		[SerializeField] private Vector2 logScroll;
+
+		public void Construct(GitManager gitManager)
+		{
+			this.gitManager = gitManager;
+			remotes = gitManager.Repository.Network != null && gitManager.Repository.Network.Remotes != null ? gitManager.Repository.Network.Remotes.ToArray() : new Remote[0];
+			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
+			branchNames = gitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+			branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
+		}
 
 		protected virtual void OnEnable()
 		{
-			remotes = GitManager.Repository.Network != null && GitManager.Repository.Network.Remotes != null ? GitManager.Repository.Network.Remotes.ToArray() : new Remote[0];
-			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
-			branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
-			branchFriendlyNames = GitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
@@ -38,9 +43,9 @@ namespace UniGit
 			if(branch == null) return;
 
 			if(branchNames == null)
-				branchNames = GitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+				branchNames = gitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
 			if(branchFriendlyNames == null)
-				branchFriendlyNames = GitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
+				branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 
 			if (remotes != null && branch.Remote != null)
 				selectedRemote = Array.IndexOf(remotes, branch.Remote);
@@ -104,7 +109,7 @@ namespace UniGit
 					password = string.Empty;
 				}
 
-				if (GitManager.GitCredentials != null)
+				if (GitCredentialsManager.GitCredentials != null)
 				{
 					if (string.IsNullOrEmpty(username) && string.IsNullOrEmpty(password))
 					{
@@ -156,16 +161,16 @@ namespace UniGit
 					break;
 				case MergeStatus.NonFastForward:
 					GitDiffWindow.GetWindow(true).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
-					GitDiffWindow.GetWindow(false).SetCommitMessage(GitManager.Repository.Info.Message);
+					GitDiffWindow.GetWindow(false).SetCommitMessage(gitManager.Repository.Info.Message);
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
 					GitDiffWindow.GetWindow(true).ShowNotification(content);
-					GitDiffWindow.GetWindow(false).SetCommitMessage(GitManager.Repository.Info.Message);
+					GitDiffWindow.GetWindow(false).SetCommitMessage(gitManager.Repository.Info.Message);
 					break;
 			}
-			GitManager.MarkDirty();
+			gitManager.MarkDirty();
 			Debug.LogFormat("{0} Status: {1}", mergeType, result.Status);
 		}
 

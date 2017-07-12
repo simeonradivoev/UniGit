@@ -15,12 +15,15 @@ namespace UniGit
 		private static string version;
 		private static FilterRegistration lfsRegistration;
 		private static GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
+		private static GitManager gitManager;
 
-		internal static void Load()
+		internal static void Load(GitManager gitManager)
 		{
+			GitLfsManager.gitManager = gitManager;
+
 			try
 			{
-				version = GitHelper.RunExeOutput("git-lfs", "version", null);
+				version = GitHelper.RunExeOutput(gitManager.RepoPath,"git-lfs", "version", null);
 				isInstalled = true;
 			}
 			catch (Exception)
@@ -41,9 +44,9 @@ namespace UniGit
 		{
 			RegisterFilter();
 
-			if (File.Exists(GitManager.RepoPath + @"\.gitattributes"))
+			if (File.Exists(Path.Combine(gitManager.RepoPath, ".gitattributes")))
 			{
-				using (TextReader file = File.OpenText(GitManager.RepoPath + @"\.gitattributes"))
+				using (TextReader file = File.OpenText(Path.Combine(gitManager.RepoPath, ".gitattributes")))
 				{
 					trackedInfo = file.ReadToEnd().Split('\n').Select(l => GitLfsTrackedInfo.Parse(l)).Where(l => l != null).ToArray();
 				}
@@ -52,7 +55,7 @@ namespace UniGit
 
 		public static void SaveTracking()
 		{
-			using (StreamWriter file = File.CreateText(GitManager.RepoPath + @"\.gitattributes"))
+			using (StreamWriter file = File.CreateText(Path.Combine(gitManager.RepoPath, ".gitattributes")))
 			{
 				foreach (var info in trackedInfo)
 				{
@@ -69,16 +72,16 @@ namespace UniGit
 			{
 				var filteredFiles = new List<FilterAttributeEntry>();
 				filteredFiles.Add(new FilterAttributeEntry("lfs"));
-				var filter = new GitLfsFilter("lfs", filteredFiles);
+				var filter = new GitLfsFilter("lfs", filteredFiles, gitManager);
 				GlobalSettings.RegisterFilter(filter);
 			}
 		}
 
 		public static bool Initialize()
 		{
-			string output = GitHelper.RunExeOutput("git-lfs", "install", null);
+			string output = GitHelper.RunExeOutput(gitManager.RepoPath,"git-lfs", "install", null);
 			
-			if (!Directory.Exists(GitManager.RepoPath + "\\.git\\lfs"))
+			if (!Directory.Exists(Path.Combine(gitManager.RepoPath,Path.Combine(".git","lfs"))))
 			{
 				Debug.LogError("Git-LFS install failed! (Try manually)");
 				Debug.LogError(output);
@@ -92,7 +95,7 @@ namespace UniGit
 		{
 			try
 			{
-				string output = GitHelper.RunExeOutput("git-lfs", string.Format("track \"*{0}\"", extension), null);
+				string output = GitHelper.RunExeOutput(gitManager.RepoPath,"git-lfs", string.Format("track \"*{0}\"", extension), null);
 				EditorUtility.DisplayDialog("Track File", output, "Ok");
 			}
 			catch (Exception e)
@@ -106,7 +109,7 @@ namespace UniGit
 		{
 			try
 			{
-				string output = GitHelper.RunExeOutput("git-lfs", string.Format("track \"*{0}\"", extension), null);
+				string output = GitHelper.RunExeOutput(gitManager.RepoPath,"git-lfs", string.Format("track \"*{0}\"", extension), null);
 				EditorUtility.DisplayDialog("Untrack File", output, "Ok");
 			}
 			catch (Exception e)
@@ -118,7 +121,7 @@ namespace UniGit
 
 		public static bool CheckInitialized()
 		{
-			return Directory.Exists(GitManager.RepoPath + @"\.git\lfs") && File.Exists(GitManager.RepoPath + @"\.git\hooks\pre-push");
+			return Directory.Exists(Path.Combine(gitManager.RepoPath, Path.Combine(".git", "lfs"))) && File.Exists(Path.Combine(gitManager.RepoPath,Path.Combine(".git",Path.Combine("hooks", "pre-push"))));
 		}
 
 		public static bool Installed

@@ -27,7 +27,9 @@ namespace UniGit
 
 		public static GitSettingsWindow GetWindow(bool focus)
 		{
-			return GetWindow<GitSettingsWindow>("Git Settings",focus);
+			var window = GetWindow<GitSettingsWindow>("Git Settings",focus);
+			window.Construct(GitManager.Instance);
+			return window;
 		}
 
 		protected override void OnEnable()
@@ -42,12 +44,12 @@ namespace UniGit
 
 		private void InitTabs()
 		{
-			generalSettingsTab = new GitGeneralSettingsTab();
-			externalsSettingsTab = new GitExternalsSettingsTab();
-			remotesSettingsTab = new GitRemotesSettingsTab();
-			branchesSettingsTab = new GitBranchesSettingsTab();
-			lfsSettingsTab = new GitLFSSettingsTab();
-			securitySettingsTab = new GitSecuritySettingsTab();
+			generalSettingsTab = new GitGeneralSettingsTab(gitManager);
+			externalsSettingsTab = new GitExternalsSettingsTab(gitManager);
+			remotesSettingsTab = new GitRemotesSettingsTab(gitManager);
+			branchesSettingsTab = new GitBranchesSettingsTab(gitManager);
+			lfsSettingsTab = new GitLFSSettingsTab(gitManager);
+			securitySettingsTab = new GitSecuritySettingsTab(gitManager);
 
 			tabs = new GitSettingsTab[]
 			{
@@ -69,7 +71,7 @@ namespace UniGit
 		{
 			base.OnFocus();
 			LoseFocus();
-			if (!GitManager.IsValidRepo) return;
+			if (!gitManager.IsValidRepo) return;
 			if (tabs == null)
 			{
 				InitTabs();
@@ -97,9 +99,9 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnGUI()
 		{
-			if (!GitManager.IsValidRepo)
+			if (!gitManager.IsValidRepo)
 			{
-				GitHistoryWindow.InvalidRepoGUI();
+				GitHistoryWindow.InvalidRepoGUI(gitManager);
 				return;
 			}
 
@@ -150,7 +152,7 @@ namespace UniGit
 			EditorGUILayout.EndHorizontal();
 
 			EditorGUILayout.Space();
-			if (GitManager.Repository != null)
+			if (gitManager.Repository != null)
 			{
 				Rect localRect = new Rect(0, 0, position.width, position.height - EditorGUIUtility.singleLineHeight * 1.6f);
 				if(currentTab != null) currentTab.OnGUI(localRect,current);

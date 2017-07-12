@@ -15,16 +15,18 @@ namespace UniGit
 		private TreeChanges changes;
 		private Tree commitTree;
 		private Vector2 scroll;
+		private GitManager gitManager;
 
-		public GitCommitDetailsWindow(Commit commit)
+		public GitCommitDetailsWindow(GitManager gitManager,Commit commit)
 		{
+			this.gitManager = gitManager;
 			this.commit = commit;
 			commitTree = commit.Tree;
 			Commit parentCommit = commit.Parents.FirstOrDefault();
 
 			if (parentCommit != null)
 			{
-				changes = GitManager.Repository.Diff.Compare<TreeChanges>(parentCommit.Tree, commitTree);
+				changes = gitManager.Repository.Diff.Compare<TreeChanges>(parentCommit.Tree, commitTree);
 			}
 
 			commitMessageStyle = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(4,4,4,4),wordWrap = true};
@@ -81,7 +83,7 @@ namespace UniGit
 							menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
 							{
 								Commit parent = commit.Parents.Single();
-								GitManager.ShowDiff(path, parent, commit);
+								gitManager.ShowDiff(path, parent, commit);
 							});
 						}
 						else
@@ -90,7 +92,7 @@ namespace UniGit
 						}
 						menu.AddItem(new GUIContent("Difference with HEAD"), false, () =>
 						{
-							GitManager.ShowDiff(path, commit, GitManager.Repository.Head.Tip);
+							gitManager.ShowDiff(path, commit, gitManager.Repository.Head.Tip);
 						});
 						menu.ShowAsContext();
 					}

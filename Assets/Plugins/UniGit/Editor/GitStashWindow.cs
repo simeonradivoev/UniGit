@@ -12,11 +12,17 @@ namespace UniGit
 		private Vector2 stashScroll;
 		private int selectedStash;
 		private GUIStyle stashStyle;
+		private GitManager gitManager;
+
+		public GitStashWindow(GitManager gitManager)
+		{
+			this.gitManager = gitManager;
+		}
 
 		public override void OnOpen()
 		{
 			base.OnOpen();
-			stashCollection = GitManager.Repository.Stashes;
+			stashCollection = gitManager.Repository.Stashes;
 			stashStyle = new GUIStyle("MenuItem") {wordWrap = true,fixedHeight = 0,normal = {background = ((GUIStyle)"ProjectBrowserHeaderBgTop").normal.background }};
 		}
 
@@ -27,7 +33,8 @@ namespace UniGit
 			EditorGUILayout.BeginHorizontal("IN BigTitle");
 			if (GUILayout.Button(GitGUI.GetTempContent(GitOverlay.icons.stashIcon.image, "Stash Save","Save changes in working directory to stash.")))
 			{
-				EditorWindow.GetWindow<GitStashSaveWizard>(true);
+				var window = EditorWindow.GetWindow<GitStashSaveWizard>(true);
+				window.Construct(gitManager);
 			}
 			EditorGUILayout.EndHorizontal();
 
@@ -60,7 +67,7 @@ namespace UniGit
 				if (EditorUtility.DisplayDialog("Apply Stash: " + selectedStash,"Are you sure you want to apply stash ? This will override your current working directory!","Apply","Cancel"))
 				{
 					stashCollection.Apply(selectedStash);
-					GitManager.MarkDirty(true);
+					gitManager.MarkDirty(true);
 					AssetDatabase.Refresh();
 				}
 			}
@@ -69,7 +76,7 @@ namespace UniGit
 				if (EditorUtility.DisplayDialog("Pop Stash: " + selectedStash, "Are you sure you want to pop the stash ? This will override your current working directory and remove the stash from the list.", "Pop and Apply", "Cancel"))
 				{
 					stashCollection.Pop(selectedStash);
-					GitManager.MarkDirty(true);
+					gitManager.MarkDirty(true);
 					AssetDatabase.Refresh();
 				}
 			}

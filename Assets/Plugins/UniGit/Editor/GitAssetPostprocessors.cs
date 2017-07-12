@@ -12,15 +12,17 @@ namespace UniGit
 			[UsedImplicitly]
 			private static string[] OnWillSaveAssets(string[] paths)
 			{
+				var gitManager = GitManager.Instance;
+
 				if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return paths;
-				if (GitManager.Repository != null && paths != null && paths.Length > 0)
+				if (gitManager.Repository != null && paths != null && paths.Length > 0)
 				{
-					bool autoStage = GitManager.Settings != null && GitManager.Settings.AutoStage;
+					bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;
 					string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 					if (pathsFinal.Length > 0)
 					{
-						if(autoStage) GitManager.Repository.Stage(pathsFinal);
-						GitManager.MarkDirty(pathsFinal);
+						if(autoStage) gitManager.Repository.Stage(pathsFinal);
+						gitManager.MarkDirty(pathsFinal);
 					}
 				}
 				return paths;
@@ -32,20 +34,22 @@ namespace UniGit
 			[UsedImplicitly]
 			static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 			{
-				if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return;
-				if (GitManager.Repository != null)
-				{
-					bool autoStage = GitManager.Settings != null && GitManager.Settings.AutoStage;
+				var gitManager = GitManager.Instance;
 
-					if (GitManager.Settings != null)
+				if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return;
+				if (gitManager.Repository != null)
+				{
+					bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;
+
+					if (gitManager.Settings != null)
 					{
 						if (importedAssets != null && importedAssets.Length > 0)
 						{
 							string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (importedAssetsToStage.Length > 0)
 							{
-								if(autoStage) GitManager.Repository.Stage(importedAssetsToStage);
-								GitManager.MarkDirty(importedAssetsToStage);
+								if(autoStage) gitManager.Repository.Stage(importedAssetsToStage);
+								gitManager.MarkDirty(importedAssetsToStage);
 							}
 						}
 
@@ -54,8 +58,8 @@ namespace UniGit
 							string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (movedAssetsFinal.Length > 0)
 							{
-								if(autoStage) GitManager.Repository.Stage(movedAssetsFinal);
-								GitManager.MarkDirty(movedAssetsFinal);
+								if(autoStage) gitManager.Repository.Stage(movedAssetsFinal);
+								gitManager.MarkDirty(movedAssetsFinal);
 							}
 						}
 					}
@@ -66,8 +70,8 @@ namespace UniGit
 						string[] movedFromAssetPathsFinal = movedFromAssetPaths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 						if (movedFromAssetPathsFinal.Length > 0)
 						{
-							GitManager.Repository.Unstage(movedFromAssetPathsFinal);
-							GitManager.MarkDirty(movedFromAssetPathsFinal);
+							gitManager.Repository.Unstage(movedFromAssetPathsFinal);
+							gitManager.MarkDirty(movedFromAssetPathsFinal);
 						}
 					}
 
@@ -77,8 +81,8 @@ namespace UniGit
 						string[] deletedAssetsFinal = deletedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 						if (deletedAssetsFinal.Length > 0)
 						{
-							GitManager.Repository.Unstage(deletedAssetsFinal);
-							GitManager.MarkDirty(deletedAssetsFinal);
+							gitManager.Repository.Unstage(deletedAssetsFinal);
+							gitManager.MarkDirty(deletedAssetsFinal);
 						}
 					}
 				}
