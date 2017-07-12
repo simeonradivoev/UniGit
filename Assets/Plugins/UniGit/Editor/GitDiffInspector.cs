@@ -88,47 +88,31 @@ namespace UniGit
 			titleContent = new GUIContent("GitDiff: " + path);
 		}
 
-		private void BuildChangeSections(Commit commit)
+		private string[] GetLines(Commit commit)
 		{
-			string[] lines = null;
-			Blob headBlob = null;
-			Blob indexBlob = null;
-			Stream indexFileContent = null;
-			StreamReader indexFileReader = null;
-			int lastIndexFileLine = 0;
-			TreeEntry headFile = commit != null ? commit[path] : GitManager.Repository.Head[path];
-			if(headFile == null) return;
-			headBlob = ((Blob)headFile.Target);
-
-			if (headBlob.IsBinary)
+			if (commit != null)
 			{
-				isBinary = true;
-				return;
+				var patch = GitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { path });
+				return patch[path].Patch.Split('\n');
+			}
+			else if(GitManager.Repository.Head != null && GitManager.Repository.Head.Tip != null)
+			{
+				var patch = GitManager.Repository.Diff.Compare<Patch>(GitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { path });
+				return patch[path].Patch.Split('\n');
 			}
 
+			return new string[0];
+		}
+
+		private void BuildChangeSections(Commit commit)
+		{
+			int lastIndexFileLine = 0;
+			Stream indexFileContent = File.OpenRead(GitManager.RepoPath + "\\" + path);
+			StreamReader indexFileReader = new StreamReader(indexFileContent);
+
+			var lines = GetLines(commit);
 			try
 			{
-				var indexFile = GitManager.Repository.Index[path];
-				if (indexFile != null)
-				{
-					indexBlob = (Blob) GitManager.Repository.Lookup(indexFile.Id);
-					indexFileContent = indexBlob.GetContentStream();
-					indexFileReader = new StreamReader(indexFileContent);
-				}
-
-				if (headBlob != null && indexBlob != null)
-				{
-					var compareOptions = new CompareOptions();
-					compareOptions.ContextLines = 0;
-					var contentChanges = GitManager.Repository.Diff.Compare(headBlob, indexBlob, compareOptions);
-					lines = contentChanges.Patch.Split('\n');
-				}
-
-				if (lines == null || indexFileContent == null)
-				{
-					return;
-				}
-
 				changeSections = new List<ChangeSection>();
 				ChangeSection currentSection = null;
 				IChangeBlob currentBlob = null;
@@ -437,8 +421,8 @@ namespace UniGit
 				EditorGUIUtility.AddCursorRect(resizeRect, MouseCursor.ResizeHorizontal);
 			}
 
-			GUI.Box(otherFileScrollRect,GUIContent.none, "AS TextArea");
-			GUI.Box(indexFileRect, GUIContent.none, "AS TextArea");
+			GUI.Box(otherFileScrollRect,GUIContent.none, "LargeTextField");
+			GUI.Box(indexFileRect, GUIContent.none, "LargeTextField");
 
 			DrawBlobs(false, otherFileScrollRect, indexFileRect);
 			DrawBlobs(true, indexFileRect, otherFileScrollRect);
