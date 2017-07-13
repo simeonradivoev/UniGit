@@ -14,7 +14,7 @@ using Utils.Extensions;
 
 namespace UniGit
 {
-	public class GitManager
+	public class GitManager : IDisposable
 	{
 		public static GitManager Instance { get; internal set; }
 
@@ -396,6 +396,11 @@ namespace UniGit
 				return EditorGUIUtility.FindTexture("CollabPush");
 			}
 			return EditorGUIUtility.FindTexture("Collab");
+		}
+
+		public void Dispose()
+		{
+			if(repository != null) repository.Dispose();
 		}
 
 		#region Auto Fetching

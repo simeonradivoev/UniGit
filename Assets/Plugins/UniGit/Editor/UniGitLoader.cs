@@ -1,5 +1,7 @@
 ﻿using System.Linq;
+using UniGit.Utils;
 using UnityEditor;
+using UnityEditor.Callbacks;
 using UnityEngine;
 
 namespace UniGit
@@ -9,6 +11,9 @@ namespace UniGit
 	{
 		static UniGitLoader()
 		{
+			var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
+			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
+
 			GitManager gitManager = new GitManager(Application.dataPath.Replace("/Assets", "").Replace("/", "\\"));
 			GitManager.Instance = gitManager;
 
@@ -25,6 +30,11 @@ namespace UniGit
 			GitLfsManager.Load(gitManager);
 			GitHookManager.Load(gitManager);
 			GitExternalManager.Load(gitManager);
+		}
+
+		private static void OnBeforeAssemblyReload()
+		{
+			if(GitManager.Instance != null) GitManager.Instance.Dispose();
 		}
 	}
 }
