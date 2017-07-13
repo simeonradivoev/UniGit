@@ -12,27 +12,31 @@ public class CallbackTests
 {
 	private int updateRepositoryCalled;
 	private int onRepositoryLoadedCalled;
-	private bool oldMultiThreaded;
 	private GitManager gitManager;
 
 	[SetUp]
 	public void Setup()
 	{
-		gitManager = GitManager.Instance;
+		var callbacks = new GitCallbacks();
+		var settings = new GitSettingsJson()
+		{
+			GitStatusMultithreaded = false
+		};
+		gitManager = new GitManager(GitManager.Instance.RepoPath, callbacks, settings);
 		updateRepositoryCalled = 0;
 		onRepositoryLoadedCalled = 0;
-		GitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
-		GitCallbacks.UpdateRepository += RepositoryUpdate;
-		oldMultiThreaded = gitManager.Settings.GitStatusMultithreaded;
+		gitManager.Callbacks.OnRepositoryLoad += OnRepositoryLoad;
+		gitManager.Callbacks.UpdateRepository += RepositoryUpdate;
 		gitManager.Settings.GitStatusMultithreaded = false;
 	}
 
 	[TearDown]
 	public void Teardown()
 	{
-		GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
-		GitCallbacks.UpdateRepository -= RepositoryUpdate;
-		gitManager.Settings.GitStatusMultithreaded = oldMultiThreaded;
+		gitManager.Callbacks.OnRepositoryLoad -= OnRepositoryLoad;
+		gitManager.Callbacks.UpdateRepository -= RepositoryUpdate;
+
+		gitManager.Dispose();
 	}
 
 	private void OnRepositoryLoad(Repository repository)
@@ -47,7 +51,7 @@ public class CallbackTests
 
 	private void ForceGitUpdate()
 	{
-		GitCallbacks.IssueEditorUpdate();
+		gitManager.Callbacks.IssueEditorUpdate();
 	}
 
 	[Test]
@@ -59,15 +63,7 @@ public class CallbackTests
 		File.Delete(Application.dataPath + "/test.txt");
 		AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 		ForceGitUpdate();
-		Assert.AreEqual(updateRepositoryCalled, 2);
-	}
-
-	[Test]
-	public void UpdateRepositorySingleThreaded_OnAssetDatabaseRefreshEmptyUpdateNotCalled_UpdateRepositoryNotCalled()
-	{
-		AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-		ForceGitUpdate();
-		Assert.AreEqual(updateRepositoryCalled, 0);
+		Assert.AreEqual(updateRepositoryCalled, 1);
 	}
 
 	[Test]

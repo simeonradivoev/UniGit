@@ -113,7 +113,6 @@ namespace UniGit
 			if (changes != null)
 			{
 				isBinary = changes.IsBinaryComparison;
-				Debug.Log(changes.Patch);
 				return changes.Patch.Split('\n');
 			}
 

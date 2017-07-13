@@ -20,9 +20,9 @@ namespace UniGit
 
 		public const string Version = "1.1.0";
 
-		private string repoPathCached;
-		private string gitPathCached;
-		public string RepoPath { get { return repoPathCached; } }
+		private string repoPath;
+		private string gitPath;
+		public string RepoPath { get { return repoPath; } }
 
 		private Repository repository;
 		private StatusTreeClass statusTree;
@@ -37,11 +37,14 @@ namespace UniGit
 		private bool isUpdating;
 		private readonly HashSet<string> dirtyFiles = new HashSet<string>();
 		private readonly List<string> updatingFiles = new List<string>();
+		private readonly GitCallbacks callbacks;
 
-		public GitManager(string repoPath)
+		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings)
 		{
-			repoPathCached = repoPath;
-			gitPathCached = Path.Combine(repoPath, ".git");
+			this.repoPath = repoPath;
+			this.callbacks = callbacks;
+			gitSettings = settings;
+			gitPath = Path.Combine(repoPath, ".git");
 
 			Initlize();
 		}
@@ -53,12 +56,9 @@ namespace UniGit
 				return;
 			}
 
-			LoadGitSettings();
-
 			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 			repositoryDirty = true;
-			//todo replace an instanced editor update
-			GitCallbacks.EditorUpdate += OnEditorUpdate;
+			callbacks.EditorUpdate += OnEditorUpdate;
 		}
 
 		internal void InitilizeRepository()
@@ -79,89 +79,8 @@ namespace UniGit
 			MarkDirty();
 		}
 
-		private void SaveSettingsToFile(GitSettingsJson settings)
-		{
-			ValidateSettingsPath();
-			string settingsFilePath = SettingsFilePath;
-
-			try
-			{
-				string json = JsonUtility.ToJson(settings);
-				File.WriteAllText(settingsFilePath, json);
-			}
-			catch (Exception e)
-			{
-				Debug.LogError("Could not serialize GitSettingsJson to json file at: " + settingsFilePath);
-				Debug.LogException(e);
-			}
-		}
-
-		private void ValidateSettingsPath()
-		{
-			string settingsFileDirectory = Path.Combine(gitPathCached,"UniGit");
-			if (!Directory.Exists(settingsFileDirectory))
-			{
-				Directory.CreateDirectory(settingsFileDirectory);
-			}
-		}
-#pragma warning disable 618
-		private void LoadGitSettings()
-		{
-			string settingsFilePath = SettingsFilePath;
-			GitSettingsJson settingsJson = null;
-			if (File.Exists(settingsFilePath))
-			{
-				try
-				{
-					settingsJson = JsonUtility.FromJson<GitSettingsJson>(File.ReadAllText(settingsFilePath));
-				}
-				catch (Exception e)
-				{
-					Debug.LogError("Could not deserialize git settings. Creating new settings.");
-					Debug.LogException(e);
-				}
-			}
-
-			if(settingsJson == null)
-			{
-				settingsJson = new GitSettingsJson();
-				var oldSettingsFile = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
-				if (oldSettingsFile != null)
-				{
-					//must be delayed call for unity to deserialize settings file properly
-					EditorApplication.delayCall += LoadOldSettingsFile;
-				}
-				else
-				{
-					SaveSettingsToFile(settingsJson);
-				}
-			}
-
-			gitSettings = settingsJson;
-		}
-
-		private void LoadOldSettingsFile()
-		{
-			var oldSettingsFile = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
-
-			if (oldSettingsFile != null)
-			{
-				gitSettings.Copy(oldSettingsFile);
-				Debug.Log("Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
-			}
-			SaveSettingsToFile(gitSettings);
-			MarkDirty(true);
-		}
-#pragma warning restore 618
-
 		internal void OnEditorUpdate()
 		{
-			if (gitSettings.IsDirty)
-			{
-				SaveSettingsToFile(gitSettings);
-				gitSettings.ResetDirty();
-			}
-
 			if (needsFetch)
 			{
 				try
@@ -217,7 +136,7 @@ namespace UniGit
 			{
 				if (repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
-				GitCallbacks.IssueOnRepositoryLoad(repository);
+				callbacks.IssueOnRepositoryLoad(repository);
 			}
 
 			if (repository != null)
@@ -294,7 +213,7 @@ namespace UniGit
 				GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 				RebuildStatus(paths);
 				GitProfilerProxy.EndSample();
-				GitCallbacks.IssueUpdateRepository(status, paths);
+				callbacks.IssueUpdateRepository(status, paths);
 				ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 			}
 			catch (Exception e)
@@ -314,7 +233,7 @@ namespace UniGit
 				RebuildStatus(paths);
 				actionQueue.Enqueue(() =>
 				{
-					GitCallbacks.IssueUpdateRepository(status, paths);
+					callbacks.IssueUpdateRepository(status, paths);
 					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
 				});
 			}
@@ -359,14 +278,14 @@ namespace UniGit
 			updatingFiles.Clear();
 			if(paths != null)
 				updatingFiles.AddRange(paths);
-			GitCallbacks.IssueUpdateRepositoryStart();
+			callbacks.IssueUpdateRepositoryStart();
 		}
 
 		private void FinishUpdating()
 		{
 			isUpdating = false;
 			updatingFiles.Clear();
-			GitCallbacks.IssueUpdateRepositoryFinish();
+			callbacks.IssueUpdateRepositoryFinish();
 		}
 
 		internal bool IsFileUpdating(string path)
@@ -400,7 +319,11 @@ namespace UniGit
 
 		public void Dispose()
 		{
-			if(repository != null) repository.Dispose();
+			if (repository != null)
+			{
+				repository.Dispose();
+				repository = null;
+			}
 		}
 
 		#region Auto Fetching
@@ -615,6 +538,11 @@ namespace UniGit
 
 		#region Getters and Setters
 
+		public GitCallbacks Callbacks
+		{
+			get { return callbacks; }
+		}
+
 		public bool IsUpdating
 		{
 			get { return isUpdating; }
@@ -654,12 +582,12 @@ namespace UniGit
 
 		public string GitFolderPath
 		{
-			get { return gitPathCached; }
+			get { return gitPath; }
 		}
 
 		public string SettingsFilePath
 		{
-			get { return Path.Combine(gitPathCached,"UniGit/Settings.json"); }
+			get { return Path.Combine(gitPath,"UniGit/Settings.json"); }
 		}
 
 		public GitRepoStatus LastStatus

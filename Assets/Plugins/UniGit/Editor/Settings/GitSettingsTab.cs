@@ -19,10 +19,11 @@ namespace UniGit.Settings
 
 		internal void OnEnable()
 		{
-			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
-			GitCallbacks.EditorUpdate += OnEditorUpdateInternal;
-			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
-			GitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
+			var callbacks = gitManager.Callbacks;
+			callbacks.EditorUpdate -= OnEditorUpdateInternal;
+			callbacks.EditorUpdate += OnEditorUpdateInternal;
+			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
 		}
 
 		internal void Setup(GitSettingsWindow settingsWindow, SerializedObject serializedObject)
@@ -73,8 +74,9 @@ namespace UniGit.Settings
 
 		internal void OnDestroy()
 		{
-			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
-			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			var callbacks = gitManager.Callbacks;
+			callbacks.EditorUpdate -= OnEditorUpdateInternal;
+			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 		}
 	}
 }

@@ -5,43 +5,38 @@ using UnityEditor;
 
 namespace UniGit
 {
-	public static class GitCallbacks
+	public class GitCallbacks
 	{
-		static GitCallbacks()
-		{
-			EditorApplication.update += IssueEditorUpdate;
-		}
-
-		public static event Action<GitRepoStatus, string[]> UpdateRepository;
-		internal static void IssueUpdateRepository(GitRepoStatus repoStatus, string[] paths)
+		public event Action<GitRepoStatus, string[]> UpdateRepository;
+		public void IssueUpdateRepository(GitRepoStatus repoStatus, string[] paths)
 		{
 			if (UpdateRepository != null)
 				UpdateRepository.Invoke(repoStatus, paths);
 		}
 
-		public static event Action<Repository> OnRepositoryLoad;
-		internal static void IssueOnRepositoryLoad(Repository repository)
+		public event Action<Repository> OnRepositoryLoad;
+		public void IssueOnRepositoryLoad(Repository repository)
 		{
 			if(OnRepositoryLoad != null)
 				OnRepositoryLoad.Invoke(repository);
 		}
 
-		internal static event Action EditorUpdate;
-		public static void IssueEditorUpdate()
+		public event Action EditorUpdate;
+		public void IssueEditorUpdate()
 		{
 			if(EditorUpdate != null)
 				EditorUpdate.Invoke();
 		}
 
-		public static event Action UpdateRepositoryStart;
-		internal static void IssueUpdateRepositoryStart()
+		public event Action UpdateRepositoryStart;
+		public void IssueUpdateRepositoryStart()
 		{
 			if(UpdateRepositoryStart != null)
 				UpdateRepositoryStart.Invoke();
 		}
 
-		public static event Action UpdateRepositoryFinish;
-		internal static void IssueUpdateRepositoryFinish()
+		public event Action UpdateRepositoryFinish;
+		public void IssueUpdateRepositoryFinish()
 		{
 			if(UpdateRepositoryFinish != null)
 				UpdateRepositoryFinish.Invoke();

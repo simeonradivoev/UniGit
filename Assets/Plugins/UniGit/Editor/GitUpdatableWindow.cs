@@ -18,19 +18,21 @@ namespace UniGit
 		{
 			Construct(GitManager.Instance);
 
-			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
-			GitCallbacks.EditorUpdate += OnEditorUpdateInternal;
+			var callbacks = gitManager.Callbacks;
 
-			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
-			GitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
-			GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
-			GitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
+			callbacks.EditorUpdate -= OnEditorUpdateInternal;
+			callbacks.EditorUpdate += OnEditorUpdateInternal;
 
-			GitCallbacks.UpdateRepositoryStart -= UpdateTitleIcon;
-			GitCallbacks.UpdateRepositoryStart += UpdateTitleIcon;
+			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
+			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
+			callbacks.OnRepositoryLoad += OnRepositoryLoad;
 
-			GitCallbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
-			GitCallbacks.UpdateRepositoryFinish += UpdateTitleIcon;
+			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
+			callbacks.UpdateRepositoryStart += UpdateTitleIcon;
+
+			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
+			callbacks.UpdateRepositoryFinish += UpdateTitleIcon;
 		}
 
 		public virtual void Construct(GitManager gitManager)
@@ -86,11 +88,12 @@ namespace UniGit
 
 		protected void OnDestroy()
 		{
-			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
-			GitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
-			GitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
-			GitCallbacks.UpdateRepositoryStart -= UpdateTitleIcon;
-			GitCallbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
+			var callbacks = gitManager.Callbacks;
+			callbacks.EditorUpdate -= OnEditorUpdateInternal;
+			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
+			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
+			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
 		}
 
 		#region Safe Controlls
