@@ -113,6 +113,7 @@ namespace UniGit
 			if (changes != null)
 			{
 				isBinary = changes.IsBinaryComparison;
+				Debug.Log(changes.Patch);
 				return changes.Patch.Split('\n');
 			}
 
@@ -533,14 +534,14 @@ namespace UniGit
 		{
 			float maxLineWidth = Mathf.Max(this.maxLineWidth, rect.width - maxLineNumWidth);
 			float totalLineWidth = maxLineNumWidth + maxLineWidth;
-			float scrollMaxVertical = Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth);
+			float scrollMaxVertical = Mathf.Max(1, Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth));
 			bool isRapaint = Event.current.type == EventType.Repaint;
 
 			float height = 0;
 			Rect viewRect = new Rect(0,0, totalLineWidth, totalLinesHeight);
 			Rect screenRect = new Rect(scrollHorizontalNormal * viewRect.width, scrollVertical, rect.width,rect.height);
 			var newScroll = GUI.BeginScrollView(rect, new Vector2(scrollHorizontalNormal * scrollMaxVertical, scrollVertical), viewRect);
-			scrollHorizontalNormal = newScroll.x / scrollMaxVertical;
+			scrollHorizontalNormal = Mathf.Clamp01(newScroll.x / scrollMaxVertical);
 			scrollVertical = newScroll.y;
 
 			GUI.color = new Color(0, 0, 0, 0.2f);
