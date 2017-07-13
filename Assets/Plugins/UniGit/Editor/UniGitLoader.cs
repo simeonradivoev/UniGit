@@ -18,7 +18,7 @@ namespace UniGit
 			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
 			string repoPath = Application.dataPath.Replace("/Assets", "").Replace("/", "\\");
-			string settingsPath = Path.Combine(repoPath, "UniGit/Settings.json");
+			string settingsPath = Path.Combine(repoPath, Path.Combine(".git",Path.Combine("UniGit", "Settings.json")));
 
 			callbacks = new GitCallbacks();
 			var settings = new GitSettingsJson();

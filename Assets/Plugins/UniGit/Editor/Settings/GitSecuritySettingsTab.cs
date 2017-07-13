@@ -26,6 +26,7 @@ namespace UniGit.Settings
 				if (EditorGUI.EndChangeCheck())
 				{
 					GitCredentialsManager.SetSelectedAdapter(newSelectedIndex);
+
 					settings.MarkDirty();
 				}
 				GUI.enabled = newSelectedIndex >= 0;
