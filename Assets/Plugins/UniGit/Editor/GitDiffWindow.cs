@@ -93,8 +93,6 @@ namespace UniGit
 			base.OnEnable();
 			editoSerializedObject = new SerializedObject(this);
 			if (settings == null) settings = new Settings();
-			ReadCommitMessage();
-			ReadCommitMessageFromFile();
 			if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
 			{
 				Undo.RegisterFullObjectHierarchyUndo(this, "Commit Message Changed");
@@ -115,7 +113,8 @@ namespace UniGit
 
 		protected override void OnInitialize()
 		{
-		
+			ReadCommitMessage();
+			ReadCommitMessageFromFile();
 		}
 
 		protected override void OnRepositoryLoad(Repository repository)
@@ -160,7 +159,7 @@ namespace UniGit
 			base.OnFocus();
 			GUI.FocusControl(null);
 
-			if (gitSettings.ReadFromFile)
+			if (gitSettings != null && gitSettings.ReadFromFile)
 			{
 				if (File.Exists(CommitMessageFilePath))
 				{
@@ -197,7 +196,7 @@ namespace UniGit
 		{
 			CreateStyles();
 
-			if (!gitManager.IsValidRepo)
+			if (gitManager == null || !gitManager.IsValidRepo)
 			{
 				GitHistoryWindow.InvalidRepoGUI(gitManager);
 				return;
@@ -892,7 +891,7 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnDisable()
 		{
-			if (!gitSettings.ReadFromFile)
+			if (gitSettings != null && !gitSettings.ReadFromFile)
 			{
 				SaveCommitMessage();
 			}

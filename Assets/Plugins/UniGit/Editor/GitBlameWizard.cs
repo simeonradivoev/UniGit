@@ -48,6 +48,11 @@ namespace UniGit
 			manager = gitManager;
 		}
 
+		private void OnEnable()
+		{
+			Construct(GitManager.Instance);
+		}
+
 		private void CheckBlame()
 		{
 			try

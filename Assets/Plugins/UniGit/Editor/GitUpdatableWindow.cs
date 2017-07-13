@@ -1,4 +1,5 @@
-﻿using LibGit2Sharp;
+﻿using System;
+using LibGit2Sharp;
 using UniGit.Status;
 using UnityEditor;
 using UnityEngine;
@@ -8,14 +9,14 @@ namespace UniGit
 	public abstract class GitUpdatableWindow : EditorWindow, IGitWindow
 	{
 		//used an object because the EditorWindow saves Booleans even if private
-		private object initilized;
-		private object hasFocused;
-		protected GitManager gitManager;
-		protected GitSettingsJson gitSettings;
+		[NonSerialized] private object initilized;
+		[NonSerialized] private object hasFocused;
+		[NonSerialized] protected GitManager gitManager;
+		[NonSerialized] protected GitSettingsJson gitSettings;
 
 		protected virtual void OnEnable()
 		{
-			titleContent.image = gitManager.GetGitStatusIcon();
+			Construct(GitManager.Instance);
 
 			GitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
 			GitCallbacks.EditorUpdate += OnEditorUpdateInternal;
@@ -36,6 +37,7 @@ namespace UniGit
 		{
 			this.gitManager = gitManager;
 			gitSettings = gitManager.Settings;
+			titleContent.image = gitManager.GetGitStatusIcon();
 		}
 
 		protected virtual void OnFocus()

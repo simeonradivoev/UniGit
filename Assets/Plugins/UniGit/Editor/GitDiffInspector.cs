@@ -56,6 +56,7 @@ namespace UniGit
 
 		private void OnEnable()
 		{
+			Construct(GitManager.Instance);
 			titleContent = new GUIContent("GitDiff: " + path);
 			uberRegex = new UberRegex(new ColoredRegex[]
 			{

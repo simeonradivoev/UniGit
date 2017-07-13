@@ -11,7 +11,6 @@ namespace UniGit
 		{
 			GitManager gitManager = new GitManager(Application.dataPath.Replace("/Assets", "").Replace("/", "\\"));
 			GitManager.Instance = gitManager;
-			InjectGitWindows(gitManager);
 
 			if (!gitManager.IsValidRepo)
 			{
@@ -26,16 +25,6 @@ namespace UniGit
 			GitLfsManager.Load(gitManager);
 			GitHookManager.Load(gitManager);
 			GitExternalManager.Load(gitManager);
-		}
-
-		private static void InjectGitWindows(GitManager manager)
-		{
-			IGitWindow[] windows = Resources.FindObjectsOfTypeAll<EditorWindow>().Where(e => e is IGitWindow).Cast<IGitWindow>().ToArray();
-
-			foreach (var window in windows)
-			{
-				window.Construct(manager);
-			}
 		}
 	}
 }

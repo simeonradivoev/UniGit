@@ -16,13 +16,7 @@ namespace UniGit
 {
 	public class GitManager
 	{
-		internal static GitManager instance;
-
-		public static GitManager Instance
-		{
-			get { return instance; }
-			internal set { instance = value; }
-		}
+		public static GitManager Instance { get; internal set; }
 
 		public const string Version = "1.1.0";
 

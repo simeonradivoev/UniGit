@@ -268,7 +268,7 @@ namespace UniGit
 		{
 			CreateStyles();
 
-			if (!gitManager.IsValidRepo)
+			if (gitManager == null || !gitManager.IsValidRepo)
 			{
 				InvalidRepoGUI(gitManager);
 				return;
@@ -925,15 +925,17 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
+			GUI.enabled = gitManager != null;
 			if (GUILayout.Button(GitGUI.GetTempContent("Create"), "LargeButton", GUILayout.Height(32), GUILayout.Width(128)))
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					gitManager.InitilizeRepository();
+					if(gitManager != null) gitManager.InitilizeRepository();
 					GUIUtility.ExitGUI();
 					return;
 				}
 			}
+			GUI.enabled = true;
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
 			EditorGUILayout.Space();

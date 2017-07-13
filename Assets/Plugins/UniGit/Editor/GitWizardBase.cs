@@ -34,6 +34,7 @@ namespace UniGit
 
 		protected virtual void OnEnable()
 		{
+			Construct(GitManager.Instance);
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
