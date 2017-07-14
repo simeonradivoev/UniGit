@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using LibGit2Sharp.Handlers;
@@ -51,7 +52,14 @@ namespace UniGit
 				if (e is NonFastForwardException)
 				{
 					GUIContent content = GitGUI.IconContent("console.warnicon", "Could not push changes to remote. Merge changes with remote before pushing.");
-					GetWindow<GitHistoryWindow>().ShowNotification(content);
+					if (focusedWindow != null)
+					{
+						focusedWindow.ShowNotification(content);
+					}
+					else
+					{
+						GitGUI.ShowNotificationOnWindow<GitHistoryWindow>(content,false);
+					}
 				}
 				Debug.LogException(e);
 			}

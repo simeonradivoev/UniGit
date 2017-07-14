@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
@@ -120,6 +121,20 @@ namespace UniGit.Utils
 			GitGUI.PopMatrix();
 
 			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadinCricleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
+		}
+
+		public static void ShowNotificationOnWindow<T>(GUIContent content,bool createIfMissing) where T : EditorWindow
+		{
+			T window = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
+			if (window == null)
+			{
+				if (createIfMissing)
+					window = EditorWindow.GetWindow<T>();
+				else
+					return;
+			}
+
+			window.ShowNotification(content);
 		}
 
 		#region Config Fields

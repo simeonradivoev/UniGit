@@ -349,7 +349,7 @@ namespace UniGit
 
 		private void GoToHelp()
 		{
-			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Committing");
+			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/File-Difference");
 		}
 
 		private float CalculateCommitTextHeight()
@@ -1190,7 +1190,7 @@ namespace UniGit
 			{
 				EditorUtility.ClearProgressBar();
 				gitManager.MarkDirty();
-				GetWindow<GitDiffWindow>().ShowNotification(new GUIContent("Revert Complete!"));
+				GitGUI.ShowNotificationOnWindow<GitDiffWindow>(new GUIContent("Revert Complete!"),false);
 			}
 		}
 
