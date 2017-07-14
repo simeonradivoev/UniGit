@@ -26,6 +26,7 @@ namespace UniGit
 		public void Construct(GitManager gitManager)
 		{
 			this.gitManager = gitManager;
+
 			remotes = gitManager.Repository.Network != null && gitManager.Repository.Network.Remotes != null ? gitManager.Repository.Network.Remotes.ToArray() : new Remote[0];
 			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
 			branchNames = gitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
@@ -34,7 +35,9 @@ namespace UniGit
 
 		protected virtual void OnEnable()
 		{
-			Construct(GitManager.Instance);
+			if(gitManager == null)
+				Construct(GitManager.Instance);
+
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
@@ -155,20 +158,20 @@ namespace UniGit
 			switch (result.Status)
 			{
 				case MergeStatus.UpToDate:
-					GitHistoryWindow.GetWindow(true).ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
+					GitHistoryWindow.GetWindow(true, gitManager).ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
 					break;
 				case MergeStatus.FastForward:
-					GitHistoryWindow.GetWindow(true).ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
+					GitHistoryWindow.GetWindow(true,gitManager).ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
 					break;
 				case MergeStatus.NonFastForward:
-					GitDiffWindow.GetWindow(true).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
-					GitDiffWindow.GetWindow(false).SetCommitMessage(gitManager.Repository.Info.Message);
+					GitDiffWindow.GetWindow(true,gitManager).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
+					GitDiffWindow.GetWindow(false, gitManager).SetCommitMessage(gitManager.Repository.Info.Message);
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
-					GitDiffWindow.GetWindow(true).ShowNotification(content);
-					GitDiffWindow.GetWindow(false).SetCommitMessage(gitManager.Repository.Info.Message);
+					GitDiffWindow.GetWindow(true, gitManager).ShowNotification(content);
+					GitDiffWindow.GetWindow(false, gitManager).SetCommitMessage(gitManager.Repository.Info.Message);
 					break;
 			}
 			gitManager.MarkDirty();

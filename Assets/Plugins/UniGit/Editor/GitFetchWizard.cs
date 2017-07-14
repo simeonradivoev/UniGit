@@ -43,7 +43,7 @@ namespace UniGit
 #if UNITY_EDITOR
 				Debug.Log("Fetch Complete");
 #endif
-				var window = GitHistoryWindow.GetWindow(true);
+				var window = GitHistoryWindow.GetWindow(true,gitManager);
 				window.ShowNotification(new GUIContent("Fetch Complete"));
 				gitManager.MarkDirty(true);
 			}

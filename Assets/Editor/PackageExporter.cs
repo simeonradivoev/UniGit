@@ -90,7 +90,7 @@ public class PackageExporter
 	public static void GeneratePackage()
 	{
 		EditorApplication.LockReloadAssemblies();
-		GitManager.DisablePostprocessing();
+		GitManager.Instance.DisablePostprocessing();
 
 		try
 		{
@@ -141,7 +141,7 @@ public class PackageExporter
 		finally
 		{
 			EditorApplication.UnlockReloadAssemblies();
-			GitManager.EnablePostprocessing();
+			GitManager.Instance.EnablePostprocessing();
 		}
 	}
 

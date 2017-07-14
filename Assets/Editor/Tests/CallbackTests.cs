@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using NUnit.Framework;
 using UniGit;
+using UniGit.Settings;
 using UniGit.Status;
 using Assert = UnityEngine.Assertions.Assert;
 
@@ -22,7 +23,8 @@ public class CallbackTests
 		{
 			GitStatusMultithreaded = false
 		};
-		gitManager = new GitManager(GitManager.Instance.RepoPath, callbacks, settings);
+		var prefs = new GitPrefs();
+		gitManager = new GitManager(GitManager.Instance.RepoPath, callbacks, settings, prefs);
 		updateRepositoryCalled = 0;
 		onRepositoryLoadedCalled = 0;
 		gitManager.Callbacks.OnRepositoryLoad += OnRepositoryLoad;

@@ -50,7 +50,8 @@ namespace UniGit
 
 		private void OnEnable()
 		{
-			Construct(GitManager.Instance);
+			if(manager == null)
+				Construct(GitManager.Instance);
 		}
 
 		private void CheckBlame()

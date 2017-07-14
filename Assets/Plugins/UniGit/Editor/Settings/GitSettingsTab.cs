@@ -1,10 +1,11 @@
-﻿using UniGit.Status;
+﻿using System;
+using UniGit.Status;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniGit.Settings
 {
-	public abstract class GitSettingsTab
+	public abstract class GitSettingsTab : IDisposable
 	{
 		protected GitSettingsWindow settingsWindow;
 		protected SerializedObject serializedObject;
@@ -15,14 +16,9 @@ namespace UniGit.Settings
 		internal GitSettingsTab(GitManager gitManager)
 		{
 			this.gitManager = gitManager;
-		}
 
-		internal void OnEnable()
-		{
 			var callbacks = gitManager.Callbacks;
-			callbacks.EditorUpdate -= OnEditorUpdateInternal;
 			callbacks.EditorUpdate += OnEditorUpdateInternal;
-			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
 		}
 
@@ -72,7 +68,7 @@ namespace UniGit.Settings
 			}
 		}
 
-		internal void OnDestroy()
+		public void Dispose()
 		{
 			var callbacks = gitManager.Callbacks;
 			callbacks.EditorUpdate -= OnEditorUpdateInternal;

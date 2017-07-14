@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using UniGit.Settings;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
@@ -25,8 +26,9 @@ namespace UniGit
 			var settings = new GitSettingsJson();
 			var settingsManager = new GitSettingsManager(settings, settingsPath, callbacks);
 			settingsManager.LoadGitSettings();
+			var editorPrefs = new UnityEditorGitPrefs();
 
-			GitManager gitManager = new GitManager(repoPath, callbacks, settings);
+			GitManager gitManager = new GitManager(repoPath, callbacks, settings, editorPrefs);
 			GitManager.Instance = gitManager;
 
 			//delayed called must be used for serialized properties to be loaded

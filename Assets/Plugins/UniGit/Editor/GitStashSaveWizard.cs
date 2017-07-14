@@ -17,7 +17,9 @@ namespace UniGit
 
 		private void OnEnable()
 		{
-			Construct(GitManager.Instance);
+			if(gitManager == null)
+				Construct(GitManager.Instance);
+
 			createButtonName = "Save";
 			titleContent = new GUIContent("Stash Save",GitOverlay.icons.stashIcon.image);
 		}

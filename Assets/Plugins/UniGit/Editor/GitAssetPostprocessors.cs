@@ -14,7 +14,7 @@ namespace UniGit
 			{
 				var gitManager = GitManager.Instance;
 
-				if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return paths;
+				if (gitManager.Prefs.GetBool("UniGit_DisablePostprocess")) return paths;
 				if (gitManager.Repository != null && paths != null && paths.Length > 0)
 				{
 					bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;
@@ -36,7 +36,7 @@ namespace UniGit
 			{
 				var gitManager = GitManager.Instance;
 
-				if (EditorPrefs.GetBool("UniGit_DisablePostprocess")) return;
+				if (gitManager.Prefs.GetBool("UniGit_DisablePostprocess")) return;
 				if (gitManager.Repository != null)
 				{
 					bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;

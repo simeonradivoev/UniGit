@@ -22,28 +22,40 @@ namespace UniGit
 		[MenuItem("Window/GIT Settings")]
 		public static void CreateEditor()
 		{
-			GetWindow(true);
+			GetWindow(true,GitManager.Instance);
 		}
 
-		public static GitSettingsWindow GetWindow(bool focus)
+		public static GitSettingsWindow GetWindow(bool focus,GitManager gitManager)
 		{
-			var window = GetWindow<GitSettingsWindow>("Git Settings",focus);
-			window.Construct(GitManager.Instance);
+			var window = GetWindow<GitSettingsWindow>(focus);
+			window.Construct(gitManager);
 			return window;
+		}
+
+		public override void Construct(GitManager gitManager)
+		{
+			base.Construct(gitManager);
+			InitTabs();
 		}
 
 		protected override void OnEnable()
 		{
+			titleContent.text = "Git Settings";
 			base.OnEnable();
-
-			if (tabs == null)
-			{
-				InitTabs();
-			}
+			if(gitManager == null)
+				Construct(GitManager.Instance);
 		}
 
 		private void InitTabs()
 		{
+			if (tabs != null)
+			{
+				foreach (var settingsTab in tabs)
+				{
+					settingsTab.Dispose();
+				}
+			}
+
 			generalSettingsTab = new GitGeneralSettingsTab(gitManager);
 			externalsSettingsTab = new GitExternalsSettingsTab(gitManager);
 			remotesSettingsTab = new GitRemotesSettingsTab(gitManager);
@@ -60,11 +72,6 @@ namespace UniGit
 				lfsSettingsTab,
 				securitySettingsTab,
 			};
-
-			foreach (var settingsTab in tabs)
-			{
-				settingsTab.OnEnable();
-			}
 		}
 
 		protected override void OnFocus()
@@ -202,8 +209,10 @@ namespace UniGit
 
 			foreach (var settingsTab in tabs)
 			{
-				settingsTab.OnDestroy();
+				settingsTab.Dispose();
 			}
+
+			tabs = null;
 		}
 
 		private GitSettingsTab currentTab

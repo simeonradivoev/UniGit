@@ -6,6 +6,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Security;
+using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
@@ -38,11 +39,13 @@ namespace UniGit
 		private readonly HashSet<string> dirtyFiles = new HashSet<string>();
 		private readonly List<string> updatingFiles = new List<string>();
 		private readonly GitCallbacks callbacks;
+		private readonly IGitPrefs prefs;
 
-		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings)
+		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs)
 		{
 			this.repoPath = repoPath;
 			this.callbacks = callbacks;
+			this.prefs = prefs;
 			gitSettings = settings;
 			gitPath = Path.Combine(repoPath, ".git");
 
@@ -64,6 +67,7 @@ namespace UniGit
 		public void InitilizeRepository()
 		{
 			Repository.Init(repoPath);
+			Directory.CreateDirectory(GitSettingsFolderPath);
 			string newGitIgnoreFile = GitIgnoreFilePath;
 			if (!File.Exists(newGitIgnoreFile))
 			{
@@ -76,13 +80,32 @@ namespace UniGit
 			callbacks.IssueAssetDatabaseRefresh();
 			callbacks.IssueSaveDatabaseRefresh();
 			Initlize();
-			MarkDirty();
+			Update(true);
 		}
 
 		public void DeleteRepository()
 		{
 			if(string.IsNullOrEmpty(repoPath)) return;
-			Directory.Delete(repoPath,true);
+			DeleteDirectory(repoPath);
+		}
+
+		private void DeleteDirectory(string target_dir)
+		{
+			string[] files = Directory.GetFiles(target_dir);
+			string[] dirs = Directory.GetDirectories(target_dir);
+
+			foreach (string file in files)
+			{
+				File.SetAttributes(file, FileAttributes.Normal);
+				File.Delete(file);
+			}
+
+			foreach (string dir in dirs)
+			{
+				DeleteDirectory(dir);
+			}
+
+			Directory.Delete(target_dir, false);
 		}
 
 		internal void OnEditorUpdate()
@@ -220,7 +243,10 @@ namespace UniGit
 				RebuildStatus(paths);
 				GitProfilerProxy.EndSample();
 				callbacks.IssueUpdateRepository(status, paths);
-				ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
+				if (Settings.GitStatusMultithreaded)
+					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
+				else
+					UpdateStatusTree(status);
 			}
 			catch (Exception e)
 			{
@@ -275,6 +301,23 @@ namespace UniGit
 			{
 				Monitor.Exit(statusTreeLock);
 				actionQueue.Enqueue(FinishUpdating);
+			}
+		}
+
+		private void UpdateStatusTree(GitRepoStatus status)
+		{
+			try
+			{
+				statusTree = new StatusTreeClass(this, status);
+				RepaintProjectWidnow();
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+			finally
+			{
+				FinishUpdating();
 			}
 		}
 
@@ -532,21 +575,36 @@ namespace UniGit
 		}
 		#endregion
 
-		public static void DisablePostprocessing()
+		public void DisablePostprocessing()
 		{
-			EditorPrefs.SetBool("UniGit_DisablePostprocess",true);
+			prefs.SetBool("UniGit_DisablePostprocess",true);
 		}
 
-		public static void EnablePostprocessing()
+		public void EnablePostprocessing()
 		{
-			EditorPrefs.SetBool("UniGit_DisablePostprocess", false);
+			prefs.SetBool("UniGit_DisablePostprocess", false);
 		}
 
 		#region Getters and Setters
 
+		public IGitPrefs Prefs
+		{
+			get { return prefs; }
+		}
+
+		public string GitSettingsFolderPath
+		{
+			get { return Path.Combine(gitPath, Path.Combine("UniGit", "Settings")); }
+		}
+
+		public string GitCommitMessageFilePath
+		{
+			get { return Path.Combine(gitPath, Path.Combine("UniGit",Path.Combine("Settings", "CommitMessage.txt"))); }
+		}
+
 		public string GitIgnoreFilePath
 		{
-			get { return Path.Combine(gitPath, ".gitignore"); }
+			get { return Path.Combine(repoPath, ".gitignore"); }
 		}
 
 		public GitCallbacks Callbacks

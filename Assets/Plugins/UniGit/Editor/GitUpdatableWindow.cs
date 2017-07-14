@@ -16,30 +16,40 @@ namespace UniGit
 
 		protected virtual void OnEnable()
 		{
-			Construct(GitManager.Instance);
-
-			var callbacks = gitManager.Callbacks;
-
-			callbacks.EditorUpdate -= OnEditorUpdateInternal;
-			callbacks.EditorUpdate += OnEditorUpdateInternal;
-
-			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
-			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
-			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
-			callbacks.OnRepositoryLoad += OnRepositoryLoad;
-
-			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
-			callbacks.UpdateRepositoryStart += UpdateTitleIcon;
-
-			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
-			callbacks.UpdateRepositoryFinish += UpdateTitleIcon;
+			if (gitManager == null || gitSettings == null)
+				Construct(GitManager.Instance);
 		}
 
 		public virtual void Construct(GitManager gitManager)
 		{
+			if (this.gitManager != null)
+			{
+				Unsubscribe(this.gitManager.Callbacks);
+			}
+
 			this.gitManager = gitManager;
 			gitSettings = gitManager.Settings;
 			titleContent.image = gitManager.GetGitStatusIcon();
+
+			Subscribe(gitManager.Callbacks);
+		}
+
+		private void Subscribe(GitCallbacks callbacks)
+		{
+			callbacks.EditorUpdate += OnEditorUpdateInternal;
+			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
+			callbacks.OnRepositoryLoad += OnRepositoryLoad;
+			callbacks.UpdateRepositoryStart += UpdateTitleIcon;
+			callbacks.UpdateRepositoryFinish += UpdateTitleIcon;
+		}
+
+		private void Unsubscribe(GitCallbacks callbacks)
+		{
+			callbacks.EditorUpdate -= OnEditorUpdateInternal;
+			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
+			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
+			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
 		}
 
 		protected virtual void OnFocus()
@@ -88,12 +98,8 @@ namespace UniGit
 
 		protected void OnDestroy()
 		{
-			var callbacks = gitManager.Callbacks;
-			callbacks.EditorUpdate -= OnEditorUpdateInternal;
-			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
-			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
-			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
-			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
+			if(gitManager != null && gitManager.Callbacks != null)
+				Unsubscribe(gitManager.Callbacks);
 		}
 
 		#region Safe Controlls

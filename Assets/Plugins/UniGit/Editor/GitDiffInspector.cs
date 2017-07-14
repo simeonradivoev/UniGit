@@ -38,7 +38,7 @@ namespace UniGit
 			public GUIStyle LineNum;
 		}
 
-		private const string keywords = @"\b(?<Keywords>public|private|partial|static|namespace|class|using|void|foreach|internal|in|return|new|const|try|catch|finally|get|set|if|else)\b";
+		private const string keywords = @"\b(?<Keywords>public|private|protected|virtual|abstract|partial|static|namespace|class|struct|enum|using|void|foreach|internal|in|return|new|const|try|catch|finally|get|set|if|else)\b";
 		private const string types = @"\b(?<Types>int|float|string|bool|double|Vector3|Vector2|Rect|Matrix4x4|Quaternion|var|object|byte)\b";
 		private const string values = @"\b(?<Values>false|true|null)\b";
 		private const string comments = @"\/\/.+?$|\/\*.+?\*\/";
@@ -56,7 +56,9 @@ namespace UniGit
 
 		private void OnEnable()
 		{
-			Construct(GitManager.Instance);
+			if(gitManager == null)
+				Construct(GitManager.Instance);
+
 			titleContent = new GUIContent("GitDiff: " + path);
 			uberRegex = new UberRegex(new ColoredRegex[]
 			{

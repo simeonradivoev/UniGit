@@ -62,18 +62,19 @@ namespace UniGit
 		[MenuItem("Window/GIT History")]
 		public static void CreateEditor()
 		{
-			GetWindow(true);
+			GetWindow(true,GitManager.Instance);
 		}
 
-		public static GitHistoryWindow GetWindow(bool focus)
+		public static GitHistoryWindow GetWindow(bool focus,GitManager gitManager)
 		{
-			var window = GetWindow<GitHistoryWindow>("Git History", focus);
-			window.Construct(GitManager.Instance);
+			var window = GetWindow<GitHistoryWindow>(focus);
+			window.Construct(gitManager);
 			return window;
 		}
 
 		protected override void OnEnable()
 		{
+			titleContent.text = "Git History";
 			base.OnEnable();
 			if (maxCommitsCount <= 0)
 			{

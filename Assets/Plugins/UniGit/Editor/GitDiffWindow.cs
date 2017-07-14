@@ -21,13 +21,22 @@ namespace UniGit
 		[MenuItem("Window/GIT Diff Window")]
 		public static void CreateEditor()
 		{
-			GetWindow(true);
+			GetWindow(true,GitManager.Instance);
 		}
 
-		public static GitDiffWindow GetWindow(bool focus)
+		public static GitDiffWindow GetWindow(bool focus,GitManager gitManager)
 		{
 			var window = GetWindow<GitDiffWindow>("Git Diff", focus);
-			window.Construct(GitManager.Instance);
+			window.Construct(gitManager);
+			return window;
+		}
+
+		public static GitDiffWindow CreateWindow(bool focus, GitManager gitManager)
+		{
+			var window = CreateInstance<GitDiffWindow>();
+			window.Show();
+			if (focus) window.Focus();
+			window.Construct(gitManager);
 			return window;
 		}
 
@@ -51,8 +60,6 @@ namespace UniGit
 		private int lastSelectedIndex;
 		private StatusList statusList;
 		private object statusListLock = new object();
-		//cached data path for threading purposes
-		private static string cachedDataPath;
 		private char commitMessageLastChar;
 		private GitConflictsHandler conflictsHandler;
 
@@ -66,7 +73,7 @@ namespace UniGit
 			public bool emptyCommit;
 			public bool amendCommit;
 			public bool prettify;
-			public string commitMessage;
+			[SerializeField] internal string commitMessage;
 			public string commitMessageFromFile;
 			public DateTime lastMessageUpdate;
 		}
@@ -90,6 +97,7 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
+			titleContent.text = "Git Diff";
 			base.OnEnable();
 			editoSerializedObject = new SerializedObject(this);
 			if (settings == null) settings = new Settings();
@@ -97,7 +105,6 @@ namespace UniGit
 			{
 				Undo.RegisterFullObjectHierarchyUndo(this, "Commit Message Changed");
 			}
-			cachedDataPath = Application.dataPath;
 		}
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
@@ -133,7 +140,7 @@ namespace UniGit
 			try
 			{
 				GitRepoStatus status = param ?? new GitRepoStatus(gitManager.Repository.RetrieveStatus());
-				statusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir,gitSettings);
+				statusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir,gitSettings,gitManager.RepoPath);
 				gitManager.ActionQueue.Enqueue(Repaint);
 			}
 			catch (Exception e)
@@ -161,9 +168,9 @@ namespace UniGit
 
 			if (gitSettings != null && gitSettings.ReadFromFile)
 			{
-				if (File.Exists(CommitMessageFilePath))
+				if (File.Exists(gitManager.GitCommitMessageFilePath))
 				{
-					var lastWriteTime = File.GetLastWriteTime(CommitMessageFilePath);
+					var lastWriteTime = File.GetLastWriteTime(gitManager.GitCommitMessageFilePath);
 					if (lastWriteTime.CompareTo(settings.lastMessageUpdate) != 0)
 					{
 						settings.lastMessageUpdate = lastWriteTime;
@@ -184,7 +191,7 @@ namespace UniGit
 				styles.assetIcon = new GUIStyle("NotificationBackground") {contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter,imagePosition = ImagePosition.ImageOnly,padding = new RectOffset(4,4,4,4),border = new RectOffset(12,12,12,12)};
 				styles.diffScrollHeader = new GUIStyle("CurveEditorBackground") {contentOffset = new Vector2(48,0),alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = {textColor = Color.white * 0.9f},padding = new RectOffset(12,12,12,12),imagePosition = ImagePosition.ImageLeft};
 				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) {fontSize = 12,onNormal = new GUIStyleState() {textColor = Color.white * 0.95f,background = Texture2D.blackTexture} };
-				styles.diffElementPath = new GUIStyle(EditorStyles.label) {onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture } };
+				styles.diffElementPath = new GUIStyle(EditorStyles.label) {onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture },wordWrap = true,fixedHeight = 0,alignment = TextAnchor.MiddleLeft};
 				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 0,border = new RectOffset(8,8,8,8)};
 				styles.toggle = new GUIStyle("IN Toggle") {normal = {background = (Texture2D)GitGUI.IconContentTex("toggle@2x") },onNormal = {background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") },active = {background = (Texture2D)GitGUI.IconContentTex("toggle act@2x")}, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0,fixedWidth = 0,border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset()};
 				GitProfilerProxy.EndSample();
@@ -299,17 +306,7 @@ namespace UniGit
 			{
 				if (settings.amendCommit)
 				{
-					if (string.IsNullOrEmpty(settings.commitMessage))
-					{
-						settings.commitMessage = gitManager.Repository.Head.Tip.Message;
-						SaveCommitMessage();
-					}
-
-					if (string.IsNullOrEmpty(settings.commitMessageFromFile))
-					{
-						settings.commitMessageFromFile = gitManager.Repository.Head.Tip.Message;
-						SaveCommitMessageToFile();
-					}
+					AmmendCommit();
 				}
 			}
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
@@ -337,7 +334,7 @@ namespace UniGit
 			commitMenu.AddSeparator("");
 			commitMenu.AddItem(new GUIContent("Commit Message/Clear"), false, ClearCommitMessage);
 			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), gitSettings.ReadFromFile, ToggleReadFromFile);
-			if (File.Exists(CommitMessageFilePath))
+			if (File.Exists(gitManager.GitCommitMessageFilePath))
 			{
 				commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
 			}
@@ -359,7 +356,7 @@ namespace UniGit
 			return Mathf.Clamp(GUI.skin.textArea.CalcHeight(GitGUI.GetTempContent(commitMessage), position.width) + EditorGUIUtility.singleLineHeight, 50, gitSettings.MaxCommitTextAreaSize);
 		}
 
-		private bool Commit()
+		public bool Commit()
 		{
 			Signature signature = gitManager.Signature;
 			try
@@ -370,7 +367,7 @@ namespace UniGit
 					GitProfilerProxy.BeginSample("Git Commit");
 					gitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
 					GitProfilerProxy.EndSample();
-					GitHistoryWindow.GetWindow(true);
+					FocusWindowIfItsOpen<GitHistoryWindow>();
 				}
 				gitManager.MarkDirty();
 				return true;
@@ -389,7 +386,12 @@ namespace UniGit
 			return false;
 		}
 
-		private string GetActiveCommitMessage(bool forceUpdate)
+		public string GetActiveCommitMessage()
+		{
+			return GetActiveCommitMessage(false);
+		}
+
+		public string GetActiveCommitMessage(bool forceUpdate)
 		{
 			if (gitSettings.ReadFromFile)
 			{
@@ -428,9 +430,9 @@ namespace UniGit
 
 		private void OpenCommitMessageFile()
 		{
-			if (File.Exists(CommitMessageFilePath))
+			if (File.Exists(gitManager.GitCommitMessageFilePath))
 			{
-				System.Diagnostics.Process.Start(CommitMessageFilePath);
+				Application.OpenURL(gitManager.GitCommitMessageFilePath);
 			}
 		}
 
@@ -459,6 +461,21 @@ namespace UniGit
 					var wizard = ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
 					wizard.Construct(gitManager);
 				}
+			}
+		}
+
+		public void AmmendCommit()
+		{
+			if (string.IsNullOrEmpty(settings.commitMessage))
+			{
+				settings.commitMessage = gitManager.Repository.Head.Tip.Message;
+				SaveCommitMessage();
+			}
+
+			if (string.IsNullOrEmpty(settings.commitMessageFromFile))
+			{
+				settings.commitMessageFromFile = gitManager.Repository.Head.Tip.Message;
+				SaveCommitMessageToFile();
 			}
 		}
 
@@ -545,7 +562,7 @@ namespace UniGit
 			EditorGUILayout.EndHorizontal();
 			GUILayout.EndArea();
 
-			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,512), elementsTotalHeight);
+			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,420), elementsTotalHeight);
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
 
 			int index = 0;
@@ -615,21 +632,40 @@ namespace UniGit
 		{
 			Event current = Event.current;
 			
+			//check visibility
 			if (rect.y > DiffRect.height + diffScroll.y || rect.y + rect.height < diffScroll.y)
 			{
 				return;
 			}
 
+			string filePath = info.Path;
+			string fileName = info.Name;
+
 			GitGUI.StartEnable(!isUpdating);
 			Rect stageToggleRect = new Rect(rect.x + rect.width - 64, rect.y + 16, 32, 32);
 			bool canUnstage = GitManager.CanUnstage(info.State);
 			bool canStage = GitManager.CanStage(info.State);
+			float maxPathSize = rect.width - stageToggleRect.width - 32 - 21;
+
+			GUI.SetNextControlName(info.Path);
+			GUI.Box(rect, GUIContent.none, info.Selected ? "TL LogicBar 1" : styles.diffElement);
+
+			if (canStage && canUnstage)
+			{
+				maxPathSize -= stageToggleRect.width - 4;
+				Rect stageWarnningRect = new Rect(stageToggleRect.x - stageToggleRect.width - 4, stageToggleRect.y, stageToggleRect.width, stageToggleRect.height);
+				EditorGUIUtility.AddCursorRect(stageWarnningRect, MouseCursor.Link);
+				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Upstaged changed pending. Stage to update index."), GUIStyle.none))
+				{
+					string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+					gitManager.Repository.Stage(paths);
+					gitManager.MarkDirty(paths);
+					Repaint();
+				}
+			}
 
 			if (current.type == EventType.Repaint)
 			{
-				string filePath = info.Path;
-				string fileName = info.Name;
-
 				Object asset = null;
 				if (filePath.EndsWith(".meta"))
 				{
@@ -639,9 +675,6 @@ namespace UniGit
 				{
 					asset = AssetDatabase.LoadAssetAtPath(filePath, typeof (Object));
 				}
-
-				GUI.SetNextControlName(info.Path);
-				GUI.Box(rect, GUIContent.none, info.Selected ? "TL LogicBar 1" : styles.diffElement);
 
 				string extension = Path.GetExtension(filePath);
 				GUIContent tmpContent = GUIContent.none;
@@ -682,10 +715,11 @@ namespace UniGit
 					x += 25;
 				}
 
+				Vector2 pathSize = styles.diffElementPath.CalcSize(GitGUI.GetTempContent(filePath));
+				pathSize.x = Mathf.Min(pathSize.x, maxPathSize - x);
 
-				float pathMinWidth,pathMaxWidth;
-				styles.diffElementPath.CalcMinMaxWidth(GitGUI.GetTempContent(filePath), out pathMinWidth, out pathMaxWidth);
-				Rect pathRect = new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 7, pathMinWidth, EditorGUIUtility.singleLineHeight);
+				Rect pathRect = new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight, pathSize.x, EditorGUIUtility.singleLineHeight*2);
+
 				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(filePath),false, info.Selected, info.Selected, false);
 				x += pathRect.width + 4;
 
@@ -721,7 +755,7 @@ namespace UniGit
 					{
 						Repaint();
 						current.Use();
-						if (paths != null && paths.Length > 0) gitManager.MarkDirty(paths);
+						if (paths.Length > 0) gitManager.MarkDirty(paths);
 					}
 				}
 			}
@@ -817,13 +851,9 @@ namespace UniGit
 
 		private void ReadCommitMessageFromFile()
 		{
-			if (File.Exists(CommitMessageFilePath))
+			if (File.Exists(gitManager.GitCommitMessageFilePath))
 			{
-				using (var commiFileStream = File.Open(CommitMessageFilePath, FileMode.Open, FileAccess.Read))
-				using (var reader = new StreamReader(commiFileStream))
-				{
-					settings.commitMessageFromFile = reader.ReadToEnd();
-				}
+				settings.commitMessageFromFile = File.ReadAllText(gitManager.GitCommitMessageFilePath);
 			}
 			else
 			{
@@ -835,9 +865,9 @@ namespace UniGit
 		private void ReadCommitMessage()
 		{
 			//load commit from previous versions and remove the key
-			if (EditorPrefs.HasKey(CommitMessageKey))
+			if (gitManager.Prefs.HasKey(CommitMessageKey))
 			{
-				settings.commitMessage = EditorPrefs.GetString(CommitMessageKey);
+				settings.commitMessage = gitManager.Prefs.GetString(CommitMessageKey);
 			}
 			else
 			{
@@ -851,17 +881,18 @@ namespace UniGit
 		{
 			try
 			{
-				if (!Directory.Exists(Path.Combine(gitManager.GitFolderPath, "UniGit/Settings")))
+				string settingsFolder = gitManager.GitSettingsFolderPath;
+				if (!Directory.Exists(settingsFolder))
 				{
-					Directory.CreateDirectory(Path.Combine(gitManager.GitFolderPath, "UniGit/Settings"));
+					Directory.CreateDirectory(settingsFolder);
 				}
 
-				File.WriteAllText(CommitMessageFilePath, settings.commitMessageFromFile);
+				File.WriteAllText(gitManager.GitCommitMessageFilePath, settings.commitMessageFromFile);
 			}
 			catch (Exception e)
 			{
 #if UNITY_EDITOR
-				Debug.LogError("Could not save commit message to file. Saving to EditorPrefs");
+				Debug.LogError("Could not save commit message to file. Saving to Prefs");
 				Debug.LogException(e);
 #endif
 			}
@@ -869,7 +900,7 @@ namespace UniGit
 
 		private void SaveCommitMessage()
 		{
-			EditorPrefs.SetString(CommitMessageKey, settings.commitMessage);
+			gitManager.Prefs.SetString(CommitMessageKey, settings.commitMessage);
 		}
 
 		public void SetCommitMessage(string commitMessage)
@@ -881,11 +912,6 @@ namespace UniGit
 			}
 			settings.commitMessage = commitMessage;
 			SaveCommitMessage();
-		}
-
-		private string CommitMessageFilePath
-		{
-			get { return Path.Combine(gitManager.GitFolderPath, "UniGit/Settings/CommitMessage.txt"); }
 		}
 
 		[UsedImplicitly]
@@ -1123,7 +1149,6 @@ namespace UniGit
 
 			if (GitExternalManager.TakeRevert(paths))
 			{
-				AssetDatabase.Refresh();
 				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
 				return;
@@ -1231,6 +1256,15 @@ namespace UniGit
 		}
 		#endregion
 
+		#region Getters and Setters
+
+		public Settings GitDiffSettings
+		{
+			get { return settings; }
+		}
+
+		#endregion
+
 		#region Status List
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
@@ -1238,9 +1272,11 @@ namespace UniGit
 			private SortType sortType;
 			private SortDir sortDir;
 			private GitSettingsJson gitSettings;
+			private string gitPath;
 
-			public StatusList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter,SortType sortType, SortDir sortDir, GitSettingsJson gitSettings)
+			public StatusList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter,SortType sortType, SortDir sortDir, GitSettingsJson gitSettings,string gitPath)
 			{
+				this.gitPath = gitPath;
 				this.gitSettings = gitSettings;
 				entires = new List<StatusListEntry>();
 				this.sortType = sortType;
@@ -1314,8 +1350,6 @@ namespace UniGit
 				int stateCompare = GetPriority(left.State).CompareTo(GetPriority(right.State));
 				if (stateCompare == 0)
 				{
-					string convertedDataPath = cachedDataPath.Replace("Assets", "").Replace('/', '\\');
-
 					if (sortDir == SortDir.Descending)
 					{
 						var oldLeft = left;
@@ -1332,13 +1366,13 @@ namespace UniGit
 							stateCompare = string.Compare(left.Path, right.Path, StringComparison.InvariantCultureIgnoreCase);
 							break;
 						case SortType.ModificationDate:
-							DateTime modifedTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetLastWriteTime(convertedDataPath + p)));
-							DateTime modifedRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetLastWriteTime(convertedDataPath + p)));
+							DateTime modifedTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetLastWriteTime(Path.Combine(gitPath, p))));
+							DateTime modifedRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetLastWriteTime(Path.Combine(gitPath,p))));
 							stateCompare = DateTime.Compare(modifedRightTime,modifedTimeLeft);
 							break;
 						case SortType.CreationDate:
-							DateTime createdTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetCreationTime(convertedDataPath + p)));
-							DateTime createdRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetCreationTime(convertedDataPath + p)));
+							DateTime createdTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetCreationTime(Path.Combine(gitPath,p))));
+							DateTime createdRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetCreationTime(Path.Combine(gitPath,p))));
 							stateCompare = DateTime.Compare(createdRightTime,createdTimeLeft);
 							break;
 						default:

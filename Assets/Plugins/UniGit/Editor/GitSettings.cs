@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+#pragma warning disable 618
 
 namespace UniGit
 {
@@ -82,9 +84,7 @@ namespace UniGit
 			Diff = 1 << 9
 		}
 
-#pragma warning disable 618
 		public void Copy(GitSettings settings)
-#pragma warning restore 618
 		{
 			AutoStage = settings.AutoStage;
 			AutoFetch = settings.AutoFetch;
