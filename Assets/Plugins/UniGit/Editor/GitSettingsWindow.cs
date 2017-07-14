@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Settings;
 using UniGit.Status;
@@ -10,6 +11,8 @@ namespace UniGit
 {
 	public class GitSettingsWindow : GitUpdatableWindow, IHasCustomMenu
 	{
+		private const string WindowTitle = "Git Settings";
+
 		private GitGeneralSettingsTab generalSettingsTab;
 		private GitExternalsSettingsTab externalsSettingsTab;
 		private GitRemotesSettingsTab remotesSettingsTab;
@@ -27,7 +30,7 @@ namespace UniGit
 
 		public static GitSettingsWindow GetWindow(bool focus,GitManager gitManager)
 		{
-			var window = GetWindow<GitSettingsWindow>(focus);
+			var window = GetWindow<GitSettingsWindow>(false, WindowTitle, focus);
 			window.Construct(gitManager);
 			return window;
 		}
@@ -40,7 +43,7 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
-			titleContent.text = "Git Settings";
+			titleContent.text = WindowTitle;
 			base.OnEnable();
 			if(gitManager == null)
 				Construct(GitManager.Instance);
@@ -56,35 +59,43 @@ namespace UniGit
 				}
 			}
 
-			generalSettingsTab = new GitGeneralSettingsTab(gitManager);
-			externalsSettingsTab = new GitExternalsSettingsTab(gitManager);
-			remotesSettingsTab = new GitRemotesSettingsTab(gitManager);
-			branchesSettingsTab = new GitBranchesSettingsTab(gitManager);
-			lfsSettingsTab = new GitLFSSettingsTab(gitManager);
-			securitySettingsTab = new GitSecuritySettingsTab(gitManager);
-
-			tabs = new GitSettingsTab[]
+			try
 			{
-				generalSettingsTab,
-				externalsSettingsTab,
-				remotesSettingsTab,
-				branchesSettingsTab,
-				lfsSettingsTab,
-				securitySettingsTab,
-			};
+				generalSettingsTab = new GitGeneralSettingsTab(gitManager, this);
+				externalsSettingsTab = new GitExternalsSettingsTab(gitManager, this);
+				remotesSettingsTab = new GitRemotesSettingsTab(gitManager, this);
+				branchesSettingsTab = new GitBranchesSettingsTab(gitManager, this);
+				lfsSettingsTab = new GitLFSSettingsTab(gitManager, this);
+				securitySettingsTab = new GitSecuritySettingsTab(gitManager, this);
+			}
+			catch (Exception e)
+			{
+				Debug.LogError("There was a problem while creating the settings window tabs.");
+				Debug.LogException(e);
+			}
+			finally
+			{
+				tabs = new GitSettingsTab[]
+				{
+					generalSettingsTab,
+					externalsSettingsTab,
+					remotesSettingsTab,
+					branchesSettingsTab,
+					lfsSettingsTab,
+					securitySettingsTab,
+				};
+			}
 		}
 
-		protected override void OnFocus()
+		protected override void OnInitialize()
 		{
-			base.OnFocus();
-			LoseFocus();
 			if (!gitManager.IsValidRepo) return;
 			if (tabs == null)
 			{
 				InitTabs();
 			}
-			currentTab.OnFocus();
-			OnGitUpdate(null,null);
+			if(currentTab != null) currentTab.OnFocus();
+			OnGitUpdate(null, null);
 		}
 
 		[UsedImplicitly]
@@ -173,11 +184,6 @@ namespace UniGit
 		}
 
 		protected override void OnGitUpdate(GitRepoStatus status, string[] paths)
-		{
-			
-		}
-
-		protected override void OnInitialize()
 		{
 			
 		}

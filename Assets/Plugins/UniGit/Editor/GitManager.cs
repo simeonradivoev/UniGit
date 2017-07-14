@@ -19,7 +19,7 @@ namespace UniGit
 	{
 		public static GitManager Instance { get; internal set; }
 
-		public const string Version = "1.1.0";
+		public const string Version = "1.1.1";
 
 		private string repoPath;
 		private string gitPath;

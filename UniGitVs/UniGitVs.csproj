@@ -47,11 +47,11 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEditor">
-      <HintPath>D:\Program Files\Unity\Editor\Data\Managed\UnityEditor.dll</HintPath>
+      <HintPath>D:\Program Files\Unity 2017.1\Editor\Data\Managed\UnityEditor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>D:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>D:\Program Files\Unity 2017.1\Editor\Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -155,6 +155,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettings.cs">
       <Link>GitSettings.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettingsManager.cs">
+      <Link>GitSettingsManager.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSettingsWindow.cs">
       <Link>GitSettingsWindow.cs</Link>
     </Compile>
@@ -178,6 +181,9 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Hooks\GitPushHookBase.cs">
       <Link>GitPushHookBase.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\IGitWindow.cs">
+      <Link>IGitWindow.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Inspectors\GitSettingsInspector.cs">
       <Link>GitSettingsInspector.cs</Link>
@@ -212,6 +218,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitLFSSettingsTab.cs">
       <Link>GitLFSSettingsTab.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitPrefs.cs">
+      <Link>GitPrefs.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitRemotesSettingsTab.cs">
       <Link>GitRemotesSettingsTab.cs</Link>
     </Compile>
@@ -221,11 +230,23 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\GitSettingsTab.cs">
       <Link>GitSettingsTab.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\IGitPrefs.cs">
+      <Link>IGitPrefs.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\UnityEditorGitPrefs.cs">
+      <Link>UnityEditorGitPrefs.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitRepoStatus.cs">
       <Link>GitRepoStatus.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusEntry.cs">
       <Link>GitStatusEntry.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\UniGitLoader.cs">
+      <Link>UniGitLoader.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\AssemblyReloadScriptableChecker.cs">
+      <Link>AssemblyReloadScriptableChecker.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\ContextGenericMenuPopup.cs">
       <Link>ContextGenericMenuPopup.cs</Link>

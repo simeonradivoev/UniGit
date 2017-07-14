@@ -22,7 +22,12 @@ namespace UniGit
 
 		public virtual void Construct(GitManager gitManager)
 		{
-			if (this.gitManager != null)
+			if (gitManager == null)
+			{
+				Debug.LogError("Git manager cannot be null.");
+				return;
+			}
+			if (this.gitManager != null && this.gitManager.Callbacks != null)
 			{
 				Unsubscribe(this.gitManager.Callbacks);
 			}
@@ -36,6 +41,11 @@ namespace UniGit
 
 		private void Subscribe(GitCallbacks callbacks)
 		{
+			if (callbacks == null)
+			{
+				Debug.LogError("Trying to subscribe to null callbacks");
+				return;
+			}
 			callbacks.EditorUpdate += OnEditorUpdateInternal;
 			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
 			callbacks.OnRepositoryLoad += OnRepositoryLoad;
@@ -45,6 +55,7 @@ namespace UniGit
 
 		private void Unsubscribe(GitCallbacks callbacks)
 		{
+			if (callbacks == null) return;
 			callbacks.EditorUpdate -= OnEditorUpdateInternal;
 			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 			callbacks.OnRepositoryLoad -= OnRepositoryLoad;

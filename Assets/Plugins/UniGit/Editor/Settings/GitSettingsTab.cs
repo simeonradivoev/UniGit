@@ -1,6 +1,5 @@
 ﻿using System;
 using UniGit.Status;
-using UnityEditor;
 using UnityEngine;
 
 namespace UniGit.Settings
@@ -8,24 +7,17 @@ namespace UniGit.Settings
 	public abstract class GitSettingsTab : IDisposable
 	{
 		protected GitSettingsWindow settingsWindow;
-		protected SerializedObject serializedObject;
 		private bool hasFocused;
 		private bool initilized;
 		protected GitManager gitManager;
 
-		internal GitSettingsTab(GitManager gitManager)
+		internal GitSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow)
 		{
 			this.gitManager = gitManager;
-
+			this.settingsWindow = settingsWindow;
 			var callbacks = gitManager.Callbacks;
 			callbacks.EditorUpdate += OnEditorUpdateInternal;
 			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
-		}
-
-		internal void Setup(GitSettingsWindow settingsWindow, SerializedObject serializedObject)
-		{
-			this.settingsWindow = settingsWindow;
-			this.serializedObject = serializedObject;
 		}
 
 		internal abstract void OnGUI(Rect rect, Event current);
@@ -70,6 +62,7 @@ namespace UniGit.Settings
 
 		public void Dispose()
 		{
+			if(gitManager == null || gitManager.Callbacks == null) return;
 			var callbacks = gitManager.Callbacks;
 			callbacks.EditorUpdate -= OnEditorUpdateInternal;
 			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;

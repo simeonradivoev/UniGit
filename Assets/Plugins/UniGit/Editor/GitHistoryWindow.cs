@@ -15,6 +15,7 @@ namespace UniGit
 {
 	public class GitHistoryWindow : GitUpdatableWindow, IHasCustomMenu
 	{
+		private const string WindowName = "Git History";
 		private static readonly Color headColor = new Color32(72, 123, 207, 255);
 		private static readonly Color remoteColor = new Color32(234, 141, 43, 255);
 		private const int CommitsPerExpand = 8;
@@ -67,14 +68,14 @@ namespace UniGit
 
 		public static GitHistoryWindow GetWindow(bool focus,GitManager gitManager)
 		{
-			var window = GetWindow<GitHistoryWindow>(focus);
+			var window = GetWindow<GitHistoryWindow>(WindowName,focus);
 			window.Construct(gitManager);
 			return window;
 		}
 
 		protected override void OnEnable()
 		{
-			titleContent.text = "Git History";
+			titleContent.text = WindowName;
 			base.OnEnable();
 			if (maxCommitsCount <= 0)
 			{

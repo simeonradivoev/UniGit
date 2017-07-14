@@ -1,4 +1,5 @@
-﻿using UniGit.Utils;
+﻿using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace UniGit.Settings
 	{
 		private Rect trackFileRect;
 
-		public GitLFSSettingsTab(GitManager gitManager) : base(gitManager)
+		public GitLFSSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow) : base(gitManager,settingsWindow)
 		{
 		}
 
@@ -36,14 +37,16 @@ namespace UniGit.Settings
 				{
 					GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
 
-
-					string url = gitManager.Repository.Config.GetValueOrDefault("lfs.url", "");
-					if (string.IsNullOrEmpty(url))
+					using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
 					{
-						EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
-					}
+						string url = c.GetValueOrDefault("lfs.url", "");
+						if (string.IsNullOrEmpty(url))
+						{
+							EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
+						}
 
-					GitGUI.DoConfigStringField(gitManager.Repository.Config,GitGUI.GetTempContent("URL"), "lfs.url", "");
+						GitGUI.DoConfigStringField(c, GitGUI.GetTempContent("URL"), "lfs.url", "");
+					}
 
 					EditorGUILayout.Space();
 

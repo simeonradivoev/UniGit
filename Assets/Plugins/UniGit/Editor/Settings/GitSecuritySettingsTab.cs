@@ -9,7 +9,7 @@ namespace UniGit.Settings
 		private Rect addCredentialsRect;
 		private Vector2 scroll;
 
-		public GitSecuritySettingsTab(GitManager gitManager) : base(gitManager)
+		public GitSecuritySettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow) : base(gitManager, settingsWindow)
 		{
 
 		}

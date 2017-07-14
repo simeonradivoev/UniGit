@@ -14,7 +14,7 @@ namespace UniGit.Settings
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
 		private Vector2 scroll;
 
-		public GitBranchesSettingsTab(GitManager gitManager) : base(gitManager)
+		public GitBranchesSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow) : base(gitManager,settingsWindow)
 		{
 		}
 

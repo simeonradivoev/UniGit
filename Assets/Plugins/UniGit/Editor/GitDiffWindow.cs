@@ -18,6 +18,8 @@ namespace UniGit
 {
 	public class GitDiffWindow : GitUpdatableWindow, IHasCustomMenu
 	{
+		private const string WindowName = "Git Diff";
+
 		[MenuItem("Window/GIT Diff Window")]
 		public static void CreateEditor()
 		{
@@ -26,7 +28,7 @@ namespace UniGit
 
 		public static GitDiffWindow GetWindow(bool focus,GitManager gitManager)
 		{
-			var window = GetWindow<GitDiffWindow>("Git Diff", focus);
+			var window = GetWindow<GitDiffWindow>(WindowName, focus);
 			window.Construct(gitManager);
 			return window;
 		}
@@ -97,7 +99,7 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
-			titleContent.text = "Git Diff";
+			titleContent.text = WindowName;
 			base.OnEnable();
 			editoSerializedObject = new SerializedObject(this);
 			if (settings == null) settings = new Settings();

@@ -6,7 +6,7 @@ namespace UniGit.Settings
 {
 	public class GitExternalsSettingsTab : GitSettingsTab
 	{
-		public GitExternalsSettingsTab(GitManager gitManager) : base(gitManager)
+		public GitExternalsSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow) : base(gitManager, settingsWindow)
 		{
 		}
 
