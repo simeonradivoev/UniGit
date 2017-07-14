@@ -41,7 +41,7 @@ namespace UniGit
 				GitHistoryWindow.GetWindow(true);
 				OnMergeComplete(result,"Merge");
 				gitManager.MarkDirty();
-				AssetDatabase.Refresh();
+				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 			}
 			catch (CheckoutConflictException e)
 			{

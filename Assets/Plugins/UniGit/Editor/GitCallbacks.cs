@@ -41,5 +41,19 @@ namespace UniGit
 			if(UpdateRepositoryFinish != null)
 				UpdateRepositoryFinish.Invoke();
 		}
+
+		public event Action RefreshAssetDatabase;
+		public void IssueAssetDatabaseRefresh()
+		{
+			if (RefreshAssetDatabase != null)
+				RefreshAssetDatabase.Invoke();
+		}
+
+		public event Action SaveAssetDatabase;
+		public void IssueSaveDatabaseRefresh()
+		{
+			if (SaveAssetDatabase != null)
+				SaveAssetDatabase.Invoke();
+		}
 	}
 }

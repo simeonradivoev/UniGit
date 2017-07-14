@@ -12,8 +12,6 @@ namespace UniGit
 
 		static UniGitLoader()
 		{
-			EditorApplication.update += OnEditorUpdate;
-
 			var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
 			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
@@ -21,6 +19,9 @@ namespace UniGit
 			string settingsPath = Path.Combine(repoPath, Path.Combine(".git",Path.Combine("UniGit", "Settings.json")));
 
 			callbacks = new GitCallbacks();
+			EditorApplication.update += callbacks.IssueEditorUpdate;
+			callbacks.RefreshAssetDatabase += AssetDatabase.Refresh;
+			callbacks.SaveAssetDatabase += AssetDatabase.SaveAssets;
 			var settings = new GitSettingsJson();
 			var settingsManager = new GitSettingsManager(settings, settingsPath, callbacks);
 			settingsManager.LoadGitSettings();
@@ -48,11 +49,6 @@ namespace UniGit
 			GitLfsManager.Load(gitManager);
 			GitHookManager.Load(gitManager);
 			GitExternalManager.Load(gitManager);
-		}
-
-		private static void OnEditorUpdate()
-		{
-			callbacks.IssueEditorUpdate();
 		}
 
 		private static void OnBeforeAssemblyReload()

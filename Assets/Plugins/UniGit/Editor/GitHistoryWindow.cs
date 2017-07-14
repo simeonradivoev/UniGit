@@ -380,7 +380,7 @@ namespace UniGit
 			{
 				if (GitExternalManager.TakeSwitch())
 				{
-					AssetDatabase.Refresh();
+					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 					gitManager.MarkDirty();
 				}
 				else
@@ -429,7 +429,7 @@ namespace UniGit
 		{
 			if (GitExternalManager.TakePull())
 			{
-				AssetDatabase.Refresh();
+				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty();
 			}
 			else
@@ -709,7 +709,7 @@ namespace UniGit
 					{
 						if (GitExternalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
 						{
-							AssetDatabase.Refresh();
+							gitManager.Callbacks.IssueAssetDatabaseRefresh();
 							gitManager.MarkDirty();
 						}
 						else
@@ -997,7 +997,7 @@ namespace UniGit
 						gitManager.MarkDirty(true);
 						editorWindow.Close();
 						GitProfilerProxy.EndSample();
-						AssetDatabase.Refresh();
+						gitManager.Callbacks.IssueAssetDatabaseRefresh();
 					}
 				}
 				EditorGUILayout.Space();

@@ -85,14 +85,14 @@ namespace UniGit
 			var paths = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e)).ToArray();
 			if (GitExternalManager.TakeRevert(paths))
 			{
-				AssetDatabase.Refresh();
+				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
 				return;
 			}
 
 			gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress});
 			EditorUtility.ClearProgressBar();
-			AssetDatabase.Refresh();
+			gitManager.Callbacks.IssueAssetDatabaseRefresh();
 			gitManager.MarkDirty(paths);
 		}
 

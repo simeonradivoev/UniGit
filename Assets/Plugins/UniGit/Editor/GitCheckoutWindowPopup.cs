@@ -52,7 +52,7 @@ namespace UniGit
 					}
 					finally
 					{
-						AssetDatabase.Refresh();
+						gitManager.Callbacks.IssueAssetDatabaseRefresh();
 						gitManager.MarkDirty(true);
 					}
 				}

@@ -61,22 +61,28 @@ namespace UniGit
 			callbacks.EditorUpdate += OnEditorUpdate;
 		}
 
-		internal void InitilizeRepository()
+		public void InitilizeRepository()
 		{
-			Repository.Init(Application.dataPath.Replace("/Assets", ""));
-			string newGitIgnoreFile = Path.Combine(Application.dataPath.Replace("Assets", "").Replace("Contents", ""), ".gitignore");
+			Repository.Init(repoPath);
+			string newGitIgnoreFile = GitIgnoreFilePath;
 			if (!File.Exists(newGitIgnoreFile))
 			{
-				File.WriteAllText(Path.Combine(Application.dataPath, newGitIgnoreFile), GitIgnoreTemplate.Template);
+				File.WriteAllText(newGitIgnoreFile, GitIgnoreTemplate.Template);
 			}
 			else
 			{
 				Debug.Log("Git Ignore file already present");
 			}
-			AssetDatabase.Refresh();
-			AssetDatabase.SaveAssets();
+			callbacks.IssueAssetDatabaseRefresh();
+			callbacks.IssueSaveDatabaseRefresh();
 			Initlize();
 			MarkDirty();
+		}
+
+		public void DeleteRepository()
+		{
+			if(string.IsNullOrEmpty(repoPath)) return;
+			Directory.Delete(repoPath,true);
 		}
 
 		internal void OnEditorUpdate()
@@ -537,6 +543,11 @@ namespace UniGit
 		}
 
 		#region Getters and Setters
+
+		public string GitIgnoreFilePath
+		{
+			get { return Path.Combine(gitPath, ".gitignore"); }
+		}
 
 		public GitCallbacks Callbacks
 		{

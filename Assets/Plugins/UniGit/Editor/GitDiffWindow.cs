@@ -1124,6 +1124,7 @@ namespace UniGit
 			if (GitExternalManager.TakeRevert(paths))
 			{
 				AssetDatabase.Refresh();
+				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
 				return;
 			}

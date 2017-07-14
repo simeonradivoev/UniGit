@@ -68,7 +68,7 @@ namespace UniGit
 				{
 					stashCollection.Apply(selectedStash);
 					gitManager.MarkDirty(true);
-					AssetDatabase.Refresh();
+					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				}
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Pop","Remove and apply stash to working directory."), "minibuttonmid"))
@@ -77,7 +77,7 @@ namespace UniGit
 				{
 					stashCollection.Pop(selectedStash);
 					gitManager.MarkDirty(true);
-					AssetDatabase.Refresh();
+					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				}
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Remove","Remove stash from list"), "minibuttonright"))

@@ -104,7 +104,7 @@ namespace UniGit.Settings
 			{
 				if (GitExternalManager.TakeSwitch())
 				{
-					AssetDatabase.Refresh();
+					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 					gitManager.MarkDirty();
 				}
 				else
