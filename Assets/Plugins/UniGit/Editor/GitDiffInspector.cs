@@ -374,7 +374,7 @@ namespace UniGit
 					var commit = string.IsNullOrEmpty(commitSha) ? null : gitManager.Repository.Lookup<Commit>(commitSha);
 					BuildChangeSections(commit);
 				}
-				GitGUI.DrawLoading(position,new GUIContent("Loading Changes"));
+				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), new GUIContent("Loading Changes"));
 				Repaint();
 				return;
 			}

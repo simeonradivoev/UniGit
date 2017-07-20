@@ -48,6 +48,7 @@ namespace UniGit
 							string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (importedAssetsToStage.Length > 0)
 							{
+								//todo add multi threaded staging 
 								if(autoStage) gitManager.Repository.Stage(importedAssetsToStage);
 								gitManager.MarkDirty(importedAssetsToStage);
 							}

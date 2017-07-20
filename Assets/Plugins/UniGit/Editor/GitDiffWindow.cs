@@ -220,7 +220,7 @@ namespace UniGit
 			if (statusList == null)
 			{
 				Repaint();
-				GitGUI.DrawLoading(position,new GUIContent("Loading Status List..."));
+				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), new GUIContent("Loading Status List..."));
 			}
 			else
 			{
