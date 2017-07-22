@@ -63,6 +63,7 @@ namespace UniGit
 		private object statusListLock = new object();
 		private char commitMessageLastChar;
 		private GitConflictsHandler conflictsHandler;
+		private StatusListAsyncUpdate statusListAsyncUpdate;
 
 		[Serializable]
 		public class Settings
@@ -128,7 +129,7 @@ namespace UniGit
 		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
 			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
-				CreateStatusListThreaded(status);
+				CreateStatusListThreaded(status, paths);
 			else
 				CreateStatusList(status);
 		}
@@ -137,7 +138,7 @@ namespace UniGit
 		{
 			if(gitManager.Repository == null) return;
 			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
-				CreateStatusListThreaded(gitManager.LastStatus);
+				CreateStatusListThreaded(gitManager.LastStatus,null);
 			else
 				CreateStatusList(gitManager.LastStatus);
 		}
@@ -158,32 +159,40 @@ namespace UniGit
 			
 		}
 
-		private void CreateStatusListThreaded(GitRepoStatus param)
+		private void CreateStatusListThreaded(GitRepoStatus param,string[] paths)
 		{
-			GitAsyncManager.QueueWorker(()=> { CreateStatusList(param, true); }, BuildngStatusOperationName);
+			string[] newPaths = paths;
+			if (statusListAsyncUpdate != null)
+			{
+				newPaths = paths.Concat(statusListAsyncUpdate.Paths).ToArray();
+			}
+
+			var operation = GitAsyncManager.QueueWorkerWithLock(() => { CreateStatusListInternal(param); }, BuildngStatusOperationName, (o) =>
+			{
+				if(statusListAsyncUpdate != null && statusListAsyncUpdate.Equals(o))
+					statusListAsyncUpdate = null;
+				Repaint();
+			}, statusListLock);
+			statusListAsyncUpdate = new StatusListAsyncUpdate(operation, newPaths);
 		}
 
 		private void CreateStatusList(GitRepoStatus param)
 		{
-			CreateStatusList(param, false);
+			CreateStatusListInternal(param);
+			Repaint();
 		}
 
-		private void CreateStatusList(GitRepoStatus param,bool threaded)
+		private void CreateStatusListInternal(GitRepoStatus param)
 		{
-			if(threaded) Monitor.Enter(statusListLock);
 			try
 			{
 				GitRepoStatus status = param ?? new GitRepoStatus(gitManager.Repository.RetrieveStatus());
-				statusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir,gitSettings,gitManager.RepoPath);
-				gitManager.ExecuteAction(Repaint, threaded);
+				var newStatusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir, gitSettings, gitManager.RepoPath);
+				statusList = newStatusList;
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
-			}
-			finally
-			{
-				if(threaded) Monitor.Exit(statusListLock);
 			}
 		}
 
@@ -582,6 +591,7 @@ namespace UniGit
 			bool isUpdating = gitManager.IsUpdating;
 			bool isStaging = gitManager.IsUpdating;
 			bool isDirty = gitManager.IsDirty;
+			bool statusListUpdate = statusListAsyncUpdate != null && !statusListAsyncUpdate.IsDone;
 			GUIContent statusContent = GUIContent.none;
 
 			if (isUpdating)
@@ -595,6 +605,10 @@ namespace UniGit
 			else if (isDirty)
 			{
 				statusContent =  GitGUI.IconContent("CollabProgress", "Waiting to update...");
+			}
+			else if (statusListUpdate)
+			{
+				statusContent = GitGUI.IconContent("CollabProgress", "Building status list gui...");
 			}
 
 			if(statusContent != GUIContent.none)
@@ -634,7 +648,7 @@ namespace UniGit
 			{
 				FileStatus mergedStatus = GetMergedStatus(info.State);
 				bool isExpanded = IsVisible(info);
-				bool isUpdating = gitManager.IsFileUpdating(info.Path);
+				bool isUpdating = gitManager.IsFileUpdating(info.Path) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
 				bool isStaging = gitManager.IsFileStaging(info.Path);
 				bool isDirty = gitManager.IsFileDirty(info.Path);
 				Rect elementRect;
@@ -1383,6 +1397,33 @@ namespace UniGit
 		#endregion
 
 		#region Status List
+		public class StatusListAsyncUpdate : IEquatable<GitAsyncOperation>
+		{
+			private readonly GitAsyncOperation operation;
+			private readonly string[] paths;
+
+			public StatusListAsyncUpdate(GitAsyncOperation operation, string[] paths)
+			{
+				this.operation = operation;
+				this.paths = paths;
+			}
+
+			public bool Equals(GitAsyncOperation other)
+			{
+				return operation == other;
+			}
+
+			public bool IsDone
+			{
+				get { return operation.IsDone; }
+			}
+
+			public string[] Paths
+			{
+				get { return paths; }
+			}
+		}
+
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
 			private List<StatusListEntry> entires;
