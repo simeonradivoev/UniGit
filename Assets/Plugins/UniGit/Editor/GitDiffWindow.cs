@@ -659,9 +659,6 @@ namespace UniGit
 			{
 				FileStatus mergedStatus = GetMergedStatus(info.State);
 				bool isExpanded = IsVisible(info);
-				bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
-				bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
-				bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
 				Rect elementRect;
 
 				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
@@ -702,8 +699,12 @@ namespace UniGit
 
 				if (!isExpanded) continue;
 				elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-				DoFileDiff(elementRect,info, isUpdating, isDirty, isStaging);
-				DoFileDiffSelection(elementRect,info,index, isUpdating, isDirty, isStaging);
+				//check visibility
+				if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
+				{
+					DoFileDiff(elementRect, info);
+					DoFileDiffSelection(elementRect, info, index);
+				}
 				infoX += elementRect.height;
 				index++;
 			}
@@ -716,15 +717,15 @@ namespace UniGit
 			}
 		}
 
-		private void DoFileDiff(Rect rect,StatusListEntry info,bool isUpdating,bool isDirty,bool isStaging)
+		private void DoFileDiff(Rect rect,StatusListEntry info)
 		{
 			Event current = Event.current;
 			
-			//check visibility
-			if (rect.y > DiffRect.height + diffScroll.y || rect.y + rect.height < diffScroll.y)
-			{
-				return;
-			}
+			
+
+			bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
+			bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
+			bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
 
 			string filePath = info.Path;
 			string fileName = info.Name;
@@ -872,9 +873,13 @@ namespace UniGit
 			GitGUI.EndEnable();
 		}
 
-		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool isUpdating,bool isDirty,bool isStaging)
+		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index)
 		{
 			Event current = Event.current;
+
+			bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
+			bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
+			bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
 
 			if (elementRect.Contains(current.mousePosition) && !isUpdating && !isDirty && !isStaging)
 			{
