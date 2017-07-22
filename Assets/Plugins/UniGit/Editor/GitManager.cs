@@ -37,7 +37,7 @@ namespace UniGit
 		private bool isUpdating;
 		private readonly List<AsyncStageOperation> asyncStages = new List<AsyncStageOperation>();
 		private readonly HashSet<string> dirtyFiles = new HashSet<string>();
-		private readonly List<string> updatingFiles = new List<string>();
+		private readonly HashSet<string> updatingFiles = new HashSet<string>();
 		private readonly GitCallbacks callbacks;
 		private readonly IGitPrefs prefs;
 
@@ -296,12 +296,17 @@ namespace UniGit
 			}
 		}
 
-		private void StartUpdating(string[] paths)
+		private void StartUpdating(IEnumerable<string> paths)
 		{
 			isUpdating = true;
 			updatingFiles.Clear();
-			if(paths != null)
-				updatingFiles.AddRange(paths);
+			if (paths != null)
+			{
+				foreach (var path in paths)
+				{
+					updatingFiles.Add(path);
+				}
+			}
 			callbacks.IssueUpdateRepositoryStart();
 		}
 
@@ -781,12 +786,12 @@ namespace UniGit
 		public class AsyncStageOperation : IEquatable<GitAsyncOperation>
 		{
 			private readonly GitAsyncOperation operation;
-			private readonly string[] paths;
+			private readonly HashSet<string> paths;
 
-			public AsyncStageOperation(GitAsyncOperation operation, string[] paths)
+			public AsyncStageOperation(GitAsyncOperation operation, IEnumerable<string> paths)
 			{
 				this.operation = operation;
-				this.paths = paths;
+				this.paths = new HashSet<string>(paths);
 			}
 
 			public bool Equals(GitAsyncOperation other)
@@ -808,7 +813,7 @@ namespace UniGit
 				return operation.GetHashCode();
 			}
 
-			public string[] Paths
+			public HashSet<string> Paths
 			{
 				get { return paths; }
 			}

@@ -161,10 +161,21 @@ namespace UniGit
 
 		private void CreateStatusListThreaded(GitRepoStatus param,string[] paths)
 		{
-			string[] newPaths = paths;
-			if (statusListAsyncUpdate != null)
+			HashSet<string> newPaths = new HashSet<string>();
+			if (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && paths != null)
 			{
-				newPaths = paths.Concat(statusListAsyncUpdate.Paths).ToArray();
+				newPaths = statusListAsyncUpdate.Paths;
+				foreach (var path in paths)
+				{
+					newPaths.Add(path);
+				}
+			}
+			else if(paths != null)
+			{
+				foreach (var path in paths)
+				{
+					newPaths.Add(path);
+				}
 			}
 
 			var operation = GitAsyncManager.QueueWorkerWithLock(() => { CreateStatusListInternal(param); }, BuildngStatusOperationName, (o) =>
@@ -648,9 +659,9 @@ namespace UniGit
 			{
 				FileStatus mergedStatus = GetMergedStatus(info.State);
 				bool isExpanded = IsVisible(info);
-				bool isUpdating = gitManager.IsFileUpdating(info.Path) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
-				bool isStaging = gitManager.IsFileStaging(info.Path);
-				bool isDirty = gitManager.IsFileDirty(info.Path);
+				bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
+				bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
+				bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
 				Rect elementRect;
 
 				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
@@ -1400,9 +1411,15 @@ namespace UniGit
 		public class StatusListAsyncUpdate : IEquatable<GitAsyncOperation>
 		{
 			private readonly GitAsyncOperation operation;
-			private readonly string[] paths;
+			private readonly HashSet<string> paths;
 
-			public StatusListAsyncUpdate(GitAsyncOperation operation, string[] paths)
+			public StatusListAsyncUpdate(GitAsyncOperation operation, IEnumerable<string> paths)
+			{
+				this.operation = operation;
+				this.paths = new HashSet<string>(paths);
+			}
+
+			public StatusListAsyncUpdate(GitAsyncOperation operation, HashSet<string> paths)
 			{
 				this.operation = operation;
 				this.paths = paths;
@@ -1418,7 +1435,7 @@ namespace UniGit
 				get { return operation.IsDone; }
 			}
 
-			public string[] Paths
+			public HashSet<string> Paths
 			{
 				get { return paths; }
 			}
