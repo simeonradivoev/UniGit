@@ -11,7 +11,6 @@ using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-using Utils.Extensions;
 
 namespace UniGit
 {
@@ -29,13 +28,14 @@ namespace UniGit
 		private StatusTreeClass statusTree;
 		private GitSettingsJson gitSettings;
 		private bool needsFetch;
-		private readonly static Queue<Action> actionQueue = new Queue<Action>();
+		private static readonly Queue<Action> actionQueue = new Queue<Action>();
 		private GitRepoStatus status;
 		private readonly object statusTreeLock = new object();
 		private readonly object statusRetriveLock = new object();
 		private bool repositoryDirty;
 		private bool reloadDirty;
 		private bool isUpdating;
+		private readonly List<AsyncStageOperation> asyncStages = new List<AsyncStageOperation>();
 		private readonly HashSet<string> dirtyFiles = new HashSet<string>();
 		private readonly List<string> updatingFiles = new List<string>();
 		private readonly GitCallbacks callbacks;
@@ -170,14 +170,8 @@ namespace UniGit
 
 			if (repository != null)
 			{
-				if (Settings.GitStatusMultithreaded)
-				{
-					ThreadPool.QueueUserWorkItem(ReteriveStatusThreaded, paths);
-				}
-				else
-				{
-					RetreiveStatus(paths);
-				}
+				if (Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
+				else RetreiveStatus(paths);
 			}
 		}
 
@@ -235,81 +229,61 @@ namespace UniGit
 			};
 		}
 
+		private void RetreiveStatusThreaded(string[] paths)
+		{
+			GitAsyncManager.QueueWorkerWithLock(() => { RetreiveStatus(paths, true); }, statusRetriveLock);
+		}
+
 		private void RetreiveStatus(string[] paths)
+		{
+			RetreiveStatus(paths, false);
+		}
+
+		private void RetreiveStatus(string[] paths,bool threaded)
 		{
 			try
 			{
-				GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
+				if (!threaded) GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 				RebuildStatus(paths);
-				GitProfilerProxy.EndSample();
-				callbacks.IssueUpdateRepository(status, paths);
-				if (Settings.GitStatusMultithreaded)
-					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
+				if (threaded)
+				{
+					actionQueue.Enqueue(() =>
+					{
+						callbacks.IssueUpdateRepository(status, paths);
+						UpdateStatusTreeThreaded(status);
+					});
+				}
 				else
+				{
+					GitProfilerProxy.EndSample();
+					callbacks.IssueUpdateRepository(status, paths);
 					UpdateStatusTree(status);
+				}
 			}
 			catch (Exception e)
 			{
-				FinishUpdating();
+				ExecuteAction(FinishUpdating, threaded);
 				Debug.LogError("Could not retrive Git Status");
 				Debug.LogException(e);
 			}
 		}
 
-		private void ReteriveStatusThreaded(object param)
+		private void UpdateStatusTreeThreaded(GitRepoStatus status)
 		{
-			Monitor.Enter(statusRetriveLock);
-			try
-			{
-				string[] paths = param as string[];
-				RebuildStatus(paths);
-				actionQueue.Enqueue(() =>
-				{
-					callbacks.IssueUpdateRepository(status, paths);
-					ThreadPool.QueueUserWorkItem(UpdateStatusTreeThreaded, status);
-				});
-			}
-			catch (ThreadAbortException)
-			{
-				actionQueue.Enqueue(FinishUpdating);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-				actionQueue.Enqueue(FinishUpdating);
-			}
-			finally
-			{
-				Monitor.Exit(statusRetriveLock);
-			}
-		}
-
-		private void UpdateStatusTreeThreaded(object statusObj)
-		{
-			Monitor.Enter(statusTreeLock);
-			try
-			{
-				GitRepoStatus status = (GitRepoStatus) statusObj;
-				statusTree = new StatusTreeClass(this,status);
-				actionQueue.Enqueue(RepaintProjectWidnow);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
-			finally
-			{
-				Monitor.Exit(statusTreeLock);
-				actionQueue.Enqueue(FinishUpdating);
-			}
+			GitAsyncManager.QueueWorkerWithLock(() => { UpdateStatusTree(status, true); }, statusTreeLock);
 		}
 
 		private void UpdateStatusTree(GitRepoStatus status)
 		{
+			UpdateStatusTree(status, false);
+		}
+
+		private void UpdateStatusTree(GitRepoStatus status,bool threaded)
+		{
 			try
 			{
 				statusTree = new StatusTreeClass(this, status);
-				RepaintProjectWidnow();
+				ExecuteAction(RepaintProjectWidnow, threaded);
 			}
 			catch (Exception e)
 			{
@@ -317,7 +291,7 @@ namespace UniGit
 			}
 			finally
 			{
-				FinishUpdating();
+				ExecuteAction(FinishUpdating, threaded);
 			}
 		}
 
@@ -337,6 +311,12 @@ namespace UniGit
 			callbacks.IssueUpdateRepositoryFinish();
 		}
 
+		internal bool IsFileDirty(string path)
+		{
+			if (dirtyFiles.Count <= 0) return false;
+			return dirtyFiles.Contains(path);
+		}
+
 		internal bool IsFileUpdating(string path)
 		{
 			if (isUpdating)
@@ -345,6 +325,11 @@ namespace UniGit
 				return updatingFiles.Contains(path);
 			}
 			return false;
+		}
+
+		internal bool IsFileStaging(string path)
+		{
+			return asyncStages.Any(s => s.Paths.Contains(path));
 		}
 
 		public Texture2D GetGitStatusIcon()
@@ -411,14 +396,16 @@ namespace UniGit
 		#endregion
 
 		#region Helpers
-		public void ShowDiff(string path, [NotNull] Commit start,[NotNull] Commit end)
+		public void ShowDiff(string path, [NotNull] Commit oldCommit,[NotNull] Commit newCommit)
 		{
-			if (GitExternalManager.TakeDiff(path, start, end))
+			if (GitExternalManager.TakeDiff(path, oldCommit, newCommit))
 			{
 				return;
 			}
 
-
+			var window = EditorWindow.GetWindow<GitDiffInspector>(true);
+			window.Construct(this);
+			window.Init(path, oldCommit, newCommit);
 		}
 
 		public void ShowDiff(string path)
@@ -472,6 +459,48 @@ namespace UniGit
 		public bool CanBlame(string path)
 		{
 			return repository.Head[path] != null;
+		}
+
+		public GitAsyncOperation AsyncStage(string[] paths)
+		{
+			var operation = GitAsyncManager.QueueWorker(() =>
+			{
+				repository.Stage(paths);
+			}, (o) =>
+			{
+				MarkDirty(paths);
+				asyncStages.RemoveAll(s => s.Equals(o));
+				callbacks.IssueAsyncStageOperationDone(o);
+			});
+			asyncStages.Add(new AsyncStageOperation(operation,paths));
+			return operation;
+		}
+
+		public GitAsyncOperation AsyncUnstage(string[] paths)
+		{
+			var operation = GitAsyncManager.QueueWorker(() =>
+			{
+				repository.Unstage(paths);
+			}, (o) =>
+			{
+				MarkDirty(paths);
+				asyncStages.RemoveAll(s => s.Equals(o));
+				callbacks.IssueAsyncStageOperationDone(o);
+			});
+			asyncStages.Add(new AsyncStageOperation(operation, paths));
+			return operation;
+		}
+
+		public void ExecuteAction(Action action, bool async)
+		{
+			if (async)
+			{
+				actionQueue.Enqueue(action);
+			}
+			else
+			{
+				action.Invoke();
+			}
 		}
 		#endregion
 
@@ -670,6 +699,93 @@ namespace UniGit
 		}
 
 		#endregion
+
+		public class AsyncUpdateOperation : IEquatable<GitAsyncOperation>
+		{
+			private readonly GitAsyncOperation operation;
+			private readonly string[] paths;
+
+			public AsyncUpdateOperation(GitAsyncOperation operation, string[] paths)
+			{
+				this.operation = operation;
+				this.paths = paths;
+			}
+
+			public bool Equals(GitAsyncOperation other)
+			{
+				return operation.Equals(other);
+			}
+
+			public override bool Equals(object obj)
+			{
+				if (obj is GitAsyncOperation)
+				{
+					return operation.Equals(obj);
+				}
+				return base.Equals(obj);
+			}
+
+			public override int GetHashCode()
+			{
+				return operation.GetHashCode();
+			}
+
+			public bool IsDone
+			{
+				get { return operation.IsDone; }
+			}
+
+			public string[] Paths
+			{
+				get { return paths; }
+			}
+		}
+
+		public class AsyncStageOperation : IEquatable<GitAsyncOperation>
+		{
+			private readonly GitAsyncOperation operation;
+			private readonly string[] paths;
+
+			public AsyncStageOperation(GitAsyncOperation operation, string[] paths)
+			{
+				this.operation = operation;
+				this.paths = paths;
+			}
+
+			public bool Equals(GitAsyncOperation other)
+			{
+				return operation.Equals(other);
+			}
+
+			public override bool Equals(object obj)
+			{
+				if (obj is GitAsyncOperation)
+				{
+					return operation.Equals(obj);
+				}
+				return base.Equals(obj);
+			}
+
+			public override int GetHashCode()
+			{
+				return operation.GetHashCode();
+			}
+
+			public string[] Paths
+			{
+				get { return paths; }
+			}
+
+			public GitAsyncOperation Operation
+			{
+				get { return operation; }
+			}
+
+			public bool IsDone
+			{
+				get { return operation.IsDone; }
+			}
+		}
 
 		#region Status Tree
 		public class StatusTreeClass

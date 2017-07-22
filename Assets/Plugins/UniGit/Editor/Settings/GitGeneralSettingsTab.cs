@@ -36,7 +36,7 @@ namespace UniGit.Settings
 				EditorGUI.BeginChangeCheck();
 				settings.ProjectStatusOverlayDepth = EditorGUILayout.DelayedIntField(GitGUI.GetTempContent("Project Status Overlay Depth", "The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit"), settings.ProjectStatusOverlayDepth);
 				settings.ShowEmptyFolders = EditorGUILayout.Toggle(new GUIContent("Show Empty Folders", "Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled."), settings.ShowEmptyFolders);
-				settings.GitStatusMultithreaded = EditorGUILayout.Toggle(GitGUI.GetTempContent("Git Status Multithreaded", "Should Git status retrieval be multithreaded."), settings.GitStatusMultithreaded);
+				settings.Threading = (GitSettingsJson.ThreadingType)EditorGUILayout.EnumMaskField(GitGUI.GetTempContent("Use Threading", "When Should Threading be used. In staging, unstaging or status retrival."), settings.Threading);
 				settings.UseGavatar = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Gavatar", "Load Gavatars based on the committer's email address."), settings.UseGavatar);
 				settings.MaxCommitTextAreaSize = EditorGUILayout.DelayedFloatField(GitGUI.GetTempContent("Max Commit Text Area Size", "The maximum height the commit text area can expand to."), settings.MaxCommitTextAreaSize);
 				settings.DetectRenames = EditorGUILayout.Toggle(GitGUI.GetTempContent("Detect Renames", "Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works."), settings.DetectRenames);

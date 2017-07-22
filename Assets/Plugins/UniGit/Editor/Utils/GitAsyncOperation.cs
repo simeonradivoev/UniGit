@@ -6,17 +6,16 @@ namespace UniGit.Utils
 	{
 		private string name;
 		private bool isDone;
-		private Action<GitAsyncOperation> onComplete;
+		public event Action<GitAsyncOperation> onComplete;
 
-		private GitAsyncOperation(string name,Action<GitAsyncOperation> onComplete)
+		private GitAsyncOperation(string name)
 		{
 			this.name = name;
-			this.onComplete = onComplete;
 		}
 
-		internal static GitAsyncOperation Create(string name, Action<GitAsyncOperation> onComplete)
+		internal static GitAsyncOperation Create(string name)
 		{
-			return new GitAsyncOperation(name,onComplete);
+			return new GitAsyncOperation(name);
 		}
 
 		internal void Complete()

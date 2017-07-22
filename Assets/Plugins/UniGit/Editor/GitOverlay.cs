@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-using Utils.Extensions;
 
 namespace UniGit
 {

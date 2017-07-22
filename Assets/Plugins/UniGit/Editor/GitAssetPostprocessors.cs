@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 
 namespace UniGit
@@ -48,9 +49,22 @@ namespace UniGit
 							string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (importedAssetsToStage.Length > 0)
 							{
-								//todo add multi threaded staging 
-								if(autoStage) gitManager.Repository.Stage(importedAssetsToStage);
-								gitManager.MarkDirty(importedAssetsToStage);
+								if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+								{
+									if (autoStage)
+									{
+										gitManager.AsyncStage(importedAssetsToStage);
+									}
+									else
+									{
+										gitManager.MarkDirty(importedAssetsToStage);
+									}
+								}
+								else
+								{
+									if (autoStage) gitManager.Repository.Stage(importedAssetsToStage);
+									gitManager.MarkDirty(importedAssetsToStage);
+								}
 							}
 						}
 
@@ -59,8 +73,22 @@ namespace UniGit
 							string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 							if (movedAssetsFinal.Length > 0)
 							{
-								if(autoStage) gitManager.Repository.Stage(movedAssetsFinal);
-								gitManager.MarkDirty(movedAssetsFinal);
+								if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+								{
+									if (autoStage)
+									{
+										gitManager.AsyncStage(movedAssetsFinal);
+									}
+									else
+									{
+										gitManager.MarkDirty(movedAssetsFinal);
+									}
+								}
+								else
+								{
+									if (autoStage) gitManager.Repository.Stage(movedAssetsFinal);
+									gitManager.MarkDirty(movedAssetsFinal);
+								}
 							}
 						}
 					}
@@ -71,8 +99,15 @@ namespace UniGit
 						string[] movedFromAssetPathsFinal = movedFromAssetPaths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 						if (movedFromAssetPathsFinal.Length > 0)
 						{
-							gitManager.Repository.Unstage(movedFromAssetPathsFinal);
-							gitManager.MarkDirty(movedFromAssetPathsFinal);
+							if (gitManager.Settings != null && gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+							{
+								gitManager.AsyncUnstage(movedFromAssetPathsFinal);
+							}
+							else
+							{
+								gitManager.Repository.Unstage(movedFromAssetPathsFinal);
+								gitManager.MarkDirty(movedFromAssetPathsFinal);
+							}
 						}
 					}
 
@@ -82,8 +117,15 @@ namespace UniGit
 						string[] deletedAssetsFinal = deletedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
 						if (deletedAssetsFinal.Length > 0)
 						{
-							gitManager.Repository.Unstage(deletedAssetsFinal);
-							gitManager.MarkDirty(deletedAssetsFinal);
+							if (gitManager.Settings != null && gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+							{
+								gitManager.AsyncUnstage(deletedAssetsFinal);
+							}
+							else
+							{
+								gitManager.Repository.Unstage(deletedAssetsFinal);
+								gitManager.MarkDirty(deletedAssetsFinal);
+							}
 						}
 					}
 				}

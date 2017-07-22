@@ -19,7 +19,7 @@ public class TestRepoFixture
 	{
 		string repoPath = @"D:\Test_Repo";
 		gitSettings = new GitSettingsJson();
-		gitSettings.GitStatusMultithreaded = false;
+		gitSettings.Threading = 0;
 		gitCallbacks = new GitCallbacks();
 		gitPrefs = new GitPrefs();
 		gitManager = new GitManager(repoPath, gitCallbacks, gitSettings, gitPrefs);

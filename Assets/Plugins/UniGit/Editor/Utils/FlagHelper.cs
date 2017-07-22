@@ -5,9 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace Utils.Extensions
+namespace UniGit.Utils
 {
-	public static class FlagHelper
+	internal static class FlagHelper
 	{
 		public static int GetIndex<T>(this T values) where T : struct
 		{

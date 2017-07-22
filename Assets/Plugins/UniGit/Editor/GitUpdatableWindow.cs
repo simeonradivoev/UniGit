@@ -39,7 +39,7 @@ namespace UniGit
 			Subscribe(gitManager.Callbacks);
 		}
 
-		private void Subscribe(GitCallbacks callbacks)
+		protected virtual void Subscribe(GitCallbacks callbacks)
 		{
 			if (callbacks == null)
 			{
@@ -53,7 +53,7 @@ namespace UniGit
 			callbacks.UpdateRepositoryFinish += UpdateTitleIcon;
 		}
 
-		private void Unsubscribe(GitCallbacks callbacks)
+		protected virtual void Unsubscribe(GitCallbacks callbacks)
 		{
 			if (callbacks == null) return;
 			callbacks.EditorUpdate -= OnEditorUpdateInternal;

@@ -38,7 +38,7 @@ namespace UniGit
 			public GUIStyle LineNum;
 		}
 
-		private const string keywords = @"\b(?<Keywords>public|private|protected|virtual|abstract|partial|static|namespace|class|struct|enum|using|void|foreach|internal|in|return|new|const|try|catch|finally|get|set|if|else)\b";
+		private const string keywords = @"\b(?<Keywords>public|private|protected|virtual|abstract|partial|static|namespace|class|struct|enum|using|void|foreach|internal|in|return|new|const|try|catch|finally|get|set|if|else|override)\b";
 		private const string types = @"\b(?<Types>int|float|string|bool|double|Vector3|Vector2|Rect|Matrix4x4|Quaternion|var|object|byte)\b";
 		private const string values = @"\b(?<Values>false|true|null)\b";
 		private const string comments = @"\/\/.+?$|\/\*.+?\*\/";
@@ -48,6 +48,8 @@ namespace UniGit
 		private const string defines = @"#.*";
 		private const string numbers = @"[\d]+\.?f?";
 		private UberRegex uberRegex;
+		private CompareOptions compareOptions;
+		private ExplicitPathsOptions explicitPathsOptions;
 
 		public void Construct(GitManager gitManager)
 		{
@@ -56,7 +58,15 @@ namespace UniGit
 
 		private void OnEnable()
 		{
-			if(gitManager == null)
+			compareOptions = new CompareOptions()
+			{
+				Algorithm = DiffAlgorithm.Myers,
+				ContextLines = 0
+			};
+
+			explicitPathsOptions = new ExplicitPathsOptions();
+
+			if (gitManager == null)
 				Construct(GitManager.Instance);
 
 			titleContent = new GUIContent("GitDiff: " + path);
@@ -97,18 +107,30 @@ namespace UniGit
 			titleContent = new GUIContent("GitDiff: " + path);
 		}
 
+		public void Init(string path, Commit oldCommit,Commit newCommit)
+		{
+			InitStyles();
+			this.path = path;
+			synataxHighlight = path.EndsWith(".cs");
+			commitSha = oldCommit.Sha;
+			BuildChangeSections(oldCommit, newCommit);
+			ScrollToFirstChange();
+
+			titleContent = new GUIContent("GitDiff: " + path);
+		}
+
 		private string[] GetLines(Commit commit)
 		{
 			PatchEntryChanges changes = null;
 
 			if (commit != null)
 			{
-				var patch = gitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { path });
+				var patch = gitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { path }, explicitPathsOptions, compareOptions);
 				changes = patch[path];
 			}
 			else if(gitManager.Repository.Head != null && gitManager.Repository.Head.Tip != null)
 			{
-				var patch = gitManager.Repository.Diff.Compare<Patch>(gitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { path });
+				var patch = gitManager.Repository.Diff.Compare<Patch>(gitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { path }, explicitPathsOptions, compareOptions);
 				changes = patch[path];
 			}
 
@@ -121,6 +143,14 @@ namespace UniGit
 			return new string[0];
 		}
 
+		private string[] GetLines(Commit oldTree, Commit newTree)
+		{
+			var patch = gitManager.Repository.Diff.Compare<Patch>(oldTree.Tree, newTree.Tree, new[] { path }, explicitPathsOptions,compareOptions);
+			var changes = patch[path];
+			isBinary = changes.IsBinaryComparison;
+			return changes.Patch.Split('\n');
+		}
+
 		private void BuildChangeSections(Commit commit)
 		{
 			int lastIndexFileLine = 0;
@@ -130,152 +160,7 @@ namespace UniGit
 			var lines = GetLines(commit);
 			try
 			{
-				changeSections = new List<ChangeSection>();
-				ChangeSection currentSection = null;
-				IChangeBlob currentBlob = null;
-
-				LineChangeType lastLineChangeType = LineChangeType.Normal;
-
-				for (int i = 0; i < lines.Length - 1; i++)
-				{
-					if (lines[i].StartsWith("@@"))
-					{
-						var newSection = CreateSection(lines[i]);
-						lastLineChangeType = LineChangeType.Normal;
-
-						if (currentSection == null)
-						{
-							var prevNormalSection = new ChangeSection(false);
-							prevNormalSection.addedStartLine = 1;
-							prevNormalSection.removedStartLine = 1;
-							var b = new NormalBlob();
-
-							for (int j = 0; j < newSection.addedStartLine - 1; j++)
-							{
-								b.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
-								lastIndexFileLine++;
-							}
-							prevNormalSection.changeBlobs.Add(b);
-							changeSections.Add(prevNormalSection);
-						}
-						else
-						{
-							var prevNormalSection = new ChangeSection(false);
-							var b = new NormalBlob();
-
-							int start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
-							int count = (newSection.addedStartLine - (currentSection.addedStartLine + currentSection.addedLineCount));
-
-							prevNormalSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
-							prevNormalSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
-
-							while (lastIndexFileLine < start)
-							{
-								indexFileReader.ReadLine();
-								lastIndexFileLine++;
-							}
-
-							for (int j = 0; j < count; j++)
-							{
-								b.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
-								lastIndexFileLine++;
-							}
-
-							prevNormalSection.addedLineCount = prevNormalSection.changeBlobs.Count;
-							prevNormalSection.removedLineCount = prevNormalSection.changeBlobs.Count;
-
-							prevNormalSection.changeBlobs.Add(b);
-							changeSections.Add(prevNormalSection);
-						}
-
-						changeSections.Add(newSection);
-						currentSection = newSection;
-					}
-					else if (currentSection != null)
-					{
-						LineChangeType lineChangeType = LineChangeType.Normal;
-						if (lines[i].StartsWith("+"))
-							lineChangeType = LineChangeType.Added;
-						else if (lines[i].StartsWith("-"))
-							lineChangeType = LineChangeType.Removed;
-
-						if (lastLineChangeType == LineChangeType.Normal && lineChangeType != LineChangeType.Normal)
-						{
-							if (currentBlob != null) currentBlob.Finish();
-							currentBlob = CreateNewBlob(lineChangeType, currentSection);
-						}
-						else if (lastLineChangeType != LineChangeType.Normal && lineChangeType == LineChangeType.Normal)
-						{
-							if (currentBlob != null) currentBlob.Finish();
-							currentBlob = CreateNewBlob(lineChangeType, currentSection);
-						}
-
-						if (currentBlob != null)
-						{
-							currentBlob.AddLine(lineChangeType, ColorizeLine(lines[i]));
-						}
-
-						lastLineChangeType = lineChangeType;
-					}
-				}
-
-				if (currentBlob != null)
-				{
-					currentBlob.Finish();
-				}
-
-				if (currentSection != null)
-				{
-					var lastNormalBlob = new NormalBlob();
-					while (lastIndexFileLine < currentSection.addedStartLine + currentSection.addedLineCount - 1)
-					{
-						indexFileReader.ReadLine();
-						lastIndexFileLine++;
-					}
-
-					while (!indexFileReader.EndOfStream)
-					{
-						lastNormalBlob.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
-						lastIndexFileLine++;
-					}
-					currentSection.changeBlobs.Add(lastNormalBlob);
-
-					maxLines = changeSections.Sum(s => s.changeBlobs.Sum(b => b.Lines));
-					totalLinesHeight = maxLines * EditorGUIUtility.singleLineHeight;
-					foreach (var changeSection in changeSections)
-					{
-						foreach (var blob in changeSection.changeBlobs)
-						{
-							if (blob is NormalBlob)
-							{
-								var normalBlob = ((NormalBlob) blob);
-								foreach (var line in normalBlob.lines)
-								{
-									maxLineWidth = Mathf.Max(maxLineWidth, GetLineWidth(line));
-								}
-							}
-							else if (blob is AddRemoveBlob)
-							{
-								var addRemoveBlob = ((AddRemoveBlob) blob);
-								if (addRemoveBlob.addedLines != null)
-								{
-									foreach (var addedLine in addRemoveBlob.addedLines)
-									{
-										maxLineWidth = Mathf.Max(maxLineWidth, GetLineWidth(addedLine));
-									}
-								}
-								if (addRemoveBlob.removedLines != null)
-								{
-									foreach (var removedLine in addRemoveBlob.removedLines)
-									{
-										maxLineWidth = Mathf.Max(maxLineWidth, GetLineWidth(removedLine));
-									}
-								}
-							}
-						}
-					}
-					maxLineNumWidth = changeSections.Max(s => Mathf.Max(styles.LineNum.CalcSize(new GUIContent(s.addedStartLine.ToString())).x, styles.LineNum.CalcSize(new GUIContent(s.removedStartLine.ToString())).x));
-				}
+				ProcessChanges(lines, indexFileReader, ref lastIndexFileLine);
 			}
 			catch (Exception e)
 			{
@@ -284,8 +169,181 @@ namespace UniGit
 			}
 			finally
 			{
-				if(indexFileContent != null) indexFileContent.Dispose();
-				if(indexFileReader != null) indexFileReader.Dispose();
+				indexFileContent.Dispose();
+				indexFileReader.Dispose();
+			}
+		}
+
+		private void BuildChangeSections(Commit oldCommit,Commit newCommit)
+		{
+			int lastIndexFileLine = 0;
+			Stream indexFileContent = ((Blob)newCommit.Tree[path].Target).GetContentStream();
+			StreamReader indexFileReader = new StreamReader(indexFileContent);
+
+			var lines = GetLines(oldCommit, newCommit);
+			try
+			{
+				ProcessChanges(lines, indexFileReader, ref lastIndexFileLine);
+			}
+			catch (Exception e)
+			{
+				Debug.LogError("There was a problem while loading changes");
+				Debug.LogException(e);
+			}
+			finally
+			{
+				indexFileContent.Dispose();
+				indexFileReader.Dispose();
+			}
+		}
+
+		private void ProcessChanges(string[] lines, StreamReader indexFileReader,ref int lastIndexFileLine)
+		{
+			changeSections = new List<ChangeSection>();
+			ChangeSection currentSection = null;
+			IChangeBlob currentBlob = null;
+
+			LineChangeType lastLineChangeType = LineChangeType.Normal;
+
+			for (int i = 0; i < lines.Length - 1; i++)
+			{
+				if (lines[i].StartsWith("@@"))
+				{
+					var newSection = CreateSection(lines[i]);
+					lastLineChangeType = LineChangeType.Normal;
+
+					if (currentSection == null)
+					{
+						var prevNormalSection = new ChangeSection(false);
+						prevNormalSection.addedStartLine = 1;
+						prevNormalSection.removedStartLine = 1;
+						var b = new NormalBlob();
+
+						for (int j = 0; j < newSection.addedStartLine - 1; j++)
+						{
+							b.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
+							lastIndexFileLine++;
+						}
+						prevNormalSection.changeBlobs.Add(b);
+						changeSections.Add(prevNormalSection);
+					}
+					else
+					{
+						var prevNormalSection = new ChangeSection(false);
+						var b = new NormalBlob();
+
+						int start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
+						int count = (newSection.addedStartLine - (currentSection.addedStartLine + currentSection.addedLineCount));
+
+						prevNormalSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
+						prevNormalSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
+
+						while (lastIndexFileLine < start)
+						{
+							indexFileReader.ReadLine();
+							lastIndexFileLine++;
+						}
+
+						for (int j = 0; j < count; j++)
+						{
+							b.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
+							lastIndexFileLine++;
+						}
+
+						prevNormalSection.addedLineCount = prevNormalSection.changeBlobs.Count;
+						prevNormalSection.removedLineCount = prevNormalSection.changeBlobs.Count;
+
+						prevNormalSection.changeBlobs.Add(b);
+						changeSections.Add(prevNormalSection);
+					}
+
+					changeSections.Add(newSection);
+					currentSection = newSection;
+				}
+				else if (currentSection != null)
+				{
+					LineChangeType lineChangeType = LineChangeType.Normal;
+					if (lines[i].StartsWith("+"))
+						lineChangeType = LineChangeType.Added;
+					else if (lines[i].StartsWith("-"))
+						lineChangeType = LineChangeType.Removed;
+
+					if (lastLineChangeType == LineChangeType.Normal && lineChangeType != LineChangeType.Normal)
+					{
+						if (currentBlob != null) currentBlob.Finish();
+						currentBlob = CreateNewBlob(lineChangeType, currentSection);
+					}
+					else if (lastLineChangeType != LineChangeType.Normal && lineChangeType == LineChangeType.Normal)
+					{
+						if (currentBlob != null) currentBlob.Finish();
+						currentBlob = CreateNewBlob(lineChangeType, currentSection);
+					}
+
+					if (currentBlob != null)
+					{
+						currentBlob.AddLine(lineChangeType, ColorizeLine(lines[i]));
+					}
+
+					lastLineChangeType = lineChangeType;
+				}
+			}
+
+			if (currentBlob != null)
+			{
+				currentBlob.Finish();
+			}
+
+			if (currentSection != null)
+			{
+				var lastNormalBlob = new NormalBlob();
+				while (lastIndexFileLine < currentSection.addedStartLine + currentSection.addedLineCount - 1)
+				{
+					indexFileReader.ReadLine();
+					lastIndexFileLine++;
+				}
+
+				while (!indexFileReader.EndOfStream)
+				{
+					lastNormalBlob.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
+					lastIndexFileLine++;
+				}
+				currentSection.changeBlobs.Add(lastNormalBlob);
+
+				maxLines = changeSections.Sum(s => s.changeBlobs.Sum(b => b.Lines));
+				totalLinesHeight = maxLines * EditorGUIUtility.singleLineHeight;
+				foreach (var changeSection in changeSections)
+				{
+					foreach (var blob in changeSection.changeBlobs)
+					{
+						if (blob is NormalBlob)
+						{
+							var normalBlob = ((NormalBlob)blob);
+							foreach (var line in normalBlob.lines)
+							{
+								maxLineWidth = Mathf.Max(maxLineWidth, GetLineWidth(line));
+							}
+						}
+						else if (blob is AddRemoveBlob)
+						{
+							var addRemoveBlob = ((AddRemoveBlob)blob);
+							if (addRemoveBlob.addedLines != null)
+							{
+								foreach (var addedLine in addRemoveBlob.addedLines)
+								{
+									maxLineWidth = Mathf.Max(maxLineWidth, GetLineWidth(addedLine));
+								}
+							}
+							if (addRemoveBlob.removedLines != null)
+							{
+								foreach (var removedLine in addRemoveBlob.removedLines)
+								{
+									maxLineWidth = Mathf.Max(maxLineWidth, GetLineWidth(removedLine));
+								}
+							}
+						}
+					}
+				}
+				maxLineNumWidth = changeSections.Max(s => Mathf.Max(styles.LineNum.CalcSize(new GUIContent(s.addedStartLine.ToString())).x, styles.LineNum.CalcSize(new GUIContent(s.removedStartLine.ToString())).x));
 			}
 		}
 

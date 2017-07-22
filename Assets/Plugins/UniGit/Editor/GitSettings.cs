@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
+
 #pragma warning disable 618
 
 namespace UniGit
@@ -59,8 +61,8 @@ namespace UniGit
 		public string ExternalProgram;
 		public string CredentialsManager;
 		public int ProjectStatusOverlayDepth = 2;
-		public bool ShowEmptyFolders = false;
-		public bool GitStatusMultithreaded = true;
+		public bool ShowEmptyFolders;
+		public ThreadingType Threading = (ThreadingType)(-1);
 		public bool UseGavatar = true;
 		public float MaxCommitTextAreaSize = 120;
 		public bool DetectRenames = true;
@@ -69,7 +71,7 @@ namespace UniGit
 		private bool isDirty;
 
 		[Flags]
-		[SerializeField]
+		[Serializable]
 		public enum ExternalsTypeEnum
 		{
 			Pull = 1 << 0,
@@ -84,6 +86,15 @@ namespace UniGit
 			Diff = 1 << 9
 		}
 
+		[Flags]
+		[Serializable]
+		public enum ThreadingType
+		{
+			Stage,
+			Unstage,
+			StatusList,
+		}
+
 		public void Copy(GitSettings settings)
 		{
 			AutoStage = settings.AutoStage;
@@ -93,7 +104,7 @@ namespace UniGit
 			CredentialsManager = settings.CredentialsManager;
 			ProjectStatusOverlayDepth = settings.ProjectStatusOverlayDepth;
 			ShowEmptyFolders = settings.ShowEmptyFolders;
-			GitStatusMultithreaded = settings.GitStatusMultithreaded;
+			Threading = (ThreadingType)(settings.GitStatusMultithreaded ? -1 : 0);
 			UseGavatar = settings.UseGavatar;
 			MaxCommitTextAreaSize = settings.MaxCommitTextAreaSize;
 			DetectRenames = settings.DetectRenames;

@@ -21,7 +21,7 @@ public class CallbackTests
 		var callbacks = new GitCallbacks();
 		var settings = new GitSettingsJson()
 		{
-			GitStatusMultithreaded = false
+			Threading = 0
 		};
 		var prefs = new GitPrefs();
 		gitManager = new GitManager(GitManager.Instance.RepoPath, callbacks, settings, prefs);
@@ -29,7 +29,7 @@ public class CallbackTests
 		onRepositoryLoadedCalled = 0;
 		gitManager.Callbacks.OnRepositoryLoad += OnRepositoryLoad;
 		gitManager.Callbacks.UpdateRepository += RepositoryUpdate;
-		gitManager.Settings.GitStatusMultithreaded = false;
+		gitManager.Settings.Threading = 0;
 	}
 
 	[TearDown]

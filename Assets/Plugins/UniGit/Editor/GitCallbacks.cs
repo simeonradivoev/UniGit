@@ -1,6 +1,7 @@
 ﻿using System;
 using LibGit2Sharp;
 using UniGit.Status;
+using UniGit.Utils;
 using UnityEditor;
 
 namespace UniGit
@@ -54,6 +55,13 @@ namespace UniGit
 		{
 			if (SaveAssetDatabase != null)
 				SaveAssetDatabase.Invoke();
+		}
+
+		public event Action<GitAsyncOperation> AsyncStageOperationDone;
+		public void IssueAsyncStageOperationDone(GitAsyncOperation operation)
+		{
+			if (AsyncStageOperationDone != null)
+				AsyncStageOperationDone.Invoke(operation);
 		}
 	}
 }

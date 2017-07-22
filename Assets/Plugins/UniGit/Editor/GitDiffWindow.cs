@@ -11,7 +11,6 @@ using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-using Utils.Extensions;
 using Object = UnityEngine.Object;
 
 namespace UniGit
@@ -97,6 +96,18 @@ namespace UniGit
 			conflictsHandler = new GitConflictsHandler(gitManager);
 		}
 
+		protected override void Subscribe(GitCallbacks callbacks)
+		{
+			base.Subscribe(callbacks);
+			callbacks.AsyncStageOperationDone += OnAsyncStageOperationDone;
+		}
+
+		protected override void Unsubscribe(GitCallbacks callbacks)
+		{
+			base.Unsubscribe(callbacks);
+			callbacks.AsyncStageOperationDone -= OnAsyncStageOperationDone;
+		}
+
 		protected override void OnEnable()
 		{
 			titleContent.text = WindowName;
@@ -109,15 +120,26 @@ namespace UniGit
 			}
 		}
 
+		private void OnAsyncStageOperationDone(GitAsyncOperation operation)
+		{
+			Repaint();
+		}
+
 		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
-			GitAsyncManager.QueueWorker(CreateStatusListThreaded, status,BuildngStatusOperationName);
+			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+				CreateStatusListThreaded(status);
+			else
+				CreateStatusList(status);
 		}
 
 		private void UpdateStatusList()
 		{
 			if(gitManager.Repository == null) return;
-			GitAsyncManager.QueueWorker(CreateStatusListThreaded, gitManager.LastStatus, BuildngStatusOperationName);
+			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+				CreateStatusListThreaded(gitManager.LastStatus);
+			else
+				CreateStatusList(gitManager.LastStatus);
 		}
 
 		protected override void OnInitialize()
@@ -138,12 +160,22 @@ namespace UniGit
 
 		private void CreateStatusListThreaded(GitRepoStatus param)
 		{
-			Monitor.Enter(statusListLock);
+			GitAsyncManager.QueueWorker(()=> { CreateStatusList(param, true); }, BuildngStatusOperationName);
+		}
+
+		private void CreateStatusList(GitRepoStatus param)
+		{
+			CreateStatusList(param, false);
+		}
+
+		private void CreateStatusList(GitRepoStatus param,bool threaded)
+		{
+			if(threaded) Monitor.Enter(statusListLock);
 			try
 			{
 				GitRepoStatus status = param ?? new GitRepoStatus(gitManager.Repository.RetrieveStatus());
 				statusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir,gitSettings,gitManager.RepoPath);
-				gitManager.ActionQueue.Enqueue(Repaint);
+				gitManager.ExecuteAction(Repaint, threaded);
 			}
 			catch (Exception e)
 			{
@@ -151,7 +183,7 @@ namespace UniGit
 			}
 			finally
 			{
-				Monitor.Exit(statusListLock);
+				if(threaded) Monitor.Exit(statusListLock);
 			}
 		}
 
@@ -576,6 +608,8 @@ namespace UniGit
 				FileStatus mergedStatus = GetMergedStatus(info.State);
 				bool isExpanded = IsVisible(info);
 				bool isUpdating = gitManager.IsFileUpdating(info.Path);
+				bool isStaging = gitManager.IsFileStaging(info.Path);
+				bool isDirty = gitManager.IsFileDirty(info.Path);
 				Rect elementRect;
 
 				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
@@ -616,8 +650,8 @@ namespace UniGit
 
 				if (!isExpanded) continue;
 				elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-				DoFileDiff(elementRect,info, isUpdating);
-				DoFileDiffSelection(elementRect,info,index, isUpdating);
+				DoFileDiff(elementRect,info, isUpdating, isDirty, isStaging);
+				DoFileDiffSelection(elementRect,info,index, isUpdating, isDirty, isStaging);
 				infoX += elementRect.height;
 				index++;
 			}
@@ -630,7 +664,7 @@ namespace UniGit
 			}
 		}
 
-		private void DoFileDiff(Rect rect,StatusListEntry info,bool isUpdating)
+		private void DoFileDiff(Rect rect,StatusListEntry info,bool isUpdating,bool isDirty,bool isStaging)
 		{
 			Event current = Event.current;
 			
@@ -643,7 +677,7 @@ namespace UniGit
 			string filePath = info.Path;
 			string fileName = info.Name;
 
-			GitGUI.StartEnable(!isUpdating);
+			GitGUI.StartEnable(!isUpdating && !isDirty && !isStaging);
 			Rect stageToggleRect = new Rect(rect.x + rect.width - 64, rect.y + 16, 32, 32);
 			bool canUnstage = GitManager.CanUnstage(info.State);
 			bool canStage = GitManager.CanStage(info.State);
@@ -725,7 +759,7 @@ namespace UniGit
 				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(filePath),false, info.Selected, info.Selected, false);
 				x += pathRect.width + 4;
 
-				if (isUpdating)
+				if (isUpdating || isDirty || isStaging)
 				{
 					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(EditorGUIUtility.FindTexture("WaitSpin00")),GUIStyle.none);
 				}
@@ -739,17 +773,33 @@ namespace UniGit
 				if (EditorGUI.EndChangeCheck())
 				{
 					bool updateFlag = false;
-					string[] paths = null;
 					if (GitManager.CanStage(info.State))
 					{
-						paths = GitManager.GetPathWithMeta(info.Path).ToArray();
-						gitManager.Repository.Stage(paths);
+						string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+						if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+						{
+							gitManager.AsyncStage(paths).onComplete += (o)=>{ Repaint(); };
+						}
+						else
+						{
+							gitManager.Repository.Stage(paths);
+							gitManager.MarkDirty(paths);
+						}
 						updateFlag = true;
 					}
 					else if (GitManager.CanUnstage(info.State))
 					{
-						paths = GitManager.GetPathWithMeta(info.Path).ToArray();
-						gitManager.Repository.Unstage(paths);
+						string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+						if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+						{
+							gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
+						}
+						else
+						{
+							gitManager.Repository.Unstage(paths);
+							gitManager.MarkDirty(paths);
+
+						}
 						updateFlag = true;
 					}
 
@@ -757,18 +807,17 @@ namespace UniGit
 					{
 						Repaint();
 						current.Use();
-						if (paths.Length > 0) gitManager.MarkDirty(paths);
 					}
 				}
 			}
 			GitGUI.EndEnable();
 		}
 
-		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool isUpdating)
+		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool isUpdating,bool isDirty,bool isStaging)
 		{
 			Event current = Event.current;
 
-			if (elementRect.Contains(current.mousePosition) && !isUpdating)
+			if (elementRect.Contains(current.mousePosition) && !isUpdating && !isDirty && !isStaging)
 			{
 				if (current.type == EventType.ContextClick)
 				{

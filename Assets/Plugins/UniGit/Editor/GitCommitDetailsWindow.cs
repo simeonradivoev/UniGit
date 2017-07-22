@@ -83,7 +83,7 @@ namespace UniGit
 							menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
 							{
 								Commit parent = commit.Parents.Single();
-								gitManager.ShowDiff(path, parent, commit);
+								gitManager.ShowDiff(path, commit,parent);
 							});
 						}
 						else
