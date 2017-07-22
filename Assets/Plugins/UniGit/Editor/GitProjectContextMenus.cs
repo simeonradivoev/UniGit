@@ -21,8 +21,7 @@ namespace UniGit
 		private static void AddSelected()
 		{
 			string[] paths = Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
-			gitManager.Repository.Stage(paths);
-			gitManager.MarkDirty(paths);
+			gitManager.AutoStage(paths);
 		}
 
 		[MenuItem("Assets/Git/Add", true, priority = 50), UsedImplicitly]
@@ -36,8 +35,7 @@ namespace UniGit
 		private static void RemoveSelected()
 		{
 			string[] paths = Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
-			gitManager.Repository.Unstage(paths);
-			gitManager.MarkDirty(paths);
+			gitManager.AutoUnstage(paths);
 		}
 
 		[MenuItem("Assets/Git/Remove", true, priority = 50), UsedImplicitly]

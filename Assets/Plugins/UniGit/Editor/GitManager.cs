@@ -461,6 +461,19 @@ namespace UniGit
 			return repository.Head[path] != null;
 		}
 
+		public void AutoStage(string[] paths)
+		{
+			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+			{
+				AsyncStage(paths);
+			}
+			else
+			{
+				repository.Stage(paths);
+				MarkDirty(paths);
+			}
+		}
+
 		public GitAsyncOperation AsyncStage(string[] paths)
 		{
 			var operation = GitAsyncManager.QueueWorker(() =>
@@ -474,6 +487,19 @@ namespace UniGit
 			});
 			asyncStages.Add(new AsyncStageOperation(operation,paths));
 			return operation;
+		}
+
+		public void AutoUnstage(string[] paths)
+		{
+			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+			{
+				AsyncUnstage(paths);
+			}
+			else
+			{
+				repository.Unstage(paths);
+				MarkDirty(paths);
+			}
 		}
 
 		public GitAsyncOperation AsyncUnstage(string[] paths)

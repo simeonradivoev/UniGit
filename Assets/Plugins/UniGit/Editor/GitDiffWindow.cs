@@ -694,8 +694,15 @@ namespace UniGit
 				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Upstaged changed pending. Stage to update index."), GUIStyle.none))
 				{
 					string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
-					gitManager.Repository.Stage(paths);
-					gitManager.MarkDirty(paths);
+					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+					{
+						gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
+					}
+					else
+					{
+						gitManager.Repository.Stage(paths);
+						gitManager.MarkDirty(paths);
+					}
 					Repaint();
 				}
 			}
@@ -994,8 +1001,16 @@ namespace UniGit
 				menu.AddItem(new GUIContent("Add All"), false, () =>
 				{
 					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
-					gitManager.Repository.Stage(paths);
-					gitManager.MarkDirty(paths);
+					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+					{
+						gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
+					}
+					else
+					{
+						gitManager.Repository.Stage(paths);
+						gitManager.MarkDirty(paths);
+					}
+					Repaint();
 				});
 			}
 			else
@@ -1008,8 +1023,16 @@ namespace UniGit
 				menu.AddItem(new GUIContent("Remove All"), false, () =>
 				{
 					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
-					gitManager.Repository.Unstage(paths);
-					gitManager.MarkDirty(paths);
+					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+					{
+						gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
+					}
+					else
+					{
+						gitManager.Repository.Unstage(paths);
+						gitManager.MarkDirty(paths);
+					}
+					Repaint();
 				});
 			}
 			else
@@ -1246,15 +1269,31 @@ namespace UniGit
 		private void RemoveSelectedCallback()
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
-			gitManager.Repository.Unstage(paths);
-			gitManager.MarkDirty(paths);
+			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+			{
+				gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
+			}
+			else
+			{
+				gitManager.Repository.Unstage(paths);
+				gitManager.MarkDirty(paths);
+			}
+			Repaint();
 		}
 
 		private void AddSelectedCallback()
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
-			gitManager.Repository.Stage(paths);
-			gitManager.MarkDirty(paths);
+			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+			{
+				gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
+			}
+			else
+			{
+				gitManager.Repository.Stage(paths);
+				gitManager.MarkDirty(paths);
+			}
+			Repaint();
 		}
 		#endregion
 

@@ -15,15 +15,32 @@ namespace UniGit
 			{
 				var gitManager = GitManager.Instance;
 
-				if (gitManager.Prefs.GetBool("UniGit_DisablePostprocess")) return paths;
-				if (gitManager.Repository != null && paths != null && paths.Length > 0)
+				if (gitManager != null && gitManager.Settings != null)
 				{
-					bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;
-					string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
-					if (pathsFinal.Length > 0)
+					if (gitManager.Prefs.GetBool("UniGit_DisablePostprocess")) return paths;
+					if (gitManager.Repository != null && paths != null && paths.Length > 0)
 					{
-						if(autoStage) gitManager.Repository.Stage(pathsFinal);
-						gitManager.MarkDirty(pathsFinal);
+						bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;
+						string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+						if (pathsFinal.Length > 0)
+						{
+							if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+							{
+								if (autoStage)
+								{
+									gitManager.AsyncStage(pathsFinal);
+								}
+								else
+								{
+									gitManager.MarkDirty(pathsFinal);
+								}
+							}
+							else
+							{
+								if (autoStage) gitManager.Repository.Stage(pathsFinal);
+								gitManager.MarkDirty(pathsFinal);
+							}
+						}
 					}
 				}
 				return paths;
