@@ -90,9 +90,9 @@ namespace UniGit
 		[Serializable]
 		public enum ThreadingType
 		{
-			Stage,
-			Unstage,
-			StatusList,
+			Stage = 1,
+			Unstage = 2,
+			StatusList = 4,
 		}
 
 		public void Copy(GitSettings settings)
