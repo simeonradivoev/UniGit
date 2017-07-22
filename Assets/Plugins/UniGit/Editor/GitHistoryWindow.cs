@@ -20,6 +20,7 @@ namespace UniGit
 		private static readonly Color remoteColor = new Color32(234, 141, 43, 255);
 		private const int CommitsPerExpand = 8;
 		private const int MaxFirstCommitCount = 16;
+		public const int ProfilePixtureSize = 32;
 
 		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
 		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
@@ -216,9 +217,11 @@ namespace UniGit
 				{
 					if (profilePicture.Value.isDone)
 					{
-						cachedProfilePicturesDictionary.Add(profilePicture.Key,profilePicture.Value.texture);
+						var newPicture = new Texture2D(ProfilePixtureSize, ProfilePixtureSize, TextureFormat.RGBA32, false,true);
+						profilePicture.Value.LoadImageIntoTexture(newPicture);
+						cachedProfilePicturesDictionary.Add(profilePicture.Key, newPicture);
 						serializedProfilePictures.RemoveAll(p => p.email == profilePicture.Key);
-						serializedProfilePictures.Add(new ProfilePicture(profilePicture.Value.texture, profilePicture.Key));
+						serializedProfilePictures.Add(new ProfilePicture(newPicture, profilePicture.Key));
 						lodingProfilePicturesToRemove.Add(profilePicture.Key);
 						profilePicture.Value.Dispose();
 						Repaint();
@@ -835,7 +838,7 @@ namespace UniGit
 			}
 
 			string hash = HashEmailForGravatar(email.Trim());
-			WWW loading = new WWW("https://www.gravatar.com/avatar/" + hash + "?s=32");
+			WWW loading = new WWW("https://www.gravatar.com/avatar/" + hash + "?s=" + ProfilePixtureSize);
 			loadingProfilePictures.Add(email, loading);
 			return null;
 		}
