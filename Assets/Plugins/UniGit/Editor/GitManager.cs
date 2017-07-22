@@ -282,7 +282,8 @@ namespace UniGit
 		{
 			try
 			{
-				statusTree = new StatusTreeClass(this, status);
+				var newStatusTree = new StatusTreeClass(this, status);
+				statusTree = newStatusTree;
 				ExecuteAction(RepaintProjectWidnow, threaded);
 			}
 			catch (Exception e)
@@ -670,6 +671,16 @@ namespace UniGit
 		public bool IsUpdating
 		{
 			get { return isUpdating; }
+		}
+
+		public bool IsAsyncStaging
+		{
+			get { return asyncStages.Count > 0; }
+		}
+
+		public bool IsDirty
+		{
+			get { return dirtyFiles.Count > 0; }
 		}
 
 		public Signature Signature

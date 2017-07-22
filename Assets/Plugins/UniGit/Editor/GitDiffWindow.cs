@@ -249,6 +249,8 @@ namespace UniGit
 			DoCommit(repoInfo);
 			GUILayout.EndArea();
 
+			DoDiffToolbar();
+
 			if (statusList == null)
 			{
 				Repaint();
@@ -519,23 +521,20 @@ namespace UniGit
 		private const float elementHeight = iconSize + elementTopBottomMargin * 2;
 		private Rect diffScrollContentRect;
 
-		private void DoDiffScroll(Event current)
+		private void DoDiffToolbar()
 		{
-			float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-			float elementsTotalHeight = (statusList.Count(i => IsVisible(i)) + totalTypesCount)  * elementHeight;
-
-			GUILayout.BeginArea(DiffToolbarRect, GUIContent.none, "Toolbar");
+			GUILayout.BeginArea(DiffToolbarRect, GUIContent.none, EditorStyles.toolbar);
 			EditorGUILayout.BeginHorizontal();
-			if (GUILayout.Button(GitGUI.GetTempContent("Edit"), "TE ToolbarDropDown",GUILayout.MinWidth(64)))
+			if (GUILayout.Button(GitGUI.GetTempContent("Edit"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64)))
 			{
 				GenericMenuWrapper editMenu = new GenericMenuWrapper(new GenericMenu());
 				DoDiffElementContex(editMenu);
 				editMenu.GenericMenu.ShowAsContext();
 			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Filter"), "TE ToolbarDropDown", GUILayout.MinWidth(64)))
+			if (GUILayout.Button(GitGUI.GetTempContent("Filter"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64)))
 			{
 				GenericMenu genericMenu = new GenericMenu();
-				FileStatus[] fileStatuses = (FileStatus[]) Enum.GetValues(typeof (FileStatus));
+				FileStatus[] fileStatuses = (FileStatus[])Enum.GetValues(typeof(FileStatus));
 				genericMenu.AddItem(new GUIContent("Show All"), settings.showFileStatusTypeFilter == (FileStatus)(-1), () =>
 				{
 					settings.showFileStatusTypeFilter = (FileStatus)(-1);
@@ -549,7 +548,7 @@ namespace UniGit
 				for (int i = 0; i < fileStatuses.Length; i++)
 				{
 					FileStatus flag = fileStatuses[i];
-					genericMenu.AddItem(new GUIContent(flag.ToString()), settings.showFileStatusTypeFilter != (FileStatus)(-1) && settings.showFileStatusTypeFilter.IsFlagSet(flag),()=>
+					genericMenu.AddItem(new GUIContent(flag.ToString()), settings.showFileStatusTypeFilter != (FileStatus)(-1) && settings.showFileStatusTypeFilter.IsFlagSet(flag), () =>
 					{
 						settings.showFileStatusTypeFilter = settings.showFileStatusTypeFilter.SetFlags(flag, !settings.showFileStatusTypeFilter.IsFlagSet(flag));
 						UpdateStatusList();
@@ -557,7 +556,7 @@ namespace UniGit
 				}
 				genericMenu.ShowAsContext();
 			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Sort"), "TE ToolbarDropDown", GUILayout.MinWidth(64)))
+			if (GUILayout.Button(GitGUI.GetTempContent("Sort"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64)))
 			{
 				GenericMenu genericMenu = new GenericMenu();
 				foreach (SortType type in Enum.GetValues(typeof(SortType)))
@@ -579,6 +578,28 @@ namespace UniGit
 				}
 				genericMenu.ShowAsContext();
 			}
+
+			bool isUpdating = gitManager.IsUpdating;
+			bool isStaging = gitManager.IsUpdating;
+			bool isDirty = gitManager.IsDirty;
+			GUIContent statusContent = GUIContent.none;
+
+			if (isUpdating)
+			{
+				statusContent = GitGUI.IconContent("CollabProgress", "Updating...");
+			}
+			else if (isStaging)
+			{
+				statusContent = GitGUI.IconContent("CollabProgress", "Staging...");
+			}
+			else if (isDirty)
+			{
+				statusContent =  GitGUI.IconContent("CollabProgress", "Waiting to update...");
+			}
+
+			if(statusContent != GUIContent.none)
+				GUILayout.Label(statusContent,EditorStyles.toolbarButton);
+
 			GUILayout.FlexibleSpace();
 			filter = EditorGUILayout.TextField(GUIContent.none, filter, "ToolbarSeachTextField");
 			if (string.IsNullOrEmpty(filter))
@@ -595,6 +616,12 @@ namespace UniGit
 			}
 			EditorGUILayout.EndHorizontal();
 			GUILayout.EndArea();
+		}
+
+		private void DoDiffScroll(Event current)
+		{
+			float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
+			float elementsTotalHeight = (statusList.Count(i => IsVisible(i)) + totalTypesCount)  * elementHeight;
 
 			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,420), elementsTotalHeight);
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
