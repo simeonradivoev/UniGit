@@ -15,6 +15,7 @@ namespace UniGit.Settings
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
+
 			if (!GitLfsManager.Installed)
 			{
 				EditorGUILayout.HelpBox("Git LFS not installed", MessageType.Warning);
@@ -25,58 +26,72 @@ namespace UniGit.Settings
 			}
 			else
 			{
-				if (!GitLfsManager.CheckInitialized())
+				if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 				{
-					EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
-					if (GUILayout.Button(GitGUI.GetTempContent("Initialize")))
-					{
-						GitLfsManager.Initialize();
-					}
+					EditorGUILayout.HelpBox("Git LFS does not work with threading! Git LFS is disabled", MessageType.Error);
 				}
 				else
 				{
-					GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
-
-					using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
+					EditorGUI.BeginChangeCheck();
+					gitManager.Settings.DisableGitLFS = EditorGUILayout.Toggle(new GUIContent("Disable Git LFS"), gitManager.Settings.DisableGitLFS);
+					if (EditorGUI.EndChangeCheck())
 					{
-						string url = c.GetValueOrDefault("lfs.url", "");
-						if (string.IsNullOrEmpty(url))
-						{
-							EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
-						}
-
-						GitGUI.DoConfigStringField(c, GitGUI.GetTempContent("URL"), "lfs.url", "");
+						gitManager.Settings.MarkDirty();
 					}
 
-					EditorGUILayout.Space();
-
-					foreach (var info in GitLfsManager.TrackedInfo)
+					if (!GitLfsManager.CheckInitialized())
 					{
-						GUILayout.Label(GitGUI.GetTempContent(info.Extension), "ShurikenModuleTitle");
-						GUI.SetNextControlName(info.GetHashCode() + " Extension");
-						info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"), info.Extension);
-						GUI.SetNextControlName(info.GetHashCode() + " Type");
-						info.Type = (GitLfsTrackedInfo.TrackType)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
-
-						if (info.IsDirty)
+						EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
+						if (GUILayout.Button(GitGUI.GetTempContent("Initialize")))
 						{
-							GitLfsManager.SaveTracking();
-							break;
+							GitLfsManager.Initialize();
 						}
 					}
+					else
+					{
+						GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
 
-					if (GUILayout.Button("Track File"))
-					{
-						PopupWindow.Show(trackFileRect, new GitLfsTrackPopupWindow(settingsWindow));
-					}
-					if (current.type == EventType.Repaint)
-					{
-						trackFileRect = GUILayoutUtility.GetLastRect();
+						using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
+						{
+							string url = c.GetValueOrDefault("lfs.url", "");
+							if (string.IsNullOrEmpty(url))
+							{
+								EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
+							}
+
+							GitGUI.DoConfigStringField(c, GitGUI.GetTempContent("URL"), "lfs.url", "");
+						}
+
+						EditorGUILayout.Space();
+
+						foreach (var info in GitLfsManager.TrackedInfo)
+						{
+							GUILayout.Label(GitGUI.GetTempContent(info.Extension), "ShurikenModuleTitle");
+							GUI.SetNextControlName(info.GetHashCode() + " Extension");
+							info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"), info.Extension);
+							GUI.SetNextControlName(info.GetHashCode() + " Type");
+							info.Type = (GitLfsTrackedInfo.TrackType) EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
+
+							if (info.IsDirty)
+							{
+								GitLfsManager.SaveTracking();
+								break;
+							}
+						}
+
+						if (GUILayout.Button("Track File"))
+						{
+							PopupWindow.Show(trackFileRect, new GitLfsTrackPopupWindow(settingsWindow));
+						}
+						if (current.type == EventType.Repaint)
+						{
+							trackFileRect = GUILayoutUtility.GetLastRect();
+						}
 					}
 				}
 			}
 
-			EditorGUILayout.HelpBox("Git LFS is still in development, and is recommended to use an external program for handling it.", MessageType.Info);
+			EditorGUILayout.HelpBox("Git LFS is still in development, and is recommended to use an external program for handling it.", MessageType.Warning);
 		}
 	}
 }

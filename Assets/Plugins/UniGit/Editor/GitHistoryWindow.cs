@@ -136,22 +136,25 @@ namespace UniGit
 				SetSelectedBranch(selectedBranchName);
 
 				int commitCount = 0;
+				CommitInfo[] newCachedCommits = null;
 				if (selectedBranch != null)
 				{
 					//update commits and limit them depending on settings
 					var loadedBranch = selectedBranch.LoadBranch(gitManager);
 					if (loadedBranch != null && loadedBranch.Commits != null)
 					{
-						IEnumerable<Commit> commits = maxCommitsCount >= 0 ? loadedBranch.Commits.Take(maxCommitsCount) : loadedBranch.Commits;
-						if (commits != null)
+						Commit[] commits = loadedBranch.Commits.Take(maxCommitsCount).ToArray();
+						newCachedCommits = new CommitInfo[commits.Length];
+						for (int i = 0; i < commits.Length; i++)
 						{
-							cachedCommits = commits.Take(maxCommitsCount).Select(c => new CommitInfo(c, cachedBranches.Where(b => b.Tip.Id == c.Id).ToArray())).ToArray();
-							commitCount = cachedCommits.Length;
+							newCachedCommits[i] = new CommitInfo(commits[i],cachedBranches.Where(b => b.Tip.Id == commits[i].Id).ToArray());
 						}
+						commitCount = cachedCommits.Length;
 					}
 				}
 
 				commitRects = new Rect[commitCount];
+				cachedCommits = newCachedCommits;
 				hasConflicts = status.Any(s => s.Status == FileStatus.Conflicted);
 				gitManager.ActionQueue.Enqueue(UpdateGitStatusIcon);
 				gitManager.ActionQueue.Enqueue(Repaint);

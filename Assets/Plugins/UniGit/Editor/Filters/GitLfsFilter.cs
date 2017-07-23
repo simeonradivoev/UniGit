@@ -21,6 +21,7 @@ namespace UniGit.Filters
 
 		protected override void Clean(string path, string root, Stream input, Stream output)
 		{
+			if(!GitLfsManager.IsEnabled) return;
 			try
 			{
 				Process process;
@@ -55,6 +56,7 @@ namespace UniGit.Filters
 
 		protected override void Complete(string path, string root, Stream output)
 		{
+			if (!GitLfsManager.IsEnabled) return;
 			try
 			{
 				Process process;
@@ -117,6 +119,7 @@ namespace UniGit.Filters
 
 		protected override void Create(string path, string root, FilterMode mode)
 		{
+			if (!GitLfsManager.IsEnabled) return;
 			try
 			{
 				var process = new Process();
@@ -172,6 +175,7 @@ namespace UniGit.Filters
 
 		protected override void Smudge(string path, string root, Stream input, Stream output)
 		{
+			if (!GitLfsManager.IsEnabled) return;
 			try
 			{
 				Process process;

@@ -68,6 +68,7 @@ namespace UniGit
 		public bool DetectRenames = true;
 		public bool UseSimpleContextMenus;
 		public bool ReadFromFile;
+		public bool DisableGitLFS;
 		private bool isDirty;
 
 		[Flags]

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Filters;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -68,6 +69,7 @@ namespace UniGit
 
 		private static void RegisterFilter()
 		{
+			if(!IsEnabled) return;
 			if (GlobalSettings.GetRegisteredFilters().All(f => f.Name != "lfs"))
 			{
 				var filteredFiles = new List<FilterAttributeEntry>();
@@ -132,6 +134,15 @@ namespace UniGit
 		public static string Version
 		{
 			get { return version; }
+		}
+
+		public static bool IsEnabled
+		{
+			get
+			{
+				return !(gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage)) &&
+				       !gitManager.Settings.DisableGitLFS;
+			}
 		}
 
 		public static GitLfsTrackedInfo[] TrackedInfo
