@@ -63,7 +63,10 @@ namespace UniGit
 		private object statusListLock = new object();
 		private char commitMessageLastChar;
 		private GitConflictsHandler conflictsHandler;
-		private StatusListAsyncUpdate statusListAsyncUpdate;
+		private GitAsyncOperation statusListUpdateOperation;
+		private HashSet<string> updatingPaths = new HashSet<string>();
+		private HashSet<string> pathsToBeUpdated = new HashSet<string>();
+		private bool needsAsyncStatusListUpdate;
 
 		[Serializable]
 		public class Settings
@@ -156,35 +159,48 @@ namespace UniGit
 
 		protected override void OnEditorUpdate()
 		{
-			
+			if (needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
+			{
+				needsAsyncStatusListUpdate = false;
+				CreateStatusListThreaded(gitManager.LastStatus, null);
+			}
 		}
 
-		private void CreateStatusListThreaded(GitRepoStatus param,string[] paths)
+		private void CreateStatusListThreaded(GitRepoStatus status,string[] paths)
 		{
-			HashSet<string> newPaths = new HashSet<string>();
-			if (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && paths != null)
+			if (statusListUpdateOperation != null && !statusListUpdateOperation.IsDone)
 			{
-				newPaths = statusListAsyncUpdate.Paths;
-				foreach (var path in paths)
+				needsAsyncStatusListUpdate = true;
+				if (paths != null)
 				{
-					newPaths.Add(path);
+					foreach (var path in paths)
+					{
+						pathsToBeUpdated.Add(path);
+					}
 				}
 			}
-			else if(paths != null)
+			else
 			{
-				foreach (var path in paths)
+				statusListUpdateOperation = GitAsyncManager.QueueWorkerWithLock(CreateStatusListInternal, status, (o) =>
 				{
-					newPaths.Add(path);
-				}
-			}
+					updatingPaths.Clear();
+					Repaint();
+				}, statusListLock);
 
-			var operation = GitAsyncManager.QueueWorkerWithLock(() => { CreateStatusListInternal(param); }, BuildngStatusOperationName, (o) =>
-			{
-				if(statusListAsyncUpdate != null && statusListAsyncUpdate.Equals(o))
-					statusListAsyncUpdate = null;
-				Repaint();
-			}, statusListLock);
-			statusListAsyncUpdate = new StatusListAsyncUpdate(operation, newPaths);
+				if (paths != null)
+				{
+					foreach (var path in paths)
+					{
+						updatingPaths.Add(path);
+					}
+				}
+
+				foreach (var path in pathsToBeUpdated)
+				{
+					updatingPaths.Add(path);
+				}
+				pathsToBeUpdated.Clear();
+			}
 		}
 
 		private void CreateStatusList(GitRepoStatus param)
@@ -193,12 +209,21 @@ namespace UniGit
 			Repaint();
 		}
 
-		private void CreateStatusListInternal(GitRepoStatus param)
+		private void CreateStatusListInternal(GitRepoStatus status)
 		{
+			if (status == null)
+			{
+				Debug.LogAssertion("Trying to create status list from empty status");
+				return;
+			}
 			try
 			{
-				GitRepoStatus status = param ?? new GitRepoStatus(gitManager.Repository.RetrieveStatus());
-				var newStatusList = new StatusList(status, settings.showFileStatusTypeFilter, settings.sortType, settings.sortDir, gitSettings, gitManager.RepoPath);
+				var newStatusList = new StatusList(settings.sortType, settings.sortDir, gitSettings, gitManager.RepoPath);
+				foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
+				{
+					newStatusList.Add(entry);
+				}
+				newStatusList.Sort();
 				statusList = newStatusList;
 			}
 			catch (Exception e)
@@ -602,7 +627,7 @@ namespace UniGit
 			bool isUpdating = gitManager.IsUpdating;
 			bool isStaging = gitManager.IsUpdating;
 			bool isDirty = gitManager.IsDirty;
-			bool statusListUpdate = statusListAsyncUpdate != null && !statusListAsyncUpdate.IsDone;
+			bool statusListUpdate = statusListUpdateOperation != null && !statusListUpdateOperation.IsDone;
 			GUIContent statusContent = GUIContent.none;
 
 			if (isUpdating)
@@ -702,8 +727,13 @@ namespace UniGit
 				//check visibility
 				if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
 				{
-					DoFileDiff(elementRect, info);
-					DoFileDiffSelection(elementRect, info, index);
+					bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || updatingPaths.Contains(info.Path) || pathsToBeUpdated.Contains(info.Path);
+					bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
+					bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
+
+					bool enabled = !isUpdating && !isDirty && !isStaging;
+					DoFileDiff(elementRect, info, enabled);
+					DoFileDiffSelection(elementRect, info, index, enabled);
 				}
 				infoX += elementRect.height;
 				index++;
@@ -717,20 +747,13 @@ namespace UniGit
 			}
 		}
 
-		private void DoFileDiff(Rect rect,StatusListEntry info)
+		private void DoFileDiff(Rect rect,StatusListEntry info,bool enabled)
 		{
 			Event current = Event.current;
-			
-			
-
-			bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
-			bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
-			bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
-
 			string filePath = info.Path;
 			string fileName = info.Name;
 
-			GitGUI.StartEnable(!isUpdating && !isDirty && !isStaging);
+			GitGUI.StartEnable(enabled);
 			Rect stageToggleRect = new Rect(rect.x + rect.width - 64, rect.y + 16, 32, 32);
 			bool canUnstage = GitManager.CanUnstage(info.State);
 			bool canStage = GitManager.CanStage(info.State);
@@ -819,7 +842,7 @@ namespace UniGit
 				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(filePath),false, info.Selected, info.Selected, false);
 				x += pathRect.width + 4;
 
-				if (isUpdating || isDirty || isStaging)
+				if (!enabled)
 				{
 					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(EditorGUIUtility.FindTexture("WaitSpin00")),GUIStyle.none);
 				}
@@ -873,15 +896,11 @@ namespace UniGit
 			GitGUI.EndEnable();
 		}
 
-		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index)
+		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool enabled)
 		{
 			Event current = Event.current;
 
-			bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || (statusListAsyncUpdate != null && statusListAsyncUpdate.Paths != null && statusListAsyncUpdate.Paths.Contains(info.Path));
-			bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
-			bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
-
-			if (elementRect.Contains(current.mousePosition) && !isUpdating && !isDirty && !isStaging)
+			if (elementRect.Contains(current.mousePosition) && enabled)
 			{
 				if (current.type == EventType.ContextClick)
 				{
@@ -1285,8 +1304,14 @@ namespace UniGit
 				return;
 			}
 
-			gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() {CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress });
-			EditorUtility.ClearProgressBar();
+			try
+			{
+				gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force, OnCheckoutProgress = OnRevertProgress });
+			}
+			finally
+			{
+				EditorUtility.ClearProgressBar();
+			}
 		}
 
 		private void BlameAuto(StatusListEntry entry)
@@ -1413,38 +1438,6 @@ namespace UniGit
 		#endregion
 
 		#region Status List
-		public class StatusListAsyncUpdate : IEquatable<GitAsyncOperation>
-		{
-			private readonly GitAsyncOperation operation;
-			private readonly HashSet<string> paths;
-
-			public StatusListAsyncUpdate(GitAsyncOperation operation, IEnumerable<string> paths)
-			{
-				this.operation = operation;
-				this.paths = new HashSet<string>(paths);
-			}
-
-			public StatusListAsyncUpdate(GitAsyncOperation operation, HashSet<string> paths)
-			{
-				this.operation = operation;
-				this.paths = paths;
-			}
-
-			public bool Equals(GitAsyncOperation other)
-			{
-				return operation == other;
-			}
-
-			public bool IsDone
-			{
-				get { return operation.IsDone; }
-			}
-
-			public HashSet<string> Paths
-			{
-				get { return paths; }
-			}
-		}
 
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
@@ -1454,47 +1447,16 @@ namespace UniGit
 			private GitSettingsJson gitSettings;
 			private string gitPath;
 
-			public StatusList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter,SortType sortType, SortDir sortDir, GitSettingsJson gitSettings,string gitPath)
+			public StatusList(SortType sortType, SortDir sortDir, GitSettingsJson gitSettings,string gitPath)
 			{
 				this.gitPath = gitPath;
 				this.gitSettings = gitSettings;
 				entires = new List<StatusListEntry>();
 				this.sortType = sortType;
 				this.sortDir = sortDir;
-				BuildList(enumerable, filter);
 			}
 
-			public void Update(IEnumerable<GitStatusEntry> enumerable,string[] paths, FileStatus fileStatus,SortType sortType,SortDir sortDir)
-			{
-				this.sortType = sortType;
-				this.sortDir = sortDir;
-
-				entires.RemoveAll(e => paths.Contains(e.Path.EndsWith(".meta") ? AssetDatabase.GetAssetPathFromTextMetaFilePath(e.Path) : e.Path));
-
-				var entries = enumerable as GitStatusEntry[] ?? enumerable.ToArray();
-				foreach (var path in paths)
-				{
-					var p = path;
-					foreach (var entry in entries.Where(e => e.Path.StartsWith(p) && fileStatus.IsFlagSet(e.Status)))
-					{
-						Add(entry);
-					}
-				}
-
-				entires.Sort(SortHandler);
-			}
-
-			private void BuildList(IEnumerable<GitStatusEntry> enumerable, FileStatus filter)
-			{
-				foreach (var entry in enumerable.Where(e => filter.IsFlagSet(e.Status)))
-				{
-					Add(entry);
-				}
-
-				entires.Sort(SortHandler);
-			}
-
-			private void Add(GitStatusEntry entry)
+			internal void Add(GitStatusEntry entry)
 			{
 				if (entry.Path.EndsWith(".meta"))
 				{
@@ -1523,6 +1485,11 @@ namespace UniGit
 						entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
 					}
 				}
+			}
+
+			public void Sort()
+			{
+				entires.Sort(SortHandler);
 			}
 
 			private int SortHandler(StatusListEntry left, StatusListEntry right)
@@ -1604,7 +1571,6 @@ namespace UniGit
 			}
 		}
 
-		[Serializable]
 		public class StatusListEntry
 		{
 			[SerializeField]

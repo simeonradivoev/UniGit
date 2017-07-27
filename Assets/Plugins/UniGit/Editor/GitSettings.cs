@@ -62,7 +62,7 @@ namespace UniGit
 		public string CredentialsManager;
 		public int ProjectStatusOverlayDepth = 2;
 		public bool ShowEmptyFolders;
-		public ThreadingType Threading = (ThreadingType)(-1);
+		public ThreadingType Threading = ThreadingType.StatusList;
 		public bool UseGavatar = true;
 		public float MaxCommitTextAreaSize = 120;
 		public bool DetectRenames = true;
@@ -105,7 +105,7 @@ namespace UniGit
 			CredentialsManager = settings.CredentialsManager;
 			ProjectStatusOverlayDepth = settings.ProjectStatusOverlayDepth;
 			ShowEmptyFolders = settings.ShowEmptyFolders;
-			Threading = (ThreadingType)(settings.GitStatusMultithreaded ? -1 : 0);
+			Threading = (settings.GitStatusMultithreaded ? ThreadingType.StatusList : 0);
 			UseGavatar = settings.UseGavatar;
 			MaxCommitTextAreaSize = settings.MaxCommitTextAreaSize;
 			DetectRenames = settings.DetectRenames;

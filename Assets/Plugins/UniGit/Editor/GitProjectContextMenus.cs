@@ -88,8 +88,15 @@ namespace UniGit
 				return;
 			}
 
-			gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force,OnCheckoutProgress = OnRevertProgress});
-			EditorUtility.ClearProgressBar();
+			try
+			{
+				gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force, OnCheckoutProgress = OnRevertProgress });
+			}
+			finally
+			{
+				EditorUtility.ClearProgressBar();
+			}
+			
 			gitManager.Callbacks.IssueAssetDatabaseRefresh();
 			gitManager.MarkDirty(paths);
 		}

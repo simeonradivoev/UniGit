@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
 using UnityEditor;
 using UnityEngine;
@@ -83,7 +84,7 @@ namespace UniGit.Utils
 			if (onComplete != null)
 				operation.onComplete += onComplete;
 
-			ThreadPool.QueueUserWorkItem(p =>
+			if (!ThreadPool.QueueUserWorkItem(p =>
 			{
 				try
 				{
@@ -93,8 +94,27 @@ namespace UniGit.Utils
 				{
 					operation.MarkDone();
 				}
-			}, state);
-			activeOperations.Add(operation);
+			}, state))
+			{
+				ShowUnableToQueueError(name);
+				try
+				{
+					waitCallback.Invoke(state);
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+				finally
+				{
+					operation.MarkDone();
+					operation.Complete();
+				}
+			}
+			else
+			{
+				activeOperations.Add(operation);
+			}
 			return operation;
 		}
 
@@ -104,7 +124,7 @@ namespace UniGit.Utils
 			if (onComplete != null)
 				operation.onComplete += onComplete;
 
-			ThreadPool.QueueUserWorkItem(p =>
+			if(!ThreadPool.QueueUserWorkItem(p =>
 			{
 				Monitor.Enter(lockObj);
 				try
@@ -116,8 +136,27 @@ namespace UniGit.Utils
 					operation.MarkDone();
 					Monitor.Exit(lockObj);
 				}
-			}, state);
-			activeOperations.Add(operation);
+			}, state))
+			{
+				ShowUnableToQueueError(name);
+				try
+				{
+					waitCallback.Invoke(state);
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+				finally
+				{
+					operation.MarkDone();
+					operation.Complete();
+				}
+			}
+			else
+			{
+				activeOperations.Add(operation);
+			}
 			return operation;
 		}
 
@@ -127,7 +166,7 @@ namespace UniGit.Utils
 			if (onComplete != null)
 				operation.onComplete += onComplete;
 
-			ThreadPool.QueueUserWorkItem((c) =>
+			if(!ThreadPool.QueueUserWorkItem((c) =>
 			{
 				try
 				{
@@ -137,8 +176,27 @@ namespace UniGit.Utils
 				{
 					operation.MarkDone();
 				}
-			});
-			activeOperations.Add(operation);
+			}))
+			{
+				ShowUnableToQueueError(name);
+				try
+				{
+					waitCallback.Invoke();
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+				finally
+				{
+					operation.MarkDone();
+					operation.Complete();
+				}
+			}
+			else
+			{
+				activeOperations.Add(operation);
+			}
 			return operation;
 		}
 
@@ -148,7 +206,7 @@ namespace UniGit.Utils
 			if (onComplete != null)
 				operation.onComplete += onComplete;
 
-			ThreadPool.QueueUserWorkItem((c) =>
+			if (!ThreadPool.QueueUserWorkItem((c) =>
 			{
 				Monitor.Enter(lockObj);
 				try
@@ -160,9 +218,33 @@ namespace UniGit.Utils
 					operation.MarkDone();
 					Monitor.Exit(lockObj);
 				}
-			});
-			activeOperations.Add(operation);
+			}))
+			{
+				ShowUnableToQueueError(name);
+				try
+				{
+					waitCallback.Invoke();
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+				finally
+				{
+					operation.MarkDone();
+					operation.Complete();
+				}
+			}
+			else
+			{
+				activeOperations.Add(operation);
+			}
 			return operation;
+		}
+
+		private static void ShowUnableToQueueError(string name)
+		{
+			Debug.LogError("Could not Queue Git Async Operation with name: " + name);
 		}
 
 		private static void OnEditorUpdate()

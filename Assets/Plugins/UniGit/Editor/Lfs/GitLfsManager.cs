@@ -69,7 +69,6 @@ namespace UniGit
 
 		private static void RegisterFilter()
 		{
-			if(!IsEnabled) return;
 			if (GlobalSettings.GetRegisteredFilters().All(f => f.Name != "lfs"))
 			{
 				var filteredFiles = new List<FilterAttributeEntry>();
