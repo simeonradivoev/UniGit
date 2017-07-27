@@ -149,7 +149,7 @@ namespace UniGit
 						{
 							newCachedCommits[i] = new CommitInfo(commits[i],cachedBranches.Where(b => b.Tip.Id == commits[i].Id).ToArray());
 						}
-						commitCount = cachedCommits.Length;
+						commitCount = newCachedCommits.Length;
 					}
 				}
 
