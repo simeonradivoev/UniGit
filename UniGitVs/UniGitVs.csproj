@@ -86,6 +86,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitAssetPostprocessors.cs">
       <Link>GitAssetPostprocessors.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitAutoFetcher.cs">
+      <Link>GitAutoFetcher.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitBlameWizard.cs">
       <Link>GitBlameWizard.cs</Link>
     </Compile>
@@ -233,6 +236,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\IGitPrefs.cs">
       <Link>IGitPrefs.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\ISettingsAffector.cs">
+      <Link>ISettingsAffector.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Settings\UnityEditorGitPrefs.cs">
       <Link>UnityEditorGitPrefs.cs</Link>
     </Compile>
@@ -278,6 +284,12 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\IGenericMenu.cs">
       <Link>IGenericMenu.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\InjectionHelper.cs">
+      <Link>InjectionHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\UniGitInject.cs">
+      <Link>UniGitInject.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -298,6 +310,10 @@
 xcopy "$(SolutionDir)$(OutDir)$(TargetName).dll" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y/i/r
 xcopy "$(SolutionDir)$(OutDir)$(TargetName).pdb" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y/i/r
 del "$(SolutionDir)$(OutDir)$(TargetName).dll" "$(SolutionDir)$(OutDir)$(TargetName).pdb"
+xcopy "$(SolutionDir)..\Assets\Plugins\UniGit\Editor\UniGitResources.dll" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y
+xcopy "$(SolutionDir)..\Assets\Plugins\UniGit\Editor\UniGitResources.dll.meta" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y/h
+xcopy "$(SolutionDir)..\Assets\Plugins\UniGit\Editor\UniGitResources.pdb" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y
+xcopy "$(SolutionDir)..\Assets\Plugins\UniGit\Editor\UniGitResources.pdb.meta" "$(SolutionDir)$(OutDir)Plugins\UniGit\Editor\" /f/y/h
 xcopy "$(SolutionDir)..\Assets\Plugins\LibGit2Sharp" "$(SolutionDir)$(OutDir)Plugins\LibGit2Sharp\" /s/h/e/k/f/c/y
 xcopy "$(SolutionDir)..\Assets\Plugins\WindowsCredentialManagement" "$(SolutionDir)$(OutDir)Plugins\WindowsCredentialManagement\" /s/h/e/k/f/c/y</PostBuildEvent>
   </PropertyGroup>
