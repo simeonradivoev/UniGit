@@ -11,10 +11,12 @@ namespace UniGit
 	public static class GitProjectContextMenus
 	{
 		private static GitManager gitManager;
+		private static GitExternalManager externalManager;
 
-		internal static void Init(GitManager gitManager)
+		internal static void Init(GitManager gitManager,GitExternalManager externalManager)
 		{
 			GitProjectContextMenus.gitManager = gitManager;
+			GitProjectContextMenus.externalManager = externalManager;
 		}
 
 		[MenuItem("Assets/Git/Add", priority = 50), UsedImplicitly]
@@ -48,7 +50,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Difference", priority = 65), UsedImplicitly]
 		private static void SeeDifference()
 		{
-			gitManager.ShowDiff(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
+			gitManager.ShowDiff(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]), externalManager);
 		}
 
 		[MenuItem("Assets/Git/Difference", true, priority = 65)]
@@ -68,7 +70,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Difference with previous version", priority = 65), UsedImplicitly]
 		private static void SeeDifferencePrev()
 		{
-			gitManager.ShowDiffPrev(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
+			gitManager.ShowDiffPrev(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]), externalManager);
 		}
 
 		[MenuItem("Assets/Git/Difference with previous version", true, priority = 65), UsedImplicitly]
@@ -81,7 +83,7 @@ namespace UniGit
 		private static void Revet()
 		{
 			var paths = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e)).ToArray();
-			if (GitExternalManager.TakeRevert(paths))
+			if (externalManager.TakeRevert(paths))
 			{
 				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
@@ -123,7 +125,7 @@ namespace UniGit
 		private static void BlameObject()
 		{
 			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).FirstOrDefault();
-			gitManager.ShowBlameWizard(path);
+			gitManager.ShowBlameWizard(path, externalManager);
 		}
 
 		[MenuItem("Assets/Git/Blame/Object", priority = 100,validate = true), UsedImplicitly]
@@ -137,7 +139,7 @@ namespace UniGit
 		private static void BlameMeta()
 		{
 			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).Select(e => AssetDatabase.GetTextMetaFilePathFromAssetPath(e)).FirstOrDefault();
-			gitManager.ShowBlameWizard(path);
+			gitManager.ShowBlameWizard(path, externalManager);
 		}
 
 		[MenuItem("Assets/Git/Blame/Meta", priority = 100,validate = true), UsedImplicitly]

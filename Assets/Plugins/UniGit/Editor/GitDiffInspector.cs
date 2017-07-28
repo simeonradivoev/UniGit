@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitDiffInspector : EditorWindow, IGitWindow
+	public class GitDiffInspector : EditorWindow, IGitWindow, ISerializationCallbackReceiver
 	{
 		private float scrollVertical;
 		private float scrollHorizontalNormal;
@@ -56,6 +56,16 @@ namespace UniGit
 			this.gitManager = gitManager;
 		}
 
+		public void OnBeforeSerialize()
+		{
+			
+		}
+
+		public void OnAfterDeserialize()
+		{
+			Construct(UniGitLoader.GitManager);
+		}
+
 		private void OnEnable()
 		{
 			compareOptions = new CompareOptions()
@@ -65,9 +75,6 @@ namespace UniGit
 			};
 
 			explicitPathsOptions = new ExplicitPathsOptions();
-
-			if (gitManager == null)
-				Construct(GitManager.Instance);
 
 			titleContent = new GUIContent("GitDiff: " + path);
 			uberRegex = new UberRegex(new ColoredRegex[]

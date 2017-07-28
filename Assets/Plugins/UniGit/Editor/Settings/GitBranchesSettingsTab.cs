@@ -13,9 +13,13 @@ namespace UniGit.Settings
 		private string[] remoteNames;
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
 		private Vector2 scroll;
+		private GitExternalManager externalManager;
 
-		public GitBranchesSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow) : base(gitManager,settingsWindow)
+		[UniGitInject]
+		public GitBranchesSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow, GitExternalManager externalManager) 
+			: base(new GUIContent("Branches"), gitManager,settingsWindow)
 		{
+			this.externalManager = externalManager;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
@@ -102,7 +106,7 @@ namespace UniGit.Settings
 			Rect switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), "minibuttonmid");
 			if (GUI.Button(switchButtonRect,GitGUI.GetTempContent("Switch"), "minibuttonmid"))
 			{
-				if (GitExternalManager.TakeSwitch())
+				if (externalManager.TakeSwitch())
 				{
 					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 					gitManager.MarkDirty();

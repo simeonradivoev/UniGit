@@ -4,27 +4,32 @@ using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Filters;
+using UniGit.Settings;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
 {
-	public static class GitLfsManager
+	public class GitLfsManager : ISettingsAffector
 	{
-		private static bool isInstalled;
-		private static string version;
-		private static FilterRegistration lfsRegistration;
-		private static GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
-		private static GitManager gitManager;
+		private bool isInstalled;
+		private bool initilized;
+		private string version;
+		private FilterRegistration lfsRegistration;
+		private GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
+		private GitManager gitManager;
 
-		internal static void Load(GitManager gitManager)
+		[UniGitInject]
+		public GitLfsManager(GitManager gitManager,GitCallbacks callbacks)
 		{
-			GitLfsManager.gitManager = gitManager;
+			this.gitManager = gitManager;
+			callbacks.UpdateRepository += (s,p) => { UpdateInitilized(); };
+			gitManager.AddSettingsAffector(this);
 
 			try
 			{
-				version = GitHelper.RunExeOutput(gitManager.RepoPath,"git-lfs", "version", null);
+				version = GitHelper.RunExeOutput(gitManager.RepoPath, "git-lfs", "version", null);
 				isInstalled = true;
 			}
 			catch (Exception)
@@ -33,15 +38,15 @@ namespace UniGit
 				return;
 			}
 
-			if (CheckInitialized())
+			UpdateInitilized();
+			if (Initilized)
 			{
 				RegisterFilter();
 				Update();
-
 			}
 		}
 
-		public static void Update()
+		public void Update()
 		{
 			RegisterFilter();
 
@@ -52,9 +57,16 @@ namespace UniGit
 					trackedInfo = file.ReadToEnd().Split('\n').Select(l => GitLfsTrackedInfo.Parse(l)).Where(l => l != null).ToArray();
 				}
 			}
+
+			UpdateInitilized();
 		}
 
-		public static void SaveTracking()
+		private void UpdateInitilized()
+		{
+			initilized = CheckInitialized();
+		}
+
+		public void SaveTracking()
 		{
 			using (StreamWriter file = File.CreateText(Path.Combine(gitManager.RepoPath, ".gitattributes")))
 			{
@@ -67,18 +79,18 @@ namespace UniGit
 			Update();
 		}
 
-		private static void RegisterFilter()
+		private void RegisterFilter()
 		{
 			if (GlobalSettings.GetRegisteredFilters().All(f => f.Name != "lfs"))
 			{
 				var filteredFiles = new List<FilterAttributeEntry>();
 				filteredFiles.Add(new FilterAttributeEntry("lfs"));
-				var filter = new GitLfsFilter("lfs", filteredFiles, gitManager);
+				var filter = new GitLfsFilter("lfs", filteredFiles,this, gitManager);
 				GlobalSettings.RegisterFilter(filter);
 			}
 		}
 
-		public static bool Initialize()
+		public bool Initialize()
 		{
 			string output = GitHelper.RunExeOutput(gitManager.RepoPath,"git-lfs", "install", null);
 			
@@ -89,10 +101,11 @@ namespace UniGit
 				return false;
 			}
 			EditorUtility.DisplayDialog("Git LFS Initialized", output, "Ok");
+			UpdateInitilized();
 			return true;
 		}
 
-		public static void Track(string extension)
+		public void Track(string extension)
 		{
 			try
 			{
@@ -106,7 +119,7 @@ namespace UniGit
 			}
 		}
 
-		public static void Untrack(string extension)
+		public void Untrack(string extension)
 		{
 			try
 			{
@@ -120,31 +133,48 @@ namespace UniGit
 			}
 		}
 
-		public static bool CheckInitialized()
+		#region Settings Affectos
+
+		public void AffectThreading(ref GitSettingsJson.ThreadingType setting)
+		{
+			if (isInstalled && Initilized)
+			{
+				setting.ClearFlags(GitSettingsJson.ThreadingType.Stage);
+				setting.ClearFlags(GitSettingsJson.ThreadingType.Unstage);
+			}
+		}
+
+		#endregion
+
+		public bool CheckInitialized()
 		{
 			return Directory.Exists(Path.Combine(gitManager.RepoPath, Path.Combine(".git", "lfs"))) && File.Exists(Path.Combine(gitManager.RepoPath,Path.Combine(".git",Path.Combine("hooks", "pre-push"))));
 		}
 
-		public static bool Installed
+		public bool Initilized
+		{
+			get { return initilized; }
+		}
+
+		public bool Installed
 		{
 			get { return isInstalled; }
 		}
 
-		public static string Version
+		public string Version
 		{
 			get { return version; }
 		}
 
-		public static bool IsEnabled
+		public bool IsEnabled
 		{
 			get
 			{
-				return !(gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage)) &&
-				       !gitManager.Settings.DisableGitLFS;
+				return !gitManager.Settings.DisableGitLFS;
 			}
 		}
 
-		public static GitLfsTrackedInfo[] TrackedInfo
+		public GitLfsTrackedInfo[] TrackedInfo
 		{
 			get { return trackedInfo; }
 		}

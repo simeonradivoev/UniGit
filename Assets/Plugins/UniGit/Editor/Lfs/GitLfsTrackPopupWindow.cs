@@ -7,11 +7,13 @@ namespace UniGit
 	public class GitLfsTrackPopupWindow : PopupWindowContent
 	{
 		private EditorWindow focusWindow;
+		private GitLfsManager lfsManager;
 		private string extension;
 
-		public GitLfsTrackPopupWindow(EditorWindow focusWindow)
+		public GitLfsTrackPopupWindow(EditorWindow focusWindow,GitLfsManager lfsManager)
 		{
 			this.focusWindow = focusWindow;
+			this.lfsManager = lfsManager;
 		}
 
 		public override void OnGUI(Rect rect)
@@ -20,10 +22,10 @@ namespace UniGit
 			GitGUI.StartEnable(!string.IsNullOrEmpty(extension));
 			if (GUILayout.Button(new GUIContent("Track")))
 			{
-				GitLfsManager.Track(extension);
+				lfsManager.Track(extension);
 				focusWindow.Focus();
 				focusWindow.ShowNotification(new GUIContent(extension + " now tracked by LFS."));
-				GitLfsManager.Update();
+				lfsManager.Update();
 			}
 			GitGUI.EndEnable();
 		}

@@ -14,7 +14,9 @@ namespace UniGit.Settings
 		private RemoteEntry[] remoteCacheList = new RemoteEntry[0];
 		private Vector2 scroll;
 
-		public GitRemotesSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow) : base(gitManager, settingsWindow)
+		[UniGitInject]
+		public GitRemotesSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow) 
+			: base(new GUIContent("Remotes", "Remote Repositories"), gitManager, settingsWindow)
 		{
 		}
 

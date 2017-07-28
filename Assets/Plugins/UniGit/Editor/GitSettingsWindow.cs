@@ -13,40 +13,42 @@ namespace UniGit
 	{
 		private const string WindowTitle = "Git Settings";
 
-		private GitGeneralSettingsTab generalSettingsTab;
-		private GitExternalsSettingsTab externalsSettingsTab;
-		private GitRemotesSettingsTab remotesSettingsTab;
-		private GitBranchesSettingsTab branchesSettingsTab;
-		private GitLFSSettingsTab lfsSettingsTab;
-		private GitSecuritySettingsTab securitySettingsTab;
 		private GitSettingsTab[] tabs;
-		[SerializeField] private SettingTabEnum tab;
+		[SerializeField] private int tab;
 
 		[MenuItem("Window/GIT Settings")]
 		public static void CreateEditor()
 		{
-			GetWindow(true,GitManager.Instance);
+			GetWindow(true, UniGitLoader.GitManager, UniGitLoader.LfsManager,UniGitLoader.ExternalManager,UniGitLoader.CredentialsManager);
 		}
 
-		public static GitSettingsWindow GetWindow(bool focus,GitManager gitManager)
+		public static GitSettingsWindow GetWindow(bool focus,GitManager gitManager,GitLfsManager lfsManager, GitExternalManager externalManager, GitCredentialsManager credentialsManager)
 		{
 			var window = GetWindow<GitSettingsWindow>(false, WindowTitle, focus);
 			window.Construct(gitManager);
+			window.Construct(lfsManager, externalManager, credentialsManager);
+			window.InitTabs();
 			return window;
 		}
 
-		public override void Construct(GitManager gitManager)
+		public void Construct(GitLfsManager lfsManager,GitExternalManager externalManager,GitCredentialsManager credentialsManager)
 		{
-			base.Construct(gitManager);
-			InitTabs();
+			injectionHelper.Bind<GitLfsManager>().FromInstance(lfsManager);
+			injectionHelper.Bind<GitExternalManager>().FromInstance(externalManager);
+			injectionHelper.Bind<GitCredentialsManager>().FromInstance(credentialsManager);
+		}
+
+		public override void OnAfterDeserialize()
+		{
+			base.OnAfterDeserialize();
+			Construct(UniGitLoader.LfsManager, UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
 
 		protected override void OnEnable()
 		{
 			titleContent.text = WindowTitle;
 			base.OnEnable();
-			if(gitManager == null)
-				Construct(GitManager.Instance);
+			InitTabs();
 		}
 
 		private void InitTabs()
@@ -61,29 +63,19 @@ namespace UniGit
 
 			try
 			{
-				generalSettingsTab = new GitGeneralSettingsTab(gitManager, this);
-				externalsSettingsTab = new GitExternalsSettingsTab(gitManager, this);
-				remotesSettingsTab = new GitRemotesSettingsTab(gitManager, this);
-				branchesSettingsTab = new GitBranchesSettingsTab(gitManager, this);
-				lfsSettingsTab = new GitLFSSettingsTab(gitManager, this);
-				securitySettingsTab = new GitSecuritySettingsTab(gitManager, this);
+				injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
+				injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
+				injectionHelper.Bind<GitSettingsTab>().To<GitRemotesSettingsTab>();
+				injectionHelper.Bind<GitSettingsTab>().To<GitBranchesSettingsTab>();
+				injectionHelper.Bind<GitSettingsTab>().To<GitLFSSettingsTab>();
+				injectionHelper.Bind<GitSettingsTab>().To<GitSecuritySettingsTab>();
+
+				tabs = injectionHelper.GetInstances<GitSettingsTab>().ToArray();
 			}
 			catch (Exception e)
 			{
 				Debug.LogError("There was a problem while creating the settings window tabs.");
 				Debug.LogException(e);
-			}
-			finally
-			{
-				tabs = new GitSettingsTab[]
-				{
-					generalSettingsTab,
-					externalsSettingsTab,
-					remotesSettingsTab,
-					branchesSettingsTab,
-					lfsSettingsTab,
-					securitySettingsTab,
-				};
 			}
 		}
 
@@ -127,35 +119,13 @@ namespace UniGit
 
 			EditorGUILayout.BeginHorizontal("Toolbar");
 			EditorGUI.BeginChangeCheck();
-			bool value = GUILayout.Toggle(tab == SettingTabEnum.General, GitGUI.GetTempContent("General"), "toolbarbutton");
-			if (value)
+			for (int i = 0; i < tabs.Length; i++)
 			{
-				tab = SettingTabEnum.General;
-			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.Externals, GitGUI.GetTempContent("Externals","External Programs Helpers"), "toolbarbutton");
-			if (value)
-			{
-				tab = SettingTabEnum.Externals;
-			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.Remotes, GitGUI.GetTempContent("Remotes","Remote Repositories"), "toolbarbutton");
-			if (value)
-			{
-				tab = SettingTabEnum.Remotes;
-			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.Branches, GitGUI.GetTempContent("Branches"), "toolbarbutton");
-			if (value)
-			{
-				tab = SettingTabEnum.Branches;
-			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.LFS, GitGUI.GetTempContent("LFS","Git Large File Storage (beta)"), "toolbarbutton");
-			if (value)
-			{
-				tab = SettingTabEnum.LFS;
-			}
-			value = GUILayout.Toggle(tab == SettingTabEnum.Security, GitGUI.GetTempContent("Security"), "toolbarbutton");
-			if (value)
-			{
-				tab = SettingTabEnum.Security;
+				bool value = GUILayout.Toggle(tab == i, tabs[i].Name, EditorStyles.toolbarButton);
+				if (value)
+				{
+					tab = i;
+				}
 			}
 			if (EditorGUI.EndChangeCheck())
 			{
@@ -229,20 +199,8 @@ namespace UniGit
 				int tabIndex = Mathf.Max((int)tab, 0);
 				if (tabIndex < tabs.Length)
 					return tabs[tabIndex];
-				return generalSettingsTab;
+				return null;
 			}
-		}
-
-		[SerializeField]
-		private enum SettingTabEnum
-		{
-			General,
-			Externals,
-			Remotes,
-			Branches,
-			LFS,
-			Security,
-			Ignore
 		}
 	}
 }

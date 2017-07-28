@@ -13,7 +13,9 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void GitDiffTestsSetup()
 	{
 		prevFocusWindow = EditorWindow.focusedWindow;
-		diffWindow = GitDiffWindow.CreateWindow(false, gitManager);
+		GitExternalManager externalsManager = new GitExternalManager(gitManager);
+		GitCredentialsManager credentialsManager = new GitCredentialsManager(gitManager,gitSettings);
+		diffWindow = GitDiffWindow.CreateWindow(false, gitManager, externalsManager, credentialsManager);
 	}
 
 	[TearDown]

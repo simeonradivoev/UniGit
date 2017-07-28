@@ -2,74 +2,79 @@
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Attributes;
+using UniGit.Utils;
 
 namespace UniGit.Adapters
 {
 	[ExternalAdapter("Git Extensions", "GitExtensions.exe",Priority = 5)]
 	public class GitExtensionsAdapter : IExternalAdapter
 	{
-		public GitExtensionsAdapter(GitManager gitManager)
+		private readonly GitExternalManager externalManager;
+
+		[UniGitInject]
+		public GitExtensionsAdapter(GitManager gitManager,GitExternalManager externalManager)
 		{
+			this.externalManager = externalManager;
 		}
 
 		public bool Push()
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "push");
+			return externalManager.CallProccess("GitExtensions.exe", "push");
 		}
 
 		public bool Reset(Commit commit)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "reset");
+			return externalManager.CallProccess("GitExtensions.exe", "reset");
 		}
 
 		public bool Merge()
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "mergetool");
+			return externalManager.CallProccess("GitExtensions.exe", "mergetool");
 		}
 
 		public bool Pull()
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "pull");
+			return externalManager.CallProccess("GitExtensions.exe", "pull");
 		}
 
 		public bool Commit(string message)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "commit");
+			return externalManager.CallProccess("GitExtensions.exe", "commit");
 		}
 
 		public bool Fetch(string remote)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "pull --fetch");
+			return externalManager.CallProccess("GitExtensions.exe", "pull --fetch");
 		}
 
 		public bool Conflict(string path)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "mergeconflicts");
+			return externalManager.CallProccess("GitExtensions.exe", "mergeconflicts");
 		}
 
 		public bool Diff(string path)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "viewdiff");
+			return externalManager.CallProccess("GitExtensions.exe", "viewdiff");
 		}
 
 		public bool Diff(string path, string path2)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "viewdiff");
+			return externalManager.CallProccess("GitExtensions.exe", "viewdiff");
 		}
 
 		public bool Diff(string path, Commit start, Commit end)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "filehistory " + path);
+			return externalManager.CallProccess("GitExtensions.exe", "filehistory " + path);
 		}
 
 		public bool Diff(string path, Commit end)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "viewdiff");
+			return externalManager.CallProccess("GitExtensions.exe", "viewdiff");
 		}
 
 		public bool Blame(string path)
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "blame " + path);
+			return externalManager.CallProccess("GitExtensions.exe", "blame " + path);
 		}
 
 		public bool Revert(IEnumerable<string> paths)
@@ -77,14 +82,14 @@ namespace UniGit.Adapters
 			string path = paths.FirstOrDefault();
 			if (path != null)
 			{
-				return GitExternalManager.CallProccess("GitExtensions.exe", "revert " + path);
+				return externalManager.CallProccess("GitExtensions.exe", "revert " + path);
 			}
 			return false;
 		}
 
 		public bool Switch()
 		{
-			return GitExternalManager.CallProccess("GitExtensions.exe", "checkout");
+			return externalManager.CallProccess("GitExtensions.exe", "checkout");
 		}
 	}
 }

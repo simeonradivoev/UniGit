@@ -3,36 +3,48 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Attributes;
+using UniGit.Utils;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace UniGit
 {
-	public static class GitExternalManager
+	public class GitExternalManager
 	{
-		private static IExternalAdapter[] adapters;
-		private static GUIContent[] adapterNames;
-		private static int selectedAdapterIndex = -1;
-		private static IExternalAdapter selectedAdapter;
-		private static bool initiazlitedSelected;
-		private static GitManager gitManager;
+		private IExternalAdapter[] adapters;
+		private GUIContent[] adapterNames;
+		private int selectedAdapterIndex = -1;
+		private IExternalAdapter selectedAdapter;
+		private bool initiazlitedSelected;
+		private GitManager gitManager;
 
-		internal static void Load(GitManager gitManager)
+		[UniGitInject]
+		public GitExternalManager(GitManager gitManager)
 		{
-			GitExternalManager.gitManager = gitManager;
-			var managerParams = new object[] {gitManager};
-			adapters = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(IExternalAdapter).IsAssignableFrom(t) && t.IsClass &&  !t.IsAbstract)).Select(t => Activator.CreateInstance(t, managerParams)).Cast<IExternalAdapter>().OrderByDescending(a => GetAdapterPriority(a)).ToArray();
+			var injectionHelper = new InjectionHelper();
+			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
+			injectionHelper.Bind<GitExternalManager>().FromInstance(this);
+			this.gitManager = gitManager;
+			var adaptorTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(IExternalAdapter).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).ToArray();
+			adapters = new IExternalAdapter[adaptorTypes.Length];
+			for (int i = 0; i < adaptorTypes.Length; i++)
+			{
+				adapters[i] = (IExternalAdapter)injectionHelper.CreateInstance(adaptorTypes[i]);
+			}
+			Array.Sort(adapters, (l, r) =>
+			{
+				return GetAdapterPriority(l).CompareTo(GetAdapterPriority(r));
+			});
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 		}
 
 		#region Selection
 		//Using lazy initialization
-		private static IExternalAdapter SelectedAdatapter
+		private IExternalAdapter SelectedAdatapter
 		{
 			get
 			{
@@ -44,7 +56,7 @@ namespace UniGit
 			}
 		}
 
-		public static int SelectedAdapterIndex
+		public int SelectedAdapterIndex
 		{
 			get
 			{
@@ -56,14 +68,14 @@ namespace UniGit
 			} 
 		}
 
-		private static void InitializeSelectedAdapter()
+		private void InitializeSelectedAdapter()
 		{
 			selectedAdapter = adapters.FirstOrDefault(a => Exists(a) && GetAdapterName(a) == gitManager.Settings.ExternalProgram) ?? adapters.FirstOrDefault(a => Exists(a));
 			if (selectedAdapter != null) selectedAdapterIndex = Array.IndexOf(adapters, selectedAdapter);
 			initiazlitedSelected = true;
 		}
 
-		public static void SetSelectedAdapter(int index)
+		public void SetSelectedAdapter(int index)
 		{
 			if(index >= adapters.Length && index < 0 && selectedAdapterIndex == index) return;
 			selectedAdapterIndex = index;
@@ -72,75 +84,75 @@ namespace UniGit
 
 		#endregion
 
-		private static ExternalAdapterAttribute GetAdapterAttribute(IExternalAdapter adapter)
+		private ExternalAdapterAttribute GetAdapterAttribute(IExternalAdapter adapter)
 		{
 			return adapter.GetType().GetCustomAttributes(typeof(ExternalAdapterAttribute), false).FirstOrDefault() as ExternalAdapterAttribute;
 		}
 
-		private static string GetAdapterName(IExternalAdapter adapter)
+		private string GetAdapterName(IExternalAdapter adapter)
 		{
 			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapter);
 			if (attribute == null) return null;
 			return attribute.FriendlyName;
 		}
 
-		private static int GetAdapterPriority(IExternalAdapter adapter)
+		private int GetAdapterPriority(IExternalAdapter adapter)
 		{
 			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapter);
 			if (attribute == null) return 0;
 			return attribute.Priority;
 		}
 
-		private static bool Exists(IExternalAdapter adapterInfo)
+		private bool Exists(IExternalAdapter adapterInfo)
 		{
 			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapterInfo);
 			if (attribute == null) return false;
 			return attribute.ProcessNames.All(p => ExistsOnPath(p));
 		}
 
-		public static bool TakeCommit(string message)
+		public bool TakeCommit(string message)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Commit) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Commit(message);
 		}
 
-		public static bool TakePush()
+		public bool TakePush()
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Push) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Push();
 		}
 
-		public static bool TakePull()
+		public bool TakePull()
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Pull) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Pull();
 		}
 
-		public static bool TakeMerge()
+		public bool TakeMerge()
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Merge) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Merge();
 		}
 
-		public static bool TakeFetch(string remote)
+		public bool TakeFetch(string remote)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Fetch(remote);
 		}
 
-		public static bool TakeReset(Commit commit)
+		public bool TakeReset(Commit commit)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Reset(commit);
 		}
 
-		public static bool TakeBlame(string path)
+		public bool TakeBlame(string path)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Blame) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Blame(path);
 		}
 
-		public static void HandleConflict(string path)
+		public void HandleConflict(string path)
 		{
 			if (SelectedAdatapter == null)
 			{
@@ -151,38 +163,38 @@ namespace UniGit
 			SelectedAdatapter.Conflict(path);
 		}
 
-		public static bool TakeDiff(string path)
+		public bool TakeDiff(string path)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path);
 		}
 
-		public static bool TakeDiff(string path,string path2)
+		public bool TakeDiff(string path,string path2)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path, path2);
 		}
 
-		public static bool TakeDiff(string path, Commit end)
+		public bool TakeDiff(string path, Commit end)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path, end);
 		}
 
 
-		public static bool TakeDiff(string path, Commit start,Commit end)
+		public bool TakeDiff(string path, Commit start,Commit end)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path, start, end);
 		}
 
-		public static bool TakeRevert(IEnumerable<string> paths)
+		public bool TakeRevert(IEnumerable<string> paths)
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Revert) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Revert(paths);
 		}
 
-		public static bool TakeSwitch()
+		public bool TakeSwitch()
 		{
 			if (!gitManager.Settings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Switch) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Switch();
@@ -191,13 +203,13 @@ namespace UniGit
 		#region Process Helpers
 
 		[StringFormatMethod("parametersFormat")]
-		public static bool CallProccess(string name, string parametersFormat,params object[] arg)
+		public bool CallProccess(string name, string parametersFormat,params object[] arg)
 		{
 			return CallProccess(name,string.Format(parametersFormat,arg));
 		}
 
 
-		public static bool CallProccess(string name, string parameters)
+		public bool CallProccess(string name, string parameters)
 		{
 			string fullPath = GetFullPath(name);
 
@@ -233,12 +245,12 @@ namespace UniGit
 			return false;
 		}
 
-		private static bool ExistsOnPath(string fileName)
+		private bool ExistsOnPath(string fileName)
 		{
 			return GetFullPath(fileName) != null;
 		}
 
-		private static string GetFullPath(string fileName)
+		private string GetFullPath(string fileName)
 		{
 			if (File.Exists(fileName))
 				return Path.GetFullPath(fileName);
@@ -256,7 +268,7 @@ namespace UniGit
 
 		#region Getters and Setters
 
-		public static GUIContent[] AdapterNames { get { return adapterNames; } }
+		public GUIContent[] AdapterNames { get { return adapterNames; } }
 
 		#endregion
 	}

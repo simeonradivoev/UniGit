@@ -8,15 +8,19 @@ namespace UniGit.Settings
 	public class GitLFSSettingsTab : GitSettingsTab
 	{
 		private Rect trackFileRect;
+		private readonly GitLfsManager lfsManager;
 
-		public GitLFSSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow) : base(gitManager,settingsWindow)
+		[UniGitInject]
+		public GitLFSSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitLfsManager lfsManager) 
+			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow)
 		{
+			this.lfsManager = lfsManager;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
 
-			if (!GitLfsManager.Installed)
+			if (!lfsManager.Installed)
 			{
 				EditorGUILayout.HelpBox("Git LFS not installed", MessageType.Warning);
 				if (GUILayout.Button(GitGUI.GetTempContent("Download")))
@@ -26,67 +30,60 @@ namespace UniGit.Settings
 			}
 			else
 			{
-				if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+				EditorGUI.BeginChangeCheck();
+				gitManager.Settings.DisableGitLFS = EditorGUILayout.Toggle(new GUIContent("Disable Git LFS"), gitManager.Settings.DisableGitLFS);
+				if (EditorGUI.EndChangeCheck())
 				{
-					EditorGUILayout.HelpBox("Git LFS does not work with threading! Git LFS is disabled", MessageType.Error);
+					gitManager.Settings.MarkDirty();
+				}
+
+				if (!lfsManager.CheckInitialized())
+				{
+					EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
+					if (GUILayout.Button(GitGUI.GetTempContent("Initialize")))
+					{
+						lfsManager.Initialize();
+					}
 				}
 				else
 				{
-					EditorGUI.BeginChangeCheck();
-					gitManager.Settings.DisableGitLFS = EditorGUILayout.Toggle(new GUIContent("Disable Git LFS"), gitManager.Settings.DisableGitLFS);
-					if (EditorGUI.EndChangeCheck())
+					GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
+
+					using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
 					{
-						gitManager.Settings.MarkDirty();
+						string url = c.GetValueOrDefault("lfs.url", "");
+						if (string.IsNullOrEmpty(url))
+						{
+							EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
+						}
+
+						GitGUI.DoConfigStringField(c, GitGUI.GetTempContent("URL"), "lfs.url", "");
 					}
 
-					if (!GitLfsManager.CheckInitialized())
+					EditorGUILayout.Space();
+
+					foreach (var info in lfsManager.TrackedInfo)
 					{
-						EditorGUILayout.HelpBox("Git LFS not Initialized", MessageType.Info);
-						if (GUILayout.Button(GitGUI.GetTempContent("Initialize")))
+						GUILayout.Label(GitGUI.GetTempContent(info.Extension), "ShurikenModuleTitle");
+						GUI.SetNextControlName(info.GetHashCode() + " Extension");
+						info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"), info.Extension);
+						GUI.SetNextControlName(info.GetHashCode() + " Type");
+						info.Type = (GitLfsTrackedInfo.TrackType)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
+
+						if (info.IsDirty)
 						{
-							GitLfsManager.Initialize();
+							lfsManager.SaveTracking();
+							break;
 						}
 					}
-					else
+
+					if (GUILayout.Button("Track File"))
 					{
-						GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
-
-						using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
-						{
-							string url = c.GetValueOrDefault("lfs.url", "");
-							if (string.IsNullOrEmpty(url))
-							{
-								EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
-							}
-
-							GitGUI.DoConfigStringField(c, GitGUI.GetTempContent("URL"), "lfs.url", "");
-						}
-
-						EditorGUILayout.Space();
-
-						foreach (var info in GitLfsManager.TrackedInfo)
-						{
-							GUILayout.Label(GitGUI.GetTempContent(info.Extension), "ShurikenModuleTitle");
-							GUI.SetNextControlName(info.GetHashCode() + " Extension");
-							info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"), info.Extension);
-							GUI.SetNextControlName(info.GetHashCode() + " Type");
-							info.Type = (GitLfsTrackedInfo.TrackType) EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
-
-							if (info.IsDirty)
-							{
-								GitLfsManager.SaveTracking();
-								break;
-							}
-						}
-
-						if (GUILayout.Button("Track File"))
-						{
-							PopupWindow.Show(trackFileRect, new GitLfsTrackPopupWindow(settingsWindow));
-						}
-						if (current.type == EventType.Repaint)
-						{
-							trackFileRect = GUILayoutUtility.GetLastRect();
-						}
+						PopupWindow.Show(trackFileRect, new GitLfsTrackPopupWindow(settingsWindow, lfsManager));
+					}
+					if (current.type == EventType.Repaint)
+					{
+						trackFileRect = GUILayoutUtility.GetLastRect();
 					}
 				}
 			}

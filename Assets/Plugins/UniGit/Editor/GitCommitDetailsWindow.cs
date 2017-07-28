@@ -16,11 +16,13 @@ namespace UniGit
 		private Tree commitTree;
 		private Vector2 scroll;
 		private GitManager gitManager;
+		private GitExternalManager externalManager;
 
-		public GitCommitDetailsWindow(GitManager gitManager,Commit commit)
+		public GitCommitDetailsWindow(GitManager gitManager,GitExternalManager externalManager,Commit commit)
 		{
 			this.gitManager = gitManager;
 			this.commit = commit;
+			this.externalManager = externalManager;
 			commitTree = commit.Tree;
 			Commit parentCommit = commit.Parents.FirstOrDefault();
 
@@ -83,7 +85,7 @@ namespace UniGit
 							menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
 							{
 								Commit parent = commit.Parents.Single();
-								gitManager.ShowDiff(path, commit,parent);
+								gitManager.ShowDiff(path, commit,parent, externalManager);
 							});
 						}
 						else
@@ -92,7 +94,7 @@ namespace UniGit
 						}
 						menu.AddItem(new GUIContent("Difference with HEAD"), false, () =>
 						{
-							gitManager.ShowDiff(path, commit, gitManager.Repository.Head.Tip);
+							gitManager.ShowDiff(path, commit, gitManager.Repository.Head.Tip, externalManager);
 						});
 						menu.ShowAsContext();
 					}

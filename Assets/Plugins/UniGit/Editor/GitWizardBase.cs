@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitWizardBase : ScriptableWizard, IGitWindow
+	public class GitWizardBase : ScriptableWizard, ISerializationCallbackReceiver
 	{
 		protected Remote[] remotes;
 		protected GUIContent[] remoteNames;
@@ -21,11 +21,15 @@ namespace UniGit
 		[SerializeField] protected bool credentalsExpanded;
 		private SerializedObject serializedObject;
 		protected GitManager gitManager;
+		protected GitCredentialsManager credentialsManager;
+		protected GitExternalManager externalManager;
 		[SerializeField] private Vector2 logScroll;
 
-		public void Construct(GitManager gitManager)
+		public void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager)
 		{
 			this.gitManager = gitManager;
+			this.credentialsManager = credentialsManager;
+			this.externalManager = externalManager;
 
 			remotes = gitManager.Repository.Network != null && gitManager.Repository.Network.Remotes != null ? gitManager.Repository.Network.Remotes.ToArray() : new Remote[0];
 			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
@@ -33,11 +37,18 @@ namespace UniGit
 			branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 		}
 
+		public virtual void OnBeforeSerialize()
+		{
+			
+		}
+
+		public virtual void OnAfterDeserialize()
+		{
+			Construct(UniGitLoader.GitManager, UniGitLoader.CredentialsManager, UniGitLoader.ExternalManager);
+		}
+
 		protected virtual void OnEnable()
 		{
-			if(gitManager == null)
-				Construct(GitManager.Instance);
-
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
@@ -113,11 +124,11 @@ namespace UniGit
 					password = string.Empty;
 				}
 
-				if (GitCredentialsManager.GitCredentials != null)
+				if (credentialsManager.GitCredentials != null)
 				{
 					if (string.IsNullOrEmpty(username) && string.IsNullOrEmpty(password))
 					{
-						GitCredentialsManager.LoadCredentials(url,ref username,ref password,true);
+						credentialsManager.LoadCredentials(url,ref username,ref password,true);
 					}
 				}
 
@@ -158,20 +169,20 @@ namespace UniGit
 			switch (result.Status)
 			{
 				case MergeStatus.UpToDate:
-					GitHistoryWindow.GetWindow(true, gitManager).ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
+					GitHistoryWindow.GetWindow(true, gitManager, externalManager,credentialsManager).ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
 					break;
 				case MergeStatus.FastForward:
-					GitHistoryWindow.GetWindow(true,gitManager).ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
+					GitHistoryWindow.GetWindow(true,gitManager, externalManager, credentialsManager).ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
 					break;
 				case MergeStatus.NonFastForward:
-					GitDiffWindow.GetWindow(true,gitManager).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
-					GitDiffWindow.GetWindow(false, gitManager).SetCommitMessage(gitManager.Repository.Info.Message);
+					GitDiffWindow.GetWindow(true,gitManager, externalManager, credentialsManager).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
+					GitDiffWindow.GetWindow(false, gitManager, externalManager, credentialsManager).SetCommitMessage(gitManager.Repository.Info.Message);
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
-					GitDiffWindow.GetWindow(true, gitManager).ShowNotification(content);
-					GitDiffWindow.GetWindow(false, gitManager).SetCommitMessage(gitManager.Repository.Info.Message);
+					GitDiffWindow.GetWindow(true, gitManager, externalManager, credentialsManager).ShowNotification(content);
+					GitDiffWindow.GetWindow(false, gitManager, externalManager, credentialsManager).SetCommitMessage(gitManager.Repository.Info.Message);
 					break;
 			}
 			gitManager.MarkDirty();

@@ -16,8 +16,6 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public static GitManager Instance { get; internal set; }
-
 		public const string Version = "1.1.1";
 
 		private string repoPath;
@@ -27,7 +25,6 @@ namespace UniGit
 		private Repository repository;
 		private StatusTreeClass statusTree;
 		private GitSettingsJson gitSettings;
-		private bool needsFetch;
 		private static readonly Queue<Action> actionQueue = new Queue<Action>();
 		private GitRepoStatus status;
 		private readonly object statusTreeLock = new object();
@@ -40,7 +37,9 @@ namespace UniGit
 		private readonly HashSet<string> updatingFiles = new HashSet<string>();
 		private readonly GitCallbacks callbacks;
 		private readonly IGitPrefs prefs;
+		private readonly List<ISettingsAffector> settingsAffectors = new List<ISettingsAffector>();
 
+		[UniGitInject]
 		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs)
 		{
 			this.repoPath = repoPath;
@@ -59,7 +58,6 @@ namespace UniGit
 				return;
 			}
 
-			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 			repositoryDirty = true;
 			callbacks.EditorUpdate += OnEditorUpdate;
 		}
@@ -110,19 +108,6 @@ namespace UniGit
 
 		internal void OnEditorUpdate()
 		{
-			if (needsFetch)
-			{
-				try
-				{
-					needsFetch = AutoFetchChanges();
-				}
-				catch(Exception e)
-				{
-					Debug.LogException(e);
-					needsFetch = false;
-				}
-			}
-
 			if (IsValidRepo && !(EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying) && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !isUpdating)
 			{
 				if ((repository == null || repositoryDirty))
@@ -170,7 +155,7 @@ namespace UniGit
 
 			if (repository != null)
 			{
-				if (Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
+				if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
 				else RetreiveStatus(paths);
 			}
 		}
@@ -366,45 +351,27 @@ namespace UniGit
 			}
 		}
 
-		#region Auto Fetching
-		private bool AutoFetchChanges()
+		#region Settings Affectors
+		public void AddSettingsAffector(ISettingsAffector settingsAffector)
 		{
-			if (repository == null || !IsValidRepo || !Settings.AutoFetch) return false;
-			Remote remote = repository.Network.Remotes.FirstOrDefault();
-			if (remote == null) return false;
-			GitProfilerProxy.BeginSample("Git automatic fetching");
-			try
-			{
-				repository.Network.Fetch(remote, new FetchOptions()
-				{
-					CredentialsProvider = GitCredentialsManager.FetchChangesAutoCredentialHandler,
-					OnTransferProgress = FetchTransferProgressHandler,
-					RepositoryOperationStarting = (context) =>
-					{
-						Debug.Log("Repository Operation Starting");
-						return true;
-					}
-				});
-				Debug.LogFormat("Auto Fetch From remote: {0} - ({1}) successful.", remote.Name, remote.Url);
-			}
-			catch (Exception e)
-			{
-				Debug.LogErrorFormat("Automatic Fetching from remote: {0} with URL: {1} Failed!", remote.Name, remote.Url);
-				Debug.LogException(e);
-			}
-			finally
-			{
-				EditorUtility.ClearProgressBar();
-			}
-			GitProfilerProxy.EndSample();
-			return false;
+			settingsAffectors.Add(settingsAffector);
+		}
+
+		public bool RemoveSettingsAffector(ISettingsAffector affector)
+		{
+			return settingsAffectors.Remove(affector);
+		}
+
+		public bool ContainsAffector(ISettingsAffector affector)
+		{
+			return settingsAffectors.Contains(affector);
 		}
 		#endregion
 
 		#region Helpers
-		public void ShowDiff(string path, [NotNull] Commit oldCommit,[NotNull] Commit newCommit)
+		public void ShowDiff(string path, [NotNull] Commit oldCommit,[NotNull] Commit newCommit,GitExternalManager externalManager)
 		{
-			if (GitExternalManager.TakeDiff(path, oldCommit, newCommit))
+			if (externalManager.TakeDiff(path, oldCommit, newCommit))
 			{
 				return;
 			}
@@ -414,10 +381,10 @@ namespace UniGit
 			window.Init(path, oldCommit, newCommit);
 		}
 
-		public void ShowDiff(string path)
+		public void ShowDiff(string path, GitExternalManager externalManager)
 		{
 			if (string.IsNullOrEmpty(path) ||  Repository == null) return;
-			if (GitExternalManager.TakeDiff(path))
+			if (externalManager.TakeDiff(path))
 			{
 				return;
 			}
@@ -427,12 +394,12 @@ namespace UniGit
 			window.Init(path);
 		}
 
-		public void ShowDiffPrev(string path)
+		public void ShowDiffPrev(string path, GitExternalManager externalManager)
 		{
 			if (string.IsNullOrEmpty(path) && Repository != null) return;
 			var lastCommit = Repository.Commits.QueryBy(path).Skip(1).FirstOrDefault();
 			if(lastCommit == null) return;
-			if (GitExternalManager.TakeDiff(path, lastCommit.Commit))
+			if (externalManager.TakeDiff(path, lastCommit.Commit))
 			{
 				return;
 			}
@@ -442,11 +409,11 @@ namespace UniGit
 			window.Init(path, lastCommit.Commit);
 		}
 
-		public void ShowBlameWizard(string path)
+		public void ShowBlameWizard(string path, GitExternalManager externalManager)
 		{
 			if (!string.IsNullOrEmpty(path))
 			{
-				if (GitExternalManager.TakeBlame(path))
+				if (externalManager.TakeBlame(path))
 				{
 					return;
 				}
@@ -469,7 +436,7 @@ namespace UniGit
 
 		public void AutoStage(string[] paths)
 		{
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+			if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
 				AsyncStage(paths);
 			}
@@ -497,7 +464,7 @@ namespace UniGit
 
 		public void AutoUnstage(string[] paths)
 		{
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+			if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 			{
 				AsyncUnstage(paths);
 			}
@@ -708,11 +675,17 @@ namespace UniGit
 			get { return statusTree; }
 		}
 
-		[Obsolete("Use GitCredentialsManager.GitCredentials instead")]
-		public static GitCredentialsJson GitCredentials
+		public GitSettingsJson.ThreadingType Threading
 		{
-			get { return GitCredentialsManager.GitCredentials; }
-			internal set { GitCredentialsManager.GitCredentials = value; }
+			get
+			{
+				GitSettingsJson.ThreadingType newThreading = gitSettings.Threading;
+				foreach (var affector in settingsAffectors)
+				{
+					affector.AffectThreading(ref newThreading);
+				}
+				return newThreading;
+			}
 		}
 
 		public GitSettingsJson Settings

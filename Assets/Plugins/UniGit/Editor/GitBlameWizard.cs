@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitBlameWizard : EditorWindow, IGitWindow
+	public class GitBlameWizard : EditorWindow, IGitWindow,ISerializationCallbackReceiver
 	{
 		private const float commitLineHeight = 21;
 
@@ -48,10 +48,14 @@ namespace UniGit
 			manager = gitManager;
 		}
 
-		private void OnEnable()
+		public void OnBeforeSerialize()
 		{
-			if(manager == null)
-				Construct(GitManager.Instance);
+			
+		}
+
+		public void OnAfterDeserialize()
+		{
+			Construct(UniGitLoader.GitManager);
 		}
 
 		private void CheckBlame()

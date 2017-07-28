@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitStashSaveWizard : ScriptableWizard, IGitWindow
+	public class GitStashSaveWizard : ScriptableWizard, IGitWindow, ISerializationCallbackReceiver
 	{
 		private string stashMessage;
 		private StashModifiers stashModifiers = StashModifiers.Default;
@@ -15,11 +15,18 @@ namespace UniGit
 			this.gitManager = gitManager;
 		}
 
+		public void OnBeforeSerialize()
+		{
+			
+		}
+
+		public void OnAfterDeserialize()
+		{
+			Construct(UniGitLoader.GitManager);
+		}
+
 		private void OnEnable()
 		{
-			if(gitManager == null)
-				Construct(GitManager.Instance);
-
 			createButtonName = "Save";
 			titleContent = new GUIContent("Stash Save",GitOverlay.icons.stashIcon.image);
 		}

@@ -6,8 +6,13 @@ namespace UniGit.Settings
 {
 	public class GitExternalsSettingsTab : GitSettingsTab
 	{
-		public GitExternalsSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow) : base(gitManager, settingsWindow)
+		private readonly GitExternalManager externalManager;
+
+		[UniGitInject]
+		public GitExternalsSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow,GitExternalManager externalManager) 
+			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow)
 		{
+			this.externalManager = externalManager;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
@@ -23,11 +28,11 @@ namespace UniGit.Settings
 			}
 
 			EditorGUI.BeginChangeCheck();
-			int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), GitExternalManager.SelectedAdapterIndex, GitExternalManager.AdapterNames);
-			settings.ExternalProgram = GitExternalManager.AdapterNames[newSelectedIndex].text;
+			int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), externalManager.SelectedAdapterIndex, externalManager.AdapterNames);
+			settings.ExternalProgram = externalManager.AdapterNames[newSelectedIndex].text;
 			if (EditorGUI.EndChangeCheck())
 			{
-				GitExternalManager.SetSelectedAdapter(newSelectedIndex);
+				externalManager.SetSelectedAdapter(newSelectedIndex);
 				settings.MarkDirty();
 			}
 

@@ -1,23 +1,26 @@
 ﻿using System;
 using LibGit2Sharp;
 using UniGit.Status;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
 {
-	public abstract class GitUpdatableWindow : EditorWindow, IGitWindow
+	public abstract class GitUpdatableWindow : EditorWindow, IGitWindow, ISerializationCallbackReceiver
 	{
 		//used an object because the EditorWindow saves Booleans even if private
 		[NonSerialized] private object initilized;
 		[NonSerialized] private object hasFocused;
 		[NonSerialized] protected GitManager gitManager;
 		[NonSerialized] protected GitSettingsJson gitSettings;
+		[NonSerialized] protected readonly InjectionHelper injectionHelper = new InjectionHelper();
 
 		protected virtual void OnEnable()
 		{
-			if (gitManager == null || gitSettings == null)
-				Construct(GitManager.Instance);
+			injectionHelper.Bind(GetType()).FromInstance(this);
+			if(gitManager != null)
+				titleContent.image = gitManager.GetGitStatusIcon();
 		}
 
 		public virtual void Construct(GitManager gitManager)
@@ -27,6 +30,7 @@ namespace UniGit
 				Debug.LogError("Git manager cannot be null.");
 				return;
 			}
+			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
 			if (this.gitManager != null && this.gitManager.Callbacks != null)
 			{
 				Unsubscribe(this.gitManager.Callbacks);
@@ -34,9 +38,18 @@ namespace UniGit
 
 			this.gitManager = gitManager;
 			gitSettings = gitManager.Settings;
-			titleContent.image = gitManager.GetGitStatusIcon();
 
 			Subscribe(gitManager.Callbacks);
+		}
+
+		public virtual void OnBeforeSerialize()
+		{
+			
+		}
+
+		public virtual void OnAfterDeserialize()
+		{
+			Construct(UniGitLoader.GitManager);
 		}
 
 		protected virtual void Subscribe(GitCallbacks callbacks)

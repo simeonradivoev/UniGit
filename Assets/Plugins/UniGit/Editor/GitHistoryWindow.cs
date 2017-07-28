@@ -43,6 +43,8 @@ namespace UniGit
 		[SerializeField] private int maxCommitsCount;
 		private object commitCachesLock = new object();
 		private GitAsyncOperation loadingCommits;
+		private GitExternalManager externalManager;
+		private GitCredentialsManager credentialsManager;
 
 		public class Styles
 		{
@@ -64,14 +66,27 @@ namespace UniGit
 		[MenuItem("Window/GIT History")]
 		public static void CreateEditor()
 		{
-			GetWindow(true,GitManager.Instance);
+			GetWindow(true, UniGitLoader.GitManager,UniGitLoader.ExternalManager,UniGitLoader.CredentialsManager);
 		}
 
-		public static GitHistoryWindow GetWindow(bool focus,GitManager gitManager)
+		public static GitHistoryWindow GetWindow(bool focus,GitManager gitManager,GitExternalManager externalManager,GitCredentialsManager credentialsManager)
 		{
 			var window = GetWindow<GitHistoryWindow>(WindowName,focus);
 			window.Construct(gitManager);
+			window.Construct(externalManager,credentialsManager);
 			return window;
+		}
+
+		private void Construct(GitExternalManager externalManager,GitCredentialsManager credentialsManager)
+		{
+			this.externalManager = externalManager;
+			this.credentialsManager = credentialsManager;
+		}
+
+		public override void OnAfterDeserialize()
+		{
+			base.OnAfterDeserialize();
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
 
 		protected override void OnEnable()
@@ -386,7 +401,7 @@ namespace UniGit
 			GitGUI.StartEnable(gitSettings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
 			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.checkout.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), "toolbarbutton"))
 			{
-				if (GitExternalManager.TakeSwitch())
+				if (externalManager.TakeSwitch())
 				{
 					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 					gitManager.MarkDirty();
@@ -407,35 +422,35 @@ namespace UniGit
 
 		private void GoToMerge()
 		{
-			if (GitExternalManager.TakeMerge())
+			if (externalManager.TakeMerge())
 			{
 				gitManager.MarkDirty();
 			}
 			else
 			{
 				var wizard = ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
-				wizard.Construct(gitManager);
+				wizard.Construct(gitManager,credentialsManager, externalManager);
 			}
 		}
 
 		private void GoToFetch()
 		{
 			var branch = selectedBranch.LoadBranch(gitManager);
-			if (GitExternalManager.TakeFetch(branch.Remote.Name))
+			if (externalManager.TakeFetch(branch.Remote.Name))
 			{
 				gitManager.MarkDirty();
 			}
 			else
 			{
 				var wizard = ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch");
-				wizard.Construct(gitManager);
+				wizard.Construct(gitManager, credentialsManager, externalManager);
 				wizard.Init(branch);
 			}
 		}
 
 		private void GoToPull()
 		{
-			if (GitExternalManager.TakePull())
+			if (externalManager.TakePull())
 			{
 				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty();
@@ -443,21 +458,21 @@ namespace UniGit
 			else
 			{
 				var wizard = ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull");
-				wizard.Construct(gitManager);
+				wizard.Construct(gitManager,credentialsManager,externalManager);
 				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
 
 		private void GoToPush()
 		{
-			if (GitExternalManager.TakePush())
+			if (externalManager.TakePush())
 			{
 				gitManager.MarkDirty();
 			}
 			else
 			{
 				var wizard = ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
-				wizard.Construct(gitManager);
+				wizard.Construct(gitManager,credentialsManager,externalManager);
 				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
@@ -715,7 +730,7 @@ namespace UniGit
 				{
 					menu.AddItem(new GUIContent("Reset"), false, () =>
 					{
-						if (GitExternalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
+						if (externalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
 						{
 							gitManager.Callbacks.IssueAssetDatabaseRefresh();
 							gitManager.MarkDirty();
@@ -740,7 +755,7 @@ namespace UniGit
 			buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
 			if (GUI.Button(buttonRect, GitGUI.GetTempContent("Details"), "minibuttonright"))
 			{
-				PopupWindow.Show(buttonRect, new GitCommitDetailsWindow(gitManager,gitManager.Repository.Lookup<Commit>(commit.Id)));
+				PopupWindow.Show(buttonRect, new GitCommitDetailsWindow(gitManager,externalManager,gitManager.Repository.Lookup<Commit>(commit.Id)));
 			}
 
 			if (rect.Contains(current.mousePosition))

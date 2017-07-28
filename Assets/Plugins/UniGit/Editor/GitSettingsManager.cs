@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 #pragma warning disable 618
@@ -11,6 +12,7 @@ namespace UniGit
 		private GitSettingsJson settings;
 		private string settingsPath;
 
+		[UniGitInject]
 		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks callbacks)
 		{
 			this.settings = settings;

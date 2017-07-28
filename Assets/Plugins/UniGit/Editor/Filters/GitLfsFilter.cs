@@ -13,15 +13,17 @@ namespace UniGit.Filters
 		private Dictionary<string, Process> processes = new Dictionary<string, Process>();
 		private Dictionary<string, FilterMode> modes = new Dictionary<string, FilterMode>();
 		private readonly GitManager gitManager;
+		private readonly GitLfsManager lfsManager;
 
-		public GitLfsFilter(string name, IEnumerable<FilterAttributeEntry> attributes,GitManager gitManager) : base(name, attributes)
+		public GitLfsFilter(string name, IEnumerable<FilterAttributeEntry> attributes, GitLfsManager lfsManager, GitManager gitManager) : base(name, attributes)
 		{
 			this.gitManager = gitManager;
+			this.lfsManager = lfsManager;
 		}
 
 		protected override void Clean(string path, string root, Stream input, Stream output)
 		{
-			if(!GitLfsManager.IsEnabled) return;
+			if(!lfsManager.IsEnabled) return;
 			try
 			{
 				Process process;
@@ -56,7 +58,7 @@ namespace UniGit.Filters
 
 		protected override void Complete(string path, string root, Stream output)
 		{
-			if (!GitLfsManager.IsEnabled) return;
+			if (!lfsManager.IsEnabled) return;
 			try
 			{
 				Process process;
@@ -72,34 +74,39 @@ namespace UniGit.Filters
 					throw new Exception("Could not find lfs filter mode for path: " + path);
 				}
 
-				process.StandardInput.Flush();
-				process.StandardInput.Close();
-
-				// finalize stdin and wait for git-lfs to finish
-				if (mode == FilterMode.Clean)
+				try
 				{
-					// write git-lfs pointer for 'clean' to git or file data for 'smudge' to working copy
-					process.StandardOutput.BaseStream.CopyTo(output);
-					process.StandardOutput.BaseStream.Flush();
-					process.StandardOutput.Close();
-					output.Flush();
-					output.Close();
+					process.StandardInput.Flush();
+					process.StandardInput.Close();
 
-					process.WaitForExit();
+					// finalize stdin and wait for git-lfs to finish
+					if (mode == FilterMode.Clean)
+					{
+						// write git-lfs pointer for 'clean' to git or file data for 'smudge' to working copy
+						process.StandardOutput.BaseStream.CopyTo(output);
+						process.StandardOutput.BaseStream.Flush();
+						process.StandardOutput.Close();
+						output.Flush();
+						output.Close();
+
+						process.WaitForExit();
+					}
+					else if (mode == FilterMode.Smudge)
+					{
+						// write git-lfs pointer for 'clean' to git or file data for 'smudge' to working copy
+						process.StandardOutput.BaseStream.CopyTo(output);
+						process.StandardOutput.BaseStream.Flush();
+						process.StandardOutput.Close();
+						output.Flush();
+						output.Close();
+
+						process.WaitForExit();
+					}
 				}
-				else if (mode == FilterMode.Smudge)
+				finally
 				{
-					// write git-lfs pointer for 'clean' to git or file data for 'smudge' to working copy
-					process.StandardOutput.BaseStream.CopyTo(output);
-					process.StandardOutput.BaseStream.Flush();
-					process.StandardOutput.Close();
-					output.Flush();
-					output.Close();
-
-					process.WaitForExit();
+					process.Dispose();
 				}
-
-				process.Dispose();
 			}
 			catch (ThreadAbortException)
 			{
@@ -119,7 +126,7 @@ namespace UniGit.Filters
 
 		protected override void Create(string path, string root, FilterMode mode)
 		{
-			if (!GitLfsManager.IsEnabled) return;
+			if (!lfsManager.IsEnabled) return;
 			try
 			{
 				var process = new Process();
@@ -175,7 +182,7 @@ namespace UniGit.Filters
 
 		protected override void Smudge(string path, string root, Stream input, Stream output)
 		{
-			if (!GitLfsManager.IsEnabled) return;
+			if (!lfsManager.IsEnabled) return;
 			try
 			{
 				Process process;

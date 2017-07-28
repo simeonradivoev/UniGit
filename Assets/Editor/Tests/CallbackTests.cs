@@ -24,7 +24,7 @@ public class CallbackTests
 			Threading = 0
 		};
 		var prefs = new GitPrefs();
-		gitManager = new GitManager(GitManager.Instance.RepoPath, callbacks, settings, prefs);
+		gitManager = new GitManager(UniGitLoader.GitManager.RepoPath, callbacks, settings, prefs);
 		updateRepositoryCalled = 0;
 		onRepositoryLoadedCalled = 0;
 		gitManager.Callbacks.OnRepositoryLoad += OnRepositoryLoad;

@@ -1,5 +1,6 @@
 ﻿using System;
 using UniGit.Status;
+using UniGit.Utils;
 using UnityEngine;
 
 namespace UniGit.Settings
@@ -10,9 +11,12 @@ namespace UniGit.Settings
 		private bool hasFocused;
 		private bool initilized;
 		protected GitManager gitManager;
+		protected GUIContent name;
 
-		internal GitSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow)
+		[UniGitInject]
+		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow)
 		{
+			this.name = name;
 			this.gitManager = gitManager;
 			this.settingsWindow = settingsWindow;
 			var callbacks = gitManager.Callbacks;
@@ -66,6 +70,11 @@ namespace UniGit.Settings
 			var callbacks = gitManager.Callbacks;
 			callbacks.EditorUpdate -= OnEditorUpdateInternal;
 			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+		}
+
+		public GUIContent Name
+		{
+			get { return name; }
 		}
 	}
 }

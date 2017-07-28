@@ -16,7 +16,7 @@ namespace UniGit
 		protected override void OnEnable()
 		{
 			base.OnEnable();
-			pushOptions = new PushOptions() {CredentialsProvider = CredentialsHandler, OnPackBuilderProgress = OnPackBuildProgress, OnPushTransferProgress = PushTransferProgress, OnPushStatusError = OnFail,OnNegotiationCompletedBeforePush = GitHookManager.PrePushHandler};
+			pushOptions = new PushOptions() {CredentialsProvider = CredentialsHandler, OnPackBuilderProgress = OnPackBuildProgress, OnPushTransferProgress = PushTransferProgress, OnPushStatusError = OnFail,OnNegotiationCompletedBeforePush = UniGitLoader.HookManager.PrePushHandler};
 		}
 
 		protected override bool DrawWizardGUI()
@@ -38,7 +38,7 @@ namespace UniGit
 					{
 						repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
 						gitManager.MarkDirty();
-						var window = GitHistoryWindow.GetWindow(true,gitManager);
+						var window = GitHistoryWindow.GetWindow(true,gitManager, externalManager,credentialsManager);
 						window.ShowNotification(new GUIContent("Push Complete"));
 					}
 					else

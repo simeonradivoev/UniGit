@@ -22,22 +22,24 @@ namespace UniGit
 		[MenuItem("Window/GIT Diff Window")]
 		public static void CreateEditor()
 		{
-			GetWindow(true,GitManager.Instance);
+			GetWindow(true, UniGitLoader.GitManager,UniGitLoader.ExternalManager,UniGitLoader.CredentialsManager);
 		}
 
-		public static GitDiffWindow GetWindow(bool focus,GitManager gitManager)
+		public static GitDiffWindow GetWindow(bool focus,GitManager gitManager,GitExternalManager externalManager,GitCredentialsManager credentialsManager)
 		{
 			var window = GetWindow<GitDiffWindow>(WindowName, focus);
 			window.Construct(gitManager);
+			window.Construct(externalManager, credentialsManager);
 			return window;
 		}
 
-		public static GitDiffWindow CreateWindow(bool focus, GitManager gitManager)
+		public static GitDiffWindow CreateWindow(bool focus, GitManager gitManager, GitExternalManager externalManager, GitCredentialsManager credentialsManager)
 		{
 			var window = CreateInstance<GitDiffWindow>();
 			window.Show();
 			if (focus) window.Focus();
 			window.Construct(gitManager);
+			window.Construct(externalManager, credentialsManager);
 			return window;
 		}
 
@@ -67,6 +69,8 @@ namespace UniGit
 		private HashSet<string> updatingPaths = new HashSet<string>();
 		private HashSet<string> pathsToBeUpdated = new HashSet<string>();
 		private bool needsAsyncStatusListUpdate;
+		private GitExternalManager externalManager;
+		private GitCredentialsManager credentialsManager;
 
 		[Serializable]
 		public class Settings
@@ -94,10 +98,17 @@ namespace UniGit
 			public GUIStyle toggle;
 		}
 
-		public override void Construct(GitManager gitManager)
+		public void Construct(GitExternalManager externalManager, GitCredentialsManager credentialsManager)
 		{
-			base.Construct(gitManager);
-			conflictsHandler = new GitConflictsHandler(gitManager);
+			this.externalManager = externalManager;
+			this.credentialsManager = credentialsManager;
+			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
+		}
+
+		public override void OnAfterDeserialize()
+		{
+			base.OnAfterDeserialize();
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
 
 		protected override void Subscribe(GitCallbacks callbacks)
@@ -131,7 +142,7 @@ namespace UniGit
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
 				CreateStatusListThreaded(status, paths);
 			else
 				CreateStatusList(status);
@@ -140,7 +151,7 @@ namespace UniGit
 		private void UpdateStatusList()
 		{
 			if(gitManager.Repository == null) return;
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
 				CreateStatusListThreaded(gitManager.LastStatus,null);
 			else
 				CreateStatusList(gitManager.LastStatus);
@@ -443,7 +454,7 @@ namespace UniGit
 			try
 			{
 				string commitMessage = GetActiveCommitMessage(true);
-				if (!GitExternalManager.TakeCommit(commitMessage))
+				if (!externalManager.TakeCommit(commitMessage))
 				{
 					GitProfilerProxy.BeginSample("Git Commit");
 					gitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
@@ -540,7 +551,7 @@ namespace UniGit
 				if (Commit())
 				{
 					var wizard = ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
-					wizard.Construct(gitManager);
+					wizard.Construct(gitManager, credentialsManager,externalManager);
 				}
 			}
 		}
@@ -770,7 +781,7 @@ namespace UniGit
 				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Upstaged changed pending. Stage to update index."), GUIStyle.none))
 				{
 					string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
-					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 					{
 						gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
 					}
@@ -859,7 +870,7 @@ namespace UniGit
 					if (GitManager.CanStage(info.State))
 					{
 						string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
-						if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+						if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 						{
 							gitManager.AsyncStage(paths).onComplete += (o)=>{ Repaint(); };
 						}
@@ -873,7 +884,7 @@ namespace UniGit
 					else if (GitManager.CanUnstage(info.State))
 					{
 						string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
-						if (gitManager.Settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+						if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 						{
 							gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
 						}
@@ -1077,7 +1088,7 @@ namespace UniGit
 				menu.AddItem(new GUIContent("Add All"), false, () =>
 				{
 					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
-					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 					{
 						gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
 					}
@@ -1099,7 +1110,7 @@ namespace UniGit
 				menu.AddItem(new GUIContent("Remove All"), false, () =>
 				{
 					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
-					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 					{
 						gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
 					}
@@ -1263,12 +1274,12 @@ namespace UniGit
 
 		private void SeeDifferenceObject(StatusListEntry entry)
 		{
-			gitManager.ShowDiff(entry.Path);
+			gitManager.ShowDiff(entry.Path,externalManager);
 		}
 
 		private void SeeDifferenceMeta(StatusListEntry entry)
 		{
-			gitManager.ShowDiff(GitManager.MetaPathFromAsset(entry.Path));
+			gitManager.ShowDiff(GitManager.MetaPathFromAsset(entry.Path), externalManager);
 		}
 
 		private void SeeDifferencePrevAuto(StatusListEntry entry)
@@ -1285,19 +1296,19 @@ namespace UniGit
 
 		private void SeeDifferencePrevObject(StatusListEntry entry)
 		{
-			gitManager.ShowDiffPrev(entry.Path);
+			gitManager.ShowDiffPrev(entry.Path, externalManager);
 		}
 
 		private void SeeDifferencePrevMeta(StatusListEntry entry)
 		{
-			gitManager.ShowDiffPrev(GitManager.MetaPathFromAsset(entry.Path));
+			gitManager.ShowDiffPrev(GitManager.MetaPathFromAsset(entry.Path), externalManager);
 		}
 
 		private void RevertSelectedCallback()
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 
-			if (GitExternalManager.TakeRevert(paths))
+			if (externalManager.TakeRevert(paths))
 			{
 				gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
@@ -1318,22 +1329,22 @@ namespace UniGit
 		{
 			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
 			{
-				gitManager.ShowBlameWizard(entry.Path);
+				gitManager.ShowBlameWizard(entry.Path, externalManager);
 			}
 			else
 			{
-				gitManager.ShowBlameWizard(AssetDatabase.GetTextMetaFilePathFromAssetPath(entry.Path));
+				gitManager.ShowBlameWizard(AssetDatabase.GetTextMetaFilePathFromAssetPath(entry.Path), externalManager);
 			}
 		}
 
 		private void BlameMeta(StatusListEntry entry)
 		{
-			gitManager.ShowBlameWizard(AssetDatabase.GetTextMetaFilePathFromAssetPath(entry.Path));
+			gitManager.ShowBlameWizard(AssetDatabase.GetTextMetaFilePathFromAssetPath(entry.Path), externalManager);
 		}
 
 		private void BlameObject(StatusListEntry entry)
 		{
-			gitManager.ShowBlameWizard(entry.Path);
+			gitManager.ShowBlameWizard(entry.Path, externalManager);
 		}
 
 		private void OnRevertProgress(string path,int currentSteps,int totalSteps)
@@ -1351,7 +1362,7 @@ namespace UniGit
 		private void RemoveSelectedCallback()
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 			{
 				gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
 			}
@@ -1366,7 +1377,7 @@ namespace UniGit
 		private void AddSelectedCallback()
 		{
 			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
 				gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
 			}

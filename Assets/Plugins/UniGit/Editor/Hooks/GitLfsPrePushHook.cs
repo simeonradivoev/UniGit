@@ -3,18 +3,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using LibGit2Sharp;
 using UniGit;
+using UniGit.Utils;
 
 namespace Assets.Plugins.UniGit.Editor.Hooks
 {
 	public class GitLfsPrePushHook : GitPushHookBase
 	{
-		public GitLfsPrePushHook(GitManager gitManager) : base(gitManager)
+		private readonly GitLfsManager lfsManager;
+
+		[UniGitInject]
+		public GitLfsPrePushHook(GitManager gitManager, GitLfsManager lfsManager) : base(gitManager)
 		{
+			this.lfsManager = lfsManager;
 		}
 
 		public override bool OnPrePush(IEnumerable<PushUpdate> updates)
 		{
-			if (!GitLfsManager.Installed || !GitLfsManager.CheckInitialized()) return true;
+			if (!lfsManager.Installed || !lfsManager.CheckInitialized()) return true;
 
 			using (var process = new Process())
 			{

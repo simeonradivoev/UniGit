@@ -5,10 +5,12 @@ namespace UniGit
 	public class GitConflictsHandler
 	{
 		private readonly GitManager gitManager;
+		private readonly GitExternalManager externalManager;
 
-		public GitConflictsHandler(GitManager gitManager)
+		public GitConflictsHandler(GitManager gitManager,GitExternalManager externalManager)
 		{
 			this.gitManager = gitManager;
+			this.externalManager = externalManager;
 		}
 
 		public bool CanResolveConflictsWithTool(string path)
@@ -24,7 +26,7 @@ namespace UniGit
 
 			if (favor == MergeFileFavor.Normal)
 			{
-				GitExternalManager.HandleConflict(path);
+				externalManager.HandleConflict(path);
 			}
 			else if (favor == MergeFileFavor.Ours)
 			{
