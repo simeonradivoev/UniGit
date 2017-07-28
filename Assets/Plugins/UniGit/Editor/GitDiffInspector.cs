@@ -450,20 +450,20 @@ namespace UniGit
 				return;
 			}
 
-			float toolbarHeight = ((GUIStyle)"Toolbar").fixedHeight;
+			float toolbarHeight = EditorStyles.toolbar.fixedHeight;
 			float difHeight = position.height - toolbarHeight;
 
-			EditorGUILayout.BeginHorizontal("Toolbar");
-			Rect goToLineRect = GUILayoutUtility.GetRect(new GUIContent("Go To Line"), "toolbarbutton");
-			if (GUI.Button(goToLineRect,new GUIContent("Go To Line"), "toolbarbutton"))
+			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+			Rect goToLineRect = GUILayoutUtility.GetRect(new GUIContent("Go To Line"), EditorStyles.toolbarButton);
+			if (GUI.Button(goToLineRect,new GUIContent("Go To Line"), EditorStyles.toolbarButton))
 			{
 				PopupWindow.Show(goToLineRect, new GoToLinePopup(GoToLine));
 			}
-			if (GUILayout.Button(new GUIContent("Previous Change"), "toolbarbutton"))
+			if (GUILayout.Button(new GUIContent("Previous Change"), EditorStyles.toolbarButton))
 			{
 				GoToPreviousChange();
 			}
-			if (GUILayout.Button(new GUIContent("Next Change"), "toolbarbutton"))
+			if (GUILayout.Button(new GUIContent("Next Change"), EditorStyles.toolbarButton))
 			{
 				GoToNextChange();
 			}
@@ -510,9 +510,9 @@ namespace UniGit
 			DrawBlobs(true, indexFileRect, otherFileScrollRect);
 
 			if(selectedFile == FileType.IndexFile)
-				GUI.Box(indexFileRect,GUIContent.none, "TL SelectionButton PreDropGlow");
+				GUI.Box(indexFileRect,GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
 			else
-				GUI.Box(otherFileScrollRect, GUIContent.none, "TL SelectionButton PreDropGlow");
+				GUI.Box(otherFileScrollRect, GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
 		}
 
 		private void GoToPreviousChange()
@@ -615,7 +615,7 @@ namespace UniGit
 			GUI.DrawTexture(new Rect(otherRect.width + (scrollHorizontalNormal * (totalLineWidth - otherRect.width)) - 1, 0, 1, totalLinesHeight), Texture2D.whiteTexture);
 			GUI.color = Color.white;
 
-			GUI.Box(new Rect(0,0,maxLineNumWidth,totalLinesHeight),GUIContent.none, "GroupBox");
+			GUI.Box(new Rect(0,0,maxLineNumWidth,totalLinesHeight),GUIContent.none, GitGUI.Styles.GroupBox);
 
 			foreach (var changeSection in changeSections)
 			{
@@ -650,7 +650,7 @@ namespace UniGit
 
 								if (showAdd ? line == selectedIndexFileLine : line == selectedOtherFileLine)
 								{
-									GUI.Box(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, "LightmapEditorSelectedHighlight");
+									GUI.Box(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, GitGUI.Styles.LightmapEditorSelectedHighlight);
 								}
 							}
 							line++;
@@ -688,7 +688,7 @@ namespace UniGit
 
 									if (showAdd ? line == selectedIndexFileLine : line == selectedOtherFileLine)
 									{
-										if(isRapaint) ((GUIStyle)"LightmapEditorSelectedHighlight").Draw(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
+										if(isRapaint) (GitGUI.Styles.LightmapEditorSelectedHighlight).Draw(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
 									}
 								}
 								else if(isRapaint)

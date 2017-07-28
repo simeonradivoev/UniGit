@@ -117,7 +117,7 @@ namespace UniGit
 
 			Event current = Event.current;
 
-			EditorGUILayout.BeginHorizontal("Toolbar");
+			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 			EditorGUI.BeginChangeCheck();
 			for (int i = 0; i < tabs.Length; i++)
 			{
@@ -133,7 +133,7 @@ namespace UniGit
 				if(currentTab != null) currentTab.OnFocus();
 			}
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.IconContent("_Help"), "IconButton"))
+			if (GUILayout.Button(GitGUI.IconContent("_Help"), GitGUI.Styles.IconButton))
 			{
 				GoToHelp();
 			}

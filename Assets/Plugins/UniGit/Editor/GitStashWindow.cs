@@ -62,7 +62,7 @@ namespace UniGit
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal("ProjectBrowserBottomBarBg");
 			GUI.enabled = stashCount > 0;
-			if (GUILayout.Button(GitGUI.GetTempContent("Apply","Apply stash to working directory."), "minibuttonleft"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Apply","Apply stash to working directory."), EditorStyles.miniButtonLeft))
 			{
 				if (EditorUtility.DisplayDialog("Apply Stash: " + selectedStash,"Are you sure you want to apply stash ? This will override your current working directory!","Apply","Cancel"))
 				{
@@ -71,7 +71,7 @@ namespace UniGit
 					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				}
 			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Pop","Remove and apply stash to working directory."), "minibuttonmid"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Pop","Remove and apply stash to working directory."), EditorStyles.miniButtonMid))
 			{
 				if (EditorUtility.DisplayDialog("Pop Stash: " + selectedStash, "Are you sure you want to pop the stash ? This will override your current working directory and remove the stash from the list.", "Pop and Apply", "Cancel"))
 				{
@@ -80,7 +80,7 @@ namespace UniGit
 					gitManager.Callbacks.IssueAssetDatabaseRefresh();
 				}
 			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Remove","Remove stash from list"), "minibuttonright"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Remove","Remove stash from list"), EditorStyles.miniButtonRight))
 			{
 				if (EditorUtility.DisplayDialog("Remove Stash: " + selectedStash, "Are you sure you want to remove the stash ? This action cannot be undone!", "Remove", "Cancel"))
 				{

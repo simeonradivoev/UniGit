@@ -27,7 +27,7 @@ namespace UniGit
 
 		public override void OnGUI(Rect rect)
 		{
-			GUILayout.Label(new GUIContent("Create Branch"), "IN BigTitle", GUILayout.ExpandWidth(true));
+			GUILayout.Label(new GUIContent("Create Branch"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true));
 			if (commit != null)
 			{
 				name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name"), name);

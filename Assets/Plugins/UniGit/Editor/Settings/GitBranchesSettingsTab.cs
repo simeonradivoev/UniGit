@@ -45,8 +45,8 @@ namespace UniGit.Settings
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), "AC Button");
-			if (GUI.Button(createBranchRect, GitGUI.IconContent("ol plus", "Create Branch"), "AC Button"))
+			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), GitGUI.Styles.AddComponentBtn);
+			if (GUI.Button(createBranchRect, GitGUI.IconContent("ol plus", "Create Branch"), GitGUI.Styles.AddComponentBtn))
 			{
 				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(gitManager.Repository.Commits.FirstOrDefault(), () =>
 				{
@@ -94,7 +94,7 @@ namespace UniGit.Settings
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
 			GUI.enabled = remoteCacheList != null && remoteCacheList.Length < selectedRemote;
-			if (GUILayout.Button(GitGUI.GetTempContent("Save", "Send branch changes to selected remote."), "minibuttonleft"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Save", "Send branch changes to selected remote."), EditorStyles.miniButtonLeft))
 			{
 				branchCollection.Update(branch, (u) =>
 				{
@@ -103,8 +103,8 @@ namespace UniGit.Settings
 				});
 			}
 			GUI.enabled = !branch.IsRemote && !isHead;
-			Rect switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), "minibuttonmid");
-			if (GUI.Button(switchButtonRect,GitGUI.GetTempContent("Switch"), "minibuttonmid"))
+			Rect switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), EditorStyles.miniButtonMid);
+			if (GUI.Button(switchButtonRect,GitGUI.GetTempContent("Switch"), EditorStyles.miniButtonMid))
 			{
 				if (externalManager.TakeSwitch())
 				{
@@ -117,7 +117,7 @@ namespace UniGit.Settings
 				}
 			}
 			GUI.enabled = !isHead;
-			if (GUILayout.Button(GitGUI.GetTempContent("Delete", branch.IsCurrentRepositoryHead ? "Can not delete head branch" : ""), "minibuttonmid"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Delete", branch.IsCurrentRepositoryHead ? "Can not delete head branch" : ""), EditorStyles.miniButtonMid))
 			{
 				if (EditorUtility.DisplayDialog("Delete Branch", "Are you sure you want do delete a branch? This action can not be undone.", "Delete", "Cancel"))
 				{
@@ -134,7 +134,7 @@ namespace UniGit.Settings
 				}
 			}
 			GUI.enabled = !branch.IsRemote;
-			if (GUILayout.Button(GitGUI.GetTempContent("Reset", "Reset branch properties."), "minibuttonright"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Reset", "Reset branch properties."), EditorStyles.miniButtonRight))
 			{
 				branchCollection.Update(branch, (u) =>
 				{

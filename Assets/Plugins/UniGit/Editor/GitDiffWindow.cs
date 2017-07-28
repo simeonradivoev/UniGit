@@ -96,6 +96,33 @@ namespace UniGit
 			public GUIStyle diffElementPath;
 			public GUIStyle diffElement;
 			public GUIStyle toggle;
+			public GUIStyle mergeIndicator;
+			public GUIStyle commitMessageFoldoud;
+			public GUIStyle commitButton;
+			public GUIStyle searchTextField;
+			public GUIStyle searchCancelButton;
+		}
+
+		private void CreateStyles()
+		{
+			if (styles == null)
+			{
+				GitProfilerProxy.BeginSample("Git Diff Window Style Creation", this);
+				styles = new Styles();
+				styles.commitTextArea = new GUIStyle("sv_iconselector_labelselection") { margin = new RectOffset(4, 4, 4, 4), normal = { textColor = Color.black }, alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 6, 4, 4) };
+				styles.assetIcon = new GUIStyle("NotificationBackground") { contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter, imagePosition = ImagePosition.ImageOnly, padding = new RectOffset(4, 4, 4, 4), border = new RectOffset(12, 12, 12, 12) };
+				styles.diffScrollHeader = new GUIStyle("CurveEditorBackground") { contentOffset = new Vector2(48, 0), alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = { textColor = Color.white * 0.9f }, padding = new RectOffset(12, 12, 12, 12), imagePosition = ImagePosition.ImageLeft };
+				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } };
+				styles.diffElementPath = new GUIStyle(EditorStyles.label) { onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture }, wordWrap = true, fixedHeight = 0, alignment = TextAnchor.MiddleLeft };
+				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") { fixedHeight = 0, border = new RectOffset(8, 8, 8, 8) };
+				styles.toggle = new GUIStyle("IN Toggle") { normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() };
+				styles.mergeIndicator = "AssetLabel";
+				styles.commitMessageFoldoud = "IN Foldout";
+				styles.commitButton = "DropDownButton";
+				styles.searchTextField = "ToolbarSeachTextField";
+				styles.searchCancelButton = "ToolbarSeachCancelButtonEmpty";
+				GitProfilerProxy.EndSample();
+			}
 		}
 
 		public void Construct(GitExternalManager externalManager, GitCredentialsManager credentialsManager)
@@ -271,23 +298,6 @@ namespace UniGit
 			}
 		}
 
-		private void CreateStyles()
-		{
-			if (styles == null)
-			{
-				GitProfilerProxy.BeginSample("Git Diff Window Style Creation",this);
-				styles = new Styles();
-				styles.commitTextArea = new GUIStyle("sv_iconselector_labelselection") {margin = new RectOffset(4, 4, 4, 4), normal = {textColor = Color.black}, alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 6, 4, 4)};
-				styles.assetIcon = new GUIStyle("NotificationBackground") {contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter,imagePosition = ImagePosition.ImageOnly,padding = new RectOffset(4,4,4,4),border = new RectOffset(12,12,12,12)};
-				styles.diffScrollHeader = new GUIStyle("CurveEditorBackground") {contentOffset = new Vector2(48,0),alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = {textColor = Color.white * 0.9f},padding = new RectOffset(12,12,12,12),imagePosition = ImagePosition.ImageLeft};
-				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) {fontSize = 12,onNormal = new GUIStyleState() {textColor = Color.white * 0.95f,background = Texture2D.blackTexture} };
-				styles.diffElementPath = new GUIStyle(EditorStyles.label) {onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture },wordWrap = true,fixedHeight = 0,alignment = TextAnchor.MiddleLeft};
-				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 0,border = new RectOffset(8,8,8,8)};
-				styles.toggle = new GUIStyle("IN Toggle") {normal = {background = (Texture2D)GitGUI.IconContentTex("toggle@2x") },onNormal = {background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") },active = {background = (Texture2D)GitGUI.IconContentTex("toggle act@2x")}, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0,fixedWidth = 0,border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset()};
-				GitProfilerProxy.EndSample();
-			}
-		}
-
 		[UsedImplicitly]
 		private void OnGUI()
 		{
@@ -332,8 +342,8 @@ namespace UniGit
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
-				GUILayout.Label(GitGUI.GetTempContent("Merge"), "AssetLabel");
-			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(gitSettings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), "IN Foldout",GUILayout.Width(gitSettings.ReadFromFile ? 210 : 116));
+				GUILayout.Label(GitGUI.GetTempContent("Merge"), styles.mergeIndicator);
+			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(gitSettings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), styles.commitMessageFoldoud, GUILayout.Width(gitSettings.ReadFromFile ? 210 : 116));
 			if (!commitMaximized)
 			{
 				if (!gitSettings.ReadFromFile)
@@ -348,7 +358,7 @@ namespace UniGit
 				}
 				else
 				{
-					GUILayout.Label(new GUIContent(settings.commitMessageFromFile), GUI.skin.textArea, GUILayout.ExpandHeight(true));
+					GUILayout.Label(new GUIContent(settings.commitMessageFromFile), GUI.skin.textArea, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 				}
 			}
 			EditorGUILayout.EndHorizontal();
@@ -384,7 +394,7 @@ namespace UniGit
 
 			EditorGUILayout.BeginHorizontal();
 			
-			if (GUILayout.Button(GitGUI.GetTempContent("Commit"), "DropDownButton"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Commit"), styles.commitButton))
 			{
 				GenericMenu commitMenu = new GenericMenu();
 				BuildCommitMenu(commitMenu);
@@ -404,7 +414,7 @@ namespace UniGit
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
 			GitGUI.EndEnable();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.IconContent("_Help"),"IconButton"))
+			if (GUILayout.Button(GitGUI.IconContent("_Help"),GitGUI.Styles.IconButton))
 			{
 				GoToHelp();
 			}
@@ -662,14 +672,14 @@ namespace UniGit
 				GUILayout.Label(statusContent,EditorStyles.toolbarButton);
 
 			GUILayout.FlexibleSpace();
-			filter = EditorGUILayout.TextField(GUIContent.none, filter, "ToolbarSeachTextField");
+			filter = EditorGUILayout.TextField(GUIContent.none, filter, styles.searchTextField);
 			if (string.IsNullOrEmpty(filter))
 			{
-				GUILayout.Box(GUIContent.none, "ToolbarSeachCancelButtonEmpty");
+				GUILayout.Box(GUIContent.none, styles.searchCancelButton);
 			}
 			else
 			{
-				if (GUILayout.Button(GUIContent.none, "ToolbarSeachCancelButton"))
+				if (GUILayout.Button(GUIContent.none, styles.searchCancelButton))
 				{
 					filter = "";
 					GUI.FocusControl("");

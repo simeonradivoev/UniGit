@@ -11,7 +11,50 @@ namespace UniGit.Utils
 	{
 		private static GUIContent tmpContent = new GUIContent();
 		private static Stack<bool> enableStack = new Stack<bool>(); 
-		private static Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>(); 
+		private static Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>();
+
+		private static StylesClass _styles;
+		public static StylesClass Styles
+		{
+			get
+			{
+				if (_styles == null)
+				{
+					_styles = new StylesClass();
+					InitStyles(_styles);
+				}
+				return _styles;
+			}
+		}
+		public class StylesClass
+		{
+			public GUIStyle BigTitle;
+			public GUIStyle BreadcrumMid;
+			public GUIStyle SelectionBoxGlow;
+			public GUIStyle GroupBox;
+			public GUIStyle LightmapEditorSelectedHighlight;
+			public GUIStyle IconButton;
+			public GUIStyle LargeButton;
+			public GUIStyle AddComponentBtn;
+			public GUIStyle ShurikenModuleTitle;
+			public GUIStyle ProjectBrowserHeaderBgTop;
+			public GUIStyle ShurikenModuleBg;
+		}
+
+		private static void InitStyles(StylesClass styles)
+		{
+			styles.BigTitle = "IN BigTitle";
+			styles.BreadcrumMid = "GUIEditor.BreadcrumbMid";
+			styles.SelectionBoxGlow = "TL SelectionButton PreDropGlow";
+			styles.GroupBox = "GroupBox";
+			styles.LightmapEditorSelectedHighlight = "LightmapEditorSelectedHighlight";
+			styles.IconButton = "IconButton";
+			styles.LargeButton = "LargeButton";
+			styles.AddComponentBtn = "AC Button";
+			styles.ShurikenModuleTitle = "ShurikenModuleTitle";
+			styles.ProjectBrowserHeaderBgTop = "ProjectBrowserHeaderBgTop";
+			styles.ShurikenModuleBg = "ShurikenModuleBg";
+		}
 
 		public static GUIContent GetTempContent(Texture tex)
 		{

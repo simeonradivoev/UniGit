@@ -47,7 +47,7 @@ namespace UniGit.Settings
 				}
 				else
 				{
-					GUILayout.Label(GitGUI.GetTempContent("Settings"), "ProjectBrowserHeaderBgTop");
+					GUILayout.Label(GitGUI.GetTempContent("Settings"), GitGUI.Styles.ProjectBrowserHeaderBgTop);
 
 					using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
 					{
@@ -64,7 +64,7 @@ namespace UniGit.Settings
 
 					foreach (var info in lfsManager.TrackedInfo)
 					{
-						GUILayout.Label(GitGUI.GetTempContent(info.Extension), "ShurikenModuleTitle");
+						GUILayout.Label(GitGUI.GetTempContent(info.Extension), GitGUI.Styles.ShurikenModuleTitle);
 						GUI.SetNextControlName(info.GetHashCode() + " Extension");
 						info.Extension = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Extension"), info.Extension);
 						GUI.SetNextControlName(info.GetHashCode() + " Type");

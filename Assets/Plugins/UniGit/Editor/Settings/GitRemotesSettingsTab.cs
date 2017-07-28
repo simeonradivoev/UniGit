@@ -32,7 +32,7 @@ namespace UniGit.Settings
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var remote in remoteCacheList)
 			{
-				GUILayout.Label(GitGUI.GetTempContent(remote.Name), "ShurikenModuleTitle");
+				GUILayout.Label(GitGUI.GetTempContent(remote.Name), GitGUI.Styles.ShurikenModuleTitle);
 				EditorGUILayout.Space();
 				EditorGUILayout.BeginVertical();
 				EditorGUI.BeginChangeCheck();
@@ -46,17 +46,17 @@ namespace UniGit.Settings
 				remote.TagFetchMode = (TagFetchMode)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Tag Fetch Mode"), remote.TagFetchMode);
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
-				if (GUILayout.Button(GitGUI.GetTempContent("Save"), "minibuttonleft"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Save"), EditorStyles.miniButtonLeft))
 				{
 					remote.Update(remotes);
 					UpdateRemotes();
 					GUI.FocusControl("");
 				}
-				if (GUILayout.Button(GitGUI.GetTempContent("Open", "Show the repository in browser."), "minibuttonmid"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Open", "Show the repository in browser."), EditorStyles.miniButtonMid))
 				{
 					Application.OpenURL(remote.Url);
 				}
-				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), "minibuttonright"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButtonRight))
 				{
 					remotes.Remove(remote.Name);
 					UpdateRemotes();
@@ -71,7 +71,7 @@ namespace UniGit.Settings
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Remote"), "AC Button"))
+			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Remote"), GitGUI.Styles.AddComponentBtn))
 			{
 				PopupWindow.Show(addRepositoryButtonRect, new AddRepositoryPopup(gitManager,remotes));
 			}

@@ -58,7 +58,7 @@ namespace UniGit
 					for (int i = 0; i < pathChunks.Length; i++)
 					{
 						string chunk = pathChunks[i];
-						if (GUILayout.Button(GitGUI.GetTempContent(chunk), "GUIEditor.BreadcrumbMid"))
+						if (GUILayout.Button(GitGUI.GetTempContent(chunk), GitGUI.Styles.BreadcrumMid))
 						{
 							string assetPath = string.Join("/", pathChunks,0,i+1);
 							if (assetPath.EndsWith(".meta"))

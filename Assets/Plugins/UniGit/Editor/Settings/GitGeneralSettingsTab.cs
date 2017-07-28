@@ -27,7 +27,7 @@ namespace UniGit.Settings
 
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			//todo cache general settings to reduce lookup
-			GUILayout.Box(GitGUI.IconContent("SceneAsset Icon", "Unity Settings"), "IN BigTitle", GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
+			GUILayout.Box(GitGUI.IconContent("SceneAsset Icon", "Unity Settings"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
 
 			if (settings != null)
 			{
@@ -64,7 +64,7 @@ namespace UniGit.Settings
 				}
 			}
 
-			GUILayout.Box(GitGUI.IconContent("ListIcon", "Git Settings"), "IN BigTitle", GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
+			GUILayout.Box(GitGUI.IconContent("ListIcon", "Git Settings"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
 
 			using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
 			{
@@ -116,7 +116,7 @@ namespace UniGit.Settings
 				EditorGUI.indentLevel = 0;
 			}
 
-			GUILayout.Box(GitGUI.IconContent("IN LockButton on", "Git Ignore"), "IN BigTitle", GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
+			GUILayout.Box(GitGUI.IconContent("IN LockButton on", "Git Ignore"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();

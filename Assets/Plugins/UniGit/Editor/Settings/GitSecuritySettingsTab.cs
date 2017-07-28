@@ -34,7 +34,7 @@ namespace UniGit.Settings
 				}
 				GUI.enabled = newSelectedIndex >= 0;
 			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Remove"), "minibutton", GUILayout.Width(64)))
+			if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButton, GUILayout.Width(64)))
 			{
 				if (EditorUtility.DisplayDialog("Remove Credentials Manager", "This will remove all stored passwords in the Manager. Usernames and URLs will be kept in Unity", "Remove", "Cancel"))
 				{
@@ -53,9 +53,9 @@ namespace UniGit.Settings
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var gitCredential in credentialsManager.GitCredentials)
 			{
-				GUILayout.Label(GitGUI.GetTempContent(gitCredential.Name), "ShurikenModuleTitle");
+				GUILayout.Label(GitGUI.GetTempContent(gitCredential.Name), GitGUI.Styles.ShurikenModuleTitle);
 				EditorGUILayout.Space();
-				EditorGUILayout.BeginVertical("ShurikenModuleBg");
+				EditorGUILayout.BeginVertical(GitGUI.Styles.ShurikenModuleBg);
 				EditorGUI.BeginChangeCheck();
 				GUI.SetNextControlName(gitCredential.URL + " Credential Name");
 				gitCredential.Name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name"), gitCredential.Name);
@@ -115,7 +115,7 @@ namespace UniGit.Settings
 				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewPassword);
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
-				if (GUILayout.Button(GitGUI.GetTempContent("Set Password"), "minibuttonleft"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Set Password"), EditorStyles.miniButtonLeft))
 				{
 					credentialsManager.SetNewPassword(gitCredential.URL, gitCredential.Username, gitCredential.NewPassword);
 					gitCredential.NewPassword = "";
@@ -124,17 +124,17 @@ namespace UniGit.Settings
 					EditorUtility.DisplayDialog("Password Changed", "Password successfully changed", "Ok");
 				}
 				GUI.enabled = gitCredential.HasPassword;
-				if (GUILayout.Button(GitGUI.GetTempContent("Clear Password"), "minibuttonmid"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Clear Password"), EditorStyles.miniButtonMid))
 				{
 					credentialsManager.ClearCredentialPassword(gitCredential.URL);
 					credentialsManager.GitCredentials.MarkDirty();
 				}
 				GUI.enabled = true;
-				if (GUILayout.Button(GitGUI.GetTempContent("Save"), "minibuttonmid"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Save"), EditorStyles.miniButtonMid))
 				{
 					credentialsManager.GitCredentials.MarkDirty();
 				}
-				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), "minibuttonright"))
+				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButtonRight))
 				{
 					credentialsManager.GitCredentials.MarkDirty();
 					GUIUtility.ExitGUI();
@@ -148,7 +148,7 @@ namespace UniGit.Settings
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Credentials"), "AC Button"))
+			if (GUILayout.Button(GitGUI.IconContent("ol plus","Add Credentials"), GitGUI.Styles.AddComponentBtn))
 			{
 				PopupWindow.Show(addCredentialsRect, new AddCredentialPopup(credentialsManager));
 			}
