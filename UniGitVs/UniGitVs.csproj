@@ -56,6 +56,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\BaseExternalAdapter.cs">
+      <Link>BaseExternalAdapter.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Adapters\GitExtensionsAdapter.cs">
       <Link>GitExtensionsAdapter.cs</Link>
     </Compile>
