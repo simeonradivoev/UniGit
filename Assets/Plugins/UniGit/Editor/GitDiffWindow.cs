@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;

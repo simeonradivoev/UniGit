@@ -50,6 +50,7 @@ namespace UniGit
 		private UberRegex uberRegex;
 		private CompareOptions compareOptions;
 		private ExplicitPathsOptions explicitPathsOptions;
+		private UnityEngine.Object asset;
 
 		public void Construct(GitManager gitManager)
 		{
@@ -76,7 +77,7 @@ namespace UniGit
 
 			explicitPathsOptions = new ExplicitPathsOptions();
 
-			titleContent = new GUIContent("GitDiff: " + path);
+			titleContent = new GUIContent("Diff Inspector", EditorGUIUtility.FindTexture("ViewToolZoom"));
 			uberRegex = new UberRegex(new ColoredRegex[]
 			{
 				new ColoredRegex("Comments",comments, "green"),
@@ -97,9 +98,8 @@ namespace UniGit
 			this.path = path;
 			synataxHighlight = path.EndsWith(".cs");
 			BuildChangeSections(null);
+			LoadAsset(path);
 			ScrollToFirstChange();
-
-			titleContent = new GUIContent("GitDiff: " + path);
 		}
 
 		public void Init(string path,Commit commit)
@@ -109,9 +109,8 @@ namespace UniGit
 			synataxHighlight = path.EndsWith(".cs");
 			commitSha = commit.Sha;
 			BuildChangeSections(commit);
+			LoadAsset(path);
 			ScrollToFirstChange();
-
-			titleContent = new GUIContent("GitDiff: " + path);
 		}
 
 		public void Init(string path, Commit oldCommit,Commit newCommit)
@@ -121,9 +120,13 @@ namespace UniGit
 			synataxHighlight = path.EndsWith(".cs");
 			commitSha = oldCommit.Sha;
 			BuildChangeSections(oldCommit, newCommit);
+			LoadAsset(path);
 			ScrollToFirstChange();
+		}
 
-			titleContent = new GUIContent("GitDiff: " + path);
+		private void LoadAsset(string path)
+		{
+			asset = AssetDatabase.LoadMainAssetAtPath(path);
 		}
 
 		private string[] GetLines(Commit commit)
@@ -141,8 +144,10 @@ namespace UniGit
 				changes = patch[path];
 			}
 
+
 			if (changes != null)
 			{
+				Debug.Log(changes.Patch);
 				isBinary = changes.IsBinaryComparison;
 				return changes.Patch.Split('\n');
 			}
@@ -350,7 +355,7 @@ namespace UniGit
 						}
 					}
 				}
-				maxLineNumWidth = changeSections.Max(s => Mathf.Max(styles.LineNum.CalcSize(new GUIContent(s.addedStartLine.ToString())).x, styles.LineNum.CalcSize(new GUIContent(s.removedStartLine.ToString())).x));
+				maxLineNumWidth = styles.LineNum.CalcSize(new GUIContent(maxLines.ToString())).x;
 			}
 		}
 
@@ -362,14 +367,19 @@ namespace UniGit
 			if (addedMatch.Success)
 			{
 				int.TryParse(addedMatch.Groups["lineStart"].Value, out newSection.addedStartLine);
-				int.TryParse(addedMatch.Groups["lineCount"].Value, out newSection.addedLineCount);
-				newSection.addedLineCount = Mathf.Max(newSection.addedLineCount, 1);
+				if (!int.TryParse(addedMatch.Groups["lineCount"].Value, out newSection.addedLineCount))
+				{
+					newSection.addedLineCount = 1;
+				}
 			}
 			if (removedMatch.Success)
 			{
 				int.TryParse(removedMatch.Groups["lineStart"].Value, out newSection.removedStartLine);
-				int.TryParse(removedMatch.Groups["lineCount"].Value, out newSection.removedLineCount);
-				newSection.removedLineCount = Mathf.Max(newSection.removedLineCount, 1);
+				if (!int.TryParse(removedMatch.Groups["lineCount"].Value, out newSection.removedLineCount))
+				{
+					newSection.removedLineCount = 1;
+				}
+				newSection.removedLineCount = Mathf.Max(newSection.removedLineCount, 0);
 			}
 			return newSection;
 		}
@@ -468,6 +478,7 @@ namespace UniGit
 				GoToNextChange();
 			}
 			GUILayout.FlexibleSpace();
+			GUILayout.Label(new GUIContent(path));
 			EditorGUILayout.EndHorizontal();
 
 			Rect resizeRect = new Rect(position.width * otherFileWindowWidth - 3, toolbarHeight,6, difHeight);
@@ -640,14 +651,8 @@ namespace UniGit
 								GUI.Label(lineRect, normalBlob.lines[i], styles.NormalLine);
 								GUI.backgroundColor = Color.white;
 
-								if (Event.current.type == EventType.MouseDown && lineRect.Contains(Event.current.mousePosition))
-								{
-									if (showAdd)
-										selectedIndexFileLine = line;
-									else
-										selectedOtherFileLine = line;
-								}
-
+								DoLineEvents(lineRect, showAdd, line);
+								
 								if (showAdd ? line == selectedIndexFileLine : line == selectedOtherFileLine)
 								{
 									GUI.Box(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, GitGUI.Styles.LightmapEditorSelectedHighlight);
@@ -678,13 +683,7 @@ namespace UniGit
 										GUI.backgroundColor = Color.white;
 									}
 
-									if (Event.current.type == EventType.MouseDown && lineRect.Contains(Event.current.mousePosition))
-									{
-										if (showAdd)
-											selectedIndexFileLine = line;
-										else
-											selectedOtherFileLine = line;
-									}
+									DoLineEvents(lineRect, showAdd, line);
 
 									if (showAdd ? line == selectedIndexFileLine : line == selectedOtherFileLine)
 									{
@@ -706,6 +705,32 @@ namespace UniGit
 				}
 			}
 			GUI.EndScrollView();
+		}
+
+		private void DoLineEvents(Rect lineRect,bool showAdd, int line)
+		{
+			if (Event.current.type == EventType.MouseDown && lineRect.Contains(Event.current.mousePosition))
+			{
+				if (showAdd)
+					selectedIndexFileLine = line;
+				else
+					selectedOtherFileLine = line;
+			}
+			else if (Event.current.type == EventType.ContextClick && lineRect.Contains(Event.current.mousePosition))
+			{
+				GenericMenu genericMenu = new GenericMenu();
+				BuildLineContextMenu(genericMenu, line);
+				genericMenu.ShowAsContext();
+				Event.current.Use();
+			}
+		}
+
+		private void BuildLineContextMenu(GenericMenu menu,int line)
+		{
+			if (asset != null)
+			{
+				menu.AddItem(new GUIContent("Open Line in Editor"), false, () => { AssetDatabase.OpenAsset(asset, line); });
+			}
 		}
 
 		private bool IsRectVisible(Rect rect,Rect screenRect)

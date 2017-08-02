@@ -376,7 +376,7 @@ namespace UniGit
 				return;
 			}
 
-			var window = EditorWindow.GetWindow<GitDiffInspector>(true);
+			var window = EditorWindow.GetWindow<GitDiffInspector>();
 			window.Construct(this);
 			window.Init(path, oldCommit, newCommit);
 		}
@@ -389,7 +389,7 @@ namespace UniGit
 				return;
 			}
 
-			var window = EditorWindow.GetWindow<GitDiffInspector>(true);
+			var window = EditorWindow.GetWindow<GitDiffInspector>();
 			window.Construct(this);
 			window.Init(path);
 		}
@@ -404,7 +404,7 @@ namespace UniGit
 				return;
 			}
 
-			var window = EditorWindow.GetWindow<GitDiffInspector>(true);
+			var window = EditorWindow.GetWindow<GitDiffInspector>();
 			window.Construct(this);
 			window.Init(path, lastCommit.Commit);
 		}
