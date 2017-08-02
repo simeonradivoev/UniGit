@@ -1,5 +1,7 @@
 ﻿using System.IO;
+using Assets.Plugins.UniGit.Editor.Hooks;
 using LibGit2Sharp;
+using UniGit.Adapters;
 using UniGit.Settings;
 using UniGit.Utils;
 using UnityEditor;
@@ -49,9 +51,16 @@ namespace UniGit
 				return;
 			}
 
+			//credentials
+			injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
 			injectionHelper.Bind<GitCredentialsManager>();
+			//externals
+			injectionHelper.Bind<IExternalAdapter>().To<GitExtensionsAdapter>();
+			injectionHelper.Bind<IExternalAdapter>().To<TortoiseGitAdapter>();
 			injectionHelper.Bind<GitExternalManager>();
 			injectionHelper.Bind<GitLfsManager>();
+			//hooks
+			injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
 			injectionHelper.Bind<GitHookManager>();
 
 			var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();

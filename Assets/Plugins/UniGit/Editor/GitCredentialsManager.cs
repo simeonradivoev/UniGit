@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LibGit2Sharp;
@@ -13,9 +14,9 @@ namespace UniGit
 {
 	public class GitCredentialsManager
 	{
-		private ICredentialsAdapter[] adapters;
-		private GUIContent[] adapterNames;
-		private string[] adapterIds;
+		private readonly ICredentialsAdapter[] adapters;
+		private readonly GUIContent[] adapterNames;
+		private readonly string[] adapterIds;
 		private ICredentialsAdapter selectedAdapter;
 		private int selectedAdapterIndex;
 		private bool initiazlitedSelected;
@@ -24,11 +25,11 @@ namespace UniGit
 		private GitSettingsJson gitSettings;
 
 		[UniGitInject]
-		public GitCredentialsManager(GitManager gitManager,GitSettingsJson gitSettings)
+		public GitCredentialsManager(GitManager gitManager,GitSettingsJson gitSettings,List<ICredentialsAdapter> adapters)
 		{
 			this.gitSettings = gitSettings;
 			this.gitManager = gitManager;
-			adapters = new ICredentialsAdapter[] {null}.Concat(AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(ICredentialsAdapter).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).Select(t => Activator.CreateInstance(t)).Cast<ICredentialsAdapter>()).ToArray();
+			this.adapters = adapters.ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 			adapterIds = adapters.Select(GetAdapterId).ToArray();
 

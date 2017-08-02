@@ -169,7 +169,7 @@ namespace UniGit
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] paths)
 		{
-			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
 				CreateStatusListThreaded(status, paths);
 			else
 				CreateStatusList(status);
@@ -178,7 +178,7 @@ namespace UniGit
 		private void UpdateStatusList()
 		{
 			if(gitManager.Repository == null) return;
-			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
 				CreateStatusListThreaded(gitManager.LastStatus,null);
 			else
 				CreateStatusList(gitManager.LastStatus);
@@ -1203,12 +1203,12 @@ namespace UniGit
 					}
 					
 				}
+				editMenu.AddSeparator("");
 			}
-			editMenu.AddSeparator("");
 			editMenu.AddItem(new GUIContent("Revert", EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow")), false, RevertSelectedCallback);
-			editMenu.AddSeparator("");
 			if (entries.Length == 1)
 			{
+				editMenu.AddSeparator("");
 				if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
 					if (gitManager.CanBlame(entries[0].State))
@@ -1238,6 +1238,10 @@ namespace UniGit
 			{
 				editMenu.AddItem(new GUIContent("Show In Explorer", EditorGUIUtility.FindTexture("Folder Icon")), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
 			}
+			editMenu.AddItem(new GUIContent("Open", EditorGUIUtility.FindTexture("ViewToolOrbit")), false, () =>
+			{
+				AssetDatabase.OpenAsset(entries.Select(e => AssetDatabase.LoadAssetAtPath<Object>(e.Path)).Where(a => a != null).ToArray());
+			});
 			editMenu.AddItem(new GUIContent("Reload", EditorGUIUtility.FindTexture("RotateTool")), false, ReloadCallback);
 		}
 

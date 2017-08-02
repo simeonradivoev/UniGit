@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using Assets.Plugins.UniGit.Editor.Hooks;
 using LibGit2Sharp;
 using UniGit.Utils;
@@ -9,23 +7,12 @@ namespace UniGit
 {
 	public class GitHookManager
 	{
-		private readonly List<GitPushHookBase> pushHooks;
-		private readonly InjectionHelper injectionHelper;
+		private readonly ICollection<GitPushHookBase> pushHooks;
 
 		[UniGitInject]
-		public GitHookManager(GitManager gitManager,GitLfsManager lfsManager)
+		public GitHookManager(ICollection<GitPushHookBase> pushHooks)
 		{
-			pushHooks = new List<GitPushHookBase>();
-			injectionHelper = new InjectionHelper();
-			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
-			injectionHelper.Bind<GitLfsManager>().FromInstance(lfsManager);
-
-			var hookTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => t.IsSubclassOf(typeof(GitPushHookBase))));
-			foreach (var hookType in hookTypes)
-			{
-				var hook = injectionHelper.CreateInstance(hookType);
-				pushHooks.Add((GitPushHookBase)hook);
-			}
+			this.pushHooks = pushHooks;
 		}
 
 		public bool PrePushHandler(IEnumerable<PushUpdate> updates)

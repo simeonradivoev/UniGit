@@ -7,99 +7,95 @@ using UniGit.Utils;
 namespace UniGit.Adapters
 {
 	[ExternalAdapter("Tortoise Git", "TortoiseGitMerge.exe", "TortoiseGitIDiff.exe", "TortoiseGitProc.exe",Priority = 10)]
-	public class TortoiseGitAdapter : IExternalAdapter
+	public class TortoiseGitAdapter : BaseExternalAdapter
 	{
-		private readonly GitManager gitManager;
-		private readonly GitExternalManager externalManager;
-
 		[UniGitInject]
-		public TortoiseGitAdapter(GitManager gitManager,GitExternalManager externalManager)
+		public TortoiseGitAdapter(GitManager gitManager) : base(gitManager)
 		{
-			this.externalManager = externalManager;
-			this.gitManager = gitManager;
+			
 		}
 
-		public bool Push()
+		public sealed override bool Push()
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "push", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "push", gitManager.RepoPath);
 			return true;
 		}
 
-		public bool Pull()
+		public sealed override bool Pull()
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "pull", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "pull", gitManager.RepoPath);
 			return true;
 		}
 
-		public bool Commit(string message)
+		public sealed override bool Commit(string message)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -logmsg:\"{2}\"", "commit", gitManager.RepoPath,message);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -logmsg:\"{2}\"", "commit", gitManager.RepoPath,message);
 			return true;
 		}
 
-		public bool Reset(Commit commit)
+		public sealed override bool Reset(Commit commit)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
 			return true;
 		}
 
-		public bool Merge()
+		public sealed override bool Merge()
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "merge", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "merge", gitManager.RepoPath);
 			return true;
 		}
 
-		public bool Fetch(string remote)
+		public sealed override bool Fetch(string remote)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -remote:\"{1}\"", "fetch",remote);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -remote:\"{1}\"", "fetch",remote);
 			return true;
 		}
 
-		public bool Revert(IEnumerable<string> paths)
+		public sealed override bool Revert(IEnumerable<string> paths)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "revert",string.Join("*", paths.ToArray()));
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "revert",string.Join("*", paths.ToArray()));
 			return true;
 		}
 
-		public bool Conflict(string path)
+		public sealed override bool Conflict(string path)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "conflicteditor", path);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "conflicteditor", path);
 			return true;
 		}
 
-		public bool Diff(string path)
+		public sealed override bool Diff(string path)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "diff", path);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "diff", path);
 			return true;
 		}
 
-		public bool Diff(string path,string path2)
+		public sealed override bool Diff(string path,string path2)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -path2:\"{2}\"", "diff", path,path2);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -path2:\"{2}\"", "diff", path,path2);
 			return true;
 		}
 
-		public bool Diff(string path, Commit end)
+		public sealed override bool Diff(string path, Commit end)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -endrev:\"{2}\"", "diff", path, end.Sha);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -endrev:\"{2}\"", "diff", path, end.Sha);
 			return true;
 		}
 
-		public bool Diff(string path, Commit start, Commit end)
+		public sealed override bool Diff(string path, Commit start, Commit end)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -startrev:\"{2}\" -endrev:\"{3}\"", "diff", path, start.Sha,end.Sha);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -startrev:\"{2}\" -endrev:\"{3}\"", "diff", path, start.Sha,end.Sha);
 			return true;
 		}
 
-		public bool Blame(string path)
+		public sealed override bool Blame(string path)
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "blame", path);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "blame", path);
 			return true;
 		}
 
-		public bool Switch()
+		public sealed override bool Switch()
 		{
-			externalManager.CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
 			return true;
 		}
 	}

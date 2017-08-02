@@ -7,89 +7,87 @@ using UniGit.Utils;
 namespace UniGit.Adapters
 {
 	[ExternalAdapter("Git Extensions", "GitExtensions.exe",Priority = 5)]
-	public class GitExtensionsAdapter : IExternalAdapter
+	public class GitExtensionsAdapter : BaseExternalAdapter
 	{
-		private readonly GitExternalManager externalManager;
-
 		[UniGitInject]
-		public GitExtensionsAdapter(GitManager gitManager,GitExternalManager externalManager)
+		public GitExtensionsAdapter(GitManager gitManager) : base(gitManager)
 		{
-			this.externalManager = externalManager;
+			
 		}
 
-		public bool Push()
+		public sealed override bool Push()
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "push");
+			return CallProccess("GitExtensions.exe", "push");
 		}
 
-		public bool Reset(Commit commit)
+		public sealed override bool Reset(Commit commit)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "reset");
+			return CallProccess("GitExtensions.exe", "reset");
 		}
 
-		public bool Merge()
+		public sealed override bool Merge()
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "mergetool");
+			return CallProccess("GitExtensions.exe", "mergetool");
 		}
 
-		public bool Pull()
+		public sealed override bool Pull()
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "pull");
+			return CallProccess("GitExtensions.exe", "pull");
 		}
 
-		public bool Commit(string message)
+		public sealed override bool Commit(string message)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "commit");
+			return CallProccess("GitExtensions.exe", "commit");
 		}
 
-		public bool Fetch(string remote)
+		public sealed override bool Fetch(string remote)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "pull --fetch");
+			return CallProccess("GitExtensions.exe", "pull --fetch");
 		}
 
-		public bool Conflict(string path)
+		public sealed override bool Conflict(string path)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "mergeconflicts");
+			return CallProccess("GitExtensions.exe", "mergeconflicts");
 		}
 
-		public bool Diff(string path)
+		public sealed override bool Diff(string path)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "viewdiff");
+			return CallProccess("GitExtensions.exe", "viewdiff");
 		}
 
-		public bool Diff(string path, string path2)
+		public sealed override bool Diff(string path, string path2)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "viewdiff");
+			return CallProccess("GitExtensions.exe", "viewdiff");
 		}
 
-		public bool Diff(string path, Commit start, Commit end)
+		public sealed override bool Diff(string path, Commit start, Commit end)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "filehistory " + path);
+			return CallProccess("GitExtensions.exe", "filehistory " + path);
 		}
 
-		public bool Diff(string path, Commit end)
+		public sealed override bool Diff(string path, Commit end)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "viewdiff");
+			return CallProccess("GitExtensions.exe", "viewdiff");
 		}
 
-		public bool Blame(string path)
+		public sealed override bool Blame(string path)
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "blame " + path);
+			return CallProccess("GitExtensions.exe", "blame " + path);
 		}
 
-		public bool Revert(IEnumerable<string> paths)
+		public sealed override bool Revert(IEnumerable<string> paths)
 		{
 			string path = paths.FirstOrDefault();
 			if (path != null)
 			{
-				return externalManager.CallProccess("GitExtensions.exe", "revert " + path);
+				return CallProccess("GitExtensions.exe", "revert " + path);
 			}
 			return false;
 		}
 
-		public bool Switch()
+		public sealed override bool Switch()
 		{
-			return externalManager.CallProccess("GitExtensions.exe", "checkout");
+			return CallProccess("GitExtensions.exe", "checkout");
 		}
 	}
 }

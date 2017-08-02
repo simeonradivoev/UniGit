@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -35,31 +36,105 @@ namespace UniGit.Utils
 
 		public object CreateInstance(Type type)
 		{
-			var constructors = type.GetConstructors();
-			foreach (var constructor in constructors)
+			var constructor = GetInjectConstructor(type);
+			if (constructor != null)
 			{
-				var customAttributes = constructor.GetCustomAttributes(typeof(UniGitInject), true);
-				if (customAttributes.Length > 0)
+				var parameterInfos = constructor.GetParameters();
+				object[] args = new object[parameterInfos.Length];
+				for (int i = 0; i < parameterInfos.Length; i++)
 				{
-					var parameterInfos = constructor.GetParameters();
-					object[] args = new object[parameterInfos.Length];
-					for (int i = 0; i < parameterInfos.Length; i++)
-					{
-						Resolve resolve;
-						if (FindResolve(parameterInfos[i], type, out resolve))
-						{
-							args[i] = resolve.GetInstance();
-						}
-						else
-						{
-							throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameterInfos[i].Name, parameterInfos[i].ParameterType));
-						}
-					}
-					object instance = constructor.Invoke(args);
-					return instance;
+					args[i] = HandleParameter(parameterInfos[i], type);
 				}
+				object instance = constructor.Invoke(args);
+				return instance;
 			}
 			return Activator.CreateInstance(type);
+		}
+
+		private ConstructorInfo GetInjectConstructor(Type type)
+		{
+			var constructors = type.GetConstructors();
+			return constructors.FirstOrDefault(c => c.GetCustomAttributes(typeof(UniGitInject), true).Length > 0);
+		}
+
+		private void CheckCrossDependency(Resolve resolve, Type injectedType,ParameterInfo parameterInfo)
+		{
+			if (resolve.injectedParamsCached == null)
+				resolve.injectedParamsCached = BuildInjectionParams(GetInjectConstructor(resolve.InstanceType));
+			if (CrossDependency(resolve.injectedParamsCached, injectedType))
+				throw new Exception(string.Format("Cross References detected when injecting parameter {0} of '{1}' with '{2}'", parameterInfo.Name,injectedType.Name, resolve.InstanceType.Name));
+		}
+
+		private bool CrossDependency(KeyValuePair<string,Type>[] injectedParams, Type type)
+		{
+			if (injectedParams == null) return false;
+
+			foreach (var param in injectedParams)
+			{
+				if (param.Value == type || param.Value.IsAssignableFrom(type) || type.IsAssignableFrom(param.Value))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private KeyValuePair<string, Type>[] BuildInjectionParams(ConstructorInfo constructorInfo)
+		{
+			if(constructorInfo == null)
+				return new KeyValuePair<string, Type>[0];
+			return constructorInfo.GetParameters().Select(p => new KeyValuePair<string, Type>(p.Name, p.ParameterType)).ToArray();
+		}
+
+		private bool IsGenericTypeList(Type type)
+		{
+			return typeof(ICollection<>).IsAssignableFrom(type) || typeof(IList<>).IsAssignableFrom(type) || typeof(List<>).IsAssignableFrom(type);
+		}
+
+		private object HandleParameter(ParameterInfo parameter,Type injecteeType)
+		{
+			if (parameter.ParameterType.IsGenericType)
+			{
+				Type parameterGenericType = parameter.ParameterType.GetGenericTypeDefinition();
+				if (IsGenericTypeList(parameterGenericType))
+				{
+					var listType = parameter.ParameterType.GetGenericArguments()[0];
+					List<Resolve> parameterResolves = new List<Resolve>();
+					IList instanceCollection = (IList) Activator.CreateInstance(typeof(List<>).MakeGenericType(listType));
+					if (FindResolves(listType, parameter.Name, injecteeType, parameterResolves))
+					{
+						foreach (var r in parameterResolves)
+						{
+							CheckCrossDependency(r, injecteeType, parameter);
+							instanceCollection.Add(r.GetInstance());
+						}
+					}
+					return instanceCollection;
+				}
+			}
+
+			Resolve resolve;
+			if (FindResolve(parameter, injecteeType, out resolve))
+			{
+				CheckCrossDependency(resolve, injecteeType, parameter);
+				return resolve.GetInstance();
+			}
+			throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameter.Name, parameter.ParameterType));
+		}
+
+		private bool FindResolves(Type types,string parameterId, Type injecteeType,ICollection<Resolve> outResolves)
+		{
+			bool foundResolves = false;
+			foreach (var resolve in resolves)
+			{
+				if (ValidResolve(resolve, types, parameterId, injecteeType))
+				{
+					outResolves.Add(resolve);
+					foundResolves = true;
+				}
+			}
+			return foundResolves;
 		}
 
 		private bool FindResolve(ParameterInfo parameter, Type injecteeType,out Resolve resolveOut)
@@ -78,29 +153,40 @@ namespace UniGit.Utils
 
 		private bool ValidResolve(Resolve resolve, ParameterInfo parameter, Type injecteeType)
 		{
-			if (resolve.Type != parameter.ParameterType) return false;
+			return ValidResolve(resolve,parameter.ParameterType,parameter.Name,injecteeType);
+		}
+
+		private bool ValidResolve(Resolve resolve, Type parameterType,string parameterId, Type injecteeType)
+		{
+			if (resolve.Type != parameterType) return false;
 			if (resolve.WhenInjectedIntoType != null && resolve.WhenInjectedIntoType != injecteeType) return false;
-			if (!string.IsNullOrEmpty(resolve.id) && parameter.Name != resolve.id) return false;
+			if (!string.IsNullOrEmpty(resolve.id) && parameterId != resolve.id) return false;
 			return true;
 		}
 
 		public T GetInstance<T>()
 		{
+			HashSet<Resolve> resolveCallList = new HashSet<Resolve>();
 			foreach (var resolve in resolves)
 			{
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && string.IsNullOrEmpty(resolve.id))
-					return (T)resolve.GetInstance();
+				{
+					resolveCallList.Add(resolve);
+					return (T) resolve.GetInstance();
+				}
 			}
 			return default(T);
 		}
 
 		public List<T> GetInstances<T>()
 		{
+			HashSet<Resolve> resolveCallList = new HashSet<Resolve>();
 			List<T> instances = new List<T>();
 			foreach (var resolve in resolves)
 			{
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && string.IsNullOrEmpty(resolve.id))
 				{
+					resolveCallList.Add(resolve);
 					instances.Add((T)resolve.GetInstance());
 				}
 			}
@@ -156,6 +242,7 @@ namespace UniGit.Utils
 			private Type instanceType;
 			private Type whenInjectedInto;
 			private Func<object> method;
+			internal KeyValuePair<string, Type>[] injectedParamsCached;
 			internal string id;
 			private object instance;
 			private readonly InjectionHelper injectionHelper;
@@ -236,6 +323,8 @@ namespace UniGit.Utils
 				}
 				return instance;
 			}
+
+			public bool HasInstance { get { return instance != null; } }
 
 			public Type Type
 			{

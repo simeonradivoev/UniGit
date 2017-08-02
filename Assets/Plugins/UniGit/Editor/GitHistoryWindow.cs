@@ -150,12 +150,28 @@ namespace UniGit
 
 		private void StartUpdateChaches(GitRepoStatus status)
 		{
-			loadingCommits = GitAsyncManager.QueueWorker(UpdateChachesThreaded, status, "Loading Commits");
+			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.CommitListGui))
+			{
+				loadingCommits = GitAsyncManager.QueueWorkerWithLock(UpdateChaches, status, "Loading Commits", (o) =>
+				{
+					OnCachesUpdated();
+				}, commitCachesLock);
+			}
+			else
+			{
+				UpdateChaches(status);
+				OnCachesUpdated();
+			}
 		}
 
-		private void UpdateChachesThreaded(GitRepoStatus status)
+		private void OnCachesUpdated()
 		{
-			Monitor.Enter(commitCachesLock);
+			UpdateGitStatusIcon();
+			Repaint();
+		}
+
+		private void UpdateChaches(GitRepoStatus status)
+		{
 			try
 			{
 				//update all branches
@@ -185,16 +201,10 @@ namespace UniGit
 				commitRects = new Rect[commitCount];
 				cachedCommits = newCachedCommits;
 				hasConflicts = status.Any(s => s.Status == FileStatus.Conflicted);
-				gitManager.ActionQueue.Enqueue(UpdateGitStatusIcon);
-				gitManager.ActionQueue.Enqueue(Repaint);
 			}
 			catch (Exception e)
 			{
 				Debug.LogException(e);
-			}
-			finally
-			{
-				Monitor.Exit(commitCachesLock);
 			}
 		}
 

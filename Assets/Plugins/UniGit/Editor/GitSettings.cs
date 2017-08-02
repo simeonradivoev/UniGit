@@ -56,14 +56,15 @@ namespace UniGit
 	[Serializable]
 	public class GitSettingsJson
 	{
-		public bool AutoStage = true;
-		public bool AutoFetch = true;
+		public const ThreadingType DefalutThreadingType = ThreadingType.StatusList | ThreadingType.StatusListGui | ThreadingType.CommitListGui;
+		public bool AutoStage;
+		public bool AutoFetch;
 		public ExternalsTypeEnum ExternalsType;
 		public string ExternalProgram;
 		public string CredentialsManager;
 		public int ProjectStatusOverlayDepth = 2;
 		public bool ShowEmptyFolders;
-		public ThreadingType Threading = ThreadingType.StatusList;
+		public ThreadingType Threading = DefalutThreadingType;
 		public bool UseGavatar = true;
 		public float MaxCommitTextAreaSize = 120;
 		public bool DetectRenames = true;
@@ -95,6 +96,8 @@ namespace UniGit
 			Stage = 1,
 			Unstage = 2,
 			StatusList = 4,
+			StatusListGui = 8,
+			CommitListGui = 16
 		}
 
 		public void Copy(GitSettings settings)
@@ -106,7 +109,7 @@ namespace UniGit
 			CredentialsManager = settings.CredentialsManager;
 			ProjectStatusOverlayDepth = settings.ProjectStatusOverlayDepth;
 			ShowEmptyFolders = settings.ShowEmptyFolders;
-			Threading = (settings.GitStatusMultithreaded ? ThreadingType.StatusList : 0);
+			Threading = (settings.GitStatusMultithreaded ? DefalutThreadingType : 0);
 			UseGavatar = settings.UseGavatar;
 			MaxCommitTextAreaSize = settings.MaxCommitTextAreaSize;
 			DetectRenames = settings.DetectRenames;

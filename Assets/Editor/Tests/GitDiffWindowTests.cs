@@ -1,7 +1,9 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UniGit;
+using UniGit.Adapters;
 using UnityEditor;
 
 public class GitDiffWindowTests : TestRepoFixture
@@ -13,8 +15,8 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void GitDiffTestsSetup()
 	{
 		prevFocusWindow = EditorWindow.focusedWindow;
-		GitExternalManager externalsManager = new GitExternalManager(gitManager);
-		GitCredentialsManager credentialsManager = new GitCredentialsManager(gitManager,gitSettings);
+		GitExternalManager externalsManager = new GitExternalManager(gitManager,new List<IExternalAdapter>());
+		GitCredentialsManager credentialsManager = new GitCredentialsManager(gitManager,gitSettings,new List<ICredentialsAdapter>());
 		diffWindow = GitDiffWindow.CreateWindow(false, gitManager, externalsManager, credentialsManager);
 	}
 

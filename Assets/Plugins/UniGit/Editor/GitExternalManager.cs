@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Attributes;
@@ -23,23 +21,15 @@ namespace UniGit
 		private GitManager gitManager;
 
 		[UniGitInject]
-		public GitExternalManager(GitManager gitManager)
+		public GitExternalManager(GitManager gitManager,ICollection<IExternalAdapter> adapters)
 		{
 			var injectionHelper = new InjectionHelper();
 			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
 			injectionHelper.Bind<GitExternalManager>().FromInstance(this);
 			this.gitManager = gitManager;
-			var adaptorTypes = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes().Where(t => typeof(IExternalAdapter).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract)).ToArray();
-			adapters = new IExternalAdapter[adaptorTypes.Length];
-			for (int i = 0; i < adaptorTypes.Length; i++)
-			{
-				adapters[i] = (IExternalAdapter)injectionHelper.CreateInstance(adaptorTypes[i]);
-			}
-			Array.Sort(adapters, (l, r) =>
-			{
-				return GetAdapterPriority(l).CompareTo(GetAdapterPriority(r));
-			});
+			this.adapters = adapters.OrderBy(GetAdapterPriority).ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
+
 		}
 
 		#region Selection
@@ -202,60 +192,17 @@ namespace UniGit
 
 		#region Process Helpers
 
-		[StringFormatMethod("parametersFormat")]
-		public bool CallProccess(string name, string parametersFormat,params object[] arg)
-		{
-			return CallProccess(name,string.Format(parametersFormat,arg));
-		}
-
-
-		public bool CallProccess(string name, string parameters)
-		{
-			string fullPath = GetFullPath(name);
-
-			if (fullPath != null)
-			{
-				ProcessStartInfo startInfo = new ProcessStartInfo
-				{
-					CreateNoWindow = false,
-					UseShellExecute = false,
-					FileName = fullPath,
-					WorkingDirectory = gitManager.RepoPath,
-					WindowStyle = ProcessWindowStyle.Hidden,
-					RedirectStandardOutput = true,
-					Arguments = parameters
-				};
-
-				try
-				{
-					// Start the process with the info we specified.
-					// Call WaitForExit and then the using statement will close.
-					using (Process exeProcess = Process.Start(startInfo))
-					{
-						if (exeProcess == null) return false;
-						exeProcess.WaitForExit();
-						return true;
-					}
-				}
-				catch
-				{
-					return false;
-				}
-			}
-			return false;
-		}
-
-		private bool ExistsOnPath(string fileName)
+		internal static bool ExistsOnPath(string fileName)
 		{
 			return GetFullPath(fileName) != null;
 		}
 
-		private string GetFullPath(string fileName)
+		internal static string GetFullPath(string fileName)
 		{
 			if (File.Exists(fileName))
 				return Path.GetFullPath(fileName);
 
-			var values = Environment.GetEnvironmentVariable("PATH",EnvironmentVariableTarget.Machine).Split(';');
+			var values = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine).Split(';');
 			foreach (var path in values)
 			{
 				var fullPath = Path.Combine(path, fileName);
@@ -264,6 +211,7 @@ namespace UniGit
 			}
 			return null;
 		}
+
 		#endregion
 
 		#region Getters and Setters
