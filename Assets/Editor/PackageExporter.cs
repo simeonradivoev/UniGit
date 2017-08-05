@@ -84,6 +84,8 @@ public class PackageExporter
 			}
 			Debug.Log("---- ------------------- ----");
 		}
+
+		Application.OpenURL(Application.dataPath.Replace("/", "\\").Replace("Assets", Path.Combine("UniGitVs",Path.Combine("bin", "Debug"))));
 	}
 
 	[MenuItem("UniGit/Dev/Export As Package")]
