@@ -11,8 +11,10 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitDiffInspector : EditorWindow, IGitWindow, ISerializationCallbackReceiver
+	public class GitDiffInspector : EditorWindow, IGitWindow, ISerializationCallbackReceiver, IHasCustomMenu
 	{
+		private const string HelpUrl = "https://github.com/simeonradivoev/UniGit/wiki/File-Difference#in-editor-diff-inspector";
+
 		private float scrollVertical;
 		private float scrollHorizontalNormal;
 		public string path;
@@ -462,23 +464,7 @@ namespace UniGit
 			float toolbarHeight = EditorStyles.toolbar.fixedHeight;
 			float difHeight = position.height - toolbarHeight;
 
-			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-			Rect goToLineRect = GUILayoutUtility.GetRect(new GUIContent("Go To Line"), EditorStyles.toolbarButton);
-			if (GUI.Button(goToLineRect,new GUIContent("Go To Line"), EditorStyles.toolbarButton))
-			{
-				PopupWindow.Show(goToLineRect, new GoToLinePopup(GoToLine));
-			}
-			if (GUILayout.Button(new GUIContent("Previous Change"), EditorStyles.toolbarButton))
-			{
-				GoToPreviousChange();
-			}
-			if (GUILayout.Button(new GUIContent("Next Change"), EditorStyles.toolbarButton))
-			{
-				GoToNextChange();
-			}
-			GUILayout.FlexibleSpace();
-			GUILayout.Label(new GUIContent(path));
-			EditorGUILayout.EndHorizontal();
+			DrawToolbar();
 
 			Rect resizeRect = new Rect(position.width * otherFileWindowWidth - 3, toolbarHeight,6, difHeight);
 			Rect indexFileRect = new Rect(position.width * otherFileWindowWidth + (resizeRect.width/2), toolbarHeight, position.width * (1 - otherFileWindowWidth) - (resizeRect.width / 2), difHeight);
@@ -523,6 +509,31 @@ namespace UniGit
 				GUI.Box(indexFileRect,GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
 			else
 				GUI.Box(otherFileScrollRect, GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
+		}
+
+		private void DrawToolbar()
+		{
+			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+			Rect goToLineRect = GUILayoutUtility.GetRect(new GUIContent("Go To Line"), EditorStyles.toolbarButton);
+			if (GUI.Button(goToLineRect, new GUIContent("Go To Line"), EditorStyles.toolbarButton))
+			{
+				PopupWindow.Show(goToLineRect, new GoToLinePopup(GoToLine));
+			}
+			if (GUILayout.Button(new GUIContent("Previous Change"), EditorStyles.toolbarButton))
+			{
+				GoToPreviousChange();
+			}
+			if (GUILayout.Button(new GUIContent("Next Change"), EditorStyles.toolbarButton))
+			{
+				GoToNextChange();
+			}
+			GUILayout.FlexibleSpace();
+			GUILayout.Label(new GUIContent(path));
+			if (GUILayout.Button(GitGUI.IconContent("_Help"), GitGUI.Styles.IconButton))
+			{
+				GoToHelp();
+			}
+			EditorGUILayout.EndHorizontal();
 		}
 
 		private void GoToPreviousChange()
@@ -733,6 +744,20 @@ namespace UniGit
 		{
 			return rect.y <= screenRect.y + screenRect.height && rect.y + rect.height >= screenRect.y;
 		}
+
+		private void GoToHelp()
+		{
+			Application.OpenURL(HelpUrl);
+		}
+
+		#region Custom Menu
+
+		public void AddItemsToMenu(GenericMenu menu)
+		{
+			menu.AddItem(new GUIContent("Help"),false,GoToHelp);
+		}
+
+		#endregion
 
 		public class GoToLinePopup : PopupWindowContent
 		{
