@@ -27,13 +27,13 @@ namespace UniGit.Security
 
 		public GitCredential(GitCredentials.Entry c)
 		{
-			this.name = c.name;
-			this.url = c.url;
-			this.username = c.username;
-			this.password = c.password;
-			this.isToken = c.isToken;
-			this.newPassword = c.newPassword;
-			this.hasPassword = c.hasPassword;
+			name = c.name;
+			url = c.url;
+			username = c.username;
+			password = c.password;
+			isToken = c.isToken;
+			newPassword = c.newPassword;
+			hasPassword = c.hasPassword;
 		}
 
 		public string Name

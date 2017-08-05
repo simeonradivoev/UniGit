@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
@@ -31,7 +30,7 @@ namespace UniGit.Settings
 
 			if (settings != null)
 			{
-				bool save = false;
+				bool save;
 
 				EditorGUI.BeginChangeCheck();
 				settings.AutoStage = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Stage", "Auto stage changes for committing when an asset is modified"), settings.AutoStage);

@@ -22,28 +22,28 @@ namespace UniGit
 		[MenuItem("Assets/Git/Add", priority = 50), UsedImplicitly]
 		private static void AddSelected()
 		{
-			string[] paths = Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			string[] paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			gitManager.AutoStage(paths);
 		}
 
 		[MenuItem("Assets/Git/Add", true, priority = 50), UsedImplicitly]
 		private static bool AddSelectedValidate()
 		{
-			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			return paths.Any(g => GitManager.CanStage(gitManager.Repository.RetrieveStatus(g)));
 		}
 
 		[MenuItem("Assets/Git/Remove", priority = 50), UsedImplicitly]
 		private static void RemoveSelected()
 		{
-			string[] paths = Selection.assetGUIDs.Select(g => AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			string[] paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			gitManager.AutoUnstage(paths);
 		}
 
 		[MenuItem("Assets/Git/Remove", true, priority = 50), UsedImplicitly]
 		private static bool RemoveSelectedValidate()
 		{
-			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			return paths.Any(g => GitManager.CanUnstage(gitManager.Repository.RetrieveStatus(g)));
 		}
 
@@ -82,7 +82,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Revert", priority = 80), UsedImplicitly]
 		private static void Revet()
 		{
-			var paths = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e)).ToArray();
+			var paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			if (externalManager.TakeRevert(paths))
 			{
 				gitManager.Callbacks.IssueAssetDatabaseRefresh();
@@ -106,7 +106,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Revert",true, priority = 80), UsedImplicitly]
 		private static bool RevetValidate()
 		{
-			return Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).SelectMany(e => GitManager.GetPathWithMeta(e)).Where(e => File.Exists(e)).Select(e => gitManager.Repository.RetrieveStatus(e)).Any(e => GitManager.CanStage(e) | GitManager.CanUnstage(e));
+			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(GitManager.GetPathWithMeta).Where(File.Exists).Select(e => gitManager.Repository.RetrieveStatus(e)).Any(e => GitManager.CanStage(e) | GitManager.CanUnstage(e));
 		}
 
 		private static void OnRevertProgress(string path, int currentSteps, int totalSteps)
@@ -124,28 +124,28 @@ namespace UniGit
 		[MenuItem("Assets/Git/Blame/Object", priority = 100), UsedImplicitly]
 		private static void BlameObject()
 		{
-			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).FirstOrDefault();
+			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
 			gitManager.ShowBlameWizard(path, externalManager);
 		}
 
 		[MenuItem("Assets/Git/Blame/Object", priority = 100,validate = true), UsedImplicitly]
 		private static bool BlameObjectValidate()
 		{
-			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).FirstOrDefault();
+			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
 			return gitManager.CanBlame(path);
 		}
 
 		[MenuItem("Assets/Git/Blame/Meta", priority = 100), UsedImplicitly]
 		private static void BlameMeta()
 		{
-			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).Select(e => AssetDatabase.GetTextMetaFilePathFromAssetPath(e)).FirstOrDefault();
+			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.GetTextMetaFilePathFromAssetPath).FirstOrDefault();
 			gitManager.ShowBlameWizard(path, externalManager);
 		}
 
 		[MenuItem("Assets/Git/Blame/Meta", priority = 100,validate = true), UsedImplicitly]
 		private static bool BlameMetaValidate()
 		{
-			var path = Selection.assetGUIDs.Select(e => AssetDatabase.GUIDToAssetPath(e)).Select(e => AssetDatabase.GetTextMetaFilePathFromAssetPath(e)).FirstOrDefault();
+			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.GetTextMetaFilePathFromAssetPath).FirstOrDefault();
 			return gitManager.CanBlame(path);
 		}
 	}

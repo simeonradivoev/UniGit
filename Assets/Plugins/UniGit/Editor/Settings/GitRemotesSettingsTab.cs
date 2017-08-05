@@ -134,7 +134,7 @@ namespace UniGit.Settings
 				{
 					return remote.Equals(obj);
 				}
-				return base.Equals(obj);
+				return ReferenceEquals(this, obj);
 			}
 
 			public override int GetHashCode()
@@ -155,10 +155,10 @@ namespace UniGit.Settings
 
 		private class AddRepositoryPopup : PopupWindowContent
 		{
-			private RemoteCollection remoteCollection;
+			private readonly RemoteCollection remoteCollection;
 			private string name = "origin";
 			private string url;
-			private GitManager gitManager;
+			private readonly GitManager gitManager;
 
 			public AddRepositoryPopup(GitManager gitManager,RemoteCollection remoteCollection)
 			{

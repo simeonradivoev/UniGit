@@ -169,9 +169,10 @@ namespace UniGit
 		{
 			foreach (var settingsTab in tabs)
 			{
-				if (settingsTab is IHasCustomMenu)
+				var customMenu = settingsTab as IHasCustomMenu;
+				if (customMenu != null)
 				{
-					((IHasCustomMenu)settingsTab).AddItemsToMenu(menu);
+					customMenu.AddItemsToMenu(menu);
 				}
 			}
 			menu.AddItem(new GUIContent("Help"),false, GoToHelp);

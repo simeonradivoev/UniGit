@@ -37,11 +37,11 @@ namespace UniGit
 		private Rect historyScrollContentsRect;
 		private Rect warningBoxRect;
 		private bool hasConflicts;
-		private Queue<KeyValuePair<Rect, PopupWindowContent>> popupsQueue = new Queue<KeyValuePair<Rect, PopupWindowContent>>();
+		private readonly Queue<KeyValuePair<Rect, PopupWindowContent>> popupsQueue = new Queue<KeyValuePair<Rect, PopupWindowContent>>();
 		[SerializeField] private Vector2 historyScroll;
 		[SerializeField] private string selectedBranchName;
 		[SerializeField] private int maxCommitsCount;
-		private object commitCachesLock = new object();
+		private readonly object commitCachesLock = new object();
 		private GitAsyncOperation loadingCommits;
 		private GitExternalManager externalManager;
 		private GitCredentialsManager credentialsManager;
@@ -76,31 +76,32 @@ namespace UniGit
 			{
 				GitProfilerProxy.BeginSample("Git History Window Style Creation", this);
 
-				styles = new Styles();
-				styles.historyKnobNormal = new GUIStyle("sv_iconselector_labelselection");
-				styles.historyKnobNormal.border = new RectOffset(6, 6, 6, 6);
-				styles.historyKnobNormal.margin = new RectOffset(0, 0, 0, 0);
-				styles.historyKnobNormal.fixedHeight = 0;
-				styles.historyKnobHead = new GUIStyle() { border = new RectOffset(6, 6, 6, 6), fixedHeight = 0, normal = new GUIStyleState() { background = EditorGUIUtility.FindTexture("sv_label_1") } };
-				styles.historyKnobRemote = new GUIStyle() { border = new RectOffset(6, 6, 6, 6), fixedHeight = 0, normal = new GUIStyleState() { background = EditorGUIUtility.FindTexture("sv_label_5") } };
-				styles.historyKnobOther = new GUIStyle() { border = new RectOffset(6, 6, 6, 6), fixedHeight = 0, normal = new GUIStyleState() { background = EditorGUIUtility.FindTexture("sv_label_2") } };
-				styles.headCommitTag = new GUIStyle("AssetLabel");
-				styles.headCommitTag.normal.background = EditorGUIUtility.FindTexture("sv_label_1");
-				styles.remoteCommitTag = new GUIStyle("AssetLabel");
-				styles.remoteCommitTag.normal.background = EditorGUIUtility.FindTexture("sv_label_5");
-				styles.otherCommitTag = new GUIStyle("AssetLabel");
-				styles.otherCommitTag.normal.background = ((GUIStyle)"sv_iconselector_labelselection").normal.background;
-				styles.historyHelpBox = new GUIStyle(EditorStyles.helpBox) { richText = true, padding = new RectOffset(8, 8, 8, 8), alignment = TextAnchor.MiddleLeft, contentOffset = new Vector2(24, -2) };
-				styles.historyHelpBoxLabel = new GUIStyle("CN EntryWarn");
-				styles.commitMessage = new GUIStyle("TL SelectionButton") { alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 4, 4, 4), clipping = TextClipping.Clip };
-				styles.avatar = new GUIStyle("ShurikenEffectBg") { contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.ImageOnly };
-				styles.avatarName = new GUIStyle("ShurikenEffectBg") { contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.TextOnly, fontSize = 28, fontStyle = FontStyle.Bold, normal = { textColor = Color.white } };
-				styles.historyLine = "AppToolbar";
-				styles.loadMoreCommitsBtn = "ButtonLeft";
-				styles.resetCommitsBtn = "ButtonRight";
-				styles.commitArrow = "AC LeftArrow";
-				styles.commitBg = "RegionBg";
-				styles.commitHashSeparator = "EyeDropperHorizontalLine";
+				styles = new Styles
+				{
+					historyKnobNormal = new GUIStyle("sv_iconselector_labelselection")
+					{
+						border = new RectOffset(6, 6, 6, 6),
+						margin = new RectOffset(0, 0, 0, 0),
+						fixedHeight = 0
+					},
+					historyKnobHead = new GUIStyle() {border = new RectOffset(6, 6, 6, 6), fixedHeight = 0, normal = new GUIStyleState() {background = EditorGUIUtility.FindTexture("sv_label_1")}},
+					historyKnobRemote = new GUIStyle() {border = new RectOffset(6, 6, 6, 6), fixedHeight = 0, normal = new GUIStyleState() {background = EditorGUIUtility.FindTexture("sv_label_5")}},
+					historyKnobOther = new GUIStyle() {border = new RectOffset(6, 6, 6, 6), fixedHeight = 0, normal = new GUIStyleState() {background = EditorGUIUtility.FindTexture("sv_label_2")}},
+					headCommitTag = new GUIStyle("AssetLabel") {normal = {background = EditorGUIUtility.FindTexture("sv_label_1")}},
+					remoteCommitTag = new GUIStyle("AssetLabel") {normal = {background = EditorGUIUtility.FindTexture("sv_label_5")}},
+					otherCommitTag = new GUIStyle("AssetLabel") {normal = {background = ((GUIStyle) "sv_iconselector_labelselection").normal.background}},
+					historyHelpBox = new GUIStyle(EditorStyles.helpBox) {richText = true, padding = new RectOffset(8, 8, 8, 8), alignment = TextAnchor.MiddleLeft, contentOffset = new Vector2(24, -2)},
+					historyHelpBoxLabel = new GUIStyle("CN EntryWarn"),
+					commitMessage = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 4, 4, 4), clipping = TextClipping.Clip},
+					avatar = new GUIStyle("ShurikenEffectBg") {contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.ImageOnly},
+					avatarName = new GUIStyle("ShurikenEffectBg") {contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.TextOnly, fontSize = 28, fontStyle = FontStyle.Bold, normal = {textColor = Color.white}},
+					historyLine = "AppToolbar",
+					loadMoreCommitsBtn = "ButtonLeft",
+					resetCommitsBtn = "ButtonRight",
+					commitArrow = "AC LeftArrow",
+					commitBg = "RegionBg",
+					commitHashSeparator = "EyeDropperHorizontalLine"
+				};
 				GitProfilerProxy.EndSample();
 			}
 		}
@@ -665,14 +666,7 @@ namespace UniGit
 			if (gitSettings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
 			{
 				Texture2D avatar = GetProfilePixture(commit.Committer.Email);
-				if (avatar != null)
-				{
-					GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), GitGUI.GetTempContent(avatar), styles.avatar);
-				}
-				else
-				{
-					GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), GitOverlay.icons.loadingIconSmall, styles.avatar);
-				}
+				GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), avatar != null ? GitGUI.GetTempContent(avatar) : GitOverlay.icons.loadingIconSmall, styles.avatar);
 			}
 			else
 			{
@@ -683,10 +677,6 @@ namespace UniGit
 			}
 			
 			
-			//if (avatar != null)
-			//{
-				//GUI.DrawTexture(new Rect(rect.x + x, rect.y + y, 32, 32), avatar);
-			//}
 			x += 38;
 			EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(commit.Committer.Name), EditorStyles.boldLabel);
 			y += 16;
@@ -752,6 +742,7 @@ namespace UniGit
 
 				if (selectedBranch.IsCurrentRepositoryHead && !isHead)
 				{
+					var rect1 = buttonRect;
 					menu.AddItem(new GUIContent("Reset"), false, () =>
 					{
 						if (externalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
@@ -761,7 +752,7 @@ namespace UniGit
 						}
 						else
 						{
-							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new ResetPopupWindow(gitManager,gitManager.Repository.Lookup<Commit>(commit.Id))));
+							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect1, new ResetPopupWindow(gitManager,gitManager.Repository.Lookup<Commit>(commit.Id))));
 						}
 					});
 				}
@@ -769,9 +760,10 @@ namespace UniGit
 				{
 					menu.AddDisabledItem(new GUIContent("Reset"));
 				}
+				var rect2 = buttonRect;
 				menu.AddItem(new GUIContent("Branch Out"), false, () =>
 				{
-					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(buttonRect, new GitCreateBranchWindow(gitManager.Repository.Lookup<Commit>(commit.Id),null, gitManager)));
+					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect2, new GitCreateBranchWindow(gitManager.Repository.Lookup<Commit>(commit.Id),null, gitManager)));
 				});
 				menu.DropDown(buttonRect);
 			}
@@ -786,9 +778,6 @@ namespace UniGit
 			{
 				if (current.type == EventType.ContextClick)
 				{
-					//GenericMenu commitContexMenu = new GenericMenu();
-
-					//commitContexMenu.ShowAsContext();
 					current.Use();
 				}
 			}
@@ -812,7 +801,7 @@ namespace UniGit
 			GUIContent content = GUIContent.none;
 			if (info.CurrentOperation == CurrentOperation.Merge)
 			{
-				content = GitGUI.GetTempContent(string.Format("Merging with remote branch in progress. You <b>must</b> do a merge commit before pushing."));
+				content = GitGUI.GetTempContent("Merging with remote branch in progress. You <b>must</b> do a merge commit before pushing.");
 			}
 			else if (behindBy != null && behindBy.Value > 0)
 			{

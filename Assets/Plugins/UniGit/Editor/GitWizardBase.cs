@@ -23,7 +23,6 @@ namespace UniGit
 		protected GitManager gitManager;
 		protected GitCredentialsManager credentialsManager;
 		protected GitExternalManager externalManager;
-		[SerializeField] private Vector2 logScroll;
 
 		public void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager)
 		{

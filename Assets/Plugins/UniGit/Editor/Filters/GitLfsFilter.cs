@@ -10,8 +10,8 @@ namespace UniGit.Filters
 {
 	public class GitLfsFilter : Filter
 	{
-		private Dictionary<string, Process> processes = new Dictionary<string, Process>();
-		private Dictionary<string, FilterMode> modes = new Dictionary<string, FilterMode>();
+		private readonly Dictionary<string, Process> processes = new Dictionary<string, Process>();
+		private readonly Dictionary<string, FilterMode> modes = new Dictionary<string, FilterMode>();
 		private readonly GitManager gitManager;
 		private readonly GitLfsManager lfsManager;
 
@@ -130,14 +130,16 @@ namespace UniGit.Filters
 			try
 			{
 				var process = new Process();
-				var startInfo = new ProcessStartInfo();
-				startInfo.FileName = "git-lfs";
-				startInfo.WorkingDirectory = gitManager.RepoPath;
-				startInfo.RedirectStandardInput = true;
-				startInfo.RedirectStandardOutput = true;
-				startInfo.RedirectStandardError = true;
-				startInfo.CreateNoWindow = true;
-				startInfo.UseShellExecute = false;
+				var startInfo = new ProcessStartInfo
+				{
+					FileName = "git-lfs",
+					WorkingDirectory = gitManager.RepoPath,
+					RedirectStandardInput = true,
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					CreateNoWindow = true,
+					UseShellExecute = false
+				};
 
 				// launch git-lfs smudge or clean
 				switch (mode)
@@ -173,11 +175,6 @@ namespace UniGit.Filters
 				Debug.LogError("LFS Create Error!");
 				Debug.LogException(e);
 			}
-		}
-
-		protected override void Initialize()
-		{
-			base.Initialize();
 		}
 
 		protected override void Smudge(string path, string root, Stream input, Stream output)

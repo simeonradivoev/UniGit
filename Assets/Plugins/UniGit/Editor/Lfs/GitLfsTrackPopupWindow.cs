@@ -6,8 +6,8 @@ namespace UniGit
 {
 	public class GitLfsTrackPopupWindow : PopupWindowContent
 	{
-		private EditorWindow focusWindow;
-		private GitLfsManager lfsManager;
+		private readonly EditorWindow focusWindow;
+		private readonly GitLfsManager lfsManager;
 		private string extension;
 
 		public GitLfsTrackPopupWindow(EditorWindow focusWindow,GitLfsManager lfsManager)

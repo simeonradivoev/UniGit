@@ -13,12 +13,12 @@ namespace UniGit
 {
 	public class GitLfsManager : ISettingsAffector
 	{
-		private bool isInstalled;
+		private readonly bool isInstalled;
 		private bool initilized;
-		private string version;
+		private readonly string version;
 		private FilterRegistration lfsRegistration;
 		private GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
-		private GitManager gitManager;
+		private readonly GitManager gitManager;
 
 		[UniGitInject]
 		public GitLfsManager(GitManager gitManager,GitCallbacks callbacks)

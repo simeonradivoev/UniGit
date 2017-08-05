@@ -10,13 +10,13 @@ namespace UniGit
 {
 	public class GitCommitDetailsWindow : PopupWindowContent
 	{
-		private Commit commit;
-		private GUIStyle commitMessageStyle;
-		private TreeChanges changes;
-		private Tree commitTree;
+		private readonly Commit commit;
+		private readonly GUIStyle commitMessageStyle;
+		private readonly TreeChanges changes;
+		private readonly Tree commitTree;
 		private Vector2 scroll;
-		private GitManager gitManager;
-		private GitExternalManager externalManager;
+		private readonly GitManager gitManager;
+		private readonly GitExternalManager externalManager;
 
 		public GitCommitDetailsWindow(GitManager gitManager,GitExternalManager externalManager,Commit commit)
 		{

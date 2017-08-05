@@ -629,9 +629,6 @@ namespace UniGit
 
 			foreach (var changeSection in changeSections)
 			{
-				//GUI.Box(new Rect(0,height, totalLineWidth, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent("Section"), "ProjectBrowserTopBarBg");
-				//height += EditorGUIUtility.singleLineHeight;
-
 				int line = showAdd ? changeSection.addedStartLine : changeSection.removedStartLine;
 				for (int b = 0; b < changeSection.changeBlobs.Count; b++)
 				{
@@ -740,7 +737,7 @@ namespace UniGit
 		public class GoToLinePopup : PopupWindowContent
 		{
 			private int line;
-			private Action<int> gotoLineAction;
+			private readonly Action<int> gotoLineAction;
 
 			public GoToLinePopup(Action<int> gotoLineAction)
 			{
@@ -784,8 +781,8 @@ namespace UniGit
 
 		public class UberRegex
 		{
-			private Regex regex;
-			private List<Func<string, string>> groupReplaces = new List<Func<string, string>>();
+			private readonly Regex regex;
+			private readonly List<Func<string, string>> groupReplaces = new List<Func<string, string>>();
 
 			public UberRegex(ColoredRegex[] regexes)
 			{
@@ -869,7 +866,7 @@ namespace UniGit
 
 		public class NormalBlob : IChangeBlob
 		{
-			public List<string> lines = new List<string>();
+			public readonly List<string> lines = new List<string>();
 
 			public void AddLine(LineChangeType type, string line)
 			{
@@ -889,8 +886,8 @@ namespace UniGit
 
 		public class AddRemoveBlob : IChangeBlob
 		{
-			public List<string> removedLines = new List<string>();
-			public List<string> addedLines = new List<string>();
+			public readonly List<string> removedLines = new List<string>();
+			public readonly List<string> addedLines = new List<string>();
 			public int maxCount;
 
 			public void AddLine(LineChangeType type, string line)

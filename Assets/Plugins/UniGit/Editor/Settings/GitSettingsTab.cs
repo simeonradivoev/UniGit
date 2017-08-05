@@ -10,8 +10,8 @@ namespace UniGit.Settings
 		protected GitSettingsWindow settingsWindow;
 		private bool hasFocused;
 		private bool initilized;
-		protected GitManager gitManager;
-		protected GUIContent name;
+		protected readonly GitManager gitManager;
+		protected readonly GUIContent name;
 
 		[UniGitInject]
 		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow)

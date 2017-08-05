@@ -17,12 +17,14 @@ namespace UniGit.Utils
 		private void GetGitVersion()
 		{
 			System.Diagnostics.Process process = new System.Diagnostics.Process();
-			System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
-			startInfo.CreateNoWindow = true;
-			startInfo.RedirectStandardOutput = true;
-			startInfo.FileName = "git";
-			startInfo.Arguments = "--version";
-			startInfo.UseShellExecute = false;
+			System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo
+			{
+				CreateNoWindow = true,
+				RedirectStandardOutput = true,
+				FileName = "git",
+				Arguments = "--version",
+				UseShellExecute = false
+			};
 			process.StartInfo = startInfo;
 			process.Start();
 			gitVersion = process.StandardOutput.ReadLine();

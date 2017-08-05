@@ -9,9 +9,9 @@ namespace UniGit
 	public class GitCreateBranchWindow : PopupWindowContent
 	{
 		private string name = "";
-		private Commit commit;
-		private Action onCreated;
-		private GitManager gitManager;
+		private readonly Commit commit;
+		private readonly Action onCreated;
+		private readonly GitManager gitManager;
 
 		public GitCreateBranchWindow(Commit commit, Action onCreated,GitManager gitManager)
 		{

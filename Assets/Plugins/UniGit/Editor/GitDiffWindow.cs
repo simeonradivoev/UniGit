@@ -48,7 +48,6 @@ namespace UniGit
 
 		private const string CommitMessageKey = "UniGitCommitMessage";
 		private const string CommitMessageUndoGroup = "Commit Message Change";
-		private const string BuildngStatusOperationName = "BuildingStatus";
 
 		[SerializeField] private Vector2 diffScroll;
 		[SerializeField] private bool commitMaximized = true;
@@ -61,7 +60,7 @@ namespace UniGit
 		[SerializeField] private Settings settings;
 		private int lastSelectedIndex;
 		private StatusList statusList;
-		private object statusListLock = new object();
+		private readonly object statusListLock = new object();
 		private char commitMessageLastChar;
 		private GitConflictsHandler conflictsHandler;
 		private GitAsyncOperation statusListUpdateOperation;
@@ -107,19 +106,21 @@ namespace UniGit
 			if (styles == null)
 			{
 				GitProfilerProxy.BeginSample("Git Diff Window Style Creation", this);
-				styles = new Styles();
-				styles.commitTextArea = new GUIStyle("sv_iconselector_labelselection") { margin = new RectOffset(4, 4, 4, 4), normal = { textColor = Color.black }, alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 6, 4, 4) };
-				styles.assetIcon = new GUIStyle("NotificationBackground") { contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter, imagePosition = ImagePosition.ImageOnly, padding = new RectOffset(4, 4, 4, 4), border = new RectOffset(12, 12, 12, 12) };
-				styles.diffScrollHeader = new GUIStyle("CurveEditorBackground") { contentOffset = new Vector2(48, 0), alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = { textColor = Color.white * 0.9f }, padding = new RectOffset(12, 12, 12, 12), imagePosition = ImagePosition.ImageLeft };
-				styles.diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } };
-				styles.diffElementPath = new GUIStyle(EditorStyles.label) { onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture }, wordWrap = true, fixedHeight = 0, alignment = TextAnchor.MiddleLeft };
-				styles.diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") { fixedHeight = 0, border = new RectOffset(8, 8, 8, 8) };
-				styles.toggle = new GUIStyle("IN Toggle") { normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() };
-				styles.mergeIndicator = "AssetLabel";
-				styles.commitMessageFoldoud = "IN Foldout";
-				styles.commitButton = "DropDownButton";
-				styles.searchTextField = "ToolbarSeachTextField";
-				styles.searchCancelButton = "ToolbarSeachCancelButtonEmpty";
+				styles = new Styles()
+				{ 
+					commitTextArea = new GUIStyle("sv_iconselector_labelselection") { margin = new RectOffset(4, 4, 4, 4), normal = { textColor = Color.black }, alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 6, 4, 4) },
+					assetIcon = new GUIStyle("NotificationBackground") { contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter, imagePosition = ImagePosition.ImageOnly, padding = new RectOffset(4, 4, 4, 4), border = new RectOffset(12, 12, 12, 12) },
+					diffScrollHeader = new GUIStyle("CurveEditorBackground") { contentOffset = new Vector2(48, 0), alignment = TextAnchor.MiddleLeft, fontSize = 18, fontStyle = FontStyle.Bold, normal = { textColor = Color.white * 0.9f }, padding = new RectOffset(12, 12, 12, 12), imagePosition = ImagePosition.ImageLeft },
+					diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } },
+					diffElementPath = new GUIStyle(EditorStyles.label) { onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture }, wordWrap = true, fixedHeight = 0, alignment = TextAnchor.MiddleLeft },
+					diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") { fixedHeight = 0, border = new RectOffset(8, 8, 8, 8) },
+					toggle = new GUIStyle("IN Toggle") { normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() },
+					mergeIndicator = "AssetLabel",
+					commitMessageFoldoud = "IN Foldout",
+					commitButton = "DropDownButton",
+					searchTextField = "ToolbarSeachTextField",
+					searchCancelButton = "ToolbarSeachCancelButtonEmpty"
+				};
 				GitProfilerProxy.EndSample();
 			}
 		}
@@ -626,18 +627,20 @@ namespace UniGit
 				GenericMenu genericMenu = new GenericMenu();
 				foreach (SortType type in Enum.GetValues(typeof(SortType)))
 				{
+					SortType t = type;
 					genericMenu.AddItem(new GUIContent(type.GetDescription()), type == settings.sortType, () =>
 					{
-						settings.sortType = type;
+						settings.sortType = t;
 						UpdateStatusList();
 					});
 				}
 				genericMenu.AddSeparator("");
 				foreach (SortDir dir in Enum.GetValues(typeof(SortDir)))
 				{
+					SortDir d = dir;
 					genericMenu.AddItem(new GUIContent(dir.GetDescription()), dir == settings.sortDir, () =>
 					{
-						settings.sortDir = dir;
+						settings.sortDir = d;
 						UpdateStatusList();
 					});
 				}
@@ -691,7 +694,7 @@ namespace UniGit
 		private void DoDiffScroll(Event current)
 		{
 			float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-			float elementsTotalHeight = (statusList.Count(i => IsVisible(i)) + totalTypesCount)  * elementHeight;
+			float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount)  * elementHeight;
 
 			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,420), elementsTotalHeight);
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
@@ -805,15 +808,7 @@ namespace UniGit
 
 			if (current.type == EventType.Repaint)
 			{
-				Object asset = null;
-				if (filePath.EndsWith(".meta"))
-				{
-					asset = AssetDatabase.LoadAssetAtPath(AssetDatabase.GetAssetPathFromTextMetaFilePath(filePath), typeof (Object));
-				}
-				else
-				{
-					asset = AssetDatabase.LoadAssetAtPath(filePath, typeof (Object));
-				}
+				Object asset = AssetDatabase.LoadAssetAtPath(filePath.EndsWith(".meta") ? AssetDatabase.GetAssetPathFromTextMetaFilePath(filePath) : filePath, typeof(Object));
 
 				string extension = Path.GetExtension(filePath);
 				GUIContent tmpContent = GUIContent.none;

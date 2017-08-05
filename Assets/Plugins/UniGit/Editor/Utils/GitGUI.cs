@@ -9,9 +9,9 @@ namespace UniGit.Utils
 {
 	public static class GitGUI
 	{
-		private static GUIContent tmpContent = new GUIContent();
-		private static Stack<bool> enableStack = new Stack<bool>(); 
-		private static Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>();
+		private static readonly GUIContent tmpContent = new GUIContent();
+		private static readonly Stack<bool> enableStack = new Stack<bool>(); 
+		private static readonly Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>();
 
 		private static StylesClass _styles;
 		public static StylesClass Styles
@@ -157,11 +157,11 @@ namespace UniGit.Utils
 			float totalWidth = loadinCricleSize + loadingLabelWidth.x + 8;
 			float totalHeight = Mathf.Max(loadingLabelWidth.y, loadinCricleSize);
 
-			GitGUI.PushMatrix();
+			PushMatrix();
 			Rect loadinCircleRect = new Rect(rect.x + rect.width / 2 - totalWidth / 2, rect.y + rect.height / 2 - totalHeight / 2, loadinCricleSize, loadinCricleSize);
 			GUIUtility.RotateAroundPivot((float)EditorApplication.timeSinceStartup * 300, loadinCircleRect.center);
 			GUI.DrawTexture(loadinCircleRect, EditorGUIUtility.FindTexture("CollabProgress"));
-			GitGUI.PopMatrix();
+			PopMatrix();
 
 			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadinCricleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
 		}

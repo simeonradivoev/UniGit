@@ -18,7 +18,7 @@ namespace UniGit
 		private int selectedAdapterIndex = -1;
 		private IExternalAdapter selectedAdapter;
 		private bool initiazlitedSelected;
-		private GitManager gitManager;
+		private readonly GitManager gitManager;
 
 		[UniGitInject]
 		public GitExternalManager(GitManager gitManager,ICollection<IExternalAdapter> adapters)
@@ -97,7 +97,7 @@ namespace UniGit
 		{
 			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapterInfo);
 			if (attribute == null) return false;
-			return attribute.ProcessNames.All(p => ExistsOnPath(p));
+			return attribute.ProcessNames.All(ExistsOnPath);
 		}
 
 		public bool TakeCommit(string message)
@@ -202,7 +202,9 @@ namespace UniGit
 			if (File.Exists(fileName))
 				return Path.GetFullPath(fileName);
 
-			var values = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine).Split(';');
+			var variables = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Machine);
+			if (variables == null) return null;
+			var values = variables.Split(';');
 			foreach (var path in values)
 			{
 				var fullPath = Path.Combine(path, fileName);

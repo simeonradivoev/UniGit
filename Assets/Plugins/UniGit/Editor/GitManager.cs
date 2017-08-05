@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
-using UniGit.Security;
 using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
@@ -16,15 +14,15 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.1.1";
+		public const string Version = "1.2";
 
-		private string repoPath;
-		private string gitPath;
+		private readonly string repoPath;
+		private readonly string gitPath;
 		public string RepoPath { get { return repoPath; } }
 
 		private Repository repository;
 		private StatusTreeClass statusTree;
-		private GitSettingsJson gitSettings;
+		private readonly GitSettingsJson gitSettings;
 		private static readonly Queue<Action> actionQueue = new Queue<Action>();
 		private GitRepoStatus status;
 		private readonly object statusTreeLock = new object();
@@ -87,10 +85,10 @@ namespace UniGit
 			DeleteDirectory(repoPath);
 		}
 
-		private void DeleteDirectory(string target_dir)
+		private void DeleteDirectory(string targetDir)
 		{
-			string[] files = Directory.GetFiles(target_dir);
-			string[] dirs = Directory.GetDirectories(target_dir);
+			string[] files = Directory.GetFiles(targetDir);
+			string[] dirs = Directory.GetDirectories(targetDir);
 
 			foreach (string file in files)
 			{
@@ -103,7 +101,7 @@ namespace UniGit
 				DeleteDirectory(dir);
 			}
 
-			Directory.Delete(target_dir, false);
+			Directory.Delete(targetDir, false);
 		}
 
 		internal void OnEditorUpdate()
@@ -258,12 +256,7 @@ namespace UniGit
 			GitAsyncManager.QueueWorkerWithLock(() => { UpdateStatusTree(status, true); }, statusTreeLock);
 		}
 
-		private void UpdateStatusTree(GitRepoStatus status)
-		{
-			UpdateStatusTree(status, false);
-		}
-
-		private void UpdateStatusTree(GitRepoStatus status,bool threaded)
+		private void UpdateStatusTree(GitRepoStatus status,bool threaded = false)
 		{
 			try
 			{
@@ -396,7 +389,7 @@ namespace UniGit
 
 		public void ShowDiffPrev(string path, GitExternalManager externalManager)
 		{
-			if (string.IsNullOrEmpty(path) && Repository != null) return;
+			if (string.IsNullOrEmpty(path) || Repository == null) return;
 			var lastCommit = Repository.Commits.QueryBy(path).Skip(1).FirstOrDefault();
 			if(lastCommit == null) return;
 			if (externalManager.TakeDiff(path, lastCommit.Commit))
@@ -583,7 +576,7 @@ namespace UniGit
 
 		public static IEnumerable<string> GetPathsWithMeta(IEnumerable<string> paths)
 		{
-			return paths.SelectMany(p => GetPathWithMeta(p));
+			return paths.SelectMany(GetPathWithMeta);
 		}
 		#endregion
 
@@ -737,7 +730,7 @@ namespace UniGit
 				{
 					return operation.Equals(obj);
 				}
-				return base.Equals(obj);
+				return ReferenceEquals(this,obj);
 			}
 
 			public override int GetHashCode()
@@ -778,7 +771,7 @@ namespace UniGit
 				{
 					return operation.Equals(obj);
 				}
-				return base.Equals(obj);
+				return ReferenceEquals(this, obj);
 			}
 
 			public override int GetHashCode()
@@ -895,7 +888,7 @@ namespace UniGit
 		{
 			private Dictionary<string, StatusTreeEntry> subEntiEntries = new Dictionary<string, StatusTreeEntry>();
 			internal bool forceStatus;
-			private int depth;
+			private readonly int depth;
 			public FileStatus State { get; set; }
 
 			public StatusTreeEntry(int depth)

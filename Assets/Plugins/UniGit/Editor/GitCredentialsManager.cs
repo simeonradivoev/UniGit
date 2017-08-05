@@ -21,8 +21,8 @@ namespace UniGit
 		private int selectedAdapterIndex;
 		private bool initiazlitedSelected;
 		private GitCredentialsJson gitCredentials;
-		private GitManager gitManager;
-		private GitSettingsJson gitSettings;
+		private readonly GitManager gitManager;
+		private readonly GitSettingsJson gitSettings;
 
 		[UniGitInject]
 		public GitCredentialsManager(GitManager gitManager,GitSettingsJson gitSettings,List<ICredentialsAdapter> adapters)
@@ -178,7 +178,7 @@ namespace UniGit
 
 		private void InitializeSelectedAdapter()
 		{
-			SetSelectedAdapter(Array.IndexOf(adapters, adapters.FirstOrDefault(a => IsValid(a))));
+			SetSelectedAdapter(Array.IndexOf(adapters, adapters.FirstOrDefault(IsValid)));
 			initiazlitedSelected = true;
 		}
 
@@ -205,16 +205,6 @@ namespace UniGit
 				lastAdapter.DeleteCredentials(credential.URL);
 				credential.SetHasPassword(false);
 			}
-		}
-
-		private void UpdateSelectedAdaptor(ICredentialsAdapter adapter)
-		{
-			foreach (var credential in GitCredentials)
-			{
-				credential.ClearPassword();
-				credential.SetHasPassword(false);
-			}
-
 		}
 		#endregion
 

@@ -33,6 +33,7 @@ namespace UniGit
 		private void ValidateSettingsPath()
 		{
 			string settingsFileDirectory = Path.GetDirectoryName(settingsPath);
+			if(string.IsNullOrEmpty(settingsFileDirectory)) return;
 			if (!Directory.Exists(settingsFileDirectory))
 			{
 				Directory.CreateDirectory(settingsFileDirectory);

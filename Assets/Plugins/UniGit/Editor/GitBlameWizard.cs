@@ -10,7 +10,7 @@ namespace UniGit
 {
 	public class GitBlameWizard : EditorWindow, IGitWindow,ISerializationCallbackReceiver
 	{
-		private const float commitLineHeight = 21;
+		private const float CommitLineHeight = 21;
 
 		[SerializeField] private string blamePath;
 
@@ -88,11 +88,13 @@ namespace UniGit
 
 		private void InitGUI()
 		{
-			styles = new Styles();
-			styles.lineStyle = new GUIStyle("CN StatusInfo") { padding = { left = 4 } };
-			styles.lineStyleSelected = new GUIStyle(EditorStyles.label) { padding = { left = 4 }, normal = { background = ((GUIStyle)"ChannelStripAttenuationBar").normal.background } };
-			styles.lineNumStyle = new GUIStyle(EditorStyles.label) { normal = { background = ((GUIStyle)"OL EntryBackEven").normal.background }, padding = { left = 4 } };
-			styles.hunkStyle = new GUIStyle("CN EntryBackOdd") {alignment = TextAnchor.MiddleLeft};
+			styles = new Styles()
+			{
+				lineStyle = new GUIStyle("CN StatusInfo") { padding = { left = 4 } },
+				lineStyleSelected = new GUIStyle(EditorStyles.label) { padding = { left = 4 }, normal = { background = ((GUIStyle)"ChannelStripAttenuationBar").normal.background } },
+				lineNumStyle = new GUIStyle(EditorStyles.label) { normal = { background = ((GUIStyle)"OL EntryBackEven").normal.background }, padding = { left = 4 } },
+				hunkStyle = new GUIStyle("CN EntryBackOdd") {alignment = TextAnchor.MiddleLeft}
+			};
 		}
 
 		private void Update()
@@ -105,7 +107,7 @@ namespace UniGit
 			}
 		}
 
-		protected bool OnGUI()
+		protected void OnGUI()
 		{
 			if (styles == null) InitGUI();
 
@@ -116,7 +118,7 @@ namespace UniGit
 				{
 					Close();
 				}
-				return false;
+				return;
 			}
 
 			if(Event.current.type == EventType.MouseMove) Repaint();
@@ -129,7 +131,6 @@ namespace UniGit
 				GUILayout.FlexibleSpace();
 				EditorGUILayout.EndHorizontal();
 				EditorGUILayout.LabelField(new GUIContent("Checking Blame..."),EditorStyles.centeredGreyMiniLabel);
-				return false;
 			}
 			else
 			{
@@ -180,7 +181,7 @@ namespace UniGit
 					hunkMaxWidth = Mathf.Max(hunkMaxWidth, hunkSize.x);
 					hunkCount++;
 				}
-				viewRect = new Rect(0, 0, hunkMaxWidth, hunkCount * commitLineHeight);
+				viewRect = new Rect(0, 0, hunkMaxWidth, hunkCount * CommitLineHeight);
 				scrollRect = new Rect(0, position.height - commitsWindowHeight + 4, position.width, commitsWindowHeight - 4);
 				hunksScroll = GUI.BeginScrollView(scrollRect, hunksScroll, viewRect);
 
@@ -188,7 +189,7 @@ namespace UniGit
 				foreach (var entry in commitLog)
 				{
 					GUIContent commitContent = new GUIContent(entry.Commit.MessageShort);
-					Rect commitRect = new Rect(0, hunkId * commitLineHeight, hunkMaxWidth, commitLineHeight);
+					Rect commitRect = new Rect(0, hunkId * CommitLineHeight, hunkMaxWidth, CommitLineHeight);
 					Rect commitInfoRect = new Rect(commitRect.x, commitRect.y, 24, commitRect.height);
 					EditorGUIUtility.AddCursorRect(commitInfoRect,MouseCursor.Link);
 					if (Event.current.type == EventType.Repaint)
@@ -217,7 +218,6 @@ namespace UniGit
 
 				GUI.EndScrollView();
 			}
-			return false;
 		}
 
 		private void DoCommitsResize(Rect rect)
@@ -257,7 +257,7 @@ namespace UniGit
 			{
 				if (commitLog[j].Commit.Sha == sha)
 				{
-					hunksScroll.y = j * commitLineHeight;
+					hunksScroll.y = j * CommitLineHeight;
 					break;
 				}
 			}
@@ -265,7 +265,7 @@ namespace UniGit
 
 		public class CommitInfoPopupContent : PopupWindowContent
 		{
-			private Commit commit;
+			private readonly Commit commit;
 
 			public CommitInfoPopupContent(Commit commit)
 			{

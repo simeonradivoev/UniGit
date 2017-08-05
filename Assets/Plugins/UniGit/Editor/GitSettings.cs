@@ -25,7 +25,7 @@ namespace UniGit
 		[Delayed]
 		public int ProjectStatusOverlayDepth = 2;
 		[Tooltip("Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled.")]
-		public bool ShowEmptyFolders = false;
+		public bool ShowEmptyFolders;
 		[Tooltip("Should Git status retrieval be multithreaded.")]
 		public bool GitStatusMultithreaded = true;
 		[Tooltip("Load Gavatars based on the committer's email address.")]

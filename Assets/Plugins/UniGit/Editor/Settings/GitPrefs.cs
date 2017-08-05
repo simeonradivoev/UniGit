@@ -40,7 +40,7 @@ namespace UniGit.Settings
 			{
 				return value;
 			}
-			return value;
+			return false;
 		}
 
 		public bool GetBool(string key, bool def)
@@ -110,7 +110,7 @@ namespace UniGit.Settings
 			{
 				return value;
 			}
-			return value;
+			return null;
 		}
 
 		public bool HasKey(string key)

@@ -21,7 +21,7 @@ namespace UniGit
 					if (gitManager.Repository != null && paths != null && paths.Length > 0)
 					{
 						bool autoStage = gitManager.Settings != null && gitManager.Settings.AutoStage;
-						string[] pathsFinal = paths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+						string[] pathsFinal = paths.SelectMany(GitManager.GetPathWithMeta).ToArray();
 						if (pathsFinal.Length > 0)
 						{
 							if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
@@ -63,7 +63,7 @@ namespace UniGit
 					{
 						if (importedAssets != null && importedAssets.Length > 0)
 						{
-							string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+							string[] importedAssetsToStage = importedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(GitManager.GetPathWithMeta).ToArray();
 							if (importedAssetsToStage.Length > 0)
 							{
 								if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
@@ -87,7 +87,7 @@ namespace UniGit
 
 						if (movedAssets != null && movedAssets.Length > 0)
 						{
-							string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+							string[] movedAssetsFinal = movedAssets.Where(a => !GitManager.IsEmptyFolder(a)).SelectMany(GitManager.GetPathWithMeta).ToArray();
 							if (movedAssetsFinal.Length > 0)
 							{
 								if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
@@ -113,7 +113,7 @@ namespace UniGit
 					//automatic deletion of previously moved asset is necessary even if AutoStage is off
 					if (movedFromAssetPaths != null && movedFromAssetPaths.Length > 0)
 					{
-						string[] movedFromAssetPathsFinal = movedFromAssetPaths.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+						string[] movedFromAssetPathsFinal = movedFromAssetPaths.SelectMany(GitManager.GetPathWithMeta).ToArray();
 						if (movedFromAssetPathsFinal.Length > 0)
 						{
 							if (gitManager.Settings != null && gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
@@ -131,7 +131,7 @@ namespace UniGit
 					//automatic deletion is necessary even if AutoStage is off
 					if (deletedAssets != null && deletedAssets.Length > 0)
 					{
-						string[] deletedAssetsFinal = deletedAssets.SelectMany(g => GitManager.GetPathWithMeta(g)).ToArray();
+						string[] deletedAssetsFinal = deletedAssets.SelectMany(GitManager.GetPathWithMeta).ToArray();
 						if (deletedAssetsFinal.Length > 0)
 						{
 							if (gitManager.Settings != null && gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
