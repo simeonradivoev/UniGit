@@ -12,7 +12,7 @@ namespace UniGit
 		private Vector2 stashScroll;
 		private int selectedStash;
 		private GUIStyle stashStyle;
-		private GitManager gitManager;
+		private readonly GitManager gitManager;
 
 		public GitStashWindow(GitManager gitManager)
 		{

@@ -24,7 +24,7 @@ namespace UniGit.Utils
 
 			public bool IsParent { get { return children != null && children.Count > 0; } }
 		}
-		private List<Element> elements;
+		private readonly List<Element> elements;
 		private GUIStyle elementStyle;
 		private GUIStyle separatorStyle;
 		private Element currentElement;

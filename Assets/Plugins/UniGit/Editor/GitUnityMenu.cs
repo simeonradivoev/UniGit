@@ -34,6 +34,18 @@ namespace UniGit
 			return !gitManager.IsValidRepo;
 		}
 
+		[MenuItem("UniGit/Report Issue", false, 0)]
+		private static void ReportIssue()
+		{
+			Application.OpenURL("https://github.com/simeonradivoev/UniGit/issues/new");
+		}
+
+		[MenuItem("UniGit/Help",false ,0)]
+		private static void Help()
+		{
+			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki");
+		}
+
 		[MenuItem("UniGit/Donate",false,20)]
 		private static void Donate()
 		{
