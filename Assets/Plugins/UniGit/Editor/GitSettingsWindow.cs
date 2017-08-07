@@ -36,6 +36,13 @@ namespace UniGit
 			injectionHelper.Bind<GitLfsManager>().FromInstance(lfsManager);
 			injectionHelper.Bind<GitExternalManager>().FromInstance(externalManager);
 			injectionHelper.Bind<GitCredentialsManager>().FromInstance(credentialsManager);
+
+			injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
+			injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
+			injectionHelper.Bind<GitSettingsTab>().To<GitRemotesSettingsTab>();
+			injectionHelper.Bind<GitSettingsTab>().To<GitBranchesSettingsTab>();
+			injectionHelper.Bind<GitSettingsTab>().To<GitLFSSettingsTab>();
+			injectionHelper.Bind<GitSettingsTab>().To<GitSecuritySettingsTab>();
 		}
 
 		public override void OnAfterDeserialize()
@@ -48,7 +55,6 @@ namespace UniGit
 		{
 			titleContent.text = WindowTitle;
 			base.OnEnable();
-			InitTabs();
 		}
 
 		private void InitTabs()
@@ -59,17 +65,11 @@ namespace UniGit
 				{
 					settingsTab.Dispose();
 				}
+				tabs = null;
 			}
 
 			try
 			{
-				injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
-				injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
-				injectionHelper.Bind<GitSettingsTab>().To<GitRemotesSettingsTab>();
-				injectionHelper.Bind<GitSettingsTab>().To<GitBranchesSettingsTab>();
-				injectionHelper.Bind<GitSettingsTab>().To<GitLFSSettingsTab>();
-				injectionHelper.Bind<GitSettingsTab>().To<GitSecuritySettingsTab>();
-
 				tabs = injectionHelper.GetInstances<GitSettingsTab>().ToArray();
 			}
 			catch (Exception e)
@@ -119,12 +119,15 @@ namespace UniGit
 
 			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 			EditorGUI.BeginChangeCheck();
-			for (int i = 0; i < tabs.Length; i++)
+			if (tabs != null)
 			{
-				bool value = GUILayout.Toggle(tab == i, tabs[i].Name, EditorStyles.toolbarButton);
-				if (value)
+				for (int i = 0; i < tabs.Length; i++)
 				{
-					tab = i;
+					bool value = GUILayout.Toggle(tab == i, tabs[i].Name, EditorStyles.toolbarButton);
+					if (value)
+					{
+						tab = i;
+					}
 				}
 			}
 			if (EditorGUI.EndChangeCheck())

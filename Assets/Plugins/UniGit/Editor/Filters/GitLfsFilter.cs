@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using LibGit2Sharp;
+using UniGit.Utils;
 using Debug = UnityEngine.Debug;
 
 namespace UniGit.Filters

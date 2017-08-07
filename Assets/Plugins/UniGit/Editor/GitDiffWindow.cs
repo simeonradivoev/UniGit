@@ -400,7 +400,7 @@ namespace UniGit
 				BuildCommitMenu(commitMenu);
 				commitMenu.ShowAsContext();
 			}
-			GitGUI.StartEnable(!gitSettings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Commit));
+			GitGUI.StartEnable(!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit));
 			settings.emptyCommit = GUILayout.Toggle(settings.emptyCommit, GitGUI.GetTempContent("Empty Commit", "Commit the message only without changes"));
 			EditorGUI.BeginChangeCheck();
 			settings.amendCommit = GUILayout.Toggle(settings.amendCommit, GitGUI.GetTempContent("Amend Commit", "Amend previous commit."));
@@ -425,7 +425,7 @@ namespace UniGit
 		private void BuildCommitMenu(GenericMenu commitMenu)
 		{
 			commitMenu.AddItem(new GUIContent("Commit"), false, CommitCallback);
-			if (!gitSettings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Commit))
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit))
 			{
 				commitMenu.AddItem(new GUIContent("Commit And Push"), false, CommitAndPushCallback);
 			}
@@ -556,7 +556,7 @@ namespace UniGit
 
 		private void CommitAndPushCallback()
 		{
-			if (gitSettings.ExternalsType.HasFlag(GitSettingsJson.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
+			if (gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
 			{
 				if (Commit())
 				{
