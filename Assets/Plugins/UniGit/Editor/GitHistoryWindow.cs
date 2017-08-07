@@ -377,7 +377,7 @@ namespace UniGit
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 			GUIContent fetchContent = new GUIContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
-			if (branch.Remote == null)
+			if (branch.RemoteName == null && gitManager.Repository.Network.Remotes[branch.RemoteName] != null)
 			{
 				fetchContent.tooltip = "Branch does not have a remote.";
 				GUI.enabled = false;
@@ -461,7 +461,7 @@ namespace UniGit
 		private void GoToFetch()
 		{
 			var branch = selectedBranch.LoadBranch(gitManager);
-			if (externalManager.TakeFetch(branch.Remote.Name))
+			if (externalManager.TakeFetch(branch.RemoteName))
 			{
 				gitManager.MarkDirty();
 			}

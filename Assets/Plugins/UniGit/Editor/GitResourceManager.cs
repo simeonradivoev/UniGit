@@ -71,10 +71,12 @@ namespace UniGit
 				imageBytes = ms.ToArray();
 			}
 
-			var img = new Texture2D(width, height, TextureFormat.RGBA32, false,true);
-			img.hideFlags = HideFlags.HideAndDontSave;
-			img.name = "UniGitEditorResource.Image." + name;
-			img.wrapMode = TextureWrapMode.Clamp;
+			var img = new Texture2D(width, height, TextureFormat.RGBA32, false, true)
+			{
+				hideFlags = HideFlags.HideAndDontSave,
+				name = "UniGitEditorResource.Image." + name,
+				wrapMode = TextureWrapMode.Clamp
+			};
 			if (!img.LoadImage(imageBytes))
 			{
 				Debug.Log("There was a problem while loading a texture: " + name);

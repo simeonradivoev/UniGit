@@ -61,8 +61,8 @@ namespace UniGit
 			if(branchFriendlyNames == null)
 				branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 
-			if (remotes != null && branch.Remote != null)
-				selectedRemote = Array.IndexOf(remotes, branch.Remote);
+			if (remotes != null && branch.RemoteName != null)
+				selectedRemote = Array.IndexOf(remotes, branch.RemoteName);
 			if (branchNames != null && !string.IsNullOrEmpty(branch.CanonicalName))
 				selectedBranch = Array.IndexOf(branchNames, branch.CanonicalName);
 		}

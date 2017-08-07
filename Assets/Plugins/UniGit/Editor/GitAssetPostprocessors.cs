@@ -37,7 +37,7 @@ namespace UniGit
 							}
 							else
 							{
-								if (autoStage) gitManager.Repository.Stage(pathsFinal);
+								if (autoStage) Commands.Stage(gitManager.Repository,pathsFinal);
 								gitManager.MarkDirty(pathsFinal);
 							}
 						}
@@ -79,7 +79,7 @@ namespace UniGit
 								}
 								else
 								{
-									if (autoStage) gitManager.Repository.Stage(importedAssetsToStage);
+									if (autoStage) Commands.Stage(gitManager.Repository, importedAssetsToStage);
 									gitManager.MarkDirty(importedAssetsToStage);
 								}
 							}
@@ -103,7 +103,7 @@ namespace UniGit
 								}
 								else
 								{
-									if (autoStage) gitManager.Repository.Stage(movedAssetsFinal);
+									if (autoStage) Commands.Stage(gitManager.Repository, movedAssetsFinal);
 									gitManager.MarkDirty(movedAssetsFinal);
 								}
 							}
@@ -122,7 +122,7 @@ namespace UniGit
 							}
 							else
 							{
-								gitManager.Repository.Unstage(movedFromAssetPathsFinal);
+								Commands.Unstage(gitManager.Repository,movedFromAssetPathsFinal);
 								gitManager.MarkDirty(movedFromAssetPathsFinal);
 							}
 						}
@@ -140,7 +140,7 @@ namespace UniGit
 							}
 							else
 							{
-								gitManager.Repository.Unstage(deletedAssetsFinal);
+								Commands.Unstage(gitManager.Repository,deletedAssetsFinal);
 								gitManager.MarkDirty(deletedAssetsFinal);
 							}
 						}

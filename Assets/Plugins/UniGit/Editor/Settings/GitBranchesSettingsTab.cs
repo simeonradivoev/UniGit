@@ -13,7 +13,7 @@ namespace UniGit.Settings
 		private string[] remoteNames;
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
 		private Vector2 scroll;
-		private GitExternalManager externalManager;
+		private readonly GitExternalManager externalManager;
 
 		[UniGitInject]
 		public GitBranchesSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow, GitExternalManager externalManager) 

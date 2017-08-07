@@ -435,7 +435,7 @@ namespace UniGit
 			}
 			else
 			{
-				repository.Stage(paths);
+				Commands.Stage(repository,paths);
 				MarkDirty(paths);
 			}
 		}
@@ -444,7 +444,7 @@ namespace UniGit
 		{
 			var operation = GitAsyncManager.QueueWorker(() =>
 			{
-				repository.Stage(paths);
+				Commands.Stage(repository,paths);
 			}, (o) =>
 			{
 				MarkDirty(paths);
@@ -463,7 +463,7 @@ namespace UniGit
 			}
 			else
 			{
-				repository.Unstage(paths);
+				Commands.Unstage(repository, paths);
 				MarkDirty(paths);
 			}
 		}
@@ -472,7 +472,7 @@ namespace UniGit
 		{
 			var operation = GitAsyncManager.QueueWorker(() =>
 			{
-				repository.Unstage(paths);
+				Commands.Unstage(repository,paths);
 			}, (o) =>
 			{
 				MarkDirty(paths);

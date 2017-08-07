@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UnityEditor;
@@ -39,7 +40,7 @@ namespace UniGit
 		{
 			try
 			{
-				gitManager.Repository.Network.Fetch(remotes[selectedRemote], fetchOptions);
+				Commands.Fetch(gitManager.Repository,remotes[selectedRemote].Name, new string[0], fetchOptions,null);
 #if UNITY_EDITOR
 				Debug.Log("Fetch Complete");
 #endif

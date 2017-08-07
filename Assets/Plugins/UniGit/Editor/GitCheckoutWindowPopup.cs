@@ -9,8 +9,8 @@ namespace UniGit
 	public class GitCheckoutWindowPopup : PopupWindowContent
 	{
 		[SerializeField] private bool force;
-		private Branch branch;
-		private GitManager gitManager;
+		private readonly Branch branch;
+		private readonly GitManager gitManager;
 
 		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch)
 		{

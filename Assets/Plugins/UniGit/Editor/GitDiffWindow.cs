@@ -799,7 +799,7 @@ namespace UniGit
 					}
 					else
 					{
-						gitManager.Repository.Stage(paths);
+						Commands.Stage(gitManager.Repository,paths);
 						gitManager.MarkDirty(paths);
 					}
 					Repaint();
@@ -880,7 +880,7 @@ namespace UniGit
 						}
 						else
 						{
-							gitManager.Repository.Stage(paths);
+							Commands.Stage(gitManager.Repository,paths);
 							gitManager.MarkDirty(paths);
 						}
 						updateFlag = true;
@@ -894,7 +894,7 @@ namespace UniGit
 						}
 						else
 						{
-							gitManager.Repository.Unstage(paths);
+							Commands.Unstage(gitManager.Repository,paths);
 							gitManager.MarkDirty(paths);
 
 						}
@@ -1098,7 +1098,7 @@ namespace UniGit
 					}
 					else
 					{
-						gitManager.Repository.Stage(paths);
+						Commands.Stage(gitManager.Repository,paths);
 						gitManager.MarkDirty(paths);
 					}
 					Repaint();
@@ -1120,7 +1120,7 @@ namespace UniGit
 					}
 					else
 					{
-						gitManager.Repository.Unstage(paths);
+						Commands.Unstage(gitManager.Repository,paths);
 						gitManager.MarkDirty(paths);
 					}
 					Repaint();
@@ -1376,7 +1376,7 @@ namespace UniGit
 			}
 			else
 			{
-				gitManager.Repository.Unstage(paths);
+				Commands.Unstage(gitManager.Repository,paths);
 				gitManager.MarkDirty(paths);
 			}
 			Repaint();
@@ -1391,7 +1391,7 @@ namespace UniGit
 			}
 			else
 			{
-				gitManager.Repository.Stage(paths);
+				Commands.Stage(gitManager.Repository,paths);
 				gitManager.MarkDirty(paths);
 			}
 			Repaint();

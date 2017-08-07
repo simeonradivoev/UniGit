@@ -117,7 +117,7 @@ namespace UniGit.Settings
 
 			public void Update(RemoteCollection remotes)
 			{
-				remotes.Update(remote, UpdateAction);
+				remotes.Update(remote.Name, UpdateAction);
 				Update();
 			}
 
