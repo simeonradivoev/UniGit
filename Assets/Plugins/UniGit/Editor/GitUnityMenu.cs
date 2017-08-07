@@ -51,11 +51,5 @@ namespace UniGit
 		{
 			Application.OpenURL(GitAboutWindow.DonateUrl);
 		}
-
-		[MenuItem("UniGit/Dev/Recompile Scripts", false, 20)]
-		private static void Recompile()
-		{
-			GitManager.Recompile();
-		}
 	}
 }
