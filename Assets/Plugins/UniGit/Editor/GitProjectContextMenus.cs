@@ -29,6 +29,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Add", true, priority = 50), UsedImplicitly]
 		private static bool AddSelectedValidate()
 		{
+			if (gitManager == null || !gitManager.IsValidRepo) return false;
 			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			return paths.Any(g => GitManager.CanStage(gitManager.Repository.RetrieveStatus(g)));
 		}
@@ -43,6 +44,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Remove", true, priority = 50), UsedImplicitly]
 		private static bool RemoveSelectedValidate()
 		{
+			if (gitManager == null || !gitManager.IsValidRepo) return false;
 			string[] paths = Selection.assetGUIDs.Select(g => string.IsNullOrEmpty(Path.GetExtension(AssetDatabase.GUIDToAssetPath(g))) ? AssetDatabase.GUIDToAssetPath(g) + ".meta" : AssetDatabase.GUIDToAssetPath(g)).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			return paths.Any(g => GitManager.CanUnstage(gitManager.Repository.RetrieveStatus(g)));
 		}
@@ -56,6 +58,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Difference", true, priority = 65)]
 		private static bool SeeDifferenceValidate()
 		{
+			if (gitManager == null || !gitManager.IsValidRepo) return false;
 			if (Selection.assetGUIDs.Length != 1) return false;
 			var entry = gitManager.Repository.Index[AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0])];
 			if (entry != null)
@@ -106,6 +109,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Revert",true, priority = 80), UsedImplicitly]
 		private static bool RevetValidate()
 		{
+			if (gitManager == null || !gitManager.IsValidRepo) return false;
 			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(GitManager.GetPathWithMeta).Where(File.Exists).Select(e => gitManager.Repository.RetrieveStatus(e)).Any(e => GitManager.CanStage(e) | GitManager.CanUnstage(e));
 		}
 
@@ -131,6 +135,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Blame/Object", priority = 100,validate = true), UsedImplicitly]
 		private static bool BlameObjectValidate()
 		{
+			if (gitManager == null || !gitManager.IsValidRepo) return false;
 			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
 			return gitManager.CanBlame(path);
 		}
@@ -145,6 +150,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/Blame/Meta", priority = 100,validate = true), UsedImplicitly]
 		private static bool BlameMetaValidate()
 		{
+			if (gitManager == null || !gitManager.IsValidRepo) return false;
 			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.GetTextMetaFilePathFromAssetPath).FirstOrDefault();
 			return gitManager.CanBlame(path);
 		}

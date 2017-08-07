@@ -45,9 +45,14 @@ namespace UniGit
 			injectionHelper.Bind<GitSettingsJson>();
 			injectionHelper.Bind<GitSettingsManager>();
 
+			GitManager = injectionHelper.GetInstance<GitManager>();
+
+			GitUnityMenu.Init(GitManager);
+			GitResourceManager.Initilize();
+			GitOverlay.Initlize(GitManager);
+
 			if (!Repository.IsValid(repoPath))
 			{
-				GitManager = injectionHelper.GetInstance<GitManager>();
 				return;
 			}
 
@@ -66,8 +71,6 @@ namespace UniGit
 			var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();
 			settingsManager.LoadGitSettings();
 
-			GitManager = injectionHelper.GetInstance<GitManager>();
-
 			//delayed called must be used for serialized properties to be loaded
 			EditorApplication.delayCall += () =>
 			{
@@ -82,9 +85,6 @@ namespace UniGit
 			autoFetcher = injectionHelper.CreateInstance<GitAutoFetcher>();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
-			GitUnityMenu.Init(GitManager);
-			GitResourceManager.Initilize();
-			GitOverlay.Initlize(GitManager);
 		}
 
 		private static void OnBeforeAssemblyReload()

@@ -298,6 +298,10 @@ namespace UniGit.Utils
 
 			public Resolve FromInstance(object instance)
 			{
+				if (instance == null)
+				{
+					throw new Exception("Instance cannot be null");
+				}
 				this.instance = instance;
 				if (!type.IsInstanceOfType(instance))
 				{

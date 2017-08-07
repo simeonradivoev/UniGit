@@ -290,6 +290,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\InjectionHelper.cs">
       <Link>InjectionHelper.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\StreamExtensions.cs">
+      <Link>StreamExtensions.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\UniGitInject.cs">
       <Link>UniGitInject.cs</Link>
     </Compile>

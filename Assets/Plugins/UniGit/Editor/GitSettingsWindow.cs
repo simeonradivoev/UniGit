@@ -33,9 +33,13 @@ namespace UniGit
 
 		public void Construct(GitLfsManager lfsManager,GitExternalManager externalManager,GitCredentialsManager credentialsManager)
 		{
-			injectionHelper.Bind<GitLfsManager>().FromInstance(lfsManager);
-			injectionHelper.Bind<GitExternalManager>().FromInstance(externalManager);
-			injectionHelper.Bind<GitCredentialsManager>().FromInstance(credentialsManager);
+			Debug.Assert(gitManager != null);
+			if (gitManager != null && gitManager.IsValidRepo)
+			{
+				injectionHelper.Bind<GitLfsManager>().FromInstance(lfsManager);
+				injectionHelper.Bind<GitExternalManager>().FromInstance(externalManager);
+				injectionHelper.Bind<GitCredentialsManager>().FromInstance(credentialsManager);
+			}
 
 			injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
@@ -59,6 +63,7 @@ namespace UniGit
 
 		private void InitTabs()
 		{
+			if(gitManager == null || !gitManager.IsValidRepo) return;
 			if (tabs != null)
 			{
 				foreach (var settingsTab in tabs)
@@ -187,12 +192,15 @@ namespace UniGit
 		{
 			base.OnDestroy();
 
-			foreach (var settingsTab in tabs)
+			if (tabs != null)
 			{
-				settingsTab.Dispose();
-			}
+				foreach (var settingsTab in tabs)
+				{
+					settingsTab.Dispose();
+				}
 
-			tabs = null;
+				tabs = null;
+			}
 		}
 
 		private GitSettingsTab currentTab
