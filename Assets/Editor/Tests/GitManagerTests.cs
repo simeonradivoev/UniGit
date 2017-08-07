@@ -8,7 +8,7 @@ public class GitManagerTests : TestRepoFixture
 	[Test]
 	public void RepositoryHandlesLockedFileWhileRetrivingStatus()
 	{
-		gitManager.InitilizeRepository();
+		gitManager.InitilizeRepository(false);
 		string lockedFilePathName = "testFile.txt";
 		string lockedFilePath = Path.Combine(gitManager.RepoPath, lockedFilePathName);
 		using (var lockFileStream = File.CreateText(lockedFilePath))

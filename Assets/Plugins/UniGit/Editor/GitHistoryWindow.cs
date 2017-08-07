@@ -966,7 +966,7 @@ namespace UniGit
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					if(gitManager != null) gitManager.InitilizeRepository();
+					if(gitManager != null) gitManager.InitilizeRepository(true);
 					GUIUtility.ExitGUI();
 					return;
 				}

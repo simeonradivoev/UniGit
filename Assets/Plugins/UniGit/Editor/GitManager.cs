@@ -60,7 +60,7 @@ namespace UniGit
 			callbacks.EditorUpdate += OnEditorUpdate;
 		}
 
-		public void InitilizeRepository()
+		public void InitilizeRepository(bool recompile)
 		{
 			Repository.Init(repoPath);
 			Directory.CreateDirectory(GitSettingsFolderPath);
@@ -77,6 +77,19 @@ namespace UniGit
 			callbacks.IssueSaveDatabaseRefresh();
 			Initlize();
 			Update(true);
+			if(recompile) Recompile();
+		}
+
+		internal static void Recompile()
+		{
+			var importer = PluginImporter.GetAllImporters().FirstOrDefault(i => i.assetPath.EndsWith("UniGitResources.dll"));
+			if (importer == null)
+			{
+				Debug.LogError("Could not find LibGit2Sharp.dll. You will have to close and open Unity to recompile scripts.");
+				return;
+			}
+			importer.SetCompatibleWithEditor(true);
+			importer.SaveAndReimport();
 		}
 
 		public void DeleteRepository()

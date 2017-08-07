@@ -24,7 +24,7 @@ namespace UniGit
 		{
 			if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 			{
-				gitManager.InitilizeRepository();
+				gitManager.InitilizeRepository(true);
 			}
 		}
 
@@ -50,6 +50,12 @@ namespace UniGit
 		private static void Donate()
 		{
 			Application.OpenURL(GitAboutWindow.DonateUrl);
+		}
+
+		[MenuItem("UniGit/Dev/Recompile Scripts", false, 20)]
+		private static void Recompile()
+		{
+			GitManager.Recompile();
 		}
 	}
 }

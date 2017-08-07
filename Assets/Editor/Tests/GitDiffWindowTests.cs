@@ -29,7 +29,7 @@ public class GitDiffWindowTests : TestRepoFixture
 	[Test]
 	public void OnCommit_CommitChanges()
 	{
-		gitManager.InitilizeRepository();
+		gitManager.InitilizeRepository(false);
 
 		const string commitText = "First Commit";
 		diffWindow.SetCommitMessage(commitText);
@@ -43,7 +43,7 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void OnCommit_CommitChangesWithFileCommitMessage()
 	{
 		gitSettings.ReadFromFile = true;
-		gitManager.InitilizeRepository();
+		gitManager.InitilizeRepository(false);
 
 		const string commitText = "First Commit from File Commit Message";
 		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
@@ -56,7 +56,7 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void OnOpen_ReadCommitFileContents()
 	{
 		gitSettings.ReadFromFile = true;
-		gitManager.InitilizeRepository();
+		gitManager.InitilizeRepository(false);
 
 		const string commitText = "Test Message";
 		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
@@ -71,7 +71,7 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void OnAmmendCommit_AmmendCommitMessage()
 	{
 		gitSettings.ReadFromFile = true;
-		gitManager.InitilizeRepository();
+		gitManager.InitilizeRepository(false);
 
 		const string commitMessage = "First Commit";
 		diffWindow.SetCommitMessage(commitMessage);
