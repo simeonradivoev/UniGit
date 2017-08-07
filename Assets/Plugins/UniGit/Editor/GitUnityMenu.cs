@@ -22,9 +22,9 @@ namespace UniGit
 		[MenuItem("UniGit/Initialize",false,0)]
 		private static void Initilize()
 		{
-			if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
+			if (!gitManager.IsValidRepo && EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 			{
-				gitManager.InitilizeRepository(true);
+				gitManager.InitilizeRepositoryAndRecompile();
 			}
 		}
 

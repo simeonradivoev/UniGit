@@ -60,7 +60,7 @@ namespace UniGit
 			callbacks.EditorUpdate += OnEditorUpdate;
 		}
 
-		public void InitilizeRepository(bool recompile)
+		public void InitilizeRepository()
 		{
 			Repository.Init(repoPath);
 			Directory.CreateDirectory(GitSettingsFolderPath);
@@ -73,11 +73,16 @@ namespace UniGit
 			{
 				Debug.Log("Git Ignore file already present");
 			}
+			Initlize();
+		}
+
+		internal void InitilizeRepositoryAndRecompile()
+		{
+			InitilizeRepository();
 			callbacks.IssueAssetDatabaseRefresh();
 			callbacks.IssueSaveDatabaseRefresh();
-			Initlize();
+			callbacks.IssueRepositoryCreate();
 			Update(true);
-			if(recompile) Recompile();
 		}
 
 		internal static void Recompile()

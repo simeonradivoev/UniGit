@@ -49,11 +49,19 @@ namespace UniGit
 			injectionHelper.Bind<GitSettingsTab>().To<GitSecuritySettingsTab>();
 		}
 
+		#region Editor Specific Updates
 		public override void OnAfterDeserialize()
 		{
 			base.OnAfterDeserialize();
 			Construct(UniGitLoader.LfsManager, UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
+
+		protected override void OnRepositoryCreate()
+		{
+			base.OnRepositoryCreate();
+			Construct(UniGitLoader.LfsManager, UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
+		}
+		#endregion
 
 		protected override void OnEnable()
 		{

@@ -15,6 +15,11 @@ namespace UniGit.Utils
 			resolves = new List<Resolve>();
 		}
 
+		public void Clear()
+		{
+			resolves.Clear();
+		}
+
 		public Resolve Bind(Type type)
 		{
 			var resolve = new Resolve(this,type);

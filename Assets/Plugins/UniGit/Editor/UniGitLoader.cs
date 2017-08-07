@@ -12,16 +12,17 @@ namespace UniGit
 	[InitializeOnLoad]
 	public static class UniGitLoader
 	{
-		public static readonly GitLfsManager LfsManager;
+		public static GitLfsManager LfsManager;
 		public static readonly GitManager GitManager;
-		public static readonly GitHookManager HookManager;
-		public static readonly GitCredentialsManager CredentialsManager;
-		public static readonly GitExternalManager ExternalManager;
-		private static readonly GitAutoFetcher autoFetcher;
+		public static GitHookManager HookManager;
+		public static GitCredentialsManager CredentialsManager;
+		public static GitExternalManager ExternalManager;
+		private static GitAutoFetcher autoFetcher;
+		private static readonly InjectionHelper injectionHelper;
 
 		static UniGitLoader()
 		{
-			var injectionHelper = new InjectionHelper();
+			injectionHelper = new InjectionHelper();
 			var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
 			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
@@ -46,15 +47,11 @@ namespace UniGit
 			injectionHelper.Bind<GitSettingsManager>();
 
 			GitManager = injectionHelper.GetInstance<GitManager>();
+			GitManager.Callbacks.RepositoryCreate += OnRepositoryCreate;
 
 			GitUnityMenu.Init(GitManager);
 			GitResourceManager.Initilize();
 			GitOverlay.Initlize(GitManager);
-
-			if (!Repository.IsValid(repoPath))
-			{
-				return;
-			}
 
 			//credentials
 			injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
@@ -68,6 +65,16 @@ namespace UniGit
 			injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
 			injectionHelper.Bind<GitHookManager>();
 
+			if (!Repository.IsValid(repoPath))
+			{
+				return;
+			}
+
+			Rebuild(injectionHelper);
+		}
+
+		private static void Rebuild(InjectionHelper injectionHelper)
+		{
 			var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();
 			settingsManager.LoadGitSettings();
 
@@ -85,6 +92,11 @@ namespace UniGit
 			autoFetcher = injectionHelper.CreateInstance<GitAutoFetcher>();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
+		}
+
+		private static void OnRepositoryCreate()
+		{
+			Rebuild(injectionHelper);
 		}
 
 		private static void OnBeforeAssemblyReload()

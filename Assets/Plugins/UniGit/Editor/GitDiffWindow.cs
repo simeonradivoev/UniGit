@@ -132,11 +132,19 @@ namespace UniGit
 			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
 		}
 
+		#region Editor Specific Updates
 		public override void OnAfterDeserialize()
 		{
 			base.OnAfterDeserialize();
 			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
+
+		protected override void OnRepositoryCreate()
+		{
+			base.OnRepositoryCreate();
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
+		}
+		#endregion
 
 		protected override void Subscribe(GitCallbacks callbacks)
 		{

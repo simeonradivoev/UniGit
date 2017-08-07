@@ -10,7 +10,7 @@ public class InitializationTests : TestRepoFixture
 	[Test]
 	public void InitilizeValidRepository_RepositoryInitilized()
 	{
-		gitManager.InitilizeRepository(false);
+		gitManager.InitilizeRepository();
 		Assert.IsTrue(Directory.Exists(gitManager.RepoPath));
 		Assert.IsTrue(Repository.IsValid(gitManager.RepoPath));
 	}
@@ -18,14 +18,14 @@ public class InitializationTests : TestRepoFixture
 	[Test]
 	public void InitilizeUniGitSettingsFolder_SettingsFolderCreated()
 	{
-		gitManager.InitilizeRepository(false);
+		gitManager.InitilizeRepository();
 		Assert.IsTrue(Directory.Exists(gitManager.GitSettingsFolderPath));
 	}
 
 	[Test]
 	public void InitilizeGitIgnore_GitIgnoreInitilized()
 	{
-		gitManager.InitilizeRepository(false);
+		gitManager.InitilizeRepository();
 		Assert.IsTrue(File.Exists(gitManager.GitIgnoreFilePath));
 		Assert.AreEqual(File.ReadAllText(gitManager.GitIgnoreFilePath),GitIgnoreTemplate.Template);
 	}

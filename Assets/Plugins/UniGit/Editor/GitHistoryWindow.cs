@@ -127,11 +127,19 @@ namespace UniGit
 			this.credentialsManager = credentialsManager;
 		}
 
+		#region Editor Specific Updates
 		public override void OnAfterDeserialize()
 		{
 			base.OnAfterDeserialize();
 			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
+
+		protected override void OnRepositoryCreate()
+		{
+			base.OnRepositoryCreate();
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
+		}
+		#endregion
 
 		protected override void OnEnable()
 		{
@@ -377,7 +385,7 @@ namespace UniGit
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 			GUIContent fetchContent = new GUIContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
-			if (branch.RemoteName == null && gitManager.Repository.Network.Remotes[branch.RemoteName] != null)
+			if (branch.RemoteName != null && gitManager.Repository.Network.Remotes[branch.RemoteName] != null)
 			{
 				fetchContent.tooltip = "Branch does not have a remote.";
 				GUI.enabled = false;
@@ -966,7 +974,10 @@ namespace UniGit
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					if(gitManager != null) gitManager.InitilizeRepository(true);
+					if (gitManager != null && !gitManager.IsValidRepo)
+					{
+						gitManager.InitilizeRepositoryAndRecompile();
+					}
 					GUIUtility.ExitGUI();
 					return;
 				}

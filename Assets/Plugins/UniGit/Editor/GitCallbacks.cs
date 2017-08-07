@@ -8,6 +8,13 @@ namespace UniGit
 {
 	public class GitCallbacks
 	{
+		public event Action RepositoryCreate;
+		public void IssueRepositoryCreate()
+		{
+			if(RepositoryCreate != null)
+				RepositoryCreate.Invoke();
+		}
+
 		public event Action<GitRepoStatus, string[]> UpdateRepository;
 		public void IssueUpdateRepository(GitRepoStatus repoStatus, string[] paths)
 		{

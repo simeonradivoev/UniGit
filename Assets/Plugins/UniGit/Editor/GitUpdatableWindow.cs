@@ -35,7 +35,6 @@ namespace UniGit
 			{
 				Unsubscribe(this.gitManager.Callbacks);
 			}
-
 			this.gitManager = gitManager;
 			gitSettings = gitManager.Settings;
 
@@ -47,10 +46,20 @@ namespace UniGit
 			
 		}
 
+		#region Editor Specific Updates
+
 		public virtual void OnAfterDeserialize()
 		{
 			Construct(UniGitLoader.GitManager);
 		}
+
+		//caled only in the editor as we can't force Editor recompile to reinject dependencies
+		protected virtual void OnRepositoryCreate()
+		{
+			Construct(UniGitLoader.GitManager);
+		}
+
+		#endregion
 
 		protected virtual void Subscribe(GitCallbacks callbacks)
 		{
@@ -64,6 +73,7 @@ namespace UniGit
 			callbacks.OnRepositoryLoad += OnRepositoryLoad;
 			callbacks.UpdateRepositoryStart += UpdateTitleIcon;
 			callbacks.UpdateRepositoryFinish += UpdateTitleIcon;
+			callbacks.RepositoryCreate += OnRepositoryCreate;
 		}
 
 		protected virtual void Unsubscribe(GitCallbacks callbacks)
@@ -74,6 +84,7 @@ namespace UniGit
 			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
 			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
 			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
+			callbacks.RepositoryCreate -= OnRepositoryCreate;
 		}
 
 		protected virtual void OnFocus()
