@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitWizardBase : ScriptableWizard, ISerializationCallbackReceiver
+	public class GitWizardBase : ScriptableWizard
 	{
 		protected Remote[] remotes;
 		protected GUIContent[] remoteNames;
@@ -24,7 +24,8 @@ namespace UniGit
 		protected GitCredentialsManager credentialsManager;
 		protected GitExternalManager externalManager;
 
-		public void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager)
+        [UniGitInject]
+		private void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager)
 		{
 			this.gitManager = gitManager;
 			this.credentialsManager = credentialsManager;
@@ -36,18 +37,9 @@ namespace UniGit
 			branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 		}
 
-		public virtual void OnBeforeSerialize()
-		{
-			
-		}
-
-		public virtual void OnAfterDeserialize()
-		{
-			Construct(UniGitLoader.GitManager, UniGitLoader.CredentialsManager, UniGitLoader.ExternalManager);
-		}
-
 		protected virtual void OnEnable()
 		{
+			GitWindows.AddWindow(this);
 			serializedObject = new SerializedObject(this);
 			Repaint();
 		}
@@ -61,8 +53,8 @@ namespace UniGit
 			if(branchFriendlyNames == null)
 				branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 
-			if (remotes != null && branch.RemoteName != null)
-				selectedRemote = Array.IndexOf(remotes, branch.RemoteName);
+			if (remotes != null && branch.Remote.Name != null)
+				selectedRemote = Array.IndexOf(remotes, branch.Remote.Name);
 			if (branchNames != null && !string.IsNullOrEmpty(branch.CanonicalName))
 				selectedBranch = Array.IndexOf(branchNames, branch.CanonicalName);
 		}
@@ -107,6 +99,11 @@ namespace UniGit
 			DrawBranchSelection();
 			DrawCredentials();
 			return EditorGUI.EndChangeCheck();
+		}
+
+		protected void OnDisable()
+		{
+			GitWindows.RemoveWindow(this);
 		}
 
 		#region Handlers
@@ -165,23 +162,40 @@ namespace UniGit
 
 		protected void OnMergeComplete(MergeResult result,string mergeType)
 		{
-			switch (result.Status)
+		    var historyWindow = UniGitLoader.FindWindow<GitHistoryWindow>();
+		    var diffWindow = UniGitLoader.FindWindow<GitDiffWindow>();
+
+            switch (result.Status)
 			{
 				case MergeStatus.UpToDate:
-					GitHistoryWindow.GetWindow(true, gitManager, externalManager,credentialsManager).ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
+				    if(historyWindow != null) historyWindow.ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
 					break;
 				case MergeStatus.FastForward:
-					GitHistoryWindow.GetWindow(true,gitManager, externalManager, credentialsManager).ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
+					if(historyWindow != null) historyWindow.ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
 					break;
 				case MergeStatus.NonFastForward:
-					GitDiffWindow.GetWindow(true,gitManager, externalManager, credentialsManager).ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
-					GitDiffWindow.GetWindow(false, gitManager, externalManager, credentialsManager).SetCommitMessage(gitManager.Repository.Info.Message);
+				    if (diffWindow != null)
+				    {
+				        diffWindow.ShowNotification(new GUIContent("Do a merge commit in order to push changes."));
+				        diffWindow.SetCommitMessage(gitManager.Repository.Info.Message);
+                    }
+				    else
+				    {
+				        GitDiffWindow.SetCommitMessage(gitManager, gitManager.Repository.Info.Message);
+				    }
 					Debug.Log(mergeType + " Complete without Fast Forwarding.");
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
-					GitDiffWindow.GetWindow(true, gitManager, externalManager, credentialsManager).ShowNotification(content);
-					GitDiffWindow.GetWindow(false, gitManager, externalManager, credentialsManager).SetCommitMessage(gitManager.Repository.Info.Message);
+				    if (diffWindow != null)
+				    {
+				        diffWindow.ShowNotification(content);
+				        diffWindow.SetCommitMessage(gitManager.Repository.Info.Message);
+                    }
+				    else
+				    {
+				        GitDiffWindow.SetCommitMessage(gitManager, gitManager.Repository.Info.Message);
+				    }
 					break;
 			}
 			gitManager.MarkDirty();

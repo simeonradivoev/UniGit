@@ -33,8 +33,7 @@ namespace UniGit
 			EditorGUILayout.BeginHorizontal("IN BigTitle");
 			if (GUILayout.Button(GitGUI.GetTempContent(GitOverlay.icons.stashIcon.image, "Stash Save","Save changes in working directory to stash.")))
 			{
-				var window = EditorWindow.GetWindow<GitStashSaveWizard>(true);
-				window.Construct(gitManager);
+				UniGitLoader.GetWindow<GitStashSaveWizard>(true);
 			}
 			EditorGUILayout.EndHorizontal();
 

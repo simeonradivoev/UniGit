@@ -15,7 +15,7 @@ namespace UniGit.Inspectors
 			GUILayout.FlexibleSpace();
 			if (GUILayout.Button(new GUIContent("Open Settings"), GitGUI.Styles.AddComponentBtn))
 			{
-				GitSettingsWindow.CreateEditor();
+			    UniGitLoader.GetWindow<GitSettingsWindow>();
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();

@@ -7,23 +7,24 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public abstract class GitUpdatableWindow : EditorWindow, IGitWindow, ISerializationCallbackReceiver
+	public abstract class GitUpdatableWindow : EditorWindow
 	{
 		//used an object because the EditorWindow saves Booleans even if private
 		[NonSerialized] private object initilized;
 		[NonSerialized] private object hasFocused;
 		[NonSerialized] protected GitManager gitManager;
-		[NonSerialized] protected GitSettingsJson gitSettings;
 		[NonSerialized] protected readonly InjectionHelper injectionHelper = new InjectionHelper();
 
 		protected virtual void OnEnable()
 		{
+			GitWindows.AddWindow(this);
 			injectionHelper.Bind(GetType()).FromInstance(this);
 			if(gitManager != null)
 				titleContent.image = gitManager.GetGitStatusIcon();
 		}
 
-		public virtual void Construct(GitManager gitManager)
+        [UniGitInject]
+		private void Construct(GitManager gitManager)
 		{
 			if (gitManager == null)
 			{
@@ -36,27 +37,15 @@ namespace UniGit
 				Unsubscribe(this.gitManager.Callbacks);
 			}
 			this.gitManager = gitManager;
-			gitSettings = gitManager.Settings;
-
 			Subscribe(gitManager.Callbacks);
-		}
-
-		public virtual void OnBeforeSerialize()
-		{
-			
 		}
 
 		#region Editor Specific Updates
 
-		public virtual void OnAfterDeserialize()
-		{
-			Construct(UniGitLoader.GitManager);
-		}
-
 		//caled only in the editor as we can't force Editor recompile to reinject dependencies
 		protected virtual void OnRepositoryCreate()
 		{
-			Construct(UniGitLoader.GitManager);
+			
 		}
 
 		#endregion
@@ -129,6 +118,11 @@ namespace UniGit
 			{
 				OnEditorUpdate();
 			}
+		}
+
+		protected void OnDisable()
+		{
+			GitWindows.RemoveWindow(this);
 		}
 
 		protected void OnDestroy()

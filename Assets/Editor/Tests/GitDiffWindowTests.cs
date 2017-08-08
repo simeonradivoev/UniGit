@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UniGit;
-using UniGit.Adapters;
 using UnityEditor;
+using UnityEngine;
 
 public class GitDiffWindowTests : TestRepoFixture
 {
@@ -15,10 +14,12 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void GitDiffTestsSetup()
 	{
 		prevFocusWindow = EditorWindow.focusedWindow;
-		GitExternalManager externalsManager = new GitExternalManager(gitManager,new List<IExternalAdapter>());
-		GitCredentialsManager credentialsManager = new GitCredentialsManager(gitManager,gitSettings,new List<ICredentialsAdapter>());
-		diffWindow = GitDiffWindow.CreateWindow(false, gitManager, externalsManager, credentialsManager);
-	}
+        injectionHelper.Bind<GitExternalManager>();
+	    injectionHelper.Bind<GitCredentialsManager>();
+		diffWindow = ScriptableObject.CreateInstance<GitDiffWindow>();
+        injectionHelper.Inject(diffWindow);
+	    diffWindow.Show();
+    }
 
 	[TearDown]
 	public void GitDiffTestsTearDown()
@@ -29,8 +30,6 @@ public class GitDiffWindowTests : TestRepoFixture
 	[Test]
 	public void OnCommit_CommitChanges()
 	{
-		gitManager.InitilizeRepository();
-
 		const string commitText = "First Commit";
 		diffWindow.SetCommitMessage(commitText);
 		Assert.AreEqual(commitText, diffWindow.GetActiveCommitMessage());
@@ -43,7 +42,6 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void OnCommit_CommitChangesWithFileCommitMessage()
 	{
 		gitSettings.ReadFromFile = true;
-		gitManager.InitilizeRepository();
 
 		const string commitText = "First Commit from File Commit Message";
 		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
@@ -56,7 +54,6 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void OnOpen_ReadCommitFileContents()
 	{
 		gitSettings.ReadFromFile = true;
-		gitManager.InitilizeRepository();
 
 		const string commitText = "Test Message";
 		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
@@ -71,7 +68,6 @@ public class GitDiffWindowTests : TestRepoFixture
 	public void OnAmmendCommit_AmmendCommitMessage()
 	{
 		gitSettings.ReadFromFile = true;
-		gitManager.InitilizeRepository();
 
 		const string commitMessage = "First Commit";
 		diffWindow.SetCommitMessage(commitMessage);

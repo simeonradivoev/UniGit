@@ -1,6 +1,7 @@
 ﻿using System;
 using CredentialManagement;
 using UniGit.Attributes;
+using UnityEngine;
 
 namespace UniGit.Adapters
 {
@@ -33,6 +34,7 @@ namespace UniGit.Adapters
 					credential.Username = username;
 					return credential.Save();
 				}
+				Debug.LogErrorFormat("Could not load credential with url: {0} from Windows Creadentials.", url);
 			}
 			return false;
 		}

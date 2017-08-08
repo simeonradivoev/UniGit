@@ -38,8 +38,9 @@ namespace UniGit
 					{
 						repository.Network.Push(repository.Branches[branchNames[selectedBranch]], pushOptions);
 						gitManager.MarkDirty();
-						var window = GitHistoryWindow.GetWindow(true,gitManager, externalManager,credentialsManager);
-						window.ShowNotification(new GUIContent("Push Complete"));
+						var window = UniGitLoader.FindWindow<GitHistoryWindow>();
+                        if(window != null)
+						    window.ShowNotification(new GUIContent("Push Complete"));
 					}
 					else
 					{

@@ -40,12 +40,13 @@ namespace UniGit
 		{
 			try
 			{
-				Commands.Fetch(gitManager.Repository,remotes[selectedRemote].Name, new string[0], fetchOptions,null);
+			    GitCommands.Fetch(gitManager.Repository,remotes[selectedRemote].Name, fetchOptions);
 #if UNITY_EDITOR
 				Debug.Log("Fetch Complete");
 #endif
-				var window = GitHistoryWindow.GetWindow(true,gitManager, externalManager,credentialsManager);
-				window.ShowNotification(new GUIContent("Fetch Complete"));
+				var window = UniGitLoader.FindWindow<GitHistoryWindow>();
+                if(window != null)
+				    window.ShowNotification(new GUIContent("Fetch Complete"));
 				gitManager.MarkDirty(true);
 			}
 			catch (Exception e)

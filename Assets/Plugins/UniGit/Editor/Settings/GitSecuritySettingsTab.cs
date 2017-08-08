@@ -194,7 +194,6 @@ namespace UniGit.Settings
 					{
 						entry.Name = name;
 						credentialsManager.GitCredentials.MarkDirty();
-						GitSettingsWindow.CreateEditor();
 					}
 					else
 					{

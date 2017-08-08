@@ -508,18 +508,6 @@
             </para>
             </summary>
         </member>
-        <member name="P:LibGit2Sharp.Branch.RemoteName">
-            <summary>
-            Get the name of the remote for the branch.
-            <para>
-              If this is a local branch, this will return the configured
-              <see cref="P:LibGit2Sharp.Branch.Remote"/> to fetch from and push to. If this is a
-              remote-tracking branch, this will return the name of the remote 
-              containing the tracked branch. If there no tracking information 
-              this will return null.
-            </para>
-            </summary>
-        </member>
         <member name="P:LibGit2Sharp.Branch.Remote">
             <summary>
             Get the remote for the branch.
@@ -1073,6 +1061,17 @@
             </para>
             </summary>
         </member>
+        <member name="P:LibGit2Sharp.CommitFilter.Since">
+            <summary>
+            A pointer to a commit object or a list of pointers to consider as starting points.
+            <para>
+              Can be either a <see cref="T:System.String"/> containing the sha or reference canonical name to use,
+              a <see cref="T:LibGit2Sharp.Branch"/>, a <see cref="T:LibGit2Sharp.Reference"/>, a <see cref="T:LibGit2Sharp.Commit"/>, a <see cref="T:LibGit2Sharp.Tag"/>,
+              a <see cref="T:LibGit2Sharp.TagAnnotation"/>, an <see cref="T:LibGit2Sharp.ObjectId"/> or even a mixed collection of all of the above.
+              By default, the <see cref="P:LibGit2Sharp.Repository.Head"/> will be used as boundary.
+            </para>
+            </summary>
+        </member>
         <member name="P:LibGit2Sharp.CommitFilter.IncludeReachableFrom">
             <summary>
             A pointer to a commit object or a list of pointers to consider as starting points.
@@ -1081,6 +1080,16 @@
               a <see cref="T:LibGit2Sharp.Branch"/>, a <see cref="T:LibGit2Sharp.Reference"/>, a <see cref="T:LibGit2Sharp.Commit"/>, a <see cref="T:LibGit2Sharp.Tag"/>,
               a <see cref="T:LibGit2Sharp.TagAnnotation"/>, an <see cref="T:LibGit2Sharp.ObjectId"/> or even a mixed collection of all of the above.
               By default, the <see cref="P:LibGit2Sharp.Repository.Head"/> will be used as boundary.
+            </para>
+            </summary>
+        </member>
+        <member name="P:LibGit2Sharp.CommitFilter.Until">
+            <summary>
+            A pointer to a commit object or a list of pointers which will be excluded (along with ancestors) from the enumeration.
+            <para>
+              Can be either a <see cref="T:System.String"/> containing the sha or reference canonical name to use,
+              a <see cref="T:LibGit2Sharp.Branch"/>, a <see cref="T:LibGit2Sharp.Reference"/>, a <see cref="T:LibGit2Sharp.Commit"/>, a <see cref="T:LibGit2Sharp.Tag"/>,
+              a <see cref="T:LibGit2Sharp.TagAnnotation"/>, an <see cref="T:LibGit2Sharp.ObjectId"/> or even a mixed collection of all of the above.
             </para>
             </summary>
         </member>
@@ -1203,6 +1212,11 @@
             Include "unmodified" entries in the results.
             </summary>
         </member>
+        <member name="P:LibGit2Sharp.CompareOptions.UsePatienceAlgorithm">
+            <summary>
+            Use the "patience diff" algorithm.
+            </summary>
+        </member>
         <member name="P:LibGit2Sharp.CompareOptions.Algorithm">
             <summary>
             Algorithm to be used when performing a Diff.
@@ -1273,6 +1287,13 @@
             <param name="path">The file's path relative to the repository's root.</param>
             <param name="filter">The filter to be used in querying the commits log.</param>
             <returns>A collection of <see cref="T:LibGit2Sharp.LogEntry"/> instances.</returns>
+        </member>
+        <member name="F:LibGit2Sharp.Core.Handles.SafeHandleBase.registered">
+            <summary>
+            This is set to non-zero when <see cref="M:LibGit2Sharp.Core.NativeMethods.AddHandle"/> has
+            been called for this handle, but <see cref="M:LibGit2Sharp.Core.NativeMethods.RemoveHandle"/>
+            has not yet been called.
+            </summary>
         </member>
         <member name="T:LibGit2Sharp.Core.FetchPruneStrategy">
             <summary>
@@ -1358,7 +1379,7 @@
             to keep per-source filter state, use this  callback to free that payload and release resources as required.
             </summary>
         </member>
-        <member name="T:LibGit2Sharp.Core.git_filter_source">
+        <member name="T:LibGit2Sharp.Core.GitFilterSource">
             <summary>
             The file source being filtered
             </summary>
@@ -1465,12 +1486,6 @@
             virtual merge base when faced with criss-cross merges.  When this
             limit is reached, the next ancestor will simply be used instead of
             attempting to merge it.  The default is unlimited.
-            </summary>
-        </member>
-        <member name="F:LibGit2Sharp.Core.GitMergeOpts.DefaultDriver">
-            <summary>
-            Default merge driver to be used when both sides of a merge have
-            changed.  The default is the `text` driver.
             </summary>
         </member>
         <member name="F:LibGit2Sharp.Core.GitMergeOpts.MergeFileFavorFlags">
@@ -1670,22 +1685,22 @@
             </summary>
             <returns>A delegate method with a signature that matches git_transfer_progress_callback.</returns>
         </member>
-        <member name="T:LibGit2Sharp.Core.git_status_entry">
+        <member name="T:LibGit2Sharp.Core.GitStatusEntry">
             <summary>
             A status entry from libgit2.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_status_entry.status">
+        <member name="F:LibGit2Sharp.Core.GitStatusEntry.Status">
             <summary>
             Calculated status of a filepath in the working directory considering the current <see cref = "P:LibGit2Sharp.Repository.Index" /> and the <see cref="P:LibGit2Sharp.Repository.Head" />.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_status_entry.head_to_index">
+        <member name="F:LibGit2Sharp.Core.GitStatusEntry.HeadToIndexPtr">
             <summary>
             The difference between the <see cref="P:LibGit2Sharp.Repository.Head" /> and <see cref = "P:LibGit2Sharp.Repository.Index" />.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_status_entry.index_to_workdir">
+        <member name="F:LibGit2Sharp.Core.GitStatusEntry.IndexToWorkDirPtr">
             <summary>
             The difference between the <see cref = "P:LibGit2Sharp.Repository.Index" /> and the working directory.
             </summary>
@@ -1903,7 +1918,7 @@
             The value from the native layer indicating that no rebase operation is in progress.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.Core.Proxy.git_rebase_next(LibGit2Sharp.Core.Handles.RebaseHandle)">
+        <member name="M:LibGit2Sharp.Core.Proxy.git_rebase_next(LibGit2Sharp.Core.RebaseSafeHandle)">
             <summary>
             Returns null when finished.
             </summary>
@@ -1926,7 +1941,7 @@
             If Patch was already applied, then CommitId will be empty (all zeros).
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.Core.Proxy.git_submodule_lookup(LibGit2Sharp.Core.Handles.RepositoryHandle,LibGit2Sharp.Core.FilePath)">
+        <member name="M:LibGit2Sharp.Core.Proxy.git_submodule_lookup(LibGit2Sharp.Core.Handles.RepositorySafeHandle,LibGit2Sharp.Core.FilePath)">
             <summary>
             Returns a handle to the corresponding submodule,
             or an invalid handle if a submodule is not found.
@@ -2602,16 +2617,6 @@
             There are no more entries left to iterate.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.GitErrorCode.Retry">
-            <summary>
-            Internal-only.
-            </summary>
-        </member>
-        <member name="F:LibGit2Sharp.Core.GitErrorCode.Mismatch">
-            <summary>
-            A retrieved object did not match its expected ID.
-            </summary>
-        </member>
         <member name="T:LibGit2Sharp.Core.GitOid">
             <summary>
             Represents a unique id in git which is the sha1 hash of this id's content.
@@ -2755,27 +2760,27 @@
             containing information about the certificate.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_certificate_x509.cert_type">
+        <member name="F:LibGit2Sharp.Core.GitCertificateX509.cert_type">
             <summary>
             Type of the certificate, in this case, GitCertificateType.X509
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_certificate_x509.data">
+        <member name="F:LibGit2Sharp.Core.GitCertificateX509.data">
             <summary>
             Pointer to the X509 certificate data
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_certificate_x509.len">
+        <member name="F:LibGit2Sharp.Core.GitCertificateX509.len">
             <summary>
              The size of the certificate data
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_certificate_ssh.HashMD5">
+        <member name="F:LibGit2Sharp.Core.GitCertificateSsh.HashMD5">
             <summary>
             The MD5 hash (if appropriate)
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.Core.git_certificate_ssh.HashSHA1">
+        <member name="F:LibGit2Sharp.Core.GitCertificateSsh.HashSHA1">
             <summary>
             The MD5 hash (if appropriate)
             </summary>
@@ -2967,42 +2972,6 @@
             <summary>
             Completed operating on the current repository.
             </summary>
-        </member>
-        <member name="M:LibGit2Sharp.EnumExt.HasFlag(System.Enum,System.Enum)">
-            <summary>
-            Check to see if a flags enumeration has a specific flag set.
-            </summary>
-            <param name="variable">Flags enumeration to check</param>
-            <param name="value">Flag to check for</param>
-            <returns></returns>
-        </member>
-        <member name="T:LibGit2Sharp.Lazy`1">
-            <summary>
-            Provides support for lazy initialization.
-            </summary>
-            <typeparam name="T">Specifies the type of object that is being lazily initialized.</typeparam>
-        </member>
-        <member name="P:LibGit2Sharp.Lazy`1.Value">
-            <summary>
-            Gets the lazily initialized value of the current Lazy{T} instance.
-            </summary>
-        </member>
-        <member name="P:LibGit2Sharp.Lazy`1.IsValueCreated">
-            <summary>
-            Gets a value that indicates whether a value has been created for this Lazy{T} instance.
-            </summary>
-        </member>
-        <member name="M:LibGit2Sharp.Lazy`1.#ctor(System.Func{`0})">
-            <summary>
-            Initializes a new instance of the Lazy{T} class.
-            </summary>
-            <param name="createValue">The delegate that produces the value when it is needed.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Lazy`1.ToString">
-            <summary>
-            Creates and returns a string representation of the Lazy{T}.Value.
-            </summary>
-            <returns>The string representation of the Lazy{T}.Value property.</returns>
         </member>
         <member name="T:LibGit2Sharp.LogEntry">
             <summary>
@@ -3204,13 +3173,6 @@
             </summary>
         </member>
         <member name="M:LibGit2Sharp.FilterSource.FromNativePtr(System.IntPtr)">
-            <summary>
-            Take an unmanaged pointer and convert it to filter source callback paramater
-            </summary>
-            <param name="ptr"></param>
-            <returns></returns>
-        </member>
-        <member name="M:LibGit2Sharp.FilterSource.FromNativePtr(LibGit2Sharp.Core.git_filter_source*)">
             <summary>
             Take an unmanaged pointer and convert it to filter source callback paramater
             </summary>
@@ -3573,10 +3535,10 @@
             <summary>
             Sets a hint path for searching for native binaries: when
             specified, native binaries will first be searched in a
-            subdirectory of the given path corresponding to the operating
-            system and architecture (eg, "x86" or "x64") before falling
-            back to the default path ("lib\win32\x86" or "lib\win32\x64"
-            next to the application).
+            subdirectory of the given path corresponding to the architecture
+            (eg, "x86" or "amd64") before falling back to the default
+            path ("NativeBinaries\x86" or "NativeBinaries\amd64" next
+            to the application).
             <para>
             This must be set before any other calls to the library,
             and is not available on Unix platforms: see your dynamic
@@ -3871,33 +3833,6 @@
             Initializes a new instance of the <see cref="T:LibGit2Sharp.CheckoutConflictException"/> class.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.CheckoutConflictException.#ctor(System.String)">
-            <summary>
-            Initializes a new instance of the <see cref="T:LibGit2Sharp.CheckoutConflictException"/> class with a specified error message.
-            </summary>
-            <param name="message">A message that describes the error.</param>
-        </member>
-        <member name="M:LibGit2Sharp.CheckoutConflictException.#ctor(System.String,System.Object[])">
-            <summary>
-            Initializes a new instance of the <see cref="T:LibGit2Sharp.CheckoutConflictException"/> class with a specified error message.
-            </summary>
-            <param name="format">A composite format string for use in <see cref="M:System.String.Format(System.IFormatProvider,System.String,System.Object[])"/>.</param>
-            <param name="args">An object array that contains zero or more objects to format.</param>
-        </member>
-        <member name="M:LibGit2Sharp.CheckoutConflictException.#ctor(System.String,System.Exception)">
-            <summary>
-            Initializes a new instance of the <see cref="T:LibGit2Sharp.CheckoutConflictException"/> class with a specified error message and a reference to the inner exception that is the cause of this exception.
-            </summary>
-            <param name="message">The error message that explains the reason for the exception.</param>
-            <param name="innerException">The exception that is the cause of the current exception. If the <paramref name="innerException"/> parameter is not a null reference, the current exception is raised in a catch block that handles the inner exception.</param>
-        </member>
-        <member name="M:LibGit2Sharp.CheckoutConflictException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
-            <summary>
-            Initializes a new instance of the <see cref="T:LibGit2Sharp.CheckoutConflictException"/> class with a serialized data.
-            </summary>
-            <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown.</param>
-            <param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination.</param>
-        </member>
         <member name="T:LibGit2Sharp.MergeOptions">
             <summary>
             Options controlling Merge behavior.
@@ -3929,6 +3864,11 @@
             Default fast-forward strategy.  If the merge.ff configuration option is set,
             it will be used.  If it is not set, this will perform a fast-forward merge if
             possible, otherwise a non-fast-forward merge that results in a merge commit.
+            </summary>
+        </member>
+        <member name="F:LibGit2Sharp.FastForwardStrategy.NoFastFoward">
+            <summary>
+            Do not fast-forward. Always creates a merge commit.
             </summary>
         </member>
         <member name="F:LibGit2Sharp.FastForwardStrategy.NoFastForward">
@@ -4368,17 +4308,6 @@
             The total number of lines deleted in this diff.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.PatchStats.Dispose">
-            <summary>
-            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-            </summary>
-        </member>
-        <member name="M:LibGit2Sharp.PatchStats.Dispose(System.Boolean)">
-            <summary>
-            Releases unmanaged and - optionally - managed resources.
-            </summary>
-            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
-        </member>
         <member name="T:LibGit2Sharp.PeelException">
             <summary>
             The exception that is thrown when a tag cannot be peeled to the
@@ -4492,7 +4421,7 @@
             <param name="innerException">The exception that is the cause of the current exception. If the <paramref name="innerException"/> parameter is not a null reference, the current exception is raised in a catch block that handles the inner exception.</param>
             <param name="initialRepositoryPath">The path to the initial repository the operation was performed on.</param>
         </member>
-        <member name="M:LibGit2Sharp.RebaseOperationImpl.Run(LibGit2Sharp.Core.Handles.RebaseHandle,LibGit2Sharp.Repository,LibGit2Sharp.Identity,LibGit2Sharp.RebaseOptions)">
+        <member name="M:LibGit2Sharp.RebaseOperationImpl.Run(LibGit2Sharp.Core.RebaseSafeHandle,LibGit2Sharp.Repository,LibGit2Sharp.Identity,LibGit2Sharp.RebaseOptions)">
             <summary>
             Run a rebase to completion, a conflict, or a requested stop point.
             </summary>
@@ -4502,7 +4431,7 @@
             <param name="options">Options controlling rebase behavior.</param>
             <returns>RebaseResult that describes the result of the rebase operation.</returns>
         </member>
-        <member name="M:LibGit2Sharp.RebaseOperationImpl.RunRebaseStep(LibGit2Sharp.Core.Handles.RebaseHandle,LibGit2Sharp.Repository,LibGit2Sharp.Identity,LibGit2Sharp.RebaseOptions,System.Int64,System.Int64)">
+        <member name="M:LibGit2Sharp.RebaseOperationImpl.RunRebaseStep(LibGit2Sharp.Core.RebaseSafeHandle,LibGit2Sharp.Repository,LibGit2Sharp.Identity,LibGit2Sharp.RebaseOptions,System.Int64,System.Int64)">
             <summary>
             Run the current rebase step. This will handle reporting that we are about to run a rebase step,
             identifying and running the operation for the current step, and reporting the current step is completed.
@@ -4515,14 +4444,14 @@
             <param name="totalStepCount"/>
             <returns></returns>
         </member>
-        <member name="M:LibGit2Sharp.RebaseOperationImpl.VerifyRebaseOp(LibGit2Sharp.Core.git_rebase_operation*,LibGit2Sharp.RebaseStepInfo)">
+        <member name="M:LibGit2Sharp.RebaseOperationImpl.VerifyRebaseOp(LibGit2Sharp.Core.GitRebaseOperation,LibGit2Sharp.RebaseStepInfo)">
             <summary>
             Verify that the information in a GitRebaseOperation and a RebaseStepInfo agree
             </summary>
             <param name="rebaseOpReport"></param>
             <param name="stepInfo"></param>
         </member>
-        <member name="M:LibGit2Sharp.RebaseOperationImpl.NextRebaseStep(LibGit2Sharp.Repository,LibGit2Sharp.Core.Handles.RebaseHandle)">
+        <member name="M:LibGit2Sharp.RebaseOperationImpl.NextRebaseStep(LibGit2Sharp.Repository,LibGit2Sharp.Core.RebaseSafeHandle)">
             <summary>
             Returns the next rebase step, or null if there are none,
             and the rebase operation needs to be finished.
@@ -4789,34 +4718,6 @@
             <summary>
             Indicates whether the destination will be force-updated if fast-forwarding is not possible
             </summary>
-        </member>
-        <member name="M:LibGit2Sharp.RefSpec.SourceMatches(System.String)">
-            <summary>
-            Check whether the given reference matches the source (lhs) part of
-            this refspec.
-            </summary>
-            <param name="reference">The reference name to check</param>
-        </member>
-        <member name="M:LibGit2Sharp.RefSpec.DestinationMatches(System.String)">
-            <summary>
-            Check whether the given reference matches the target (rhs) part of
-            this refspec.
-            </summary>
-            <param name="reference">The reference name to check</param>
-        </member>
-        <member name="M:LibGit2Sharp.RefSpec.Transform(System.String)">
-            <summary>
-            Perform the transformation described by this refspec on the given
-            reference name (from source to destination).
-            </summary>
-            <param name="reference">The reference name to transform</param>
-        </member>
-        <member name="M:LibGit2Sharp.RefSpec.ReverseTransform(System.String)">
-            <summary>
-            Perform the reverse of the transformation described by this refspec
-            on the given reference name (from destination to source).
-            </summary>
-            <param name="reference">The reference name to transform</param>
         </member>
         <member name="T:LibGit2Sharp.RefSpecCollection">
             <summary>
@@ -5340,14 +5241,6 @@
             Unaltered meaning the file is identical in the working directory, the index and HEAD.
             </remarks>
         </member>
-        <member name="P:LibGit2Sharp.StatusOptions.IncludeIgnored">
-            <summary>
-            Include ignored files when scanning for status
-            </summary>
-            <remarks>
-            ignored meaning present in .gitignore. Defaults to true for back compat but may improve perf to not include if you have thousands of ignored files.
-            </remarks>
-        </member>
         <member name="T:LibGit2Sharp.WhitespaceMode">
             <summary>
             Represents a mode for handling whitespace while detecting renames and copies.
@@ -5852,17 +5745,6 @@
             </summary>
             <param name="patch"><see cref="T:LibGit2Sharp.Patch"/>.</param>
             <returns>The patch content as string.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Patch.Dispose">
-            <summary>
-            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-            </summary>
-        </member>
-        <member name="M:LibGit2Sharp.Patch.Dispose(System.Boolean)">
-            <summary>
-            Releases unmanaged and - optionally - managed resources.
-            </summary>
-            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         </member>
         <member name="T:LibGit2Sharp.ReferenceExtensions">
             <summary>
@@ -6542,7 +6424,7 @@
             Needed for mocking purposes.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.ReflogEntry.#ctor(LibGit2Sharp.Core.git_reflog_entry*)">
+        <member name="M:LibGit2Sharp.ReflogEntry.#ctor(System.Runtime.InteropServices.SafeHandle)">
             <summary>
             Initializes a new instance of the <see cref="T:LibGit2Sharp.ReflogEntry"/> class.
             </summary>
@@ -6559,6 +6441,11 @@
             </summary>
         </member>
         <member name="P:LibGit2Sharp.ReflogEntry.Committer">
+            <summary>
+            <see cref="T:LibGit2Sharp.Signature"/> of the committer of this reference update
+            </summary>
+        </member>
+        <member name="P:LibGit2Sharp.ReflogEntry.Commiter">
             <summary>
             <see cref="T:LibGit2Sharp.Signature"/> of the committer of this reference update
             </summary>
@@ -7160,58 +7047,6 @@
             Gets the notes of this commit.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.Commit.PrettifyMessage(System.String,System.Char)">
-            <summary>
-            Prettify a commit message
-            <para>
-            Remove comment lines and trailing lines
-            </para>
-            </summary>
-            <returns>The prettified message</returns>
-            <param name="message">The message to prettify.</param>
-            <param name="commentChar">Comment character. Lines starting with it will be removed</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commit.ExtractSignature(LibGit2Sharp.Repository,LibGit2Sharp.ObjectId,System.String)">
-            <summary>
-            Extract the signature data from this commit
-            </summary>
-            <returns>The signature and the signed data</returns>
-            <param name="repo">The repository in which the object lives</param>
-            <param name="id">The commit to extract the signature from</param>
-            <param name="field">The header field which contains the signature; use null for the default of "gpgsig"</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commit.ExtractSignature(LibGit2Sharp.Repository,LibGit2Sharp.ObjectId)">
-            <summary>
-            Extract the signature data from this commit
-            <para>
-            The overload uses the default header field "gpgsig"
-            </para>
-            </summary>
-            <returns>The signature and the signed data</returns>
-            <param name="repo">The repository in which the object lives</param>
-            <param name="id">The commit to extract the signature from</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commit.CreateBuffer(LibGit2Sharp.Signature,LibGit2Sharp.Signature,System.String,LibGit2Sharp.Tree,System.Collections.Generic.IEnumerable{LibGit2Sharp.Commit},System.Boolean,System.Nullable{System.Char})">
-            <summary>
-            Create a commit in-memory
-            <para>
-            Prettifing the message includes:
-            * Removing empty lines from the beginning and end.
-            * Removing trailing spaces from every line.
-            * Turning multiple consecutive empty lines between paragraphs into just one empty line.
-            * Ensuring the commit message ends with a newline.
-            * Removing every line starting with the <paramref name="commentChar"/>.
-            </para>
-            </summary>
-            <param name="author">The <see cref="T:LibGit2Sharp.Signature"/> of who made the change.</param>
-            <param name="committer">The <see cref="T:LibGit2Sharp.Signature"/> of who added the change to the repository.</param>
-            <param name="message">The description of why a change was made to the repository.</param>
-            <param name="tree">The <see cref="P:LibGit2Sharp.Commit.Tree"/> of the <see cref="T:LibGit2Sharp.Commit"/> to be created.</param>
-            <param name="parents">The parents of the <see cref="T:LibGit2Sharp.Commit"/> to be created.</param>
-            <param name="prettifyMessage">True to prettify the message, or false to leave it as is.</param>
-            <param name="commentChar">When non null, lines starting with this character will be stripped if prettifyMessage is true.</param>
-            <returns>The contents of the commit object.</returns>
-        </member>
         <member name="T:LibGit2Sharp.CommitLog">
             <summary>
             A log of commits in a <see cref="T:LibGit2Sharp.Repository"/>
@@ -7270,13 +7105,21 @@
             <param name="filter">The options used to control which commits will be returned.</param>
             <returns>A list of file history entries, ready to be enumerated.</returns>
         </member>
-        <member name="M:LibGit2Sharp.CommitLog.QueryBy(System.String,LibGit2Sharp.CommitFilter)">
+        <member name="M:LibGit2Sharp.CommitLog.FindMergeBase(LibGit2Sharp.Commit,LibGit2Sharp.Commit)">
             <summary>
-            Returns the list of commits of the repository representing the history of a file beyond renames.
+            Find the best possible merge base given two <see cref="T:LibGit2Sharp.Commit"/>s.
             </summary>
-            <param name="path">The file's path.</param>
-            <param name="filter">The options used to control which commits will be returned.</param>
-            <returns>A list of file history entries, ready to be enumerated.</returns>
+            <param name="first">The first <see cref="T:LibGit2Sharp.Commit"/>.</param>
+            <param name="second">The second <see cref="T:LibGit2Sharp.Commit"/>.</param>
+            <returns>The merge base or null if none found.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.CommitLog.FindMergeBase(System.Collections.Generic.IEnumerable{LibGit2Sharp.Commit},LibGit2Sharp.MergeBaseFindingStrategy)">
+            <summary>
+            Find the best possible merge base given two or more <see cref="T:LibGit2Sharp.Commit"/> according to the <see cref="T:LibGit2Sharp.MergeBaseFindingStrategy"/>.
+            </summary>
+            <param name="commits">The <see cref="T:LibGit2Sharp.Commit"/>s for which to find the merge base.</param>
+            <param name="strategy">The strategy to leverage in order to find the merge base.</param>
+            <returns>The merge base or null if none found.</returns>
         </member>
         <member name="T:LibGit2Sharp.MergeBaseFindingStrategy">
             <summary>
@@ -7367,6 +7210,27 @@
             <param name="xdgConfigurationFileLocation">Path to a XDG configuration file. If null, the default path for a XDG configuration file will be probed.</param>
             <param name="systemConfigurationFileLocation">Path to a System configuration file. If null, the default path for a System configuration file will be probed.</param>
             <returns>An instance of <see cref="T:LibGit2Sharp.Configuration"/>.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.Configuration.#ctor(System.String)">
+            <summary>
+            Access configuration values without a repository. Generally you want to access configuration via an instance of <see cref="T:LibGit2Sharp.Repository"/> instead.
+            </summary>
+            <param name="globalConfigurationFileLocation">Path to a Global configuration file. If null, the default path for a global configuration file will be probed.</param>
+        </member>
+        <member name="M:LibGit2Sharp.Configuration.#ctor(System.String,System.String)">
+            <summary>
+            Access configuration values without a repository. Generally you want to access configuration via an instance of <see cref="T:LibGit2Sharp.Repository"/> instead.
+            </summary>
+            <param name="globalConfigurationFileLocation">Path to a Global configuration file. If null, the default path for a global configuration file will be probed.</param>
+            <param name="xdgConfigurationFileLocation">Path to a XDG configuration file. If null, the default path for a XDG configuration file will be probed.</param>
+        </member>
+        <member name="M:LibGit2Sharp.Configuration.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Access configuration values without a repository. Generally you want to access configuration via an instance of <see cref="T:LibGit2Sharp.Repository"/> instead.
+            </summary>
+            <param name="globalConfigurationFileLocation">Path to a Global configuration file. If null, the default path for a global configuration file will be probed.</param>
+            <param name="xdgConfigurationFileLocation">Path to a XDG configuration file. If null, the default path for a XDG configuration file will be probed.</param>
+            <param name="systemConfigurationFileLocation">Path to a System configuration file. If null, the default path for a system configuration file will be probed.</param>
         </member>
         <member name="M:LibGit2Sharp.Configuration.HasConfig(LibGit2Sharp.ConfigurationLevel)">
             <summary>
@@ -7694,17 +7558,6 @@
             </summary>
             <param name="now">The timestamp to use for the <see cref="T:LibGit2Sharp.Signature"/>.</param>
             <returns>The signature or null if no user identity can be found in the configuration.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Configuration.WithinTransaction(System.Action)">
-             <summary>
-             Perform a series of actions within a transaction.
-            
-             The configuration will be locked during this function and the changes will be committed at the end. These
-             changes will not be visible in the configuration until the end of this method.
-            
-             If the action throws an exception, the changes will be rolled back.
-             </summary>
-             <param name="action">The code to run under the transaction</param>
         </member>
         <member name="T:LibGit2Sharp.ConfigurationEntry`1">
             <summary>
@@ -8076,6 +7929,45 @@
             </summary>
             <param name="relativePath">A path relative to the repository</param>
             <returns>true if the path should be ignored.</returns>
+        </member>
+        <member name="T:LibGit2Sharp.MergeConflictException">
+            <summary>
+            The exception that is thrown when a checkout cannot be performed
+            because of a conflicting change staged in the index, or unstaged
+            in the working directory.
+            </summary>
+        </member>
+        <member name="M:LibGit2Sharp.MergeConflictException.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:LibGit2Sharp.MergeConflictException"/> class.
+            </summary>
+        </member>
+        <member name="M:LibGit2Sharp.MergeConflictException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:LibGit2Sharp.MergeConflictException"/> class with a specified error message.
+            </summary>
+            <param name="message">A message that describes the error.</param>
+        </member>
+        <member name="M:LibGit2Sharp.MergeConflictException.#ctor(System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:LibGit2Sharp.MergeConflictException"/> class with a specified error message.
+            </summary>
+            <param name="format">A composite format string for use in <see cref="M:System.String.Format(System.IFormatProvider,System.String,System.Object[])"/>.</param>
+            <param name="args">An object array that contains zero or more objects to format.</param>
+        </member>
+        <member name="M:LibGit2Sharp.MergeConflictException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:LibGit2Sharp.MergeConflictException"/> class with a specified error message and a reference to the inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The error message that explains the reason for the exception.</param>
+            <param name="innerException">The exception that is the cause of the current exception. If the <paramref name="innerException"/> parameter is not a null reference, the current exception is raised in a catch block that handles the inner exception.</param>
+        </member>
+        <member name="M:LibGit2Sharp.MergeConflictException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:LibGit2Sharp.MergeConflictException"/> class with a serialized data.
+            </summary>
+            <param name="info">The <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The <see cref="T:System.Runtime.Serialization.StreamingContext"/> that contains contextual information about the source or destination.</param>
         </member>
         <member name="T:LibGit2Sharp.MergeHead">
             <summary>
@@ -8570,11 +8462,6 @@
             The system wide .gitconfig.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.ConfigurationLevel.ProgramData">
-            <summary>
-            Another system-wide configuration on Windows.
-            </summary>
-        </member>
         <member name="T:LibGit2Sharp.ChangeKind">
             <summary>
             The kind of changes that a Diff can report.
@@ -8979,14 +8866,6 @@
             <param name="options"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
             <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
         </member>
-        <member name="M:LibGit2Sharp.IRepository.Checkout(LibGit2Sharp.Tree,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.CheckoutOptions)">
-            <summary>
-            Checkout the specified tree.
-            </summary>
-            <param name="tree">The <see cref="T:LibGit2Sharp.Tree"/> to checkout.</param>
-            <param name="paths">The paths to checkout.</param>
-            <param name="opts">Collection of parameters controlling checkout behavior.</param>
-        </member>
         <member name="M:LibGit2Sharp.IRepository.CheckoutPaths(System.String,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.CheckoutOptions)">
             <summary>
             Updates specifed paths in the index and working directory with the versions from the specified branch, reference, or SHA.
@@ -9056,6 +8935,17 @@
             <param name="resetMode">Flavor of reset operation to perform.</param>
             <param name="commit">The target commit object.</param>
             <param name="options">Collection of parameters controlling checkout behavior.</param>
+        </member>
+        <member name="M:LibGit2Sharp.IRepository.Reset(LibGit2Sharp.Commit,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.ExplicitPathsOptions)">
+            <summary>
+            Replaces entries in the <see cref="P:LibGit2Sharp.Repository.Index"/> with entries from the specified commit.
+            </summary>
+            <param name="commit">The target commit object.</param>
+            <param name="paths">The list of paths (either files or directories) that should be considered.</param>
+            <param name="explicitPathsOptions">
+            If set, the passed <paramref name="paths"/> will be treated as explicit paths.
+            Use these options to determine how unmatched explicit paths should be handled.
+            </param>
         </member>
         <member name="M:LibGit2Sharp.IRepository.RemoveUntrackedFiles">
             <summary>
@@ -9277,15 +9167,6 @@
             <param name="options">Determines how the commit will be described.</param>
             <returns>A descriptive identifier for the commit based on the nearest annotated tag.</returns>
         </member>
-        <member name="M:LibGit2Sharp.IRepository.RevParse(System.String,LibGit2Sharp.Reference@,LibGit2Sharp.GitObject@)">
-            <summary>
-            Parse an extended SHA-1 expression and retrieve the object and the reference
-            mentioned in the revision (if any).
-            </summary>
-            <param name="revision">An extended SHA-1 expression for the object to look up</param>
-            <param name="reference">The reference mentioned in the revision (if any)</param>
-            <param name="obj">The object which the revision resolves to</param>
-        </member>
         <member name="T:LibGit2Sharp.NoteCollection">
             <summary>
             A collection of <see cref="T:LibGit2Sharp.Note"/> exposed in the <see cref="T:LibGit2Sharp.Repository"/>.
@@ -9334,6 +9215,16 @@
             Gets the <see cref="T:LibGit2Sharp.Note"/> associated with the specified objectId and the specified namespace.
             </summary>
         </member>
+        <member name="M:LibGit2Sharp.NoteCollection.Add(LibGit2Sharp.ObjectId,System.String,System.String)">
+            <summary>
+            Creates or updates a <see cref="T:LibGit2Sharp.Note"/> on the specified object, and for the given namespace.
+            <para>Both the Author and Committer will be guessed from the Git configuration. An exception will be raised if no configuration is reachable.</para>
+            </summary>
+            <param name="targetId">The target <see cref="T:LibGit2Sharp.ObjectId"/>, for which the note will be created.</param>
+            <param name="message">The note message.</param>
+            <param name="namespace">The namespace on which the note will be created. It can be either a canonical namespace or an abbreviated namespace ('refs/notes/myNamespace' or just 'myNamespace').</param>
+            <returns>The note which was just saved.</returns>
+        </member>
         <member name="M:LibGit2Sharp.NoteCollection.Add(LibGit2Sharp.ObjectId,System.String,LibGit2Sharp.Signature,LibGit2Sharp.Signature,System.String)">
             <summary>
             Creates or updates a <see cref="T:LibGit2Sharp.Note"/> on the specified object, and for the given namespace.
@@ -9344,6 +9235,14 @@
             <param name="committer">The committer.</param>
             <param name="namespace">The namespace on which the note will be created. It can be either a canonical namespace or an abbreviated namespace ('refs/notes/myNamespace' or just 'myNamespace').</param>
             <returns>The note which was just saved.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.NoteCollection.Remove(LibGit2Sharp.ObjectId,System.String)">
+            <summary>
+            Deletes the note on the specified object, and for the given namespace.
+            <para>Both the Author and Committer will be guessed from the Git configuration. An exception will be raised if no configuration is reachable.</para>
+            </summary>
+            <param name="targetId">The target <see cref="T:LibGit2Sharp.ObjectId"/>, for which the note will be created.</param>
+            <param name="namespace">The namespace on which the note will be removed. It can be either a canonical namespace or an abbreviated namespace ('refs/notes/myNamespace' or just 'myNamespace').</param>
         </member>
         <member name="M:LibGit2Sharp.NoteCollection.Remove(LibGit2Sharp.ObjectId,LibGit2Sharp.Signature,LibGit2Sharp.Signature,System.String)">
             <summary>
@@ -9541,29 +9440,11 @@
             Needed for mocking purposes.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.TreeChanges.GetChangesOfKind(LibGit2Sharp.ChangeKind)">
-            <summary>
-            Enumerates the diff and yields deltas with the specified change kind.
-            </summary>
-            <param name="changeKind">Change type to filter on.</param>
-        </member>
-        <member name="M:LibGit2Sharp.TreeChanges.TryGetEntryWithChangeTypeAt(System.Int32,LibGit2Sharp.ChangeKind,LibGit2Sharp.TreeEntryChanges@)">
-            <summary>
-            This is method exists to work around .net not allowing unsafe code
-            in iterators.
-            </summary>
-        </member>
         <member name="M:LibGit2Sharp.TreeChanges.GetEnumerator">
             <summary>
             Returns an enumerator that iterates through the collection.
             </summary>
             <returns>An <see cref="T:System.Collections.Generic.IEnumerator`1"/> object that can be used to iterate through the collection.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.TreeChanges.GetEntryAt(System.Int32)">
-            <summary>
-            This is method exists to work around .net not allowing unsafe code
-            in iterators.
-            </summary>
         </member>
         <member name="M:LibGit2Sharp.TreeChanges.System#Collections#IEnumerable#GetEnumerator">
             <summary>
@@ -9610,22 +9491,6 @@
             <summary>
             List of <see cref="T:LibGit2Sharp.TreeEntryChanges"/> which are conflicted
             </summary>
-        </member>
-        <member name="P:LibGit2Sharp.TreeChanges.Count">
-            <summary>
-            Gets the number of <see cref="T:LibGit2Sharp.TreeEntryChanges"/> in this comparison.
-            </summary>
-        </member>
-        <member name="M:LibGit2Sharp.TreeChanges.Dispose">
-            <summary>
-            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-            </summary>
-        </member>
-        <member name="M:LibGit2Sharp.TreeChanges.Dispose(System.Boolean)">
-            <summary>
-            Releases unmanaged and - optionally - managed resources.
-            </summary>
-            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         </member>
         <member name="T:LibGit2Sharp.TreeEntryChanges">
             <summary>
@@ -9745,14 +9610,29 @@
             The file hasn't been modified.
             </summary>
         </member>
+        <member name="F:LibGit2Sharp.FileStatus.Added">
+            <summary>
+            New file has been added to the Index. It's unknown from the Head.
+            </summary>
+        </member>
         <member name="F:LibGit2Sharp.FileStatus.NewInIndex">
             <summary>
             New file has been added to the Index. It's unknown from the Head.
             </summary>
         </member>
+        <member name="F:LibGit2Sharp.FileStatus.Staged">
+            <summary>
+            New version of a file has been added to the Index. A previous version exists in the Head.
+            </summary>
+        </member>
         <member name="F:LibGit2Sharp.FileStatus.ModifiedInIndex">
             <summary>
             New version of a file has been added to the Index. A previous version exists in the Head.
+            </summary>
+        </member>
+        <member name="F:LibGit2Sharp.FileStatus.Removed">
+            <summary>
+            The deletion of a file has been promoted from the working directory to the Index. A previous version exists in the Head.
             </summary>
         </member>
         <member name="F:LibGit2Sharp.FileStatus.DeletedFromIndex">
@@ -9765,9 +9645,19 @@
             The renaming of a file has been promoted from the working directory to the Index. A previous version exists in the Head.
             </summary>
         </member>
+        <member name="F:LibGit2Sharp.FileStatus.StagedTypeChange">
+            <summary>
+            A change in type for a file has been promoted from the working directory to the Index. A previous version exists in the Head.
+            </summary>
+        </member>
         <member name="F:LibGit2Sharp.FileStatus.TypeChangeInIndex">
             <summary>
             A change in type for a file has been promoted from the working directory to the Index. A previous version exists in the Head.
+            </summary>
+        </member>
+        <member name="F:LibGit2Sharp.FileStatus.Untracked">
+            <summary>
+            New file in the working directory, unknown from the Index and the Head.
             </summary>
         </member>
         <member name="F:LibGit2Sharp.FileStatus.NewInWorkdir">
@@ -9775,14 +9665,29 @@
             New file in the working directory, unknown from the Index and the Head.
             </summary>
         </member>
+        <member name="F:LibGit2Sharp.FileStatus.Modified">
+            <summary>
+            The file has been updated in the working directory. A previous version exists in the Index.
+            </summary>
+        </member>
         <member name="F:LibGit2Sharp.FileStatus.ModifiedInWorkdir">
             <summary>
             The file has been updated in the working directory. A previous version exists in the Index.
             </summary>
         </member>
+        <member name="F:LibGit2Sharp.FileStatus.Missing">
+            <summary>
+            The file has been deleted from the working directory. A previous version exists in the Index.
+            </summary>
+        </member>
         <member name="F:LibGit2Sharp.FileStatus.DeletedFromWorkdir">
             <summary>
             The file has been deleted from the working directory. A previous version exists in the Index.
+            </summary>
+        </member>
+        <member name="F:LibGit2Sharp.FileStatus.TypeChanged">
+            <summary>
+            The file type has been changed in the working directory. A previous version exists in the Index.
             </summary>
         </member>
         <member name="F:LibGit2Sharp.FileStatus.TypeChangeInWorkdir">
@@ -10030,11 +9935,6 @@
             Use these options to determine how unmatched explicit paths should be handled.
             </param>
         </member>
-        <member name="M:LibGit2Sharp.Index.Write">
-            <summary>
-            Write the contents of this <see cref="T:LibGit2Sharp.Index"/> to disk
-            </summary>
-        </member>
         <member name="T:LibGit2Sharp.IndexEntry">
             <summary>
             A reference to a <see cref="T:LibGit2Sharp.Blob"/> known by the <see cref="T:LibGit2Sharp.Index"/>.
@@ -10128,13 +10028,21 @@
             <param name="filter">The options used to control which commits will be returned.</param>
             <returns>A list of file history entries, ready to be enumerated.</returns>
         </member>
-        <member name="M:LibGit2Sharp.IQueryableCommitLog.QueryBy(System.String,LibGit2Sharp.CommitFilter)">
+        <member name="M:LibGit2Sharp.IQueryableCommitLog.FindMergeBase(LibGit2Sharp.Commit,LibGit2Sharp.Commit)">
             <summary>
-            Returns the list of commits of the repository representing the history of a file beyond renames.
+            Find the best possible merge base given two <see cref="T:LibGit2Sharp.Commit"/>s.
             </summary>
-            <param name="path">The file's path.</param>
-            <param name="filter">The options used to control which commits will be returned.</param>
-            <returns>A list of file history entries, ready to be enumerated.</returns>
+            <param name="first">The first <see cref="T:LibGit2Sharp.Commit"/>.</param>
+            <param name="second">The second <see cref="T:LibGit2Sharp.Commit"/>.</param>
+            <returns>The merge base or null if none found.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.IQueryableCommitLog.FindMergeBase(System.Collections.Generic.IEnumerable{LibGit2Sharp.Commit},LibGit2Sharp.MergeBaseFindingStrategy)">
+            <summary>
+            Find the best possible merge base given two or more <see cref="T:LibGit2Sharp.Commit"/> according to the <see cref="T:LibGit2Sharp.MergeBaseFindingStrategy"/>.
+            </summary>
+            <param name="commits">The <see cref="T:LibGit2Sharp.Commit"/>s for which to find the merge base.</param>
+            <param name="strategy">The strategy to leverage in order to find the merge base.</param>
+            <returns>The merge base or null if none found.</returns>
         </member>
         <member name="T:LibGit2Sharp.Mode">
             <summary>
@@ -10240,13 +10148,6 @@
             <param name="backend">The backend to add</param>
             <param name="priority">The priority at which libgit2 should consult this backend (higher values are consulted first)</param>
         </member>
-        <member name="M:LibGit2Sharp.ObjectDatabase.Write``1(System.Byte[])">
-            <summary>
-            Write an object to the object database
-            </summary>
-            <param name="data">The contents of the object</param>
-            <typeparam name="T">The type of object to write</typeparam>
-        </member>
         <member name="M:LibGit2Sharp.ObjectDatabase.CreateBlob(System.IO.Stream)">
             <summary>
             Inserts a <see cref="T:LibGit2Sharp.Blob"/> into the object database, created from the content of a stream.
@@ -10343,26 +10244,6 @@
             <param name="commentChar">When non null, lines starting with this character will be stripped if prettifyMessage is true.</param>
             <returns>The created <see cref="T:LibGit2Sharp.Commit"/>.</returns>
         </member>
-        <member name="M:LibGit2Sharp.ObjectDatabase.CreateCommitWithSignature(System.String,System.String,System.String)">
-            <summary>
-            Inserts a <see cref="T:LibGit2Sharp.Commit"/> into the object database after attaching the given signature.
-            </summary>
-            <param name="commitContent">The raw unsigned commit</param>
-            <param name="signature">The signature data </param>
-            <param name="field">The header field in the commit in which to store the signature</param>
-            <returns>The created <see cref="T:LibGit2Sharp.Commit"/>.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.ObjectDatabase.CreateCommitWithSignature(System.String,System.String)">
-            <summary>
-            Inserts a <see cref="T:LibGit2Sharp.Commit"/> into the object database after attaching the given signature.
-            <para>
-            This overload uses the default header field of "gpgsig"
-            </para>
-            </summary>
-            <param name="commitContent">The raw unsigned commit</param>
-            <param name="signature">The signature data </param>
-            <returns>The created <see cref="T:LibGit2Sharp.Commit"/>.</returns>
-        </member>
         <member name="M:LibGit2Sharp.ObjectDatabase.CreateTagAnnotation(System.String,LibGit2Sharp.GitObject,LibGit2Sharp.Signature,System.String)">
             <summary>
             Inserts a <see cref="T:LibGit2Sharp.TagAnnotation"/> into the object database, pointing to a specific <see cref="T:LibGit2Sharp.GitObject"/>.
@@ -10409,16 +10290,6 @@
             <param name="one">The <see cref="T:LibGit2Sharp.Commit"/> being used as a reference.</param>
             <param name="another">The <see cref="T:LibGit2Sharp.Commit"/> being compared against <paramref name="one"/>.</param>
             <returns>A instance of <see cref="T:LibGit2Sharp.HistoryDivergence"/>.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.ObjectDatabase.CherryPickCommit(LibGit2Sharp.Commit,LibGit2Sharp.Commit,System.Int32,LibGit2Sharp.MergeTreeOptions)">
-            <summary>
-            Performs a cherry-pick of <paramref name="cherryPickCommit"/> onto <paramref name="cherryPickOnto"/> commit.
-            </summary>
-            <param name="cherryPickCommit">The commit to cherry-pick.</param>
-            <param name="cherryPickOnto">The commit to cherry-pick onto.</param>
-            <param name="mainline">Which commit to consider the parent for the diff when cherry-picking a merge commit.</param>
-            <param name="options">The options for the merging in the cherry-pick operation.</param>
-            <returns>A result containing a <see cref="T:LibGit2Sharp.Tree"/> if the cherry-pick was successful and a list of <see cref="T:LibGit2Sharp.Conflict"/>s if it is not.</returns>
         </member>
         <member name="M:LibGit2Sharp.ObjectDatabase.ShortenObjectId(LibGit2Sharp.GitObject)">
             <summary>
@@ -10499,16 +10370,6 @@
             <param name="options">Packing options</param>
             <param name="packDelegate">Packing action</param>
             <returns>Packing results</returns>
-        </member>
-        <member name="M:LibGit2Sharp.ObjectDatabase.RevertCommit(LibGit2Sharp.Commit,LibGit2Sharp.Commit,System.Int32,LibGit2Sharp.MergeTreeOptions)">
-            <summary>
-            Performs a revert of <paramref name="revertCommit"/> onto <paramref name="revertOnto"/> commit.
-            </summary>
-            <param name="revertCommit">The commit to revert.</param>
-            <param name="revertOnto">The commit to revert onto.</param>
-            <param name="mainline">Which commit to consider the parent for the diff when reverting a merge commit.</param>
-            <param name="options">The options for the merging in the revert operation.</param>
-            <returns>A result containing a <see cref="T:LibGit2Sharp.Tree"/> if the revert was successful and a list of <see cref="T:LibGit2Sharp.Conflict"/>s if it is not.</returns>
         </member>
         <member name="T:LibGit2Sharp.OdbBackend">
             <summary>
@@ -10731,7 +10592,7 @@
         </member>
         <member name="T:LibGit2Sharp.ReferenceWrapper`1">
             <summary>
-            A base class for things that wrap a <see cref="P:LibGit2Sharp.ReferenceWrapper`1.Reference"/> (branch, tag, etc).
+            A base class for things that wrap a <see cref="T:LibGit2Sharp.Reference"/> (branch, tag, etc).
             </summary>
             <typeparam name="TObject">The type of the referenced Git object.</typeparam>
         </member>
@@ -10760,9 +10621,9 @@
             Gets the human-friendly name of this reference.
             </summary>
         </member>
-        <member name="P:LibGit2Sharp.ReferenceWrapper`1.Reference">
+        <member name="P:LibGit2Sharp.ReferenceWrapper`1.Name">
             <summary>
-            The underlying <see cref="P:LibGit2Sharp.ReferenceWrapper`1.Reference"/>
+            Gets the name of this reference.
             </summary>
         </member>
         <member name="M:LibGit2Sharp.ReferenceWrapper`1.ToString">
@@ -11426,11 +11287,6 @@
             Needed for mocking purposes.
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.Remote.Dispose">
-            <summary>
-            Release the unmanaged remote object
-            </summary>
-        </member>
         <member name="P:LibGit2Sharp.Remote.Name">
             <summary>
             Gets the alias of this remote repository.
@@ -11493,6 +11349,42 @@
             </para>
             </summary>
         </member>
+        <member name="M:LibGit2Sharp.Remote.Equals(System.Object)">
+            <summary>
+            Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:LibGit2Sharp.Remote"/>.
+            </summary>
+            <param name="obj">The <see cref="T:System.Object"/> to compare with the current <see cref="T:LibGit2Sharp.Remote"/>.</param>
+            <returns>True if the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:LibGit2Sharp.Remote"/>; otherwise, false.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.Remote.Equals(LibGit2Sharp.Remote)">
+            <summary>
+            Determines whether the specified <see cref="T:LibGit2Sharp.Remote"/> is equal to the current <see cref="T:LibGit2Sharp.Remote"/>.
+            </summary>
+            <param name="other">The <see cref="T:LibGit2Sharp.Remote"/> to compare with the current <see cref="T:LibGit2Sharp.Remote"/>.</param>
+            <returns>True if the specified <see cref="T:LibGit2Sharp.Remote"/> is equal to the current <see cref="T:LibGit2Sharp.Remote"/>; otherwise, false.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.Remote.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+            <returns>A 32-bit signed integer hash code.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.Remote.op_Equality(LibGit2Sharp.Remote,LibGit2Sharp.Remote)">
+            <summary>
+            Tests if two <see cref="T:LibGit2Sharp.Remote"/> are equal.
+            </summary>
+            <param name="left">First <see cref="T:LibGit2Sharp.Remote"/> to compare.</param>
+            <param name="right">Second <see cref="T:LibGit2Sharp.Remote"/> to compare.</param>
+            <returns>True if the two objects are equal; false otherwise.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.Remote.op_Inequality(LibGit2Sharp.Remote,LibGit2Sharp.Remote)">
+            <summary>
+            Tests if two <see cref="T:LibGit2Sharp.Remote"/> are different.
+            </summary>
+            <param name="left">First <see cref="T:LibGit2Sharp.Remote"/> to compare.</param>
+            <param name="right">Second <see cref="T:LibGit2Sharp.Remote"/> to compare.</param>
+            <returns>True if the two objects are different; false otherwise.</returns>
+        </member>
         <member name="T:LibGit2Sharp.RemoteCollection">
             <summary>
             The collection of <see cref="T:LibGit2Sharp.Remote"/> in a <see cref="T:LibGit2Sharp.Repository"/>
@@ -11517,15 +11409,6 @@
             <param name="remote">The remote to update.</param>
             <param name="actions">Delegate to perform updates on the remote.</param>
             <returns>The updated remote.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.RemoteCollection.Update(System.String,System.Action{LibGit2Sharp.RemoteUpdater}[])">
-             <summary>
-             Update properties of a remote.
-            
-             These updates will be performed as a bulk update at the end of the method.
-             </summary>
-             <param name="remote">The name of the remote to update.</param>
-             <param name="actions">Delegate to perform updates on the remote.</param>
         </member>
         <member name="M:LibGit2Sharp.RemoteCollection.GetEnumerator">
             <summary>
@@ -11588,15 +11471,6 @@
             A Repository is the primary interface into a git repository
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.Repository.#ctor">
-            <summary>
-            Initializes a new instance of the <see cref="T:LibGit2Sharp.Repository"/> class
-            that does not point to an on-disk Git repository.  This is
-            suitable only for custom, in-memory Git repositories that are
-            configured with custom object database, reference database and/or
-            configuration backends.
-            </summary>
-        </member>
         <member name="M:LibGit2Sharp.Repository.#ctor(System.String)">
             <summary>
             Initializes a new instance of the <see cref="T:LibGit2Sharp.Repository"/> class.
@@ -11609,19 +11483,12 @@
         </member>
         <member name="M:LibGit2Sharp.Repository.#ctor(System.String,LibGit2Sharp.RepositoryOptions)">
             <summary>
-            Initializes a new instance of the <see cref="T:LibGit2Sharp.Repository"/> class,
-            providing optional behavioral overrides through the
-            <paramref name="options"/> parameter.
-            <para>For a standard repository, <paramref name="path"/> may
-            either point to the ".git" folder or to the working directory.
-            For a bare repository, <paramref name="path"/> should directly
-            point to the repository folder.</para>
+            Initializes a new instance of the <see cref="T:LibGit2Sharp.Repository"/> class, providing optional behavioral overrides through <paramref name="options"/> parameter.
+            <para>For a standard repository, <paramref name="path"/> should either point to the ".git" folder or to the working directory. For a bare repository, <paramref name="path"/> should directly point to the repository folder.</para>
             </summary>
             <param name="path">
-            The path to the git repository to open, can be either the
-            path to the git directory (for non-bare repositories this
-            would be the ".git" folder inside the working directory)
-            or the path to the working directory.
+            The path to the git repository to open, can be either the path to the git directory (for non-bare repositories this
+            would be the ".git" folder inside the working directory) or the path to the working directory.
             </param>
             <param name="options">
             Overrides to the way a repository is opened.
@@ -11903,13 +11770,14 @@
             <param name="options"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
             <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
         </member>
-        <member name="M:LibGit2Sharp.Repository.Checkout(LibGit2Sharp.Tree,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.CheckoutOptions)">
+        <member name="M:LibGit2Sharp.Repository.Checkout(LibGit2Sharp.Tree,LibGit2Sharp.CheckoutOptions,System.String)">
             <summary>
-            Checkout the specified tree.
+            Internal implementation of Checkout that expects the ID of the checkout target
+            to already be in the form of a canonical branch name or a commit ID.
             </summary>
             <param name="tree">The <see cref="T:LibGit2Sharp.Tree"/> to checkout.</param>
-            <param name="paths">The paths to checkout.</param>
-            <param name="options">Collection of parameters controlling checkout behavior.</param>
+            <param name="checkoutOptions"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
+            <param name="refLogHeadSpec">The spec which will be written as target in the reflog.</param>
         </member>
         <member name="M:LibGit2Sharp.Repository.CheckoutTree(LibGit2Sharp.Tree,System.Collections.Generic.IList{System.String},LibGit2Sharp.Core.IConvertableToGitCheckoutOpts)">
             <summary>
@@ -11946,6 +11814,17 @@
             <param name = "committishOrBranchSpec">A revparse spec for the commit or branch to checkout paths from.</param>
             <param name="paths">The paths to checkout. Will throw if null is passed in. Passing an empty enumeration results in nothing being checked out.</param>
             <param name="checkoutOptions">Collection of parameters controlling checkout behavior.</param>
+        </member>
+        <member name="M:LibGit2Sharp.Repository.Reset(LibGit2Sharp.Commit,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.ExplicitPathsOptions)">
+            <summary>
+            Replaces entries in the <see cref="P:LibGit2Sharp.Repository.Index"/> with entries from the specified commit.
+            </summary>
+            <param name="commit">The target commit object.</param>
+            <param name="paths">The list of paths (either files or directories) that should be considered.</param>
+            <param name="explicitPathsOptions">
+            If set, the passed <paramref name="paths"/> will be treated as explicit paths.
+            Use these options to determine how unmatched explicit paths should be handled.
+            </param>
         </member>
         <member name="M:LibGit2Sharp.Repository.Commit(System.String,LibGit2Sharp.Signature,LibGit2Sharp.Signature,LibGit2Sharp.CommitOptions)">
             <summary>
@@ -12029,7 +11908,7 @@
             <param name="options"><see cref="T:LibGit2Sharp.CherryPickOptions"/> controlling cherry pick behavior.</param>
             <returns>The result of the cherry pick.</returns>
         </member>
-        <member name="M:LibGit2Sharp.Repository.Merge(LibGit2Sharp.Core.Handles.AnnotatedCommitHandle[],LibGit2Sharp.Signature,LibGit2Sharp.MergeOptions)">
+        <member name="M:LibGit2Sharp.Repository.Merge(LibGit2Sharp.Core.Handles.GitAnnotatedCommitHandle[],LibGit2Sharp.Signature,LibGit2Sharp.MergeOptions)">
             <summary>
             Internal implementation of merge.
             </summary>
@@ -12038,7 +11917,7 @@
             <param name="options">Specifies optional parameters controlling merge behavior; if null, the defaults are used.</param>
             <returns>The <see cref="T:LibGit2Sharp.MergeResult"/> of the merge.</returns>
         </member>
-        <member name="M:LibGit2Sharp.Repository.NormalMerge(LibGit2Sharp.Core.Handles.AnnotatedCommitHandle[],LibGit2Sharp.Signature,LibGit2Sharp.MergeOptions)">
+        <member name="M:LibGit2Sharp.Repository.NormalMerge(LibGit2Sharp.Core.Handles.GitAnnotatedCommitHandle[],LibGit2Sharp.Signature,LibGit2Sharp.MergeOptions)">
             <summary>
             Perform a normal merge (i.e. a non-fast-forward merge).
             </summary>
@@ -12047,7 +11926,7 @@
             <param name="options">Specifies optional parameters controlling merge behavior; if null, the defaults are used.</param>
             <returns>The <see cref="T:LibGit2Sharp.MergeResult"/> of the merge.</returns>
         </member>
-        <member name="M:LibGit2Sharp.Repository.FastForwardMerge(LibGit2Sharp.Core.Handles.AnnotatedCommitHandle,LibGit2Sharp.MergeOptions)">
+        <member name="M:LibGit2Sharp.Repository.FastForwardMerge(LibGit2Sharp.Core.Handles.GitAnnotatedCommitHandle,LibGit2Sharp.MergeOptions)">
             <summary>
             Perform a fast-forward merge.
             </summary>
@@ -12189,15 +12068,6 @@
             <param name="commit">The commit to be described.</param>
             <param name="options">Determines how the commit will be described.</param>
             <returns>A descriptive identifier for the commit based on the nearest annotated tag.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Repository.RevParse(System.String,LibGit2Sharp.Reference@,LibGit2Sharp.GitObject@)">
-            <summary>
-            Parse an extended SHA-1 expression and retrieve the object and the reference
-            mentioned in the revision (if any).
-            </summary>
-            <param name="revision">An extended SHA-1 expression for the object to look up</param>
-            <param name="reference">The reference mentioned in the revision (if any)</param>
-            <param name="obj">The object which the revision resolves to</param>
         </member>
         <member name="T:LibGit2Sharp.RepositoryInformation">
             <summary>
@@ -12349,6 +12219,66 @@
             <param name="resetMode">Flavor of reset operation to perform.</param>
             <param name="committish">A revparse spec for the target commit object.</param>
         </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Reset(LibGit2Sharp.IRepository,System.String,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.ExplicitPathsOptions)">
+            <summary>
+            Replaces entries in the <see cref="T:LibGit2Sharp.Index"/> with entries from the specified commit.
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.Repository"/> being worked with.</param>
+            <param name="committish">A revparse spec for the target commit object.</param>
+            <param name="paths">The list of paths (either files or directories) that should be considered.</param>
+            <param name="explicitPathsOptions">
+            If set, the passed <paramref name="paths"/> will be treated as explicit paths.
+            Use these options to determine how unmatched explicit paths should be handled.
+            </param>
+        </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Commit(LibGit2Sharp.IRepository,System.String)">
+            <summary>
+            Stores the content of the <see cref="P:LibGit2Sharp.Repository.Index"/> as a new <see cref="T:LibGit2Sharp.Commit"/> into the repository.
+            The tip of the <see cref="P:LibGit2Sharp.Repository.Head"/> will be used as the parent of this new Commit.
+            Once the commit is created, the <see cref="P:LibGit2Sharp.Repository.Head"/> will move forward to point at it.
+            <para>Both the Author and Committer will be guessed from the Git configuration. An exception will be raised if no configuration is reachable.</para>
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.Repository"/> being worked with.</param>
+            <param name="message">The description of why a change was made to the repository.</param>
+            <returns>The generated <see cref="T:LibGit2Sharp.Commit"/>.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Commit(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.CommitOptions)">
+            <summary>
+            Stores the content of the <see cref="P:LibGit2Sharp.Repository.Index"/> as a new <see cref="T:LibGit2Sharp.Commit"/> into the repository.
+            The tip of the <see cref="P:LibGit2Sharp.Repository.Head"/> will be used as the parent of this new Commit.
+            Once the commit is created, the <see cref="P:LibGit2Sharp.Repository.Head"/> will move forward to point at it.
+            <para>Both the Author and Committer will be guessed from the Git configuration. An exception will be raised if no configuration is reachable.</para>
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.Repository"/> being worked with.</param>
+            <param name="message">The description of why a change was made to the repository.</param>
+            <param name="options">The <see cref="T:LibGit2Sharp.CommitOptions"/> that specify the commit behavior.</param>
+            <returns>The generated <see cref="T:LibGit2Sharp.Commit"/>.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Commit(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.Signature)">
+            <summary>
+            Stores the content of the <see cref="P:LibGit2Sharp.Repository.Index"/> as a new <see cref="T:LibGit2Sharp.Commit"/> into the repository.
+            The tip of the <see cref="P:LibGit2Sharp.Repository.Head"/> will be used as the parent of this new Commit.
+            Once the commit is created, the <see cref="P:LibGit2Sharp.Repository.Head"/> will move forward to point at it.
+            <para>The Committer will be guessed from the Git configuration. An exception will be raised if no configuration is reachable.</para>
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.Repository"/> being worked with.</param>
+            <param name="author">The <see cref="T:LibGit2Sharp.Signature"/> of who made the change.</param>
+            <param name="message">The description of why a change was made to the repository.</param>
+            <returns>The generated <see cref="T:LibGit2Sharp.Commit"/>.</returns>
+        </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Commit(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.Signature,LibGit2Sharp.CommitOptions)">
+            <summary>
+            Stores the content of the <see cref="P:LibGit2Sharp.Repository.Index"/> as a new <see cref="T:LibGit2Sharp.Commit"/> into the repository.
+            The tip of the <see cref="P:LibGit2Sharp.Repository.Head"/> will be used as the parent of this new Commit.
+            Once the commit is created, the <see cref="P:LibGit2Sharp.Repository.Head"/> will move forward to point at it.
+            <para>The Committer will be guessed from the Git configuration. An exception will be raised if no configuration is reachable.</para>
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.Repository"/> being worked with.</param>
+            <param name="author">The <see cref="T:LibGit2Sharp.Signature"/> of who made the change.</param>
+            <param name="message">The description of why a change was made to the repository.</param>
+            <param name="options">The <see cref="T:LibGit2Sharp.CommitOptions"/> that specify the commit behavior.</param>
+            <returns>The generated <see cref="T:LibGit2Sharp.Commit"/>.</returns>
+        </member>
         <member name="M:LibGit2Sharp.RepositoryExtensions.Commit(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.Signature,LibGit2Sharp.Signature)">
             <summary>
             Stores the content of the <see cref="P:LibGit2Sharp.Repository.Index"/> as a new <see cref="T:LibGit2Sharp.Commit"/> into the repository.
@@ -12496,6 +12426,21 @@
             </summary>
             <param name="repository">The <see cref="T:LibGit2Sharp.IRepository"/> being worked with.</param>
             <param name="resetMode">Flavor of reset operation to perform.</param>
+            <param name="commit">The target commit object.</param>
+        </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Reset(LibGit2Sharp.IRepository,LibGit2Sharp.Commit,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Replaces entries in the <see cref="P:LibGit2Sharp.Repository.Index"/> with entries from the specified commit.
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.IRepository"/> being worked with.</param>
+            <param name="commit">The target commit object.</param>
+            <param name="paths">The list of paths (either files or directories) that should be considered.</param>
+        </member>
+        <member name="M:LibGit2Sharp.RepositoryExtensions.Reset(LibGit2Sharp.IRepository,LibGit2Sharp.Commit)">
+            <summary>
+            Replaces entries in the <see cref="P:LibGit2Sharp.Repository.Index"/> with entries from the specified commit.
+            </summary>
+            <param name="repository">The <see cref="T:LibGit2Sharp.IRepository"/> being worked with.</param>
             <param name="commit">The target commit object.</param>
         </member>
         <member name="M:LibGit2Sharp.RepositoryExtensions.Blame(LibGit2Sharp.IRepository,System.String)">
@@ -13510,7 +13455,7 @@
             </summary>
             <para>
               The format of the version number is as follows:
-              <para>Major.Minor.Patch-LibGit2Sharp_abbrev_hash-libgit2_abbrev_hash (x86|x64 - features)</para>
+              <para>Major.Minor.Patch-LibGit2Sharp_abbrev_hash-libgit2_abbrev_hash (x86|amd64 - features)</para>
             </para>
             <returns></returns>
         </member>
@@ -13689,7 +13634,7 @@
             True if we have the SHA1 hostkey hash from the server
             </summary>
         </member>
-        <member name="M:LibGit2Sharp.CertificateSsh.#ctor(LibGit2Sharp.Core.git_certificate_ssh*)">
+        <member name="M:LibGit2Sharp.CertificateSsh.#ctor(LibGit2Sharp.Core.GitCertificateSsh)">
             <summary>
             True if we have the SHA1 hostkey hash from the server
             </summary>public readonly bool HasSHA1;
@@ -13699,306 +13644,33 @@
               Marker interface to identify Diff results.
             </summary>
         </member>
-        <member name="T:LibGit2Sharp.Commands">
+        <member name="T:Lazy`1">
             <summary>
-            Fetch changes from the configured upstream remote and branch into the branch pointed at by HEAD.
+            Provides support for lazy initialization.
             </summary>
+            <typeparam name="T">Specifies the type of object that is being lazily initialized.</typeparam>
+        </member>
+        <member name="P:Lazy`1.Value">
             <summary>
-            Class to serve as namespacing for the command-emulating methods
-            </summary>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Pull(LibGit2Sharp.Repository,LibGit2Sharp.Signature,LibGit2Sharp.PullOptions)">
-            <summary>
-            Fetch changes from the configured upstream remote and branch into the branch pointed at by HEAD.
-            </summary>
-            <param name="repository">The repository.</param>
-            <param name="merger">The signature to use for the merge.</param>
-            <param name="options">The options for fetch and merging.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Fetch(LibGit2Sharp.Repository,System.String,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.FetchOptions,System.String)">
-            <summary>
-            Perform a fetch
-            </summary>
-            <param name="repository">The repository in which to fetch.</param>
-            <param name="remote">The remote to fetch from. Either as a remote name or a URL</param>
-            <param name="options">Fetch options.</param>
-            <param name="logMessage">Log message for any ref updates.</param>
-            <param name="refspecs">List of refspecs to apply as active.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Stage(LibGit2Sharp.IRepository,System.String)">
-             <summary>
-             Promotes to the staging area the latest modifications of a file in the working directory (addition, updation or removal).
-            
-             If this path is ignored by configuration then it will not be staged unless <see cref="P:LibGit2Sharp.StageOptions.IncludeIgnored"/> is unset.
-             </summary>
-             <param name="repository">The repository in which to act</param>
-             <param name="path">The path of the file within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Stage(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.StageOptions)">
-             <summary>
-             Promotes to the staging area the latest modifications of a file in the working directory (addition, updation or removal).
-            
-             If this path is ignored by configuration then it will not be staged unless <see cref="P:LibGit2Sharp.StageOptions.IncludeIgnored"/> is unset.
-             </summary>
-             <param name="repository">The repository in which to act</param>
-             <param name="path">The path of the file within the working directory.</param>
-             <param name="stageOptions">Determines how paths will be staged.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Stage(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String})">
-             <summary>
-             Promotes to the staging area the latest modifications of a collection of files in the working directory (addition, updation or removal).
-            
-             Any paths (even those listed explicitly) that are ignored by configuration will not be staged unless <see cref="P:LibGit2Sharp.StageOptions.IncludeIgnored"/> is unset.
-             </summary>
-             <param name="repository">The repository in which to act</param>
-             <param name="paths">The collection of paths of the files within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Stage(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.StageOptions)">
-             <summary>
-             Promotes to the staging area the latest modifications of a collection of files in the working directory (addition, updation or removal).
-            
-             Any paths (even those listed explicitly) that are ignored by configuration will not be staged unless <see cref="P:LibGit2Sharp.StageOptions.IncludeIgnored"/> is unset.
-             </summary>
-             <param name="repository">The repository in which to act</param>
-             <param name="paths">The collection of paths of the files within the working directory.</param>
-             <param name="stageOptions">Determines how paths will be staged.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Unstage(LibGit2Sharp.IRepository,System.String)">
-            <summary>
-            Removes from the staging area all the modifications of a file since the latest commit (addition, updation or removal).
-            </summary>
-            <param name="repository">The repository in which to act</param>
-            <param name="path">The path of the file within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Unstage(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.ExplicitPathsOptions)">
-            <summary>
-            Removes from the staging area all the modifications of a file since the latest commit (addition, updation or removal).
-            </summary>
-            <param name="repository">The repository in which to act</param>
-            <param name="path">The path of the file within the working directory.</param>
-            <param name="explicitPathsOptions">
-            The passed <paramref name="path"/> will be treated as explicit paths.
-            Use these options to determine how unmatched explicit paths should be handled.
-            </param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Unstage(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            Removes from the staging area all the modifications of a collection of file since the latest commit (addition, updation or removal).
-            </summary>
-            <param name="repository">The repository in which to act</param>
-            <param name="paths">The collection of paths of the files within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Unstage(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String},LibGit2Sharp.ExplicitPathsOptions)">
-            <summary>
-            Removes from the staging area all the modifications of a collection of file since the latest commit (addition, updation or removal).
-            </summary>
-            <param name="repository">The repository in which to act</param>
-            <param name="paths">The collection of paths of the files within the working directory.</param>
-            <param name="explicitPathsOptions">
-            The passed <paramref name="paths"/> will be treated as explicit paths.
-            Use these options to determine how unmatched explicit paths should be handled.
-            </param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Move(LibGit2Sharp.IRepository,System.String,System.String)">
-            <summary>
-            Moves and/or renames a file in the working directory and promotes the change to the staging area.
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="sourcePath">The path of the file within the working directory which has to be moved/renamed.</param>
-            <param name="destinationPath">The target path of the file within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Move(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            Moves and/or renames a collection of files in the working directory and promotes the changes to the staging area.
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="sourcePaths">The paths of the files within the working directory which have to be moved/renamed.</param>
-            <param name="destinationPaths">The target paths of the files within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Remove(LibGit2Sharp.IRepository,System.String)">
-            <summary>
-            Removes a file from the staging area, and optionally removes it from the working directory as well.
-            <para>
-              If the file has already been deleted from the working directory, this method will only deal
-              with promoting the removal to the staging area.
-            </para>
-            <para>
-              The default behavior is to remove the file from the working directory as well.
-            </para>
-            </summary>
-            <param name="repository">The <see cref="T:LibGit2Sharp.IRepository"/> being worked with.</param>
-            <param name="path">The path of the file within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Remove(LibGit2Sharp.IRepository,System.String,System.Boolean)">
-            <summary>
-            Removes a file from the staging area, and optionally removes it from the working directory as well.
-            <para>
-              If the file has already been deleted from the working directory, this method will only deal
-              with promoting the removal to the staging area.
-            </para>
-            <para>
-              The default behavior is to remove the file from the working directory as well.
-            </para>
-            </summary>
-            <param name="repository">The <see cref="T:LibGit2Sharp.IRepository"/> being worked with.</param>
-            <param name="path">The path of the file within the working directory.</param>
-            <param name="removeFromWorkingDirectory">True to remove the file from the working directory, False otherwise.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Remove(LibGit2Sharp.IRepository,System.String,System.Boolean,LibGit2Sharp.ExplicitPathsOptions)">
-            <summary>
-            Removes a file from the staging area, and optionally removes it from the working directory as well.
-            <para>
-              If the file has already been deleted from the working directory, this method will only deal
-              with promoting the removal to the staging area.
-            </para>
-            <para>
-              The default behavior is to remove the file from the working directory as well.
-            </para>
-            <para>
-              When not passing a <paramref name="explicitPathsOptions"/>, the passed path will be treated as
-              a pathspec. You can for example use it to pass the relative path to a folder inside the working directory,
-              so that all files beneath this folders, and the folder itself, will be removed.
-            </para>
-            </summary>
-            <param name="repository">The repository in which to operate</param>
-            <param name="path">The path of the file within the working directory.</param>
-            <param name="removeFromWorkingDirectory">True to remove the file from the working directory, False otherwise.</param>
-            <param name="explicitPathsOptions">
-            The passed <paramref name="path"/> will be treated as an explicit path.
-            Use these options to determine how unmatched explicit paths should be handled.
-            </param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Remove(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String})">
-            <summary>
-            Removes a collection of fileS from the staging, and optionally removes them from the working directory as well.
-            <para>
-              If a file has already been deleted from the working directory, this method will only deal
-              with promoting the removal to the staging area.
-            </para>
-            <para>
-              The default behavior is to remove the files from the working directory as well.
-            </para>
-            </summary>
-            <param name="repository">The <see cref="T:LibGit2Sharp.IRepository"/> being worked with.</param>
-            <param name="paths">The collection of paths of the files within the working directory.</param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Remove(LibGit2Sharp.IRepository,System.Collections.Generic.IEnumerable{System.String},System.Boolean,LibGit2Sharp.ExplicitPathsOptions)">
-            <summary>
-            Removes a collection of fileS from the staging, and optionally removes them from the working directory as well.
-            <para>
-              If a file has already been deleted from the working directory, this method will only deal
-              with promoting the removal to the staging area.
-            </para>
-            <para>
-              The default behavior is to remove the files from the working directory as well.
-            </para>
-            <para>
-              When not passing a <paramref name="explicitPathsOptions"/>, the passed paths will be treated as
-              a pathspec. You can for example use it to pass the relative paths to folders inside the working directory,
-              so that all files beneath these folders, and the folders themselves, will be removed.
-            </para>
-            </summary>
-            <param name="repository">The repository in which to operate</param>
-            <param name="paths">The collection of paths of the files within the working directory.</param>
-            <param name="removeFromWorkingDirectory">True to remove the files from the working directory, False otherwise.</param>
-            <param name="explicitPathsOptions">
-            The passed <paramref name="paths"/> will be treated as explicit paths.
-            Use these options to determine how unmatched explicit paths should be handled.
-            </param>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,System.String)">
-            <summary>
-            Checkout the specified <see cref="T:LibGit2Sharp.Branch"/>, reference or SHA.
-            <para>
-              If the committishOrBranchSpec parameter resolves to a branch name, then the checked out HEAD will
-              will point to the branch. Otherwise, the HEAD will be detached, pointing at the commit sha.
-            </para>
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="committishOrBranchSpec">A revparse spec for the commit or branch to checkout.</param>
-            <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,System.String,LibGit2Sharp.CheckoutOptions)">
-            <summary>
-            Checkout the specified <see cref="T:LibGit2Sharp.Branch"/>, reference or SHA.
-            <para>
-              If the committishOrBranchSpec parameter resolves to a branch name, then the checked out HEAD will
-              will point to the branch. Otherwise, the HEAD will be detached, pointing at the commit sha.
-            </para>
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="committishOrBranchSpec">A revparse spec for the commit or branch to checkout.</param>
-            <param name="options"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
-            <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,LibGit2Sharp.Branch)">
-            <summary>
-            Checkout the tip commit of the specified <see cref="T:LibGit2Sharp.Branch"/> object. If this commit is the
-            current tip of the branch, will checkout the named branch. Otherwise, will checkout the tip commit
-            as a detached HEAD.
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="branch">The <see cref="T:LibGit2Sharp.Branch"/> to check out.</param>
-            <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,LibGit2Sharp.Branch,LibGit2Sharp.CheckoutOptions)">
-            <summary>
-            Checkout the tip commit of the specified <see cref="T:LibGit2Sharp.Branch"/> object. If this commit is the
-            current tip of the branch, will checkout the named branch. Otherwise, will checkout the tip commit
-            as a detached HEAD.
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="branch">The <see cref="T:LibGit2Sharp.Branch"/> to check out.</param>
-            <param name="options"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
-            <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,LibGit2Sharp.Commit)">
-            <summary>
-            Checkout the specified <see cref="T:LibGit2Sharp.Commit"/>.
-            <para>
-              Will detach the HEAD and make it point to this commit sha.
-            </para>
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="commit">The <see cref="T:LibGit2Sharp.Commit"/> to check out.</param>
-            <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,LibGit2Sharp.Commit,LibGit2Sharp.CheckoutOptions)">
-            <summary>
-            Checkout the specified <see cref="T:LibGit2Sharp.Commit"/>.
-            <para>
-              Will detach the HEAD and make it point to this commit sha.
-            </para>
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="commit">The <see cref="T:LibGit2Sharp.Commit"/> to check out.</param>
-            <param name="options"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
-            <returns>The <see cref="T:LibGit2Sharp.Branch"/> that was checked out.</returns>
-        </member>
-        <member name="M:LibGit2Sharp.Commands.Checkout(LibGit2Sharp.IRepository,LibGit2Sharp.Tree,LibGit2Sharp.CheckoutOptions,System.String)">
-            <summary>
-            Internal implementation of Checkout that expects the ID of the checkout target
-            to already be in the form of a canonical branch name or a commit ID.
-            </summary>
-            <param name="repository">The repository to act on</param>
-            <param name="tree">The <see cref="T:LibGit2Sharp.Tree"/> to checkout.</param>
-            <param name="checkoutOptions"><see cref="T:LibGit2Sharp.CheckoutOptions"/> controlling checkout behavior.</param>
-            <param name="refLogHeadSpec">The spec which will be written as target in the reflog.</param>
-        </member>
-        <member name="T:LibGit2Sharp.SignatureInfo">
-            <summary>
-            Structure for holding a signature extracted from a commit or a tag
+            Gets the lazily initialized value of the current Lazy{T} instance.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.SignatureInfo.Signature">
+        <member name="P:Lazy`1.IsValueCreated">
             <summary>
-            The signature data, PGP/GPG or otherwise.
+            Gets a value that indicates whether a value has been created for this Lazy{T} instance.
             </summary>
         </member>
-        <member name="F:LibGit2Sharp.SignatureInfo.SignedData">
+        <member name="M:Lazy`1.#ctor(System.Func{`0})">
             <summary>
-            The data which was signed. The object contents without the signature part.
+            Initializes a new instance of the Lazy{T} class.
             </summary>
+            <param name="createValue">The delegate that produces the value when it is needed.</param>
+        </member>
+        <member name="M:Lazy`1.ToString">
+            <summary>
+            Creates and returns a string representation of the Lazy{T}.Value.
+            </summary>
+            <returns>The string representation of the Lazy{T}.Value property.</returns>
         </member>
     </members>
 </doc>

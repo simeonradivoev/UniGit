@@ -14,7 +14,7 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.2.1";
+		public const string Version = "1.2.2";
 
 		private readonly string repoPath;
 		private readonly string gitPath;
@@ -387,8 +387,7 @@ namespace UniGit
 				return;
 			}
 
-			var window = EditorWindow.GetWindow<GitDiffInspector>();
-			window.Construct(this);
+			var window = UniGitLoader.GetWindow<GitDiffInspector>();
 			window.Init(path, oldCommit, newCommit);
 		}
 
@@ -400,8 +399,7 @@ namespace UniGit
 				return;
 			}
 
-			var window = EditorWindow.GetWindow<GitDiffInspector>();
-			window.Construct(this);
+			var window = UniGitLoader.GetWindow<GitDiffInspector>();
 			window.Init(path);
 		}
 
@@ -415,8 +413,7 @@ namespace UniGit
 				return;
 			}
 
-			var window = EditorWindow.GetWindow<GitDiffInspector>();
-			window.Construct(this);
+			var window = UniGitLoader.GetWindow<GitDiffInspector>();
 			window.Init(path, lastCommit.Commit);
 		}
 
@@ -429,8 +426,7 @@ namespace UniGit
 					return;
 				}
 
-				var blameWizard = EditorWindow.GetWindow<GitBlameWizard>(true);
-				blameWizard.Construct(this);
+				var blameWizard = UniGitLoader.GetWindow<GitBlameWizard>(true);
 				blameWizard.SetBlamePath(path);
 			}
 		}
@@ -453,7 +449,7 @@ namespace UniGit
 			}
 			else
 			{
-				Commands.Stage(repository,paths);
+				GitCommands.Stage(repository,paths);
 				MarkDirty(paths);
 			}
 		}
@@ -462,7 +458,7 @@ namespace UniGit
 		{
 			var operation = GitAsyncManager.QueueWorker(() =>
 			{
-				Commands.Stage(repository,paths);
+			    GitCommands.Stage(repository,paths);
 			}, (o) =>
 			{
 				MarkDirty(paths);
@@ -481,7 +477,7 @@ namespace UniGit
 			}
 			else
 			{
-				Commands.Unstage(repository, paths);
+			    GitCommands.Unstage(repository, paths);
 				MarkDirty(paths);
 			}
 		}
@@ -490,7 +486,7 @@ namespace UniGit
 		{
 			var operation = GitAsyncManager.QueueWorker(() =>
 			{
-				Commands.Unstage(repository,paths);
+			    GitCommands.Unstage(repository,paths);
 			}, (o) =>
 			{
 				MarkDirty(paths);

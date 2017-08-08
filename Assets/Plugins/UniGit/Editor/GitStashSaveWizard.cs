@@ -1,35 +1,33 @@
 ﻿using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
 {
-	public class GitStashSaveWizard : ScriptableWizard, IGitWindow, ISerializationCallbackReceiver
+	public class GitStashSaveWizard : ScriptableWizard
 	{
 		private string stashMessage;
 		private StashModifiers stashModifiers = StashModifiers.Default;
 		private GitManager gitManager;
 
-		public void Construct(GitManager gitManager)
+        [UniGitInject]
+		private void Construct(GitManager gitManager)
 		{
 			this.gitManager = gitManager;
 		}
 
-		public void OnBeforeSerialize()
-		{
-			
-		}
-
-		public void OnAfterDeserialize()
-		{
-			Construct(UniGitLoader.GitManager);
-		}
-
 		private void OnEnable()
 		{
+            GitWindows.AddWindow(this);
 			createButtonName = "Save";
 			titleContent = new GUIContent("Stash Save",GitOverlay.icons.stashIcon.image);
 		}
+
+	    private void OnDisable()
+	    {
+	        GitWindows.RemoveWindow(this);
+        }
 
 		protected override bool DrawWizardGUI()
 		{

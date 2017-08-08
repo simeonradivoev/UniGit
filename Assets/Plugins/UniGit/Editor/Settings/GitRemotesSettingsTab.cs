@@ -117,7 +117,7 @@ namespace UniGit.Settings
 
 			public void Update(RemoteCollection remotes)
 			{
-				remotes.Update(remote.Name, UpdateAction);
+				remotes.Update(remote, UpdateAction);
 				Update();
 			}
 
@@ -181,7 +181,6 @@ namespace UniGit.Settings
 				{
 					remoteCollection.Add(name, url);
 					gitManager.MarkDirty();
-					GitSettingsWindow.CreateEditor();
 				}
 				GUI.enabled = true;
 				EditorGUILayout.Space();

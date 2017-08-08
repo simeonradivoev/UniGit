@@ -3,16 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace UniGit.Utils
 {
 	public class InjectionHelper
 	{
 		private readonly List<Resolve> resolves;
+	    private InjectionHelper parent;
 
 		public InjectionHelper()
 		{
 			resolves = new List<Resolve>();
+		    Bind<InjectionHelper>().FromInstance(this);
 		}
 
 		public void Clear()
@@ -34,6 +37,11 @@ namespace UniGit.Utils
 			return resolve;
 		}
 
+	    public void SetParent(InjectionHelper parent)
+	    {
+	        this.parent = parent;
+	    }
+
 		public T CreateInstance<T>()
 		{
 			return (T)CreateInstance(typeof(T));
@@ -54,6 +62,59 @@ namespace UniGit.Utils
 				return instance;
 			}
 			return Activator.CreateInstance(type);
+		}
+
+		public void Inject(object obj)
+		{
+			Type type = obj.GetType();
+			List<MethodInfo> infos = GetInjectMethods(type);
+			foreach (var methodInfo in infos)
+			{
+				var parameterInfos = methodInfo.GetParameters();
+				object[] args = new object[parameterInfos.Length];
+				for (int i = 0; i < parameterInfos.Length; i++)
+				{
+					args[i] = HandleParameter(parameterInfos[i], type);
+				}
+				try
+				{
+					methodInfo.Invoke(obj, args);
+				}
+				catch (Exception e)
+				{
+					Debug.LogErrorFormat("There was a problem while calling injectable method {0}",methodInfo.Name);
+					Debug.LogException(e);
+					return;
+				}
+			}
+		}
+
+		private List<MethodInfo> GetInjectMethods(Type type)
+		{
+			List<MethodInfo> infos = new List<MethodInfo>();
+			Type lastType = type;
+			while (lastType != null)
+			{
+				var methods = lastType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+				foreach (var method in methods)
+				{
+					if (HasInjectAttribute(method))
+					{
+                        if(method.IsAbstract) continue;
+                        //don't put overriden methods, only methods that are virtual
+						if (method.IsVirtual && method.GetBaseDefinition().DeclaringType != lastType) continue;
+						infos.Add(method);
+					}
+				}
+				lastType = lastType.BaseType;
+			}
+			infos.Reverse();
+			return infos;
+		}
+
+		private bool HasInjectAttribute(MethodInfo methodInfo)
+		{
+			return methodInfo.GetCustomAttributes(typeof(UniGitInject), true).Length > 0;
 		}
 
 		private ConstructorInfo GetInjectConstructor(Type type)
@@ -125,6 +186,12 @@ namespace UniGit.Utils
 				CheckCrossDependency(resolve, injecteeType, parameter);
 				return resolve.GetInstance();
 			}
+
+		    if (parent != null)
+		    {
+		        return parent.HandleParameter(parameter, injecteeType);
+		    }
+
 			throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameter.Name, parameter.ParameterType));
 		}
 

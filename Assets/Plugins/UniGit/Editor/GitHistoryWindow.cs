@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;
@@ -107,20 +106,7 @@ namespace UniGit
 		}
 		#endregion
 
-		[MenuItem("Window/GIT History")]
-		public static void CreateEditor()
-		{
-			GetWindow(true, UniGitLoader.GitManager,UniGitLoader.ExternalManager,UniGitLoader.CredentialsManager);
-		}
-
-		public static GitHistoryWindow GetWindow(bool focus,GitManager gitManager,GitExternalManager externalManager,GitCredentialsManager credentialsManager)
-		{
-			var window = GetWindow<GitHistoryWindow>(WindowName,focus);
-			window.Construct(gitManager);
-			window.Construct(externalManager,credentialsManager);
-			return window;
-		}
-
+        [UniGitInject]
 		private void Construct(GitExternalManager externalManager,GitCredentialsManager credentialsManager)
 		{
 			this.externalManager = externalManager;
@@ -128,11 +114,6 @@ namespace UniGit
 		}
 
 		#region Editor Specific Updates
-		public override void OnAfterDeserialize()
-		{
-			base.OnAfterDeserialize();
-			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
-		}
 
 		protected override void OnRepositoryCreate()
 		{
@@ -385,7 +366,7 @@ namespace UniGit
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 			GUIContent fetchContent = new GUIContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
-			if (branch.RemoteName != null && gitManager.Repository.Network.Remotes[branch.RemoteName] != null)
+			if (branch.Remote != null)
 			{
 				fetchContent.tooltip = "Branch does not have a remote.";
 				GUI.enabled = false;
@@ -431,7 +412,7 @@ namespace UniGit
 			}
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
-			GitGUI.StartEnable(gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
+			GitGUI.StartEnable(gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
 			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.checkout.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), EditorStyles.toolbarButton))
 			{
 				if (externalManager.TakeSwitch())
@@ -461,22 +442,20 @@ namespace UniGit
 			}
 			else
 			{
-				var wizard = ScriptableWizard.DisplayWizard<GitMergeWizard>("Merge", "Merge");
-				wizard.Construct(gitManager,credentialsManager, externalManager);
+				UniGitLoader.DisplayWizard<GitMergeWizard>("Git Merge","Merge", "Merge");
 			}
 		}
 
 		private void GoToFetch()
 		{
 			var branch = selectedBranch.LoadBranch(gitManager);
-			if (externalManager.TakeFetch(branch.RemoteName))
+			if (externalManager.TakeFetch(branch.Remote.Name))
 			{
 				gitManager.MarkDirty();
 			}
 			else
 			{
-				var wizard = ScriptableWizard.DisplayWizard<GitFetchWizard>("Fetch", "Fetch");
-				wizard.Construct(gitManager, credentialsManager, externalManager);
+				var wizard = UniGitLoader.DisplayWizard<GitFetchWizard>("Git Fetch","Fetch", "Fetch");
 				wizard.Init(branch);
 			}
 		}
@@ -490,9 +469,8 @@ namespace UniGit
 			}
 			else
 			{
-				var wizard = ScriptableWizard.DisplayWizard<GitPullWizard>("Pull", "Pull");
-				wizard.Construct(gitManager,credentialsManager,externalManager);
-				wizard.Init(selectedBranch.LoadBranch(gitManager));
+			    var wizard = UniGitLoader.DisplayWizard<GitPullWizard>("Git Pull", "Push", "Pull");
+			    wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
 
@@ -504,8 +482,7 @@ namespace UniGit
 			}
 			else
 			{
-				var wizard = ScriptableWizard.DisplayWizard<GitPushWizard>("Push", "Push");
-				wizard.Construct(gitManager,credentialsManager,externalManager);
+				var wizard = UniGitLoader.DisplayWizard<GitPushWizard>("Git Push","Push", "Push");
 				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
@@ -671,7 +648,7 @@ namespace UniGit
 				y += 4;
 			}
 
-			if (gitSettings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
+			if (gitManager.Settings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
 			{
 				Texture2D avatar = GetProfilePixture(commit.Committer.Email);
 				GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), avatar != null ? GitGUI.GetTempContent(avatar) : GitOverlay.icons.loadingIconSmall, styles.avatar);

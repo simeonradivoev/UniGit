@@ -16,52 +16,18 @@ namespace UniGit
 		private GitSettingsTab[] tabs;
 		[SerializeField] private int tab;
 
-		[MenuItem("Window/GIT Settings")]
-		public static void CreateEditor()
+        [UniGitInject]
+		private void Construct(InjectionHelper parentInjectionHelper)
 		{
-			GetWindow(true, UniGitLoader.GitManager, UniGitLoader.LfsManager,UniGitLoader.ExternalManager,UniGitLoader.CredentialsManager);
-		}
-
-		public static GitSettingsWindow GetWindow(bool focus,GitManager gitManager,GitLfsManager lfsManager, GitExternalManager externalManager, GitCredentialsManager credentialsManager)
-		{
-			var window = GetWindow<GitSettingsWindow>(false, WindowTitle, focus);
-			window.Construct(gitManager);
-			window.Construct(lfsManager, externalManager, credentialsManager);
-			window.InitTabs();
-			return window;
-		}
-
-		public void Construct(GitLfsManager lfsManager,GitExternalManager externalManager,GitCredentialsManager credentialsManager)
-		{
-			Debug.Assert(gitManager != null);
-			if (gitManager != null && gitManager.IsValidRepo)
-			{
-				injectionHelper.Bind<GitLfsManager>().FromInstance(lfsManager);
-				injectionHelper.Bind<GitExternalManager>().FromInstance(externalManager);
-				injectionHelper.Bind<GitCredentialsManager>().FromInstance(credentialsManager);
-			}
-
-			injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
+		    injectionHelper.SetParent(parentInjectionHelper);
+            injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitRemotesSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitBranchesSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitLFSSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitSecuritySettingsTab>();
-		}
 
-		#region Editor Specific Updates
-		public override void OnAfterDeserialize()
-		{
-			base.OnAfterDeserialize();
-			Construct(UniGitLoader.LfsManager, UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
 		}
-
-		protected override void OnRepositoryCreate()
-		{
-			base.OnRepositoryCreate();
-			Construct(UniGitLoader.LfsManager, UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
-		}
-		#endregion
 
 		protected override void OnEnable()
 		{

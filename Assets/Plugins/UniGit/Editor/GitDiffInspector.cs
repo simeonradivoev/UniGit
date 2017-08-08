@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitDiffInspector : EditorWindow, IGitWindow, ISerializationCallbackReceiver, IHasCustomMenu
+	public class GitDiffInspector : EditorWindow, IHasCustomMenu
 	{
 		private const string HelpUrl = "https://github.com/simeonradivoev/UniGit/wiki/File-Difference#in-editor-diff-inspector";
 
@@ -54,23 +54,15 @@ namespace UniGit
 		private ExplicitPathsOptions explicitPathsOptions;
 		private UnityEngine.Object asset;
 
-		public void Construct(GitManager gitManager)
+        [UniGitInject]
+		private void Construct(GitManager gitManager)
 		{
 			this.gitManager = gitManager;
 		}
 
-		public void OnBeforeSerialize()
-		{
-			
-		}
-
-		public void OnAfterDeserialize()
-		{
-			Construct(UniGitLoader.GitManager);
-		}
-
 		private void OnEnable()
 		{
+            GitWindows.AddWindow(this);
 			compareOptions = new CompareOptions()
 			{
 				Algorithm = DiffAlgorithm.Myers,
@@ -93,6 +85,11 @@ namespace UniGit
 				new ColoredRegex("NUmbers",numbers,"brown"), 
 			});
 		}
+
+	    private void OnDisable()
+	    {
+	        GitWindows.RemoveWindow(this);
+	    }
 
 		public void Init(string path)
 		{

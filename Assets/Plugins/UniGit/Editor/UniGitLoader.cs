@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Assets.Plugins.UniGit.Editor.Hooks;
 using LibGit2Sharp;
 using UniGit.Adapters;
@@ -84,6 +85,7 @@ namespace UniGit
 				settingsManager.LoadOldSettingsFile();
 				GitManager.MarkDirty(true);
 			};
+			EditorApplication.delayCall += OnDelayedInit;
 
 			HookManager = injectionHelper.GetInstance<GitHookManager>();
 			LfsManager = injectionHelper.GetInstance<GitLfsManager>();
@@ -92,6 +94,16 @@ namespace UniGit
 			autoFetcher = injectionHelper.CreateInstance<GitAutoFetcher>();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
+		}
+
+		private static void OnDelayedInit()
+		{
+            //inject all windows that are open
+            //windows should add themselfs on OnEnable
+			foreach (var editorWindow in GitWindows.Windows)
+			{
+				injectionHelper.Inject(editorWindow);
+			}
 		}
 
 		private static void OnRepositoryCreate()
@@ -103,5 +115,44 @@ namespace UniGit
 		{
 			if(GitManager != null) GitManager.Dispose();
 		}
+
+	    public static T FindWindow<T>() where T : EditorWindow
+	    {
+	        var editorWindow = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
+	        if (editorWindow != null)
+	        {
+	            return editorWindow;
+	        }
+	        return null;
+	    }
+
+	    public static T GetWindow<T>() where T : EditorWindow
+	    {
+	        return GetWindow<T>(false);
+	    }
+
+	    public static T GetWindow<T>(bool utility) where T : EditorWindow
+	    {
+	        var editorWindow = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
+	        if (editorWindow != null)
+	        {
+	            return editorWindow;
+	        }
+	        var newWindow = ScriptableObject.CreateInstance<T>();
+            injectionHelper.Inject(newWindow);
+            if(utility)
+                newWindow.ShowUtility();
+            else
+	            newWindow.Show();
+
+            return newWindow;
+	    }
+
+	    public static T DisplayWizard<T>(string title,string createButtonName,string otherButtonName) where T : ScriptableWizard
+	    {
+	        var instance = ScriptableWizard.DisplayWizard<T>(title, createButtonName, otherButtonName);
+            injectionHelper.Inject(instance);
+            return instance;
+        }
 	}
 }

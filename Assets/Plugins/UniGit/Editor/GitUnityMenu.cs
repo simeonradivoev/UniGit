@@ -13,7 +13,30 @@ namespace UniGit
 			GitUnityMenu.gitManager = gitManager;
 		}
 
-		[MenuItem("UniGit/About",false,0)]
+        #region
+
+	    [MenuItem("Window/GIT History")]
+        private static void OpenGitHistoryWindow()
+	    {
+	        UniGitLoader.GetWindow<GitHistoryWindow>();
+	    }
+
+	    [MenuItem("Window/GIT Diff")]
+	    private static void OpenGitDiffWindow()
+	    {
+	        UniGitLoader.GetWindow<GitDiffWindow>();
+	    }
+
+	    [MenuItem("Window/GIT Settings")]
+	    private static void OpenGitSettingsWindow()
+	    {
+	        UniGitLoader.GetWindow<GitSettingsWindow>();
+	    }
+
+        #endregion
+
+        #region UniGit menus
+        [MenuItem("UniGit/About",false,0)]
 		private static void OpenAboutWindow()
 		{
 			EditorWindow.GetWindow<GitAboutWindow>(true,"About UniGit");
@@ -51,5 +74,6 @@ namespace UniGit
 		{
 			Application.OpenURL(GitAboutWindow.DonateUrl);
 		}
-	}
+        #endregion
+    }
 }

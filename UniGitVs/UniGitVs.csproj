@@ -104,6 +104,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCheckoutWindowPopup.cs">
       <Link>GitCheckoutWindowPopup.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCommands.cs">
+      <Link>GitCommands.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitCommitDetailsWindow.cs">
       <Link>GitCommitDetailsWindow.cs</Link>
     </Compile>
@@ -178,6 +181,9 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitUpdatableWindow.cs">
       <Link>GitUpdatableWindow.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWindows.cs">
+      <Link>GitWindows.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWizardBase.cs">
       <Link>GitWizardBase.cs</Link>
