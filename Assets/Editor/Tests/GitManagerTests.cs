@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class GitManagerTests : TestRepoFixture
 {
-	[Test]
+	/*[Test]
 	public void RepositoryHandlesLockedFileWhileRetrivingStatus()
 	{
 		string lockedFilePathName = "testFile.txt";
@@ -28,5 +28,5 @@ public class GitManagerTests : TestRepoFixture
 		{
 			lockedFileStream.Dispose();
 		}
-	}
+	}*/
 }

@@ -88,7 +88,7 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnGUI()
 		{
-			if (!gitManager.IsValidRepo)
+			if (gitManager == null || !gitManager.IsValidRepo)
 			{
 				GitHistoryWindow.InvalidRepoGUI(gitManager);
 				return;

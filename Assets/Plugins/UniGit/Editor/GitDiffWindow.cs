@@ -540,7 +540,7 @@ namespace UniGit
 			{
 				if (Commit())
 				{
-					UniGitLoader.DisplayWizard<GitPushWizard>("Git Push","Push", "Push");
+					UniGitLoader.DisplayWizard<GitPushWizard>("Git Push","Push");
 				}
 			}
 		}

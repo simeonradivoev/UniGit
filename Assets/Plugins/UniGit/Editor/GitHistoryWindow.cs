@@ -442,7 +442,7 @@ namespace UniGit
 			}
 			else
 			{
-				UniGitLoader.DisplayWizard<GitMergeWizard>("Git Merge","Merge", "Merge");
+				UniGitLoader.DisplayWizard<GitMergeWizard>("Git Merge","Merge");
 			}
 		}
 
@@ -455,7 +455,7 @@ namespace UniGit
 			}
 			else
 			{
-				var wizard = UniGitLoader.DisplayWizard<GitFetchWizard>("Git Fetch","Fetch", "Fetch");
+				var wizard = UniGitLoader.DisplayWizard<GitFetchWizard>("Git Fetch","Fetch");
 				wizard.Init(branch);
 			}
 		}
@@ -469,7 +469,7 @@ namespace UniGit
 			}
 			else
 			{
-			    var wizard = UniGitLoader.DisplayWizard<GitPullWizard>("Git Pull", "Push", "Pull");
+			    var wizard = UniGitLoader.DisplayWizard<GitPullWizard>("Git Pull", "Pull");
 			    wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
@@ -482,7 +482,7 @@ namespace UniGit
 			}
 			else
 			{
-				var wizard = UniGitLoader.DisplayWizard<GitPushWizard>("Git Push","Push", "Push");
+				var wizard = UniGitLoader.DisplayWizard<GitPushWizard>("Git Push","Push");
 				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
 		}
@@ -930,6 +930,13 @@ namespace UniGit
 		#region Invalid Repo GUI
 		internal static void InvalidRepoGUI(GitManager gitManager)
 		{
+		    if (gitManager == null)
+		    {
+		        Rect initilizingRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
+                GitGUI.DrawLoading(new Rect(initilizingRect.x, initilizingRect.y, initilizingRect.width, initilizingRect.height), new GUIContent("Initializing..."));
+                return;
+            }
+
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
 			GUILayout.Box(GitGUI.GetTempContent("Not a GIT Repository"), "NotificationBackground");

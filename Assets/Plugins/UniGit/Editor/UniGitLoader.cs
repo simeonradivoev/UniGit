@@ -33,7 +33,6 @@ namespace UniGit
 			injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 			injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
 
-
 			injectionHelper.Bind<GitCallbacks>().FromMethod(() =>
 			{
 				var c = new GitCallbacks();
@@ -66,7 +65,9 @@ namespace UniGit
 			injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
 			injectionHelper.Bind<GitHookManager>();
 
-			if (!Repository.IsValid(repoPath))
+		    EditorApplication.delayCall += OnDelayedInit;
+
+            if (!Repository.IsValid(repoPath))
 			{
 				return;
 			}
@@ -85,7 +86,6 @@ namespace UniGit
 				settingsManager.LoadOldSettingsFile();
 				GitManager.MarkDirty(true);
 			};
-			EditorApplication.delayCall += OnDelayedInit;
 
 			HookManager = injectionHelper.GetInstance<GitHookManager>();
 			LfsManager = injectionHelper.GetInstance<GitLfsManager>();
@@ -146,6 +146,11 @@ namespace UniGit
 	            newWindow.Show();
 
             return newWindow;
+	    }
+
+	    public static T DisplayWizard<T>(string title, string createButtonName) where T : ScriptableWizard
+	    {
+	        return DisplayWizard<T>(title, createButtonName, "");
 	    }
 
 	    public static T DisplayWizard<T>(string title,string createButtonName,string otherButtonName) where T : ScriptableWizard
