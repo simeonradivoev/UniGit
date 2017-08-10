@@ -150,12 +150,15 @@ namespace UniGit
 
 		public void AddItemsToMenu(GenericMenu menu)
 		{
-			foreach (var settingsTab in tabs)
+			if (tabs != null)
 			{
-				var customMenu = settingsTab as IHasCustomMenu;
-				if (customMenu != null)
+				foreach (var settingsTab in tabs)
 				{
-					customMenu.AddItemsToMenu(menu);
+					var customMenu = settingsTab as IHasCustomMenu;
+					if (customMenu != null)
+					{
+						customMenu.AddItemsToMenu(menu);
+					}
 				}
 			}
 			menu.AddItem(new GUIContent("Help"),false, GoToHelp);

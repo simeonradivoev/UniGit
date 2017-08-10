@@ -24,6 +24,7 @@ namespace UniGit
 		static UniGitLoader()
 		{
 			injectionHelper = new InjectionHelper();
+			GitWindows.Init();
 			var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
 			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
@@ -98,8 +99,8 @@ namespace UniGit
 
 		private static void OnDelayedInit()
 		{
-            //inject all windows that are open
-            //windows should add themselfs on OnEnable
+			//inject all windows that are open
+			//windows should add themselfs on OnEnable
 			foreach (var editorWindow in GitWindows.Windows)
 			{
 				injectionHelper.Inject(editorWindow);
