@@ -404,6 +404,7 @@ namespace UniGit
 
 		private void BuildCommitMenu(GenericMenu commitMenu)
 		{
+			if(gitManager == null) return;
 			commitMenu.AddItem(new GUIContent("Commit"), false, CommitCallback);
 			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit))
 			{
@@ -1070,7 +1071,7 @@ namespace UniGit
 		protected new void OnDisable()
 		{
 			base.OnDisable();
-			if (gitManager.Settings != null && !gitManager.Settings.ReadFromFile)
+			if (gitManager != null && gitManager.Settings != null && !gitManager.Settings.ReadFromFile)
 			{
 				SaveCommitMessage();
 			}

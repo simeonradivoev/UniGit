@@ -13,12 +13,10 @@ namespace UniGit
 		[NonSerialized] private object initilized;
 		[NonSerialized] private object hasFocused;
 		[NonSerialized] protected GitManager gitManager;
-		[NonSerialized] protected readonly InjectionHelper injectionHelper = new InjectionHelper();
 
 		protected virtual void OnEnable()
 		{
 			GitWindows.AddWindow(this);
-			injectionHelper.Bind(GetType()).FromInstance(this);
 			if(gitManager != null)
 				titleContent.image = gitManager.GetGitStatusIcon();
 		}
@@ -31,7 +29,6 @@ namespace UniGit
 				Debug.LogError("Git manager cannot be null.");
 				return;
 			}
-			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
 			if (this.gitManager != null && this.gitManager.Callbacks != null)
 			{
 				Unsubscribe(this.gitManager.Callbacks);

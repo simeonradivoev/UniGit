@@ -15,24 +15,25 @@ namespace UniGit
 
 		private GitSettingsTab[] tabs;
 		[SerializeField] private int tab;
+		[NonSerialized] private readonly InjectionHelper injectionHelper = new InjectionHelper();
 
         [UniGitInject]
 		private void Construct(InjectionHelper parentInjectionHelper)
 		{
-		    injectionHelper.SetParent(parentInjectionHelper);
+			injectionHelper.SetParent(parentInjectionHelper);
             injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitRemotesSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitBranchesSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitLFSSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitSecuritySettingsTab>();
-
 		}
 
 		protected override void OnEnable()
 		{
 			titleContent.text = WindowTitle;
 			base.OnEnable();
+			injectionHelper.Bind(GetType()).FromInstance(this);
 		}
 
 		private void InitTabs()

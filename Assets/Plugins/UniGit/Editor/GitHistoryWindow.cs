@@ -815,6 +815,7 @@ namespace UniGit
 
 		public void AddItemsToMenu(GenericMenu menu)
 		{
+			if(gitManager == null) return;
 			menu.AddItem(new GUIContent("Push"), false, GoToPush);
 			menu.AddItem(new GUIContent("Pull"),false,GoToPull);
 			menu.AddItem(new GUIContent("Fetch"), false, GoToFetch);
