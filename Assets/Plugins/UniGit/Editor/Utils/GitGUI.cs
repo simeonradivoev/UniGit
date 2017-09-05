@@ -39,6 +39,20 @@ namespace UniGit.Utils
 			public GUIStyle ShurikenModuleTitle;
 			public GUIStyle ProjectBrowserHeaderBgTop;
 			public GUIStyle ShurikenModuleBg;
+
+			public Texture2D CollabPush;
+			public Texture2D CollabPull;
+			public Texture2D GameView;
+			public Texture2D FolderIcon;
+			public Texture2D OrbitTool;
+			public Texture2D RotateTool;
+			public Texture2D AnimationWindow;
+			public Texture2D ZoomTool;
+			public Texture2D SpinTexture;
+			public Texture2D Collab;
+			public Texture2D CollabNew;
+			public Texture2D CollabConflict;
+			public Texture2D WarrningIconSmall;
 		}
 
 		private static void InitStyles(StylesClass styles)
@@ -54,6 +68,20 @@ namespace UniGit.Utils
 			styles.ShurikenModuleTitle = "ShurikenModuleTitle";
 			styles.ProjectBrowserHeaderBgTop = "ProjectBrowserHeaderBgTop";
 			styles.ShurikenModuleBg = "ShurikenModuleBg";
+
+			styles.CollabPush = EditorGUIUtility.FindTexture("CollabPush");
+			styles.CollabPull = EditorGUIUtility.FindTexture("CollabPull");
+			styles.GameView = EditorGUIUtility.FindTexture("UnityEditor.GameView");
+			styles.FolderIcon = EditorGUIUtility.FindTexture("Folder Icon");
+			styles.OrbitTool = EditorGUIUtility.FindTexture("ViewToolOrbit");
+			styles.RotateTool = EditorGUIUtility.FindTexture("RotateTool");
+			styles.AnimationWindow = EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow");
+			styles.ZoomTool = EditorGUIUtility.FindTexture("ViewToolZoom");
+			styles.SpinTexture = EditorGUIUtility.FindTexture("WaitSpin00");
+			styles.Collab = EditorGUIUtility.FindTexture("Collab");
+			styles.CollabNew = EditorGUIUtility.FindTexture("CollabNew");
+			styles.CollabConflict = EditorGUIUtility.FindTexture("CollabConflict");
+			styles.WarrningIconSmall = EditorGUIUtility.FindTexture("console.warnicon.sml");
 		}
 
 		public static GUIContent GetTempContent(Texture tex)
@@ -103,7 +131,7 @@ namespace UniGit.Utils
 			return tmpContent;
 		}
 
-		public static GUIContent GetTempContent(Texture tex, string label, string tooltip)
+		public static GUIContent GetTempContent(string label, Texture tex, string tooltip)
 		{
 			tmpContent.text = label;
 			tmpContent.tooltip = tooltip;
@@ -111,9 +139,17 @@ namespace UniGit.Utils
 			return tmpContent;
 		}
 
-		public static GUIContent GetTempContent(Texture tex, string label)
+		public static GUIContent GetTempContent(string label, Texture tex)
 		{
 			tmpContent.text = label;
+			tmpContent.tooltip = String.Empty;
+			tmpContent.image = tex;
+			return tmpContent;
+		}
+
+		public static GUIContent GetTempContent(Texture tex,string tooltip)
+		{
+			tmpContent.text = string.Empty;
 			tmpContent.tooltip = String.Empty;
 			tmpContent.image = tex;
 			return tmpContent;

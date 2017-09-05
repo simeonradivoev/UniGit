@@ -13,7 +13,7 @@ namespace UniGit.Inspectors
 			EditorGUILayout.HelpBox("Open the 'Git Settings' window to change the settings.",MessageType.Info);
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(new GUIContent("Open Settings"), GitGUI.Styles.AddComponentBtn))
+			if (GUILayout.Button(GitGUI.GetTempContent("Open Settings"), GitGUI.Styles.AddComponentBtn))
 			{
 			    UniGitLoader.GetWindow<GitSettingsWindow>();
 			}

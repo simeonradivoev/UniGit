@@ -137,7 +137,7 @@ namespace UniGit.Utils
 
 		private void CalculateMaxSize(ref Vector2 maxSize,List<Element> elements,bool includeBackButton)
 		{
-			float maxHeight = includeBackButton ? elementStyle.CalcSize(new GUIContent("Back")).y : 0;
+			float maxHeight = includeBackButton ? elementStyle.CalcSize(GitGUI.GetTempContent("Back")).y : 0;
 			foreach (var element in elements)
 			{
 				Vector2 size = Vector2.zero;
@@ -169,11 +169,11 @@ namespace UniGit.Utils
 			if (drawBack)
 			{
 				Rect backRect = new Rect(rect.x, rect.y + height, rect.width, elementStyle.fixedHeight);
-				int backControlId = GUIUtility.GetControlID(new GUIContent("Back"), FocusType.Passive, backRect);
+				int backControlId = GUIUtility.GetControlID(GitGUI.GetTempContent("Back"), FocusType.Passive, backRect);
 				if (Event.current.type == EventType.Repaint)
 				{
 					EditorGUIUtility.AddCursorRect(backRect, MouseCursor.Link);
-					elementStyle.Draw(backRect, new GUIContent("Back"), false, false, backRect.Contains(Event.current.mousePosition), false);
+					elementStyle.Draw(backRect, GitGUI.GetTempContent("Back"), false, false, backRect.Contains(Event.current.mousePosition), false);
 					((GUIStyle)"AC LeftArrow").Draw(new Rect(backRect.x,backRect.y + ((backRect.height - 16) / 2f),16,16),GUIContent.none, false,false,false,false);
 
 					if (backRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)

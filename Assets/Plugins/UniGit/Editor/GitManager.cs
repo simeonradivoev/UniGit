@@ -44,7 +44,7 @@ namespace UniGit
 			this.callbacks = callbacks;
 			this.prefs = prefs;
 			gitSettings = settings;
-			gitPath = Path.Combine(repoPath, ".git");
+			gitPath = UniGitPath.Combine(repoPath, ".git");
 
 			Initlize();
 		}
@@ -196,7 +196,7 @@ namespace UniGit
 		{
 			foreach (var path in paths)
 			{
-				string fixedPath = path.Replace("/", "\\");
+				string fixedPath = path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
 				if(!dirtyFiles.Contains(fixedPath))
 					dirtyFiles.Add(fixedPath);
 			}
@@ -336,21 +336,21 @@ namespace UniGit
 
 		public Texture2D GetGitStatusIcon()
 		{
-			if (!IsValidRepo) return EditorGUIUtility.FindTexture("CollabNew");
-			if (Repository == null) return EditorGUIUtility.FindTexture("Collab");
-			if (isUpdating) return EditorGUIUtility.FindTexture("WaitSpin00");
-			if (Repository.Index.Conflicts.Any()) return EditorGUIUtility.FindTexture("CollabConflict");
+			if (!IsValidRepo) return GitGUI.Styles.CollabNew;
+			if (Repository == null) return GitGUI.Styles.Collab;
+			if (isUpdating) return GitGUI.Styles.SpinTexture;
+			if (Repository.Index.Conflicts.Any()) return GitGUI.Styles.CollabConflict;
 			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
 			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
 			if (behindBy.GetValueOrDefault(0) > 0)
 			{
-				return EditorGUIUtility.FindTexture("CollabPull");
+				return GitGUI.Styles.CollabPull;
 			}
 			if (aheadBy.GetValueOrDefault(0) > 0)
 			{
-				return EditorGUIUtility.FindTexture("CollabPush");
+				return GitGUI.Styles.CollabPush;
 			}
-			return EditorGUIUtility.FindTexture("Collab");
+			return GitGUI.Styles.Collab;
 		}
 
 		public void Dispose()
@@ -629,17 +629,17 @@ namespace UniGit
 
 		public string GitSettingsFolderPath
 		{
-			get { return Path.Combine(gitPath, Path.Combine("UniGit", "Settings")); }
+			get { return UniGitPath.Combine(gitPath, Path.Combine("UniGit", "Settings")); }
 		}
 
 		public string GitCommitMessageFilePath
 		{
-			get { return Path.Combine(gitPath, Path.Combine("UniGit",Path.Combine("Settings", "CommitMessage.txt"))); }
+			get { return UniGitPath.Combine(gitPath, "UniGit","Settings", "CommitMessage.txt"); }
 		}
 
 		public string GitIgnoreFilePath
 		{
-			get { return Path.Combine(repoPath, ".gitignore"); }
+			get { return UniGitPath.Combine(repoPath, ".gitignore"); }
 		}
 
 		public GitCallbacks Callbacks
@@ -707,7 +707,7 @@ namespace UniGit
 
 		public string SettingsFilePath
 		{
-			get { return Path.Combine(gitPath,"UniGit/Settings.json"); }
+			get { return UniGitPath.Combine(gitPath,"UniGit", "Settings.json"); }
 		}
 
 		public GitRepoStatus LastStatus
@@ -871,7 +871,7 @@ namespace UniGit
 			public StatusTreeEntry GetStatus(string path)
 			{
 				StatusTreeEntry entry;
-				GetStatusRecursive(0, path.Split(new[] {'/'}, StringSplitOptions.RemoveEmptyEntries), entries, out entry);
+				GetStatusRecursive(0, path.Split(new[] {UniGitPath.UnityDeirectorySeparatorChar}, StringSplitOptions.RemoveEmptyEntries), entries, out entry);
 				return entry;
 			}
 

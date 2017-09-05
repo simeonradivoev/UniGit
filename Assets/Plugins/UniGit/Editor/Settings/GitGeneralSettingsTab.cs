@@ -38,11 +38,11 @@ namespace UniGit.Settings
 				save = EditorGUI.EndChangeCheck();
 				EditorGUI.BeginChangeCheck();
 				settings.ProjectStatusOverlayDepth = EditorGUILayout.DelayedIntField(GitGUI.GetTempContent("Project Status Overlay Depth", "The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit"), settings.ProjectStatusOverlayDepth);
-				settings.ShowEmptyFolders = EditorGUILayout.Toggle(new GUIContent("Show Empty Folders", "Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled."), settings.ShowEmptyFolders);
+				settings.ShowEmptyFolders = EditorGUILayout.Toggle(GitGUI.GetTempContent("Show Empty Folders", "Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled."), settings.ShowEmptyFolders);
 				GUIContent threadingContent = GitGUI.GetTempContent("Use Threading", "When Should Threading be used. In staging, unstaging or status retrival.");
 				if ((settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage)) && lfsManager.Installed && lfsManager.CheckInitialized())
 				{
-					threadingContent.image = EditorGUIUtility.FindTexture("console.warnicon.sml");
+					threadingContent.image = GitGUI.Styles.WarrningIconSmall;
 					threadingContent.tooltip = "Threaded 'Stage' and 'Unstage' are disabled when Git LFS is enabled.";
 				}
 				settings.Threading = (GitSettingsJson.ThreadingType)EditorGUILayout.EnumMaskField(threadingContent, settings.Threading);
@@ -130,7 +130,7 @@ namespace UniGit.Settings
 
 		private void OpenGitIgnore()
 		{
-			Application.OpenURL(Path.Combine(gitManager.RepoPath, ".gitignore"));
+			Application.OpenURL(UniGitPath.Combine(gitManager.RepoPath, ".gitignore"));
 		}
 
 		public void AddItemsToMenu(GenericMenu menu)

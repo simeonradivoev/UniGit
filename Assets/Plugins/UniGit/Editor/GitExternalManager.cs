@@ -207,7 +207,7 @@ namespace UniGit
 			var values = variables.Split(';');
 			foreach (var path in values)
 			{
-				var fullPath = Path.Combine(path, fileName);
+				var fullPath = UniGitPath.Combine(path, fileName);
 				if (File.Exists(fullPath))
 					return fullPath;
 			}

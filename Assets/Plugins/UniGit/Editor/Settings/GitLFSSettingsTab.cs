@@ -31,7 +31,7 @@ namespace UniGit.Settings
 			else
 			{
 				EditorGUI.BeginChangeCheck();
-				gitManager.Settings.DisableGitLFS = EditorGUILayout.Toggle(new GUIContent("Disable Git LFS"), gitManager.Settings.DisableGitLFS);
+				gitManager.Settings.DisableGitLFS = EditorGUILayout.Toggle(GitGUI.GetTempContent("Disable Git LFS"), gitManager.Settings.DisableGitLFS);
 				if (EditorGUI.EndChangeCheck())
 				{
 					gitManager.Settings.MarkDirty();

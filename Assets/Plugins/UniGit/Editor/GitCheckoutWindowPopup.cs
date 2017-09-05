@@ -25,9 +25,9 @@ namespace UniGit
 
 		public override void OnGUI(Rect rect)
 		{
-			GUILayout.Label(new GUIContent("Switch to: " + branch.FriendlyName), GitGUI.Styles.BigTitle,GUILayout.ExpandWidth(true));
+			GUILayout.Label(GitGUI.GetTempContent("Switch to: " + branch.FriendlyName), GitGUI.Styles.BigTitle,GUILayout.ExpandWidth(true));
 			force = EditorGUILayout.Toggle(GitGUI.GetTempContent("Force", "Override working tree changes"), force);
-			if (GUILayout.Button(new GUIContent("Siwtch")))
+			if (GUILayout.Button(GitGUI.GetTempContent("Siwtch")))
 			{
 				CheckoutOptions checkoutOptions = new CheckoutOptions()
 				{

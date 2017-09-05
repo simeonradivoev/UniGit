@@ -28,8 +28,8 @@ namespace UniGit
 			var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
 			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
-			string repoPath = Application.dataPath.Replace("/Assets", "").Replace("/", "\\");
-			string settingsPath = Path.Combine(repoPath, Path.Combine(".git",Path.Combine("UniGit", "Settings.json")));
+			string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar+"Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
+			string settingsPath = UniGitPath.Combine(repoPath, ".git","UniGit", "Settings.json");
 
 			injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 			injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");

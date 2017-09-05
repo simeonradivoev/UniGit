@@ -31,7 +31,7 @@ namespace UniGit
 			if(Event.current.type == EventType.MouseMove) editorWindow.Repaint();
 			int stashCount = stashCollection.Count();
 			EditorGUILayout.BeginHorizontal("IN BigTitle");
-			if (GUILayout.Button(GitGUI.GetTempContent(GitOverlay.icons.stashIcon.image, "Stash Save","Save changes in working directory to stash.")))
+			if (GUILayout.Button(GitGUI.GetTempContent("Stash Save",GitOverlay.icons.stashIcon.image,"Save changes in working directory to stash.")))
 			{
 				UniGitLoader.GetWindow<GitStashSaveWizard>(true);
 			}
@@ -43,7 +43,7 @@ namespace UniGit
 			foreach (var stash in stashCollection)
 			{
 				string msg = stash.Message;
-				GUIContent stashContent = new GUIContent(msg);
+				GUIContent stashContent = GitGUI.GetTempContent(msg);
 				Rect stastRect = GUILayoutUtility.GetRect(stashContent, stashStyle);
 				if (Event.current.type == EventType.Repaint)
 				{

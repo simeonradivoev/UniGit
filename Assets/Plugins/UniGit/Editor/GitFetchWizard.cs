@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -31,7 +32,7 @@ namespace UniGit
 			EditorGUI.BeginChangeCheck();
 			DrawRemoteSelection();
 			DrawCredentials();
-			prune = EditorGUILayout.Toggle(new GUIContent("Prune", "Prune all unreachable objects from the object database"), prune);
+			prune = EditorGUILayout.Toggle(GitGUI.GetTempContent("Prune", "Prune all unreachable objects from the object database"), prune);
 			return EditorGUI.EndChangeCheck();
 		}
 

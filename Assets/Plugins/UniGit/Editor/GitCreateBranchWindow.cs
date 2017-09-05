@@ -27,11 +27,11 @@ namespace UniGit
 
 		public override void OnGUI(Rect rect)
 		{
-			GUILayout.Label(new GUIContent("Create Branch"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true));
+			GUILayout.Label(GitGUI.GetTempContent("Create Branch"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true));
 			if (commit != null)
 			{
 				name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name"), name);
-				EditorGUILayout.LabelField(GitGUI.GetTempContent("Commit SHA"), new GUIContent(commit.Sha));
+				EditorGUILayout.LabelField(GitGUI.GetTempContent("Commit SHA"), GitGUI.GetTempContent(commit.Sha));
 			}
 			else
 			{

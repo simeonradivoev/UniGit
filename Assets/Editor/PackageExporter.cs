@@ -7,6 +7,7 @@ using System.Linq;
 using System.Xml;
 using Microsoft.Win32;
 using UniGit;
+using UniGit.Utils;
 using UnityEditor;
 using Debug = UnityEngine.Debug;
 
@@ -85,7 +86,7 @@ public class PackageExporter
 			Debug.Log("---- ------------------- ----");
 		}
 
-		Application.OpenURL(Application.dataPath.Replace("/", "\\").Replace("Assets", Path.Combine("UniGitVs",Path.Combine("bin", "Debug"))));
+		Application.OpenURL(Application.dataPath.Replace("/", "\\").Replace("Assets", UniGitPath.Combine("UniGitVs","bin", "Debug")));
 	}
 
 	[MenuItem("UniGit/Dev/Export As Package")]
@@ -226,15 +227,15 @@ public class PackageExporter
 			FileInfo mFile = new FileInfo(file);
 
 			string subDir = mFile.Directory.ToString().Replace(from + "\\", "");
-			string newPath = Path.Combine(to, subDir);
+			string newPath = UniGitPath.Combine(to, subDir);
 			// to remove name collisions
-			if (!new FileInfo(Path.Combine(newPath, mFile.Name)).Exists)
+			if (!new FileInfo(UniGitPath.Combine(newPath, mFile.Name)).Exists)
 			{
 				if (!Directory.Exists(newPath))
 				{
 					Directory.CreateDirectory(newPath);
 				}
-				mFile.CopyTo(Path.Combine(newPath, mFile.Name));
+				mFile.CopyTo(UniGitPath.Combine(newPath, mFile.Name));
 			}
 		}
 	}

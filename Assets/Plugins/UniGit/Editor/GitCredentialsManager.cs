@@ -114,7 +114,7 @@ namespace UniGit
 
 		private void ValidateCredentialsPath()
 		{
-			string settingsFileDirectory = Path.Combine(gitManager.GitFolderPath, "UniGit");
+			string settingsFileDirectory = UniGitPath.Combine(gitManager.GitFolderPath, "UniGit");
 			if (!Directory.Exists(settingsFileDirectory))
 			{
 				Directory.CreateDirectory(settingsFileDirectory);
@@ -426,7 +426,7 @@ namespace UniGit
 		{
 			get
 			{
-				return Path.Combine(gitManager.GitFolderPath, Path.Combine("UniGit", "Credentials.json"));
+				return UniGitPath.Combine(gitManager.GitFolderPath, "UniGit", "Credentials.json");
 			}
 		}
 

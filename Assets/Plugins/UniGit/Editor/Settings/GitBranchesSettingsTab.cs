@@ -86,7 +86,7 @@ namespace UniGit.Settings
 			}
 			else
 			{
-				GUILayout.Button(new GUIContent("No Remotes"));
+				GUILayout.Button(GitGUI.GetTempContent("No Remotes"));
 			}
 			EditorGUILayout.EndHorizontal();
 

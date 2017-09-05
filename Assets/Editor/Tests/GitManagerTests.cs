@@ -2,6 +2,7 @@
 using LibGit2Sharp;
 using NUnit.Framework;
 using UniGit;
+using UniGit.Utils;
 using UnityEngine;
 
 public class GitManagerTests : TestRepoFixture
@@ -35,7 +36,7 @@ public class GitManagerTests : TestRepoFixture
     {
         File.AppendAllText(gitManager.GitIgnoreFilePath, "testFile.txt");
         string lockedFilePathName = "testFile.txt";
-        string lockedFilePath = Path.Combine(gitManager.RepoPath, lockedFilePathName);
+        string lockedFilePath = UniGitPath.Combine(gitManager.RepoPath, lockedFilePathName);
         using (var lockFileStream = File.CreateText(lockedFilePath))
         {
             lockFileStream.WriteLine("This is a locked test file");

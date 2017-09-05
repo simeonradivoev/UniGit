@@ -69,6 +69,7 @@ namespace UniGit
 			public GUIStyle diffElementName;
 			public GUIStyle diffElementPath;
 			public GUIStyle diffElement;
+			public GUIStyle diffElementSelected;
 			public GUIStyle toggle;
 			public GUIStyle mergeIndicator;
 			public GUIStyle commitMessageFoldoud;
@@ -90,6 +91,7 @@ namespace UniGit
 					diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } },
 					diffElementPath = new GUIStyle(EditorStyles.label) { onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture }, wordWrap = true, fixedHeight = 0, alignment = TextAnchor.MiddleLeft },
 					diffElement = new GUIStyle("ProjectBrowserHeaderBgTop") { fixedHeight = 0, border = new RectOffset(8, 8, 8, 8) },
+					diffElementSelected = "TL LogicBar 1",
 					toggle = new GUIStyle("IN Toggle") { normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() },
 					mergeIndicator = "AssetLabel",
 					commitMessageFoldoud = "IN Foldout",
@@ -300,7 +302,7 @@ namespace UniGit
 			if (statusList == null)
 			{
 				Repaint();
-				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), new GUIContent("Loading Status List..."));
+				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), GitGUI.GetTempContent("Loading Status List..."));
 			}
 			else
 			{
@@ -338,7 +340,7 @@ namespace UniGit
 				}
 				else
 				{
-					GUILayout.Label(new GUIContent(settings.commitMessageFromFile), GUI.skin.textArea, GUILayout.Height(EditorGUIUtility.singleLineHeight));
+					GUILayout.Label(GitGUI.GetTempContent(settings.commitMessageFromFile), GUI.skin.textArea, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 				}
 			}
 			EditorGUILayout.EndHorizontal();
@@ -367,7 +369,7 @@ namespace UniGit
 				}
 				else
 				{
-					GUILayout.Label(new GUIContent(settings.commitMessageFromFile), GUI.skin.textArea,GUILayout.ExpandHeight(true));
+					GUILayout.Label(GitGUI.GetTempContent(settings.commitMessageFromFile), GUI.skin.textArea,GUILayout.ExpandHeight(true));
 				}
 				EditorGUILayout.EndScrollView();
 			}
@@ -698,7 +700,6 @@ namespace UniGit
 					{
 						styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false,false,false,false);
 						GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(GitOverlay.GetDiffTypeIcon(info.State, false).image),false,false,false,false);
-						((GUIStyle) "ProjectBrowserSubAssetExpandBtn").Draw(new Rect(elementRect.x + elementRect.width + 32, elementRect.y, 24, 24), GUIContent.none, false, isExpanded, isExpanded, false);
 					}
 
 					if (elementRect.Contains(current.mousePosition))
@@ -762,8 +763,10 @@ namespace UniGit
 			bool canStage = GitManager.CanStage(info.State);
 			float maxPathSize = rect.width - stageToggleRect.width - 32 - 21;
 
-			GUI.SetNextControlName(info.Path);
-			GUI.Box(rect, GUIContent.none, info.Selected ? "TL LogicBar 1" : styles.diffElement);
+			if (current.type == EventType.Repaint)
+			{
+				(info.Selected ? styles.diffElementSelected : styles.diffElement).Draw(rect,false,false,false,false);
+			}
 
 			if (canStage && canUnstage)
 			{
@@ -801,7 +804,7 @@ namespace UniGit
 				{
 					if (asset != null)
 					{
-						tmpContent = GitGUI.GetTempContent(AssetPreview.GetMiniThumbnail(asset), string.Empty, asset.GetType().Name);
+						tmpContent = GitGUI.GetTempContent(string.Empty,AssetPreview.GetMiniThumbnail(asset), asset.GetType().Name);
 					}
 					else
 					{
@@ -820,12 +823,12 @@ namespace UniGit
 				x += 25;
 				if (info.MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.objectIconSmall.image,string.Empty, "main asset file changed"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.objectIconSmall.image, "main asset file changed"), GUIStyle.none);
 					x += 25;
 				}
 				if (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.metaIconSmall.image,string.Empty, ".meta file changed"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.metaIconSmall.image, ".meta file changed"), GUIStyle.none);
 					x += 25;
 				}
 
@@ -839,7 +842,7 @@ namespace UniGit
 
 				if (!enabled)
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(EditorGUIUtility.FindTexture("WaitSpin00")),GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitGUI.Styles.SpinTexture),GUIStyle.none);
 				}
 			}
 
@@ -1142,7 +1145,7 @@ namespace UniGit
 			StatusListEntry[] entries = statusList.Where(e => e.Selected).ToArray();
 			FileStatus selectedFlags = entries.Select(e => e.State).CombineFlags();
 
-			GUIContent addContent = new GUIContent("Stage", EditorGUIUtility.FindTexture("CollabPush"));
+			GUIContent addContent = new GUIContent("Stage", GitGUI.Styles.CollabPush);
 			if (GitManager.CanStage(selectedFlags))
 			{
 				editMenu.AddItem(addContent, false, AddSelectedCallback);
@@ -1151,7 +1154,7 @@ namespace UniGit
 			{
 				editMenu.AddDisabledItem(addContent);
 			}
-			GUIContent removeContent = new GUIContent("Unstage", EditorGUIUtility.FindTexture("CollabPull"));
+			GUIContent removeContent = new GUIContent("Unstage", GitGUI.Styles.CollabPull);
 			if (GitManager.CanUnstage(selectedFlags))
 			{
 				editMenu.AddItem(removeContent, false, RemoveSelectedCallback);
@@ -1162,7 +1165,7 @@ namespace UniGit
 			}
 			
 			editMenu.AddSeparator("");
-			Texture2D diffIcon = EditorGUIUtility.FindTexture("ViewToolZoom");
+			Texture2D diffIcon = GitGUI.Styles.ZoomTool;
 			if (entries.Length == 1)
 			{
 				string path = entries[0].Path;
@@ -1204,7 +1207,7 @@ namespace UniGit
 				}
 				editMenu.AddSeparator("");
 			}
-			editMenu.AddItem(new GUIContent("Revert", EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow")), false, RevertSelectedCallback);
+			editMenu.AddItem(new GUIContent("Revert", GitGUI.Styles.AnimationWindow), false, RevertSelectedCallback);
 			if (entries.Length == 1)
 			{
 				editMenu.AddSeparator("");
@@ -1212,36 +1215,36 @@ namespace UniGit
 				{
 					if (gitManager.CanBlame(entries[0].State))
 					{
-						editMenu.AddItem(new GUIContent("Blame/Object", EditorGUIUtility.FindTexture("UnityEditor.GameView")), false, ()=> {BlameObject(entries[0]);});
-						editMenu.AddItem(new GUIContent("Blame/Meta", EditorGUIUtility.FindTexture("UnityEditor.GameView")), false, ()=> {BlameMeta(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame/Object", GitGUI.Styles.GameView), false, ()=> {BlameObject(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame/Meta", GitGUI.Styles.GameView), false, ()=> {BlameMeta(entries[0]);});
 					}
 					else
 					{
-						editMenu.AddDisabledItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")));
+						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Styles.GameView));
 					}
 				}
 				else
 				{
 					if (gitManager.CanBlame(entries[0].State))
 					{
-						editMenu.AddItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")), false, ()=> {BlameAuto(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame", GitGUI.Styles.GameView), false, ()=> {BlameAuto(entries[0]);});
 					}
 					else
 					{
-						editMenu.AddDisabledItem(new GUIContent("Blame", EditorGUIUtility.FindTexture("UnityEditor.GameView")));
+						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Styles.GameView));
 					}
 				}
 			}
 			editMenu.AddSeparator("");
 			if (entries.Length == 1)
 			{
-				editMenu.AddItem(new GUIContent("Show In Explorer", EditorGUIUtility.FindTexture("Folder Icon")), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
+				editMenu.AddItem(new GUIContent("Show In Explorer", GitGUI.Styles.FolderIcon), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
 			}
-			editMenu.AddItem(new GUIContent("Open", EditorGUIUtility.FindTexture("ViewToolOrbit")), false, () =>
+			editMenu.AddItem(new GUIContent("Open", GitGUI.Styles.OrbitTool), false, () =>
 			{
 				AssetDatabase.OpenAsset(entries.Select(e => AssetDatabase.LoadAssetAtPath<Object>(e.Path)).Where(a => a != null).ToArray());
 			});
-			editMenu.AddItem(new GUIContent("Reload", EditorGUIUtility.FindTexture("RotateTool")), false, ReloadCallback);
+			editMenu.AddItem(new GUIContent("Reload", GitGUI.Styles.RotateTool), false, ReloadCallback);
 		}
 
 		private void SelectFilteredCallback(object filter)
@@ -1537,13 +1540,13 @@ namespace UniGit
 							stateCompare = string.Compare(left.Path, right.Path, StringComparison.InvariantCultureIgnoreCase);
 							break;
 						case SortType.ModificationDate:
-							DateTime modifedTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetLastWriteTime(Path.Combine(gitPath, p))));
-							DateTime modifedRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetLastWriteTime(Path.Combine(gitPath,p))));
+							DateTime modifedTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitPath, p))));
+							DateTime modifedRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitPath,p))));
 							stateCompare = DateTime.Compare(modifedRightTime,modifedTimeLeft);
 							break;
 						case SortType.CreationDate:
-							DateTime createdTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetCreationTime(Path.Combine(gitPath,p))));
-							DateTime createdRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetCreationTime(Path.Combine(gitPath,p))));
+							DateTime createdTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetCreationTime(UniGitPath.Combine(gitPath,p))));
+							DateTime createdRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetCreationTime(UniGitPath.Combine(gitPath,p))));
 							stateCompare = DateTime.Compare(createdRightTime,createdTimeLeft);
 							break;
 						default:

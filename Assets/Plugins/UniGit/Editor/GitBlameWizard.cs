@@ -77,7 +77,7 @@ namespace UniGit
 			var asset = AssetDatabase.LoadAssetAtPath<MonoScript>(blamePath);
 			if (asset != null)
 			{
-				lines = asset.text.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+				lines = asset.text.Split(new[] { UniGitPath.NewLineChar }, StringSplitOptions.None);
 			}
 			else
 			{
@@ -115,7 +115,7 @@ namespace UniGit
 			if (!string.IsNullOrEmpty(invalidMessage))
 			{
 				EditorGUILayout.HelpBox(invalidMessage,MessageType.Error,true);
-				if (GUILayout.Button(new GUIContent("Close")))
+				if (GUILayout.Button(GitGUI.GetTempContent("Close")))
 				{
 					Close();
 				}
@@ -131,7 +131,7 @@ namespace UniGit
 				GUILayout.Label(GitGUI.IconContent("WaitSpin00"));
 				GUILayout.FlexibleSpace();
 				EditorGUILayout.EndHorizontal();
-				EditorGUILayout.LabelField(new GUIContent("Checking Blame..."),EditorStyles.centeredGreyMiniLabel);
+				EditorGUILayout.LabelField(GitGUI.GetTempContent("Checking Blame..."),EditorStyles.centeredGreyMiniLabel);
 			}
 			else
 			{
@@ -139,13 +139,13 @@ namespace UniGit
 				Rect viewRect = new Rect(0,0,0,lines.Length * EditorGUIUtility.singleLineHeight);
 				for (int i = 0; i < lines.Length; i++)
 				{
-					viewRect.width = Mathf.Max(viewRect.width, styles.lineStyle.CalcSize(new GUIContent(lines[i])).x);
+					viewRect.width = Mathf.Max(viewRect.width, styles.lineStyle.CalcSize(GitGUI.GetTempContent(lines[i])).x);
 				}
 				viewRect.width += 32;
 				linesScroll = GUI.BeginScrollView(scrollRect, linesScroll, viewRect);
 				for (int i = 0; i < lines.Length; i++)
 				{
-					GUIContent lineContent = new GUIContent(lines[i]);
+					GUIContent lineContent = GitGUI.GetTempContent(lines[i]);
 					Rect lineRect = new Rect(32, i * EditorGUIUtility.singleLineHeight, viewRect.width - 32, EditorGUIUtility.singleLineHeight);
 					if (lineRect.y < linesScroll.y + scrollRect.height && lineRect.y + lineRect.height > linesScroll.y)
 					{
@@ -178,7 +178,7 @@ namespace UniGit
 				float hunkMaxWidth = 0;
 				foreach (var entry in commitLog)
 				{
-					Vector2 hunkSize = styles.hunkStyle.CalcSize(new GUIContent(entry.Commit.MessageShort));
+					Vector2 hunkSize = styles.hunkStyle.CalcSize(GitGUI.GetTempContent(entry.Commit.MessageShort));
 					hunkMaxWidth = Mathf.Max(hunkMaxWidth, hunkSize.x);
 					hunkCount++;
 				}
@@ -189,7 +189,7 @@ namespace UniGit
 				int hunkId = 0;
 				foreach (var entry in commitLog)
 				{
-					GUIContent commitContent = new GUIContent(entry.Commit.MessageShort);
+					GUIContent commitContent = GitGUI.GetTempContent(entry.Commit.MessageShort);
 					Rect commitRect = new Rect(0, hunkId * CommitLineHeight, hunkMaxWidth, CommitLineHeight);
 					Rect commitInfoRect = new Rect(commitRect.x, commitRect.y, 24, commitRect.height);
 					EditorGUIUtility.AddCursorRect(commitInfoRect,MouseCursor.Link);
@@ -275,16 +275,16 @@ namespace UniGit
 
 			public override Vector2 GetWindowSize()
 			{
-				return new Vector2(360, EditorStyles.wordWrappedLabel.CalcHeight(new GUIContent(commit.Message), 360) + EditorGUIUtility.singleLineHeight * 5);
+				return new Vector2(360, EditorStyles.wordWrappedLabel.CalcHeight(GitGUI.GetTempContent(commit.Message), 360) + EditorGUIUtility.singleLineHeight * 5);
 			}
 
 			public override void OnGUI(Rect rect)
 			{
 				EditorGUILayout.SelectableLabel(commit.Message, "AS TextArea");
-				EditorGUILayout.TextField(new GUIContent("Author"), commit.Author.Name);
-				EditorGUILayout.TextField(new GUIContent("Author Email"), commit.Author.Email);
-				EditorGUILayout.TextField(new GUIContent("Date"), commit.Author.When.ToString());
-				EditorGUILayout.TextField(new GUIContent("Revision (SHA)"), commit.Sha);
+				EditorGUILayout.TextField(GitGUI.GetTempContent("Author"), commit.Author.Name);
+				EditorGUILayout.TextField(GitGUI.GetTempContent("Author Email"), commit.Author.Email);
+				EditorGUILayout.TextField(GitGUI.GetTempContent("Date"), commit.Author.When.ToString());
+				EditorGUILayout.TextField(GitGUI.GetTempContent("Revision (SHA)"), commit.Sha);
 			}
 		}
 	}

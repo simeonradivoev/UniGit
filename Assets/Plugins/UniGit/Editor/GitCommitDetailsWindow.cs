@@ -54,7 +54,7 @@ namespace UniGit
 					EditorGUILayout.BeginHorizontal("ProjectBrowserHeaderBgTop");
 					GUILayout.Label(new GUIContent(GitOverlay.GetDiffTypeIcon(change.Status, true)) {tooltip = change.Status.ToString()}, GUILayout.Width(16));
 					GUILayout.Space(8);
-					string[] pathChunks = change.Path.Split('\\');
+					string[] pathChunks = change.Path.Split(Path.DirectorySeparatorChar);
 					for (int i = 0; i < pathChunks.Length; i++)
 					{
 						string chunk = pathChunks[i];

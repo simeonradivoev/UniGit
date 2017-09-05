@@ -18,9 +18,9 @@ namespace UniGit
 
 		public override void OnGUI(Rect rect)
 		{
-			extension = EditorGUILayout.TextField(new GUIContent("Extension"), extension);
+			extension = EditorGUILayout.TextField(GitGUI.GetTempContent("Extension"), extension);
 			GitGUI.StartEnable(!string.IsNullOrEmpty(extension));
-			if (GUILayout.Button(new GUIContent("Track")))
+			if (GUILayout.Button(GitGUI.GetTempContent("Track")))
 			{
 				lfsManager.Track(extension);
 				focusWindow.Focus();

@@ -71,7 +71,7 @@ namespace UniGit
 
 			explicitPathsOptions = new ExplicitPathsOptions();
 
-			titleContent = new GUIContent("Diff Inspector", EditorGUIUtility.FindTexture("ViewToolZoom"));
+			titleContent = new GUIContent("Diff Inspector", GitGUI.Styles.ZoomTool);
 			uberRegex = new UberRegex(new ColoredRegex[]
 			{
 				new ColoredRegex("Comments",comments, "green"),
@@ -158,13 +158,13 @@ namespace UniGit
 			var patch = gitManager.Repository.Diff.Compare<Patch>(oldTree.Tree, newTree.Tree, new[] { path }, explicitPathsOptions,compareOptions);
 			var changes = patch[path];
 			isBinary = changes.IsBinaryComparison;
-			return changes.Patch.Split('\n');
+			return changes.Patch.Split(UniGitPath.NewLineChar);
 		}
 
 		private void BuildChangeSections(Commit commit)
 		{
 			int lastIndexFileLine = 0;
-			Stream indexFileContent = File.OpenRead(gitManager.RepoPath + "\\" + path);
+			Stream indexFileContent = File.OpenRead(UniGitPath.Combine(gitManager.RepoPath,path));
 			StreamReader indexFileReader = new StreamReader(indexFileContent);
 
 			var lines = GetLines(commit);
@@ -353,7 +353,7 @@ namespace UniGit
 						}
 					}
 				}
-				maxLineNumWidth = styles.LineNum.CalcSize(new GUIContent(maxLines.ToString())).x;
+				maxLineNumWidth = styles.LineNum.CalcSize(GitGUI.GetTempContent(maxLines.ToString())).x;
 			}
 		}
 
@@ -447,7 +447,7 @@ namespace UniGit
 					var commit = string.IsNullOrEmpty(commitSha) ? null : gitManager.Repository.Lookup<Commit>(commitSha);
 					BuildChangeSections(commit);
 				}
-				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), new GUIContent("Loading Changes"));
+				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), GitGUI.GetTempContent("Loading Changes"));
 				Repaint();
 				return;
 			}
@@ -511,21 +511,21 @@ namespace UniGit
 		private void DrawToolbar()
 		{
 			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-			Rect goToLineRect = GUILayoutUtility.GetRect(new GUIContent("Go To Line"), EditorStyles.toolbarButton);
-			if (GUI.Button(goToLineRect, new GUIContent("Go To Line"), EditorStyles.toolbarButton))
+			Rect goToLineRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton);
+			if (GUI.Button(goToLineRect, GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton))
 			{
 				PopupWindow.Show(goToLineRect, new GoToLinePopup(GoToLine));
 			}
-			if (GUILayout.Button(new GUIContent("Previous Change"), EditorStyles.toolbarButton))
+			if (GUILayout.Button(GitGUI.GetTempContent("Previous Change"), EditorStyles.toolbarButton))
 			{
 				GoToPreviousChange();
 			}
-			if (GUILayout.Button(new GUIContent("Next Change"), EditorStyles.toolbarButton))
+			if (GUILayout.Button(GitGUI.GetTempContent("Next Change"), EditorStyles.toolbarButton))
 			{
 				GoToNextChange();
 			}
 			GUILayout.FlexibleSpace();
-			GUILayout.Label(new GUIContent(path));
+			GUILayout.Label(GitGUI.GetTempContent(path));
 			if (GUILayout.Button(GitGUI.IconContent("_Help"), GitGUI.Styles.IconButton))
 			{
 				GoToHelp();
@@ -773,8 +773,8 @@ namespace UniGit
 
 			public override void OnGUI(Rect rect)
 			{
-				line = EditorGUILayout.IntField(new GUIContent("Line"), line);
-				if (GUILayout.Button(new GUIContent("Go To Line")))
+				line = EditorGUILayout.IntField(GitGUI.GetTempContent("Line"), line);
+				if (GUILayout.Button(GitGUI.GetTempContent("Go To Line")))
 				{
 					gotoLineAction.Invoke(line);
 					editorWindow.Close();

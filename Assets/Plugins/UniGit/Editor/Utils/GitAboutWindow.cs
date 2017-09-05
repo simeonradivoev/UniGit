@@ -38,34 +38,34 @@ namespace UniGit.Utils
 		{
 			var version = GlobalSettings.Version;
 
-			GUILayout.Label(new GUIContent("UniGit"), "TL Selection H1");
+			GUILayout.Label(GitGUI.GetTempContent("UniGit"), "TL Selection H1");
 
 			GUILayout.BeginVertical("IN GameObjectHeader");
-			GUILayout.Label(new GUIContent("Created by: Simeon Radivoev"));
-			GUILayout.Label(new GUIContent("UniGit Version: " + GitManager.Version));
-			GUILayout.Label(new GUIContent("Git Version: " + gitVersion));
-			GUILayout.Label(new GUIContent("LibGit2Sharp Version: " + version.InformationalVersion));
-			GUILayout.Label(new GUIContent("LibGit2Sharp Features: " + version.Features));
-			GUILayout.Label(new GUIContent("License:  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"),EditorStyles.wordWrappedLabel);
+			GUILayout.Label(GitGUI.GetTempContent("Created by: Simeon Radivoev"));
+			GUILayout.Label(GitGUI.GetTempContent("UniGit Version: " + GitManager.Version));
+			GUILayout.Label(GitGUI.GetTempContent("Git Version: " + gitVersion));
+			GUILayout.Label(GitGUI.GetTempContent("LibGit2Sharp Version: " + version.InformationalVersion));
+			GUILayout.Label(GitGUI.GetTempContent("LibGit2Sharp Features: " + version.Features));
+			GUILayout.Label(GitGUI.GetTempContent("License:  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"),EditorStyles.wordWrappedLabel);
 			GUILayout.EndVertical();
 
 			EditorGUILayout.Space();
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(new GUIContent("Donate", EditorGUIUtility.FindTexture("Collab"), "Support UniGit"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Donate", GitGUI.Styles.Collab, "Support UniGit"), "CN CountBadge"))
 			{
 				Application.OpenURL(DonateUrl);
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
 			EditorGUILayout.Space();
-			if (GUILayout.Button(new GUIContent("Source", "View Source on GitHub"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Source", "View Source on GitHub"), "CN CountBadge"))
 			{
 				Application.OpenURL("https://github.com/simeonradivoev/UniGit");
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
 			EditorGUILayout.Space();
-			if (GUILayout.Button(new GUIContent("License", "View UniGit License"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("License", "View UniGit License"), "CN CountBadge"))
 			{
 				Application.OpenURL("https://github.com/simeonradivoev/UniGit/blob/master/LICENSE.md");
 			}

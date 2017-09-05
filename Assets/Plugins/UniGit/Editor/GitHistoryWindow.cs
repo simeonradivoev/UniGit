@@ -338,7 +338,7 @@ namespace UniGit
 			GitProfilerProxy.BeginSample("Git History Window Toolbar GUI",this);
 			GUI.Box(rect, GUIContent.none, EditorStyles.toolbar);
 			Rect btRect = new Rect(rect.x, rect.y, 64, rect.height);
-			GUIContent pushButtonContent = GitGUI.GetTempContent(EditorGUIUtility.FindTexture("CollabPush"),"Push", "Push local changes to a remote repository.");
+			GUIContent pushButtonContent = GitGUI.GetTempContent("Push", GitGUI.Styles.CollabPush, "Push local changes to a remote repository.");
 			if (info.CurrentOperation == CurrentOperation.Merge)
 			{
 				GUI.enabled = false;
@@ -365,7 +365,7 @@ namespace UniGit
 				GoToPull();
 			}
 			btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
-			GUIContent fetchContent = new GUIContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
+			GUIContent fetchContent = GitGUI.GetTempContent("Fetch", GitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
 			if (branch.Remote != null)
 			{
 				fetchContent.tooltip = "Branch does not have a remote.";
@@ -377,13 +377,13 @@ namespace UniGit
 			}
 			GUI.enabled = true;
 			btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.merge.image, "Merge", hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), EditorStyles.toolbarButton))
+			if (GUI.Button(btRect, GitGUI.GetTempContent("Merge", GitOverlay.icons.merge.image, hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), EditorStyles.toolbarButton))
 			{
 				GoToMerge();
 			}
 			GUI.enabled = gitManager.IsValidRepo;
 			btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
-			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.stashIcon.image,"Stash"), EditorStyles.toolbarButton))
+			if (GUI.Button(btRect, GitGUI.GetTempContent("Stash", GitOverlay.icons.stashIcon.image), EditorStyles.toolbarButton))
 			{
 				PopupWindow.Show(btRect,new GitStashWindow(gitManager));
 			}
@@ -395,9 +395,9 @@ namespace UniGit
 			else if (!selectedBranch.IsCurrentRepositoryHead)
 				branchNameContent.image = GitGUI.IconContentTex("IN LockButton on");
 
-			float branchNameWidth = ((GUIStyle) "ToolbarDropDown").CalcSize(branchNameContent).x;
+			float branchNameWidth = EditorStyles.toolbarDropDown.CalcSize(branchNameContent).x;
 			btRect = new Rect(rect.x + rect.width - branchNameWidth, btRect.y, branchNameWidth, btRect.height);
-			if (GUI.Button(btRect, branchNameContent, "ToolbarDropDown"))
+			if (GUI.Button(btRect, branchNameContent, EditorStyles.toolbarDropDown))
 			{
 				GenericMenu selectBranchMenu = new GenericMenu();
 				foreach (var cachedBranch in cachedBranches)
@@ -413,7 +413,7 @@ namespace UniGit
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
 			GitGUI.StartEnable(gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
-			if (GUI.Button(btRect, GitGUI.GetTempContent(GitOverlay.icons.checkout.image, "Switch", selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), EditorStyles.toolbarButton))
+			if (GUI.Button(btRect, GitGUI.GetTempContent("Switch", GitOverlay.icons.checkout.image, selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), EditorStyles.toolbarButton))
 			{
 				if (externalManager.TakeSwitch())
 				{
@@ -497,7 +497,7 @@ namespace UniGit
 			if (loadingCommits != null && !loadingCommits.IsDone)
 			{
 				Repaint();
-				GitGUI.DrawLoading(rect, new GUIContent("Loading Commit History"));
+				GitGUI.DrawLoading(rect, GitGUI.GetTempContent("Loading Commit History"));
 				return;
 			}
 
@@ -934,7 +934,7 @@ namespace UniGit
 		    if (gitManager == null)
 		    {
 		        Rect initilizingRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-                GitGUI.DrawLoading(new Rect(initilizingRect.x, initilizingRect.y, initilizingRect.width, initilizingRect.height), new GUIContent("Initializing..."));
+                GitGUI.DrawLoading(new Rect(initilizingRect.x, initilizingRect.y, initilizingRect.width, initilizingRect.height), GitGUI.GetTempContent("Initializing..."));
                 return;
             }
 
