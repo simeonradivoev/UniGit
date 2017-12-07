@@ -29,6 +29,7 @@ namespace UniGit
 		[SerializeField] private bool commitMaximized = true;
 		[SerializeField] private string filter = "";
 		[SerializeField] private Vector2 commitScroll;
+		[SerializeField] private List<SelectionId> selections;
 
 		private SerializedObject editoSerializedObject;
 		private Rect commitsRect;
@@ -45,6 +46,7 @@ namespace UniGit
 		private bool needsAsyncStatusListUpdate;
 		private GitExternalManager externalManager;
 		private GitCredentialsManager credentialsManager;
+		private GitLfsHelper lfsHelper;
 
 		[Serializable]
 		public class Settings
@@ -104,10 +106,11 @@ namespace UniGit
 		}
 
 		[UniGitInject]
-		private void Construct(GitExternalManager externalManager, GitCredentialsManager credentialsManager)
+		private void Construct(GitExternalManager externalManager, GitCredentialsManager credentialsManager, GitLfsHelper lfsHelper)
 		{
 			this.externalManager = externalManager;
 			this.credentialsManager = credentialsManager;
+			this.lfsHelper = lfsHelper;
 			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
 		}
 
@@ -116,7 +119,7 @@ namespace UniGit
 		protected override void OnRepositoryCreate()
 		{
 			base.OnRepositoryCreate();
-			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager, UniGitLoader.LfsHelper);
 		}
 		#endregion
 
@@ -134,6 +137,7 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
+			if(selections == null) selections = new List<SelectionId>();
 			titleContent.text = WindowName;
 			base.OnEnable();
 			editoSerializedObject = new SerializedObject(this);
@@ -256,7 +260,7 @@ namespace UniGit
 		private void OnUnfocus()
 		{
 			if(!gitManager.IsValidRepo) return;
-			if(statusList != null) statusList.SelectAll(false);
+			if(statusList != null) ClearSelection();
 		}
 
 		[UsedImplicitly]
@@ -716,7 +720,7 @@ namespace UniGit
 							settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isExpanded);
 							if (!isExpanded)
 							{
-								statusList.SelectAll(e => e.State == newState, false);
+								ClearSelected(e => e.State == newState);
 							}
 							Repaint();
 							current.Use();
@@ -735,9 +739,10 @@ namespace UniGit
 					bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
 					bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
 
+					bool selected = IsSelected(info);
 					bool enabled = !isUpdating && !isDirty && !isStaging;
-					DoFileDiff(elementRect, info, enabled);
-					DoFileDiffSelection(elementRect, info, index, enabled);
+					DoFileDiff(elementRect, info, enabled, selected);
+					DoFileDiffSelection(elementRect, info, index, enabled, selected);
 				}
 				infoX += elementRect.height;
 				index++;
@@ -751,7 +756,7 @@ namespace UniGit
 			}
 		}
 
-		private void DoFileDiff(Rect rect,StatusListEntry info,bool enabled)
+		private void DoFileDiff(Rect rect,StatusListEntry info,bool enabled,bool selected)
 		{
 			Event current = Event.current;
 			string filePath = info.Path;
@@ -765,7 +770,7 @@ namespace UniGit
 
 			if (current.type == EventType.Repaint)
 			{
-				(info.Selected ? styles.diffElementSelected : styles.diffElement).Draw(rect,false,false,false,false);
+				(selected ? styles.diffElementSelected : styles.diffElement).Draw(rect,false,false,false,false);
 			}
 
 			if (canStage && canUnstage)
@@ -816,7 +821,7 @@ namespace UniGit
 				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin, iconSize, iconSize), tmpContent, styles.assetIcon);
 				x += iconSize + 8;
 
-				styles.diffElementName.Draw(new Rect(x, rect.y + elementTopBottomMargin + 2, rect.width - elementSideMargin - iconSize - rect.height, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(fileName), false, info.Selected, info.Selected, false);
+				styles.diffElementName.Draw(new Rect(x, rect.y + elementTopBottomMargin + 2, rect.width - elementSideMargin - iconSize - rect.height, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(fileName), false, selected, selected, false);
 
 				x = rect.x + elementSideMargin + iconSize + 8;
 				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitOverlay.GetDiffTypeIcon(info.State, false), GUIStyle.none);
@@ -831,18 +836,23 @@ namespace UniGit
 					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.metaIconSmall.image, ".meta file changed"), GUIStyle.none);
 					x += 25;
 				}
+				if (lfsHelper.IsLfsPath(info.Path))
+				{
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.lfsObjectIconSmall.image, "Lfs Object"), GUIStyle.none);
+					x += 25;
+				}
 
 				Vector2 pathSize = styles.diffElementPath.CalcSize(GitGUI.GetTempContent(filePath));
 				pathSize.x = Mathf.Min(pathSize.x, maxPathSize - x);
 
 				Rect pathRect = new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight, pathSize.x, EditorGUIUtility.singleLineHeight*2);
 
-				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(filePath),false, info.Selected, info.Selected, false);
+				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(filePath),false, selected, selected, false);
 				x += pathRect.width + 4;
 
 				if (!enabled)
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitGUI.Styles.SpinTexture),GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitGUI.Textures.SpinTexture),GUIStyle.none);
 				}
 			}
 
@@ -894,7 +904,7 @@ namespace UniGit
 			GitGUI.EndEnable();
 		}
 
-		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool enabled)
+		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool enabled,bool selected)
 		{
 			Event current = Event.current;
 
@@ -923,12 +933,15 @@ namespace UniGit
 						if (current.modifiers == EventModifiers.Control)
 						{
 							lastSelectedIndex = index;
-							info.Selected = !info.Selected;
+							if(selected)
+								RemoveSelected(info);
+							else
+								AddSelected(info);
 							GUI.FocusControl(info.Path);
 						}
 						else if (current.shift)
 						{
-							if (!current.control) statusList.SelectAll(false);
+							if (!current.control) ClearSelection();
 
 							int tmpIndex = 0;
 							foreach (var selectInfo in statusList)
@@ -938,7 +951,7 @@ namespace UniGit
 								if (!isExpanded) continue;
 								if (tmpIndex >= Mathf.Min(lastSelectedIndex, index) && tmpIndex <= Mathf.Max(lastSelectedIndex, index))
 								{
-									selectInfo.Selected = true;
+									AddSelected(selectInfo);
 								}
 								tmpIndex++;
 							}
@@ -954,8 +967,8 @@ namespace UniGit
 							else
 							{
 								lastSelectedIndex = index;
-								statusList.SelectAll(false);
-								info.Selected = !info.Selected;
+								ClearSelection();
+								AddSelected(info);
 								GUI.FocusControl(info.Path);
 							}
 						}
@@ -964,10 +977,10 @@ namespace UniGit
 					}
 					else if (current.button == 1)
 					{
-						if (!info.Selected)
+						if (!selected)
 						{
-							statusList.SelectAll(false);
-							info.Selected = true;
+							ClearSelection();
+							AddSelected(info);
 							current.Use();
 							Repaint();
 						}
@@ -1079,6 +1092,69 @@ namespace UniGit
 				SaveCommitMessage();
 			}
 		}
+		#region Selection
+
+		private SelectionId CreateSelectionId(StatusListEntry entry)
+		{
+			string guid = AssetDatabase.AssetPathToGUID(entry.Path);
+			return string.IsNullOrEmpty(guid) ? new SelectionId(entry.Path,true) : new SelectionId(guid,false);
+		}
+
+		private bool IsSelected(StatusListEntry entry)
+		{
+			int selectionsCount = selections.Count;
+			for (int i = 0; i < selectionsCount; i++)
+			{
+				if (SelectionPredicate(selections[i], entry))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private void AddSelected(StatusListEntry entry)
+		{
+			if(!IsSelected(entry))
+				selections.Add(CreateSelectionId(entry));
+		}
+
+		private void RemoveSelected(StatusListEntry entry)
+		{
+			for (int i = selections.Count-1; i >= 0; i--)
+			{
+				var selection = selections[i];
+				if (SelectionPredicate(selection, entry))
+				{
+					selections.RemoveAt(i);
+					break;
+				}
+			}
+		}
+
+		private bool SelectionPredicate(SelectionId id, StatusListEntry entry)
+		{
+			if (id.isPath)
+			{
+				return entry.Path == id.id;
+			}
+			return entry.Guid == id.id;
+		}
+
+		public void ClearSelected(Func<StatusListEntry, bool> predicate)
+		{
+			foreach (var entry in statusList.Where(predicate))
+			{
+				RemoveSelected(entry);
+			}
+		}
+
+		private void ClearSelection()
+		{
+			selections.Clear();
+		}
+
+		#endregion
 
 		#region IHasCustomMenu
 
@@ -1142,10 +1218,10 @@ namespace UniGit
 
 		private void DoDiffElementContex(IGenericMenu editMenu)
 		{
-			StatusListEntry[] entries = statusList.Where(e => e.Selected).ToArray();
+			StatusListEntry[] entries = statusList.Where(IsSelected).ToArray();
 			FileStatus selectedFlags = entries.Select(e => e.State).CombineFlags();
 
-			GUIContent addContent = new GUIContent("Stage", GitGUI.Styles.CollabPush);
+			GUIContent addContent = new GUIContent("Stage", GitGUI.Textures.CollabPush);
 			if (GitManager.CanStage(selectedFlags))
 			{
 				editMenu.AddItem(addContent, false, AddSelectedCallback);
@@ -1154,7 +1230,7 @@ namespace UniGit
 			{
 				editMenu.AddDisabledItem(addContent);
 			}
-			GUIContent removeContent = new GUIContent("Unstage", GitGUI.Styles.CollabPull);
+			GUIContent removeContent = new GUIContent("Unstage", GitGUI.Textures.CollabPull);
 			if (GitManager.CanUnstage(selectedFlags))
 			{
 				editMenu.AddItem(removeContent, false, RemoveSelectedCallback);
@@ -1165,7 +1241,7 @@ namespace UniGit
 			}
 			
 			editMenu.AddSeparator("");
-			Texture2D diffIcon = GitGUI.Styles.ZoomTool;
+			Texture2D diffIcon = GitGUI.Textures.ZoomTool;
 			if (entries.Length == 1)
 			{
 				string path = entries[0].Path;
@@ -1207,7 +1283,7 @@ namespace UniGit
 				}
 				editMenu.AddSeparator("");
 			}
-			editMenu.AddItem(new GUIContent("Revert", GitGUI.Styles.AnimationWindow), false, RevertSelectedCallback);
+			editMenu.AddItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow), false, RevertSelectedCallback);
 			if (entries.Length == 1)
 			{
 				editMenu.AddSeparator("");
@@ -1215,36 +1291,36 @@ namespace UniGit
 				{
 					if (gitManager.CanBlame(entries[0].State))
 					{
-						editMenu.AddItem(new GUIContent("Blame/Object", GitGUI.Styles.GameView), false, ()=> {BlameObject(entries[0]);});
-						editMenu.AddItem(new GUIContent("Blame/Meta", GitGUI.Styles.GameView), false, ()=> {BlameMeta(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame/Object", GitGUI.Textures.GameView), false, ()=> {BlameObject(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame/Meta", GitGUI.Textures.GameView), false, ()=> {BlameMeta(entries[0]);});
 					}
 					else
 					{
-						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Styles.GameView));
+						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Textures.GameView));
 					}
 				}
 				else
 				{
 					if (gitManager.CanBlame(entries[0].State))
 					{
-						editMenu.AddItem(new GUIContent("Blame", GitGUI.Styles.GameView), false, ()=> {BlameAuto(entries[0]);});
+						editMenu.AddItem(new GUIContent("Blame", GitGUI.Textures.GameView), false, ()=> {BlameAuto(entries[0]);});
 					}
 					else
 					{
-						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Styles.GameView));
+						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Textures.GameView));
 					}
 				}
 			}
 			editMenu.AddSeparator("");
 			if (entries.Length == 1)
 			{
-				editMenu.AddItem(new GUIContent("Show In Explorer", GitGUI.Styles.FolderIcon), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
+				editMenu.AddItem(new GUIContent("Show In Explorer", GitGUI.Textures.FolderIcon), false, () => { EditorUtility.RevealInFinder(entries[0].Path); });
 			}
-			editMenu.AddItem(new GUIContent("Open", GitGUI.Styles.OrbitTool), false, () =>
+			editMenu.AddItem(new GUIContent("Open", GitGUI.Textures.OrbitTool), false, () =>
 			{
 				AssetDatabase.OpenAsset(entries.Select(e => AssetDatabase.LoadAssetAtPath<Object>(e.Path)).Where(a => a != null).ToArray());
 			});
-			editMenu.AddItem(new GUIContent("Reload", GitGUI.Styles.RotateTool), false, ReloadCallback);
+			editMenu.AddItem(new GUIContent("Reload", GitGUI.Textures.RotateTool), false, ReloadCallback);
 		}
 
 		private void SelectFilteredCallback(object filter)
@@ -1252,7 +1328,10 @@ namespace UniGit
 			FileStatus state = (FileStatus)filter;
 			foreach (var entry in statusList)
 			{
-				entry.Selected = entry.State == state;
+				if(entry.State == state)
+					AddSelected(entry);
+				else
+					RemoveSelected(entry);
 			}
 		}
 
@@ -1322,7 +1401,7 @@ namespace UniGit
 
 		private void RevertSelectedCallback()
 		{
-			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 
 			if (externalManager.TakeRevert(paths))
 			{
@@ -1377,7 +1456,7 @@ namespace UniGit
 
 		private void RemoveSelectedCallback()
 		{
-			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 			{
 				gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
@@ -1392,7 +1471,7 @@ namespace UniGit
 
 		private void AddSelectedCallback()
 		{
-			string[] paths = statusList.Where(e => e.Selected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
 				gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
@@ -1497,7 +1576,7 @@ namespace UniGit
 					}
 					else
 					{
-						entires.Add(new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta));
+						entires.Add(new StatusListEntry(mainAssetPath,AssetDatabase.AssetPathToGUID(mainAssetPath), entry.Status, MetaChangeEnum.Meta));
 					}
 				}
 				else
@@ -1509,7 +1588,7 @@ namespace UniGit
 					}
 					else
 					{
-						entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
+						entires.Add(new StatusListEntry(entry.Path, AssetDatabase.AssetPathToGUID(entry.Path), entry.Status, MetaChangeEnum.Object));
 					}
 				}
 			}
@@ -1571,22 +1650,6 @@ namespace UniGit
 				return closest;
 			}
 
-			public void SelectAll(Func<StatusListEntry, bool> predicate, bool select)
-			{
-				foreach (var entry in entires.Where(predicate))
-				{
-					entry.Selected = select;
-				}
-			}
-
-			public void SelectAll(bool select)
-			{
-				foreach (var entry in entires)
-				{
-					entry.Selected = select;
-				}
-			}
-
 			IEnumerator IEnumerable.GetEnumerator()
 			{
 				return GetEnumerator();
@@ -1609,20 +1672,20 @@ namespace UniGit
 			[SerializeField]
 			private FileStatus state;
 			[SerializeField]
-			private bool selected;
+			private string guid;
 
-			public StatusListEntry(string path, FileStatus state, MetaChangeEnum metaChange)
+			public StatusListEntry(string path,string guid, FileStatus state, MetaChangeEnum metaChange)
 			{
 				this.path = path;
+				this.guid = guid;
 				this.name = System.IO.Path.GetFileName(path);
 				this.state = state;
 				this.metaChange = metaChange;
 			}
 
-			public bool Selected
+			public string Guid
 			{
-				get { return selected; }
-				set { selected = value; }
+				get { return guid; }
 			}
 
 			public string Path
@@ -1645,6 +1708,19 @@ namespace UniGit
 			{
 				get { return state; }
 				internal set { state = value; }
+			}
+		}
+
+		[Serializable]
+		private struct SelectionId
+		{
+			public bool isPath;
+			public string id;
+
+			public SelectionId(string id,bool isPath) : this()
+			{
+				this.id = id;
+				this.isPath = isPath;
 			}
 		}
 

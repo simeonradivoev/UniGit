@@ -42,7 +42,7 @@ namespace UniGit.Settings
 				GUIContent threadingContent = GitGUI.GetTempContent("Use Threading", "When Should Threading be used. In staging, unstaging or status retrival.");
 				if ((settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage)) && lfsManager.Installed && lfsManager.CheckInitialized())
 				{
-					threadingContent.image = GitGUI.Styles.WarrningIconSmall;
+					threadingContent.image = GitGUI.Textures.WarrningIconSmall;
 					threadingContent.tooltip = "Threaded 'Stage' and 'Unstage' are disabled when Git LFS is enabled.";
 				}
 				settings.Threading = (GitSettingsJson.ThreadingType)EditorGUILayout.EnumMaskField(threadingContent, settings.Threading);

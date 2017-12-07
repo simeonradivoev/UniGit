@@ -336,21 +336,21 @@ namespace UniGit
 
 		public Texture2D GetGitStatusIcon()
 		{
-			if (!IsValidRepo) return GitGUI.Styles.CollabNew;
-			if (Repository == null) return GitGUI.Styles.Collab;
-			if (isUpdating) return GitGUI.Styles.SpinTexture;
-			if (Repository.Index.Conflicts.Any()) return GitGUI.Styles.CollabConflict;
+			if (!IsValidRepo) return GitGUI.Textures.CollabNew;
+			if (Repository == null) return GitGUI.Textures.Collab;
+			if (isUpdating) return GitGUI.Textures.SpinTexture;
+			if (Repository.Index.Conflicts.Any()) return GitGUI.Textures.CollabConflict;
 			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
 			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
 			if (behindBy.GetValueOrDefault(0) > 0)
 			{
-				return GitGUI.Styles.CollabPull;
+				return GitGUI.Textures.CollabPull;
 			}
 			if (aheadBy.GetValueOrDefault(0) > 0)
 			{
-				return GitGUI.Styles.CollabPush;
+				return GitGUI.Textures.CollabPush;
 			}
-			return GitGUI.Styles.Collab;
+			return GitGUI.Textures.Collab;
 		}
 
 		public void Dispose()

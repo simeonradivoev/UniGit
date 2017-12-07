@@ -53,7 +53,7 @@ namespace UniGit.Utils
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.GetTempContent("Donate", GitGUI.Styles.Collab, "Support UniGit"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Donate", GitGUI.Textures.Collab, "Support UniGit"), "CN CountBadge"))
 			{
 				Application.OpenURL(DonateUrl);
 			}

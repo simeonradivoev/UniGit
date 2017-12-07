@@ -14,6 +14,7 @@ namespace UniGit.Utils
 		private static readonly Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>();
 
 		private static StylesClass _styles;
+		private static TexturesClass _textures;
 		public static StylesClass Styles
 		{
 			get
@@ -24,6 +25,18 @@ namespace UniGit.Utils
 					InitStyles(_styles);
 				}
 				return _styles;
+			}
+		}
+		public static TexturesClass Textures
+		{
+			get
+			{
+				if (_textures == null)
+				{
+					_textures = new TexturesClass();
+					InitTextures(_textures);
+				}
+				return _textures;
 			}
 		}
 		public class StylesClass
@@ -39,7 +52,10 @@ namespace UniGit.Utils
 			public GUIStyle ShurikenModuleTitle;
 			public GUIStyle ProjectBrowserHeaderBgTop;
 			public GUIStyle ShurikenModuleBg;
+		}
 
+		public class TexturesClass
+		{
 			public Texture2D CollabPush;
 			public Texture2D CollabPull;
 			public Texture2D GameView;
@@ -68,20 +84,23 @@ namespace UniGit.Utils
 			styles.ShurikenModuleTitle = "ShurikenModuleTitle";
 			styles.ProjectBrowserHeaderBgTop = "ProjectBrowserHeaderBgTop";
 			styles.ShurikenModuleBg = "ShurikenModuleBg";
+		}
 
-			styles.CollabPush = EditorGUIUtility.FindTexture("CollabPush");
-			styles.CollabPull = EditorGUIUtility.FindTexture("CollabPull");
-			styles.GameView = EditorGUIUtility.FindTexture("UnityEditor.GameView");
-			styles.FolderIcon = EditorGUIUtility.FindTexture("Folder Icon");
-			styles.OrbitTool = EditorGUIUtility.FindTexture("ViewToolOrbit");
-			styles.RotateTool = EditorGUIUtility.FindTexture("RotateTool");
-			styles.AnimationWindow = EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow");
-			styles.ZoomTool = EditorGUIUtility.FindTexture("ViewToolZoom");
-			styles.SpinTexture = EditorGUIUtility.FindTexture("WaitSpin00");
-			styles.Collab = EditorGUIUtility.FindTexture("Collab");
-			styles.CollabNew = EditorGUIUtility.FindTexture("CollabNew");
-			styles.CollabConflict = EditorGUIUtility.FindTexture("CollabConflict");
-			styles.WarrningIconSmall = EditorGUIUtility.FindTexture("console.warnicon.sml");
+		private static void InitTextures(TexturesClass textures)
+		{
+			textures.CollabPush = EditorGUIUtility.FindTexture("CollabPush");
+			textures.CollabPull = EditorGUIUtility.FindTexture("CollabPull");
+			textures.GameView = EditorGUIUtility.FindTexture("UnityEditor.GameView");
+			textures.FolderIcon = EditorGUIUtility.FindTexture("Folder Icon");
+			textures.OrbitTool = EditorGUIUtility.FindTexture("ViewToolOrbit");
+			textures.RotateTool = EditorGUIUtility.FindTexture("RotateTool");
+			textures.AnimationWindow = EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow");
+			textures.ZoomTool = EditorGUIUtility.FindTexture("ViewToolZoom");
+			textures.SpinTexture = EditorGUIUtility.FindTexture("WaitSpin00");
+			textures.Collab = EditorGUIUtility.FindTexture("Collab");
+			textures.CollabNew = EditorGUIUtility.FindTexture("CollabNew");
+			textures.CollabConflict = EditorGUIUtility.FindTexture("CollabConflict");
+			textures.WarrningIconSmall = EditorGUIUtility.FindTexture("console.warnicon.sml");
 		}
 
 		public static GUIContent GetTempContent(Texture tex)

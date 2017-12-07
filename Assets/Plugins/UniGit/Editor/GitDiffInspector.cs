@@ -71,7 +71,7 @@ namespace UniGit
 
 			explicitPathsOptions = new ExplicitPathsOptions();
 
-			titleContent = new GUIContent("Diff Inspector", GitGUI.Styles.ZoomTool);
+			titleContent = new GUIContent("Diff Inspector", GitGUI.Textures.ZoomTool);
 			uberRegex = new UberRegex(new ColoredRegex[]
 			{
 				new ColoredRegex("Comments",comments, "green"),
@@ -617,16 +617,24 @@ namespace UniGit
 		private void DrawBlobs(bool showAdd,Rect rect,Rect otherRect)
 		{
 			float maxLineWidth = Mathf.Max(this.maxLineWidth, rect.width - maxLineNumWidth);
-			float totalLineWidth = maxLineNumWidth + maxLineWidth;
-			float scrollMaxVertical = Mathf.Max(1, Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth));
+			float totalLineWidth = maxLineNumWidth + maxLineWidth + GUI.skin.verticalScrollbar.fixedWidth;
+			float scrollMaxHorizontal = Mathf.Max(1, Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth));
 			bool isRapaint = Event.current.type == EventType.Repaint;
 
 			float height = 0;
 			Rect viewRect = new Rect(0,0, totalLineWidth, totalLinesHeight);
 			Rect screenRect = new Rect(scrollHorizontalNormal * viewRect.width, scrollVertical, rect.width,rect.height);
-			var newScroll = GUI.BeginScrollView(rect, new Vector2(scrollHorizontalNormal * scrollMaxVertical, scrollVertical), viewRect);
-			scrollHorizontalNormal = Mathf.Clamp01(newScroll.x / scrollMaxVertical);
+			var newScroll = GUI.BeginScrollView(rect, new Vector2(scrollHorizontalNormal * scrollMaxHorizontal, scrollVertical), viewRect);
+			scrollHorizontalNormal = Mathf.Clamp01(newScroll.x / scrollMaxHorizontal);
 			scrollVertical = newScroll.y;
+
+			if (Event.current.type == EventType.mouseDrag && (Event.current.button == 2 || (Event.current.button == 0 && Event.current.shift)))
+			{
+				Vector2 scrollDelta = new Vector2(Event.current.delta.x / totalLineWidth, Event.current.delta.y * 0.5f);
+				scrollHorizontalNormal -= scrollDelta.x;
+				scrollVertical -= scrollDelta.y;
+				Repaint();
+			}
 
 			GUI.color = new Color(0, 0, 0, 0.2f);
 			GUI.DrawTexture(new Rect((scrollHorizontalNormal * (totalLineWidth - otherRect.width)), 0, 1, totalLinesHeight), Texture2D.whiteTexture);
@@ -713,7 +721,7 @@ namespace UniGit
 
 		private void DoLineEvents(Rect lineRect,bool showAdd, int line)
 		{
-			if (Event.current.type == EventType.MouseDown && lineRect.Contains(Event.current.mousePosition))
+			if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && !Event.current.shift && lineRect.Contains(Event.current.mousePosition))
 			{
 				if (showAdd)
 					selectedIndexFileLine = line;

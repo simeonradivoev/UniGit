@@ -338,7 +338,7 @@ namespace UniGit
 			GitProfilerProxy.BeginSample("Git History Window Toolbar GUI",this);
 			GUI.Box(rect, GUIContent.none, EditorStyles.toolbar);
 			Rect btRect = new Rect(rect.x, rect.y, 64, rect.height);
-			GUIContent pushButtonContent = GitGUI.GetTempContent("Push", GitGUI.Styles.CollabPush, "Push local changes to a remote repository.");
+			GUIContent pushButtonContent = GitGUI.GetTempContent("Push", GitGUI.Textures.CollabPush, "Push local changes to a remote repository.");
 			if (info.CurrentOperation == CurrentOperation.Merge)
 			{
 				GUI.enabled = false;

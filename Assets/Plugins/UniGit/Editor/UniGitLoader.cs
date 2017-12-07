@@ -18,6 +18,7 @@ namespace UniGit
 		public static GitHookManager HookManager;
 		public static GitCredentialsManager CredentialsManager;
 		public static GitExternalManager ExternalManager;
+		public static GitLfsHelper LfsHelper;
 		private static GitAutoFetcher autoFetcher;
 		private static readonly InjectionHelper injectionHelper;
 
@@ -65,6 +66,9 @@ namespace UniGit
 			//hooks
 			injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
 			injectionHelper.Bind<GitHookManager>();
+			//helpers
+			injectionHelper.Bind<GitLfsHelper>();
+			injectionHelper.Bind<FileLinesReader>();
 
 		    EditorApplication.delayCall += OnDelayedInit;
 
@@ -92,7 +96,8 @@ namespace UniGit
 			LfsManager = injectionHelper.GetInstance<GitLfsManager>();
 			ExternalManager = injectionHelper.GetInstance<GitExternalManager>();
 			CredentialsManager = injectionHelper.GetInstance<GitCredentialsManager>();
-			autoFetcher = injectionHelper.CreateInstance<GitAutoFetcher>();
+			autoFetcher = injectionHelper.GetInstance<GitAutoFetcher>();
+			LfsHelper = injectionHelper.GetInstance<GitLfsHelper>();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
 		}
