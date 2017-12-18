@@ -65,40 +65,11 @@ namespace UniGit
 							{
 								assetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(assetPath);
 							}
-							var asset = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
-							if (asset != null)
-							{
-								Selection.activeObject = asset;
-							}
+							ShowContextMenuForElement(change.Path, assetPath);
 						}
+						
 					}
-					//GUILayout.Label(new GUIContent(" (" + change.Status + ") " + change.Path));
 					EditorGUILayout.EndHorizontal();
-					Rect r = GUILayoutUtility.GetLastRect();
-					if (Event.current.type == EventType.ContextClick && r.Contains(Event.current.mousePosition))
-					{
-						string path = change.Path;
-						GenericMenu menu = new GenericMenu();
-						if (commit.Parents.Count() == 1)
-						{
-							
-							menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
-							{
-								Commit parent = commit.Parents.Single();
-								gitManager.ShowDiff(path, commit,parent, externalManager);
-							});
-						}
-						else
-						{
-							menu.AddDisabledItem(new GUIContent(new GUIContent("Difference with previous commit")));
-						}
-						menu.AddItem(new GUIContent("Difference with HEAD"), false, () =>
-						{
-							gitManager.ShowDiff(path, commit, gitManager.Repository.Head.Tip, externalManager);
-						});
-						menu.ShowAsContext();
-					}
-					//EditorGUILayout.EndHorizontal();
 				}
 			}
 			else
@@ -107,6 +78,37 @@ namespace UniGit
 			}
 			EditorGUILayout.Space();
 			EditorGUILayout.EndScrollView();
+		}
+
+		private void ShowContextMenuForElement(string changePath,string assetPath)
+		{
+			GenericMenu menu = new GenericMenu();
+			if (commit.Parents.Count() == 1)
+			{
+
+				menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
+				{
+					Commit parent = commit.Parents.Single();
+					gitManager.ShowDiff(changePath, commit, parent, externalManager);
+				});
+			}
+			else
+			{
+				menu.AddDisabledItem(new GUIContent(new GUIContent("Difference with previous commit")));
+			}
+			menu.AddItem(new GUIContent("Difference with HEAD"), false, () =>
+			{
+				gitManager.ShowDiff(changePath, commit, gitManager.Repository.Head.Tip, externalManager);
+			});
+			menu.AddItem(new GUIContent("Select In Project"), false, () =>
+			{
+				var asset = AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
+				if (asset != null)
+				{
+					Selection.activeObject = asset;
+				}
+			});
+			menu.ShowAsContext();
 		}
 
 		private void DrawTreeEntry(Tree tree, int depth)
