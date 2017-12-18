@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace UniGit
 {
@@ -14,7 +15,15 @@ namespace UniGit
 
 		internal static void Initilize()
 		{
-			LoadDLLResources();
+			Profiler.BeginSample("UniGit Resource Loading");
+			try
+			{
+				LoadDLLResources();
+			}
+			finally
+			{
+				Profiler.EndSample();
+			}
 		}
 
 		public static Texture2D GetTexture(string name, bool throwError = true)

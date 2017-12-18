@@ -10,6 +10,7 @@ using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace UniGit
 {
@@ -247,7 +248,9 @@ namespace UniGit
 
 		private void RetreiveStatus(string[] paths)
 		{
+			Profiler.BeginSample("UniGit Status Retrieval");
 			RetreiveStatus(paths, false);
+			Profiler.EndSample();
 		}
 
 		private void RetreiveStatus(string[] paths,bool threaded)

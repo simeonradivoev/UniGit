@@ -7,6 +7,7 @@ using UniGit.Settings;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace UniGit
 {
@@ -24,60 +25,68 @@ namespace UniGit
 
 		static UniGitLoader()
 		{
-			injectionHelper = new InjectionHelper();
-			GitWindows.Init();
-			var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
-			recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
-
-			string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar+"Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
-			string settingsPath = UniGitPath.Combine(repoPath, ".git","UniGit", "Settings.json");
-
-			injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
-			injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
-
-			injectionHelper.Bind<GitCallbacks>().FromMethod(() =>
+			Profiler.BeginSample("UniGit Initialization");
+			try
 			{
-				var c = new GitCallbacks();
-				EditorApplication.update += c.IssueEditorUpdate;
-				c.RefreshAssetDatabase += AssetDatabase.Refresh;
-				c.SaveAssetDatabase += AssetDatabase.SaveAssets;
-				return c;
-			});
-			injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
-			injectionHelper.Bind<GitManager>();
-			injectionHelper.Bind<GitSettingsJson>();
-			injectionHelper.Bind<GitSettingsManager>();
+				injectionHelper = new InjectionHelper();
+				GitWindows.Init();
+				var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
+				recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
-			GitManager = injectionHelper.GetInstance<GitManager>();
-			GitManager.Callbacks.RepositoryCreate += OnRepositoryCreate;
+				string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
+				string settingsPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "Settings.json");
 
-			GitUnityMenu.Init(GitManager);
-			GitResourceManager.Initilize();
-			GitOverlay.Initlize(GitManager);
+				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
+				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
 
-			//credentials
-			injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
-			injectionHelper.Bind<GitCredentialsManager>();
-			//externals
-			injectionHelper.Bind<IExternalAdapter>().To<GitExtensionsAdapter>();
-			injectionHelper.Bind<IExternalAdapter>().To<TortoiseGitAdapter>();
-			injectionHelper.Bind<GitExternalManager>();
-			injectionHelper.Bind<GitLfsManager>();
-			//hooks
-			injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
-			injectionHelper.Bind<GitHookManager>();
-			//helpers
-			injectionHelper.Bind<GitLfsHelper>();
-			injectionHelper.Bind<FileLinesReader>();
+				injectionHelper.Bind<GitCallbacks>().FromMethod(() =>
+				{
+					var c = new GitCallbacks();
+					EditorApplication.update += c.IssueEditorUpdate;
+					c.RefreshAssetDatabase += AssetDatabase.Refresh;
+					c.SaveAssetDatabase += AssetDatabase.SaveAssets;
+					return c;
+				});
+				injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
+				injectionHelper.Bind<GitManager>();
+				injectionHelper.Bind<GitSettingsJson>();
+				injectionHelper.Bind<GitSettingsManager>();
 
-		    EditorApplication.delayCall += OnDelayedInit;
+				GitManager = injectionHelper.GetInstance<GitManager>();
+				GitManager.Callbacks.RepositoryCreate += OnRepositoryCreate;
 
-            if (!Repository.IsValid(repoPath))
-			{
-				return;
+				GitUnityMenu.Init(GitManager);
+				GitResourceManager.Initilize();
+				GitOverlay.Initlize(GitManager);
+
+				//credentials
+				injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
+				injectionHelper.Bind<GitCredentialsManager>();
+				//externals
+				injectionHelper.Bind<IExternalAdapter>().To<GitExtensionsAdapter>();
+				injectionHelper.Bind<IExternalAdapter>().To<TortoiseGitAdapter>();
+				injectionHelper.Bind<GitExternalManager>();
+				injectionHelper.Bind<GitLfsManager>();
+				//hooks
+				injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
+				injectionHelper.Bind<GitHookManager>();
+				//helpers
+				injectionHelper.Bind<GitLfsHelper>();
+				injectionHelper.Bind<FileLinesReader>();
+
+				EditorApplication.delayCall += OnDelayedInit;
+
+				if (!Repository.IsValid(repoPath))
+				{
+					return;
+				}
+
+				Rebuild(injectionHelper);
 			}
-
-			Rebuild(injectionHelper);
+			finally
+			{
+				Profiler.EndSample();
+			}
 		}
 
 		private static void Rebuild(InjectionHelper injectionHelper)
@@ -104,11 +113,19 @@ namespace UniGit
 
 		private static void OnDelayedInit()
 		{
-			//inject all windows that are open
-			//windows should add themselfs on OnEnable
-			foreach (var editorWindow in GitWindows.Windows)
+			Profiler.BeginSample("UniGit Delayed Window Injection");
+			try
 			{
-				injectionHelper.Inject(editorWindow);
+				//inject all windows that are open
+				//windows should add themselves on OnEnable
+				foreach (var editorWindow in GitWindows.Windows)
+				{
+					injectionHelper.Inject(editorWindow);
+				}
+			}
+			finally
+			{
+				Profiler.EndSample();
 			}
 		}
 
