@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Settings;
@@ -14,7 +15,7 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.2.2";
+		public const string Version = "1.2.3";
 
 		private readonly string repoPath;
 		private readonly string gitPath;
@@ -124,7 +125,8 @@ namespace UniGit
 
 		internal void OnEditorUpdate()
 		{
-			if (IsValidRepo && !(EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying) && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !isUpdating)
+			var updateStatus = GetUpdateStatus();
+			if (updateStatus == UpdateStatusEnum.Ready)
 			{
 				if ((repository == null || repositoryDirty))
 				{
@@ -215,8 +217,16 @@ namespace UniGit
 			else
 			{
 				var options = GetStatusOptions();
-				var s = repository.RetrieveStatus(options);
-				status = new GitRepoStatus(s);
+				try
+				{
+					var s = repository.RetrieveStatus(options);
+					status = new GitRepoStatus(s);
+				}
+				catch (ThreadAbortException)
+				{
+					Thread.ResetAbort();
+					//handle thread aborts to stop the annoying console messages
+				}
 			}
 			
 		}
@@ -622,6 +632,31 @@ namespace UniGit
 
 		#region Getters and Setters
 
+		public UpdateStatusEnum GetUpdateStatus()
+		{
+			if (!IsValidRepo)
+			{
+				return UpdateStatusEnum.InvalidRepo;
+			}
+			if (EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
+			{
+				return UpdateStatusEnum.SwitchingToPlayMode;
+			}
+			if (EditorApplication.isCompiling)
+			{
+				return UpdateStatusEnum.Compiling;
+			}
+			if (EditorApplication.isUpdating)
+			{
+				return UpdateStatusEnum.UpdatingAssetDatabase;
+			}
+			if (isUpdating)
+			{
+				return UpdateStatusEnum.Updating;
+			}
+			return UpdateStatusEnum.Ready;
+		}
+
 		public IGitPrefs Prefs
 		{
 			get { return prefs; }
@@ -925,6 +960,17 @@ namespace UniGit
 				get { return subEntiEntries; }
 				set { subEntiEntries = value; }
 			}
+		}
+
+		public enum UpdateStatusEnum
+		{
+			Ready,
+			Other,
+			InvalidRepo,
+			SwitchingToPlayMode,
+			Compiling,
+			UpdatingAssetDatabase,
+			Updating
 		}
 		#endregion
 	}

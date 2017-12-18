@@ -649,7 +649,8 @@ namespace UniGit
 			}
 			else if (isDirty)
 			{
-				statusContent =  GitGUI.IconContent("CollabProgress", "Waiting to update...");
+				string updateStatus = GetUpdateStatusMessage(gitManager.GetUpdateStatus());
+				statusContent =  GitGUI.IconContent("CollabProgress", updateStatus + "... ");
 			}
 			else if (statusListUpdate)
 			{
@@ -749,9 +750,9 @@ namespace UniGit
 			}
 			GUI.EndScrollView();
 
-			if (Event.current.type == EventType.mouseDrag && DiffRect.Contains(Event.current.mousePosition))
+			if (current.type == EventType.mouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
 			{
-				diffScroll.y -= Event.current.delta.y;
+				diffScroll.y -= current.delta.y;
 				Repaint();
 			}
 		}
@@ -992,6 +993,25 @@ namespace UniGit
 		private bool IsVisible(StatusListEntry entry)
 		{
 			return settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State)) && (entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.Contains(filter));
+		}
+
+		private string GetUpdateStatusMessage(GitManager.UpdateStatusEnum status)
+		{
+			switch (status)
+			{
+				case GitManager.UpdateStatusEnum.InvalidRepo:
+					return "Invalid Repository";
+				case GitManager.UpdateStatusEnum.SwitchingToPlayMode:
+					return "Switching to play mode";
+				case GitManager.UpdateStatusEnum.Compiling:
+					return "Compiling";
+				case GitManager.UpdateStatusEnum.UpdatingAssetDatabase:
+					return "Updating Asset Database";
+				case GitManager.UpdateStatusEnum.Updating:
+					return "Updating in progress";
+				default:
+					return "Waiting to update";
+			}
 		}
 
 		private void ReadCommitMessageFromFile()
