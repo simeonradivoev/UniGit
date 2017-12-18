@@ -427,9 +427,10 @@ namespace UniGit
 			}
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 21, btRect.y+1, 21, btRect.height);
-			if (GUI.Button(btRect, GitGUI.IconContent("_Help"), GitGUI.Styles.IconButton))
+			EditorGUIUtility.AddCursorRect(btRect,MouseCursor.Link);
+			if (GUI.Button(btRect, GitGUI.Contents.Help, GitGUI.Styles.IconButton))
 			{
-				GoToHelp();
+				GitLinks.GoTo(GitLinks.HistoryWindowHelp);
 			}
 			GitProfilerProxy.EndSample();
 		}
@@ -485,11 +486,6 @@ namespace UniGit
 				var wizard = UniGitLoader.DisplayWizard<GitPushWizard>("Git Push","Push");
 				wizard.Init(selectedBranch.LoadBranch(gitManager));
 			}
-		}
-
-		private void GoToHelp()
-		{
-			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Commit-History");
 		}
 
 		private void DoHistoryScrollRect(Rect rect, RepositoryInformation info)
@@ -820,7 +816,8 @@ namespace UniGit
 			menu.AddItem(new GUIContent("Pull"),false,GoToPull);
 			menu.AddItem(new GUIContent("Fetch"), false, GoToFetch);
 			menu.AddItem(new GUIContent("Merge"), false, GoToMerge);
-			menu.AddItem(new GUIContent("Help"),false, GoToHelp);
+			menu.AddItem(new GUIContent("Donate"), false, ()=>{GitLinks.GoTo(GitLinks.Donate);});
+			menu.AddItem(new GUIContent("Help"),false, ()=>{GitLinks.GoTo(GitLinks.HistoryWindowHelp);});
 		}
 
 		#endregion

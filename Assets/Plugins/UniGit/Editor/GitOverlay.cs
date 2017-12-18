@@ -40,6 +40,8 @@ namespace UniGit
 			public GUIContent unstashIcon;
 			public GUIContent lfsObjectIcon;
 			public GUIContent lfsObjectIconSmall;
+			public GUIContent donateSmall;
+			public GUIContent starSmall;
 		}
 
 		internal static Icons icons;
@@ -94,6 +96,8 @@ namespace UniGit
 					unstashIcon = new GUIContent(GitResourceManager.GetTexture("unstash")),
 					lfsObjectIcon = new GUIContent(GitResourceManager.GetTexture("lfs_object")),
 					lfsObjectIconSmall = new GUIContent(GitResourceManager.GetTexture("lfs_object_small")),
+					donateSmall = new GUIContent(GitResourceManager.GetTexture("donate"),"Donate"),
+					starSmall = new GUIContent(GitResourceManager.GetTexture("star")),
 				};
 			}
 		}

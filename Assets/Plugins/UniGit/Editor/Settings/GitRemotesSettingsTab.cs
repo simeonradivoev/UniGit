@@ -54,7 +54,7 @@ namespace UniGit.Settings
 				}
 				if (GUILayout.Button(GitGUI.GetTempContent("Open", "Show the repository in browser."), EditorStyles.miniButtonMid))
 				{
-					Application.OpenURL(remote.Url);
+					GitLinks.GoTo(remote.Url);
 				}
 				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButtonRight))
 				{

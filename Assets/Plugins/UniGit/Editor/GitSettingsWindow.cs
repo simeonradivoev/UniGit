@@ -116,9 +116,13 @@ namespace UniGit
 				if(currentTab != null) currentTab.OnFocus();
 			}
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.IconContent("_Help"), GitGUI.Styles.IconButton))
+			if (GitGUI.LinkButtonLayout(GitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
-				GoToHelp();
+				GitLinks.GoTo(GitLinks.Donate);
+			}
+			if (GitGUI.LinkButtonLayout(GitGUI.Contents.Help, GitGUI.Styles.IconButton))
+			{
+				GitLinks.GoTo(GitLinks.SettingsWindowHelp);
 			}
 			EditorGUILayout.EndHorizontal();
 
@@ -141,11 +145,6 @@ namespace UniGit
 			
 		}
 
-		private void GoToHelp()
-		{
-			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/Setup#configuration");
-		}
-
 		#region IHasCustomMenu
 
 		public void AddItemsToMenu(GenericMenu menu)
@@ -161,7 +160,8 @@ namespace UniGit
 					}
 				}
 			}
-			menu.AddItem(new GUIContent("Help"),false, GoToHelp);
+			menu.AddItem(new GUIContent("Donate"),false, ()=>{GitLinks.GoTo(GitLinks.Donate);});
+			menu.AddItem(new GUIContent("Help"),false, ()=>{GitLinks.GoTo(GitLinks.SettingsWindowHelp);});
 		}
 
 		#endregion

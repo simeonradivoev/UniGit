@@ -25,7 +25,7 @@ namespace UniGit.Settings
 				EditorGUILayout.HelpBox("Git LFS not installed", MessageType.Warning);
 				if (GUILayout.Button(GitGUI.GetTempContent("Download")))
 				{
-					Application.OpenURL("https://git-lfs.github.com/");
+					GitLinks.GoTo(GitLinks.GitLFS);
 				}
 			}
 			else

@@ -13,8 +13,6 @@ namespace UniGit
 {
 	public class GitDiffInspector : EditorWindow, IHasCustomMenu
 	{
-		private const string HelpUrl = "https://github.com/simeonradivoev/UniGit/wiki/File-Difference#in-editor-diff-inspector";
-
 		private float scrollVertical;
 		private float scrollHorizontalNormal;
 		public string path;
@@ -526,9 +524,13 @@ namespace UniGit
 			}
 			GUILayout.FlexibleSpace();
 			GUILayout.Label(GitGUI.GetTempContent(path));
-			if (GUILayout.Button(GitGUI.IconContent("_Help"), GitGUI.Styles.IconButton))
+			if (GitGUI.LinkButtonLayout(GitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
-				GoToHelp();
+				GitLinks.GoTo(GitLinks.Donate);
+			}
+			if (GitGUI.LinkButtonLayout(GitGUI.Contents.Help, GitGUI.Styles.IconButton))
+			{
+				GitLinks.GoTo(GitLinks.DiffInspectorHelp);
 			}
 			EditorGUILayout.EndHorizontal();
 		}
@@ -750,16 +752,12 @@ namespace UniGit
 			return rect.y <= screenRect.y + screenRect.height && rect.y + rect.height >= screenRect.y;
 		}
 
-		private void GoToHelp()
-		{
-			Application.OpenURL(HelpUrl);
-		}
-
 		#region Custom Menu
 
 		public void AddItemsToMenu(GenericMenu menu)
 		{
-			menu.AddItem(new GUIContent("Help"),false,GoToHelp);
+			menu.AddItem(new GUIContent("Donate"),false,()=>{GitLinks.GoTo(GitLinks.Donate);});
+			menu.AddItem(new GUIContent("Help"),false,()=>{GitLinks.GoTo(GitLinks.DiffInspectorHelp);});
 		}
 
 		#endregion

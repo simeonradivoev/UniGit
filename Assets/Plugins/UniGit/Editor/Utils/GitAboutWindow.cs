@@ -6,7 +6,6 @@ namespace UniGit.Utils
 {
 	public class GitAboutWindow : EditorWindow
 	{
-		public const string DonateUrl = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4A4LQGA69LQ5A";
 		private string gitVersion;
 
 		private void OnEnable()
@@ -53,21 +52,21 @@ namespace UniGit.Utils
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.GetTempContent("Donate", GitGUI.Textures.Collab, "Support UniGit"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Donate", GitOverlay.icons.donateSmall.image, "Support UniGit"), "CN CountBadge"))
 			{
-				Application.OpenURL(DonateUrl);
+				GitLinks.GoTo(GitLinks.Donate);
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
 			EditorGUILayout.Space();
-			if (GUILayout.Button(GitGUI.GetTempContent("Source", "View Source on GitHub"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Source", GitOverlay.icons.starSmall.image, "View Source on GitHub"), "CN CountBadge"))
 			{
-				Application.OpenURL("https://github.com/simeonradivoev/UniGit");
+				GitLinks.GoTo(GitLinks.Homepage);
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
 			EditorGUILayout.Space();
 			if (GUILayout.Button(GitGUI.GetTempContent("License", "View UniGit License"), "CN CountBadge"))
 			{
-				Application.OpenURL("https://github.com/simeonradivoev/UniGit/blob/master/LICENSE.md");
+				GitLinks.GoTo(GitLinks.License);
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
 			GUILayout.FlexibleSpace();

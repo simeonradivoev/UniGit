@@ -400,9 +400,13 @@ namespace UniGit
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
 			GitGUI.EndEnable();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.IconContent("_Help"),GitGUI.Styles.IconButton))
+			if (GitGUI.LinkButtonLayout(GitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
-				GoToHelp();
+				GitLinks.GoTo(GitLinks.Donate);
+			}
+			if (GitGUI.LinkButtonLayout(GitGUI.Contents.Help,GitGUI.Styles.IconButton))
+			{
+				GitLinks.GoTo(GitLinks.DiffWindowHelp);
 			}
 			EditorGUILayout.EndHorizontal();
 			EditorGUILayout.Space();
@@ -432,11 +436,6 @@ namespace UniGit
 				commitMenu.AddDisabledItem(new GUIContent("Commit Message/Open File"));
 			}
 			commitMenu.AddItem(new GUIContent("Commit Message/Reload"), false, ReadCommitMessage);
-		}
-
-		private void GoToHelp()
-		{
-			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki/File-Difference");
 		}
 
 		private float CalculateCommitTextHeight()
@@ -1181,7 +1180,8 @@ namespace UniGit
 		public void AddItemsToMenu(GenericMenu menu)
 		{
 			BuildCommitMenu(menu);
-			menu.AddItem(new GUIContent("Help"),false, GoToHelp);
+			menu.AddItem(new GUIContent("Donate"),false, ()=>{GitLinks.GoTo(GitLinks.Donate);});
+			menu.AddItem(new GUIContent("Help"),false, ()=>{GitLinks.GoTo(GitLinks.DiffWindowHelp);});
 		}
 
 		#endregion

@@ -15,6 +15,7 @@ namespace UniGit.Utils
 
 		private static StylesClass _styles;
 		private static TexturesClass _textures;
+		private static ContentsClass _contents;
 		public static StylesClass Styles
 		{
 			get
@@ -37,6 +38,18 @@ namespace UniGit.Utils
 					InitTextures(_textures);
 				}
 				return _textures;
+			}
+		}
+		public static ContentsClass Contents
+		{
+			get
+			{
+				if (_textures == null)
+				{
+					_contents = new ContentsClass();
+					InitContents(_contents);
+				}
+				return _contents;
 			}
 		}
 		public class StylesClass
@@ -71,6 +84,11 @@ namespace UniGit.Utils
 			public Texture2D WarrningIconSmall;
 		}
 
+		public class ContentsClass
+		{
+			public GUIContent Help;
+		}
+
 		private static void InitStyles(StylesClass styles)
 		{
 			styles.BigTitle = "IN BigTitle";
@@ -101,6 +119,11 @@ namespace UniGit.Utils
 			textures.CollabNew = EditorGUIUtility.FindTexture("CollabNew");
 			textures.CollabConflict = EditorGUIUtility.FindTexture("CollabConflict");
 			textures.WarrningIconSmall = EditorGUIUtility.FindTexture("console.warnicon.sml");
+		}
+
+		private static void InitContents(ContentsClass content)
+		{
+			content.Help = IconContent("_Help","","Help");
 		}
 
 		public static GUIContent GetTempContent(Texture tex)
@@ -219,6 +242,13 @@ namespace UniGit.Utils
 			PopMatrix();
 
 			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadinCricleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
+		}
+
+		public static bool LinkButtonLayout(GUIContent content, GUIStyle style)
+		{
+			Rect rect = GUILayoutUtility.GetRect(content, style);
+			EditorGUIUtility.AddCursorRect(rect,MouseCursor.Link);
+			return GUI.Button(rect, content, style);
 		}
 
 		public static void ShowNotificationOnWindow<T>(GUIContent content,bool createIfMissing) where T : EditorWindow

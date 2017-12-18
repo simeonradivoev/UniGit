@@ -60,19 +60,19 @@ namespace UniGit
 		[MenuItem("UniGit/Report Issue", false, 0)]
 		private static void ReportIssue()
 		{
-			Application.OpenURL("https://github.com/simeonradivoev/UniGit/issues/new");
+			GitLinks.GoTo(GitLinks.ReportIssue);
 		}
 
 		[MenuItem("UniGit/Help",false ,0)]
 		private static void Help()
 		{
-			Application.OpenURL("https://github.com/simeonradivoev/UniGit/wiki");
+			GitLinks.GoTo(GitLinks.Wiki);
 		}
 
 		[MenuItem("UniGit/Donate",false,20)]
 		private static void Donate()
 		{
-			Application.OpenURL(GitAboutWindow.DonateUrl);
+			GitLinks.GoTo(GitLinks.Donate);
 		}
         #endregion
     }
