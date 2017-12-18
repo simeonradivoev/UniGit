@@ -45,7 +45,6 @@ namespace UniGit
 		private HashSet<string> pathsToBeUpdated = new HashSet<string>();
 		private bool needsAsyncStatusListUpdate;
 		private GitExternalManager externalManager;
-		private GitCredentialsManager credentialsManager;
 		private GitLfsHelper lfsHelper;
 
 		[Serializable]
@@ -106,10 +105,9 @@ namespace UniGit
 		}
 
 		[UniGitInject]
-		private void Construct(GitExternalManager externalManager, GitCredentialsManager credentialsManager, GitLfsHelper lfsHelper)
+		private void Construct(GitExternalManager externalManager, GitLfsHelper lfsHelper)
 		{
 			this.externalManager = externalManager;
-			this.credentialsManager = credentialsManager;
 			this.lfsHelper = lfsHelper;
 			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
 		}
@@ -119,7 +117,7 @@ namespace UniGit
 		protected override void OnRepositoryCreate()
 		{
 			base.OnRepositoryCreate();
-			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager, UniGitLoader.LfsHelper);
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.LfsHelper);
 		}
 		#endregion
 
@@ -306,7 +304,7 @@ namespace UniGit
 			if (statusList == null)
 			{
 				Repaint();
-				GitGUI.DrawLoading(new Rect(0,0, position.width, position.height), GitGUI.GetTempContent("Loading Status List..."));
+				GitGUI.DrawLoading(new Rect(0, 0, position.width, position.height), GitGUI.GetTempContent(GetStatusBuildingState()));
 			}
 			else
 			{
@@ -633,7 +631,7 @@ namespace UniGit
 			}
 
 			bool isUpdating = gitManager.IsUpdating;
-			bool isStaging = gitManager.IsUpdating;
+			bool isStaging = gitManager.IsAsyncStaging;
 			bool isDirty = gitManager.IsDirty;
 			bool statusListUpdate = statusListUpdateOperation != null && !statusListUpdateOperation.IsDone;
 			GUIContent statusContent = GUIContent.none;
@@ -653,7 +651,7 @@ namespace UniGit
 			}
 			else if (statusListUpdate)
 			{
-				statusContent = GitGUI.IconContent("CollabProgress", "Building status list gui...");
+				statusContent = GitGUI.IconContent("CollabProgress", GetStatusBuildingState());
 			}
 
 			if(statusContent != GUIContent.none)
@@ -1011,6 +1009,11 @@ namespace UniGit
 				default:
 					return "Waiting to update";
 			}
+		}
+
+		private string GetStatusBuildingState()
+		{
+			return statusListUpdateOperation == null ? "Waiting on repository..." : "Building Status List...";
 		}
 
 		private void ReadCommitMessageFromFile()
@@ -1596,7 +1599,7 @@ namespace UniGit
 					}
 					else
 					{
-						entires.Add(new StatusListEntry(mainAssetPath,AssetDatabase.AssetPathToGUID(mainAssetPath), entry.Status, MetaChangeEnum.Meta));
+						entires.Add(new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta));
 					}
 				}
 				else
@@ -1608,7 +1611,7 @@ namespace UniGit
 					}
 					else
 					{
-						entires.Add(new StatusListEntry(entry.Path, AssetDatabase.AssetPathToGUID(entry.Path), entry.Status, MetaChangeEnum.Object));
+						entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
 					}
 				}
 			}
@@ -1694,10 +1697,9 @@ namespace UniGit
 			[SerializeField]
 			private string guid;
 
-			public StatusListEntry(string path,string guid, FileStatus state, MetaChangeEnum metaChange)
+			public StatusListEntry(string path, FileStatus state, MetaChangeEnum metaChange)
 			{
 				this.path = path;
-				this.guid = guid;
 				this.name = System.IO.Path.GetFileName(path);
 				this.state = state;
 				this.metaChange = metaChange;
@@ -1705,7 +1707,7 @@ namespace UniGit
 
 			public string Guid
 			{
-				get { return guid; }
+				get { return guid ?? (guid = AssetDatabase.AssetPathToGUID(path)); }
 			}
 
 			public string Path

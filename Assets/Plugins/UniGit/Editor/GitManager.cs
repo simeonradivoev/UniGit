@@ -25,16 +25,17 @@ namespace UniGit
 		private Repository repository;
 		private StatusTreeClass statusTree;
 		private readonly GitSettingsJson gitSettings;
-		private static readonly Queue<Action> actionQueue = new Queue<Action>();
-		private GitRepoStatus status;
+		private static readonly Queue<Action> actionQueue = new Queue<Action>();	//queue for executing actions on main thread
+		private GitRepoStatus status;	//intermediate repository status cache with only a path and a meta change flag
 		private readonly object statusTreeLock = new object();
 		private readonly object statusRetriveLock = new object();
-		private bool repositoryDirty;
-		private bool reloadDirty;
+		private bool repositoryDirty;	//is the whole repository dirty
+		private bool forceSingleThread;	//force single threaded update
+		private bool reloadDirty;	//should the GitLib2Sharp repository be recreated with a new instance
 		private bool isUpdating;
 		private readonly List<AsyncStageOperation> asyncStages = new List<AsyncStageOperation>();
-		private readonly HashSet<string> dirtyFiles = new HashSet<string>();
-		private readonly HashSet<string> updatingFiles = new HashSet<string>();
+		private readonly HashSet<string> dirtyFileQueue = new HashSet<string>();	//dirty files to update as soon as possible
+		private readonly HashSet<string> updatingFiles = new HashSet<string>();		//currently updating files, mainly for multi threaded update
 		private readonly GitCallbacks callbacks;
 		private readonly IGitPrefs prefs;
 		private readonly List<ISettingsAffector> settingsAffectors = new List<ISettingsAffector>();
@@ -48,10 +49,10 @@ namespace UniGit
 			gitSettings = settings;
 			gitPath = UniGitPath.Combine(repoPath, ".git");
 
-			Initlize();
+			Initialize();
 		}
 
-		private void Initlize()
+		private void Initialize()
 		{
 			if (!IsValidRepo)
 			{
@@ -75,7 +76,7 @@ namespace UniGit
 			{
 				Debug.Log("Git Ignore file already present");
 			}
-			Initlize();
+			Initialize();
 		}
 
 		internal void InitilizeRepositoryAndRecompile()
@@ -134,12 +135,12 @@ namespace UniGit
 					Update(reloadDirty);
 					reloadDirty = false;
 					repositoryDirty = false;
-					dirtyFiles.Clear();
+					dirtyFileQueue.Clear();
 				}
-				else if (dirtyFiles.Count > 0)
+				else if (dirtyFileQueue.Count > 0)
 				{
-					Update(reloadDirty || repository == null, dirtyFiles.ToArray());
-					dirtyFiles.Clear();
+					Update(reloadDirty || repository == null, dirtyFileQueue.ToArray());
+					dirtyFileQueue.Clear();
 				}
 			}
 
@@ -174,7 +175,7 @@ namespace UniGit
 
 			if (repository != null)
 			{
-				if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
+				if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
 				else RetreiveStatus(paths);
 			}
 		}
@@ -200,8 +201,8 @@ namespace UniGit
 			foreach (var path in paths)
 			{
 				string fixedPath = path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
-				if(!dirtyFiles.Contains(fixedPath))
-					dirtyFiles.Add(fixedPath);
+				if(!dirtyFileQueue.Contains(fixedPath))
+					dirtyFileQueue.Add(fixedPath);
 			}
 			
 		}
@@ -210,24 +211,16 @@ namespace UniGit
 		{
 			if (paths != null && paths.Length > 0 && status != null)
 			{
-				foreach (var path in paths)
+				foreach (string path in paths)
 				{
-					status.Update(path,repository.RetrieveStatus(path));
+					status.Update(path, repository.RetrieveStatus(path));
 				}
 			}
 			else
 			{
 				var options = GetStatusOptions();
-				try
-				{
-					var s = repository.RetrieveStatus(options);
-					status = new GitRepoStatus(s);
-				}
-				catch (ThreadAbortException)
-				{
-					Thread.ResetAbort();
-					//handle thread aborts to stop the annoying console messages
-				}
+				var s = repository.RetrieveStatus(options);
+				status = new GitRepoStatus(s);
 			}
 			
 		}
@@ -248,6 +241,8 @@ namespace UniGit
 
 		private void RetreiveStatus(string[] paths)
 		{
+			//reset force single thread as we are going to update on main thread
+			forceSingleThread = false;
 			Profiler.BeginSample("UniGit Status Retrieval");
 			RetreiveStatus(paths, false);
 			Profiler.EndSample();
@@ -274,9 +269,34 @@ namespace UniGit
 					UpdateStatusTree(status);
 				}
 			}
+			catch (ThreadAbortException)
+			{
+				//run status retrieval on main thread if this thread was aborted
+				actionQueue.Enqueue(() =>
+				{
+					RetreiveStatus(paths);
+				});
+				//handle thread abort gracefully
+				Thread.ResetAbort();
+				Debug.LogWarning("Git status threaded retrieval aborted, executing on main thread.");
+			}
 			catch (Exception e)
 			{
-				ExecuteAction(FinishUpdating, threaded);
+				if (threaded)
+				{
+					//mark dirty if threaded failed
+					actionQueue.Enqueue(() =>
+					{
+						FinishUpdating();
+						forceSingleThread = true;
+						MarkDirty();
+					});
+				}
+				else
+				{
+					FinishUpdating();
+				}
+
 				Debug.LogError("Could not retrive Git Status");
 				Debug.LogException(e);
 			}
@@ -328,8 +348,8 @@ namespace UniGit
 
 		internal bool IsFileDirty(string path)
 		{
-			if (dirtyFiles.Count <= 0) return false;
-			return dirtyFiles.Contains(path);
+			if (dirtyFileQueue.Count <= 0) return false;
+			return dirtyFileQueue.Contains(path);
 		}
 
 		internal bool IsFileUpdating(string path)
@@ -697,7 +717,7 @@ namespace UniGit
 
 		public bool IsDirty
 		{
-			get { return dirtyFiles.Count > 0; }
+			get { return dirtyFileQueue.Count > 0 || repositoryDirty; }
 		}
 
 		public Signature Signature

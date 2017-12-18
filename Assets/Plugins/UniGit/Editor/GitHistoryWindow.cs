@@ -43,7 +43,6 @@ namespace UniGit
 		private readonly object commitCachesLock = new object();
 		private GitAsyncOperation loadingCommits;
 		private GitExternalManager externalManager;
-		private GitCredentialsManager credentialsManager;
 
 		#region Styles
 		public class Styles
@@ -107,10 +106,9 @@ namespace UniGit
 		#endregion
 
         [UniGitInject]
-		private void Construct(GitExternalManager externalManager,GitCredentialsManager credentialsManager)
+		private void Construct(GitExternalManager externalManager)
 		{
 			this.externalManager = externalManager;
-			this.credentialsManager = credentialsManager;
 		}
 
 		#region Editor Specific Updates
@@ -118,7 +116,7 @@ namespace UniGit
 		protected override void OnRepositoryCreate()
 		{
 			base.OnRepositoryCreate();
-			Construct(UniGitLoader.ExternalManager, UniGitLoader.CredentialsManager);
+			Construct(UniGitLoader.ExternalManager);
 		}
 		#endregion
 

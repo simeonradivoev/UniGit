@@ -44,7 +44,7 @@ namespace UniGit.Utils
 		{
 			get
 			{
-				if (_textures == null)
+				if (_contents == null)
 				{
 					_contents = new ContentsClass();
 					InitContents(_contents);
