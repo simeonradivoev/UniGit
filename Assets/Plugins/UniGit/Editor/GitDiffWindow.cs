@@ -747,7 +747,7 @@ namespace UniGit
 			}
 			GUI.EndScrollView();
 
-			if (current.type == EventType.mouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
+			if (current.type == EventType.MouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
 			{
 				diffScroll.y -= current.delta.y;
 				Repaint();

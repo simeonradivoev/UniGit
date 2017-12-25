@@ -230,7 +230,9 @@ namespace UniGit
 			return new StatusOptions()
 			{
 				DetectRenamesInIndex = Settings.DetectRenames,
-				DetectRenamesInWorkDir = Settings.DetectRenames
+				DetectRenamesInWorkDir = Settings.DetectRenames,
+				//this might help with locked ignored files hanging the search
+				RecurseIgnoredDirs = false
 			};
 		}
 

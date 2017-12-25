@@ -630,7 +630,7 @@ namespace UniGit
 			scrollHorizontalNormal = Mathf.Clamp01(newScroll.x / scrollMaxHorizontal);
 			scrollVertical = newScroll.y;
 
-			if (Event.current.type == EventType.mouseDrag && (Event.current.button == 2 || (Event.current.button == 0 && Event.current.shift)))
+			if (Event.current.type == EventType.MouseDrag && (Event.current.button == 2 || (Event.current.button == 0 && Event.current.shift)))
 			{
 				Vector2 scrollDelta = new Vector2(Event.current.delta.x / totalLineWidth, Event.current.delta.y * 0.5f);
 				scrollHorizontalNormal -= scrollDelta.x;
