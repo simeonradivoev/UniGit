@@ -10,6 +10,7 @@
 		/[Bb]uild/
 		/[Bb]uilds/
 		/Assets/AssetStoreTools*
+		/.vs
 
 		# UniGit specific. You can remove to save changes to UniGit in version control
 		/Assets/Plugins/LibGit2Sharp*

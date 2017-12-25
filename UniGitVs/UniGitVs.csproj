@@ -47,11 +47,11 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEditor">
-      <HintPath>D:\Program Files\Unity 2017.1\Editor\Data\Managed\UnityEditor.dll</HintPath>
+      <HintPath>D:\Program Files\Unity 2017.3\Editor\Data\Managed\UnityEditor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>D:\Program Files\Unity 2017.1\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>D:\Program Files\Unity 2017.3\Editor\Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
