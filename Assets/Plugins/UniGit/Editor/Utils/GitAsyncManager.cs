@@ -7,78 +7,78 @@ using UnityEngine;
 
 namespace UniGit.Utils
 {
-	[InitializeOnLoad]
 	public class GitAsyncManager
 	{
-		private static List<GitAsyncOperation> activeOperations;
+		private List<GitAsyncOperation> activeOperations;
 
-		static GitAsyncManager()
+		[UniGitInject]
+		public GitAsyncManager(GitCallbacks callbacks)
 		{
 			activeOperations = new List<GitAsyncOperation>();
-			EditorApplication.update += OnEditorUpdate;
+			callbacks.EditorUpdate += OnEditorUpdate;
 		}
 
-		public static GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, Action<GitAsyncOperation> onComplete)
+		public GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, Action<GitAsyncOperation> onComplete)
 		{
 			return QueueWorker(waitCallback,state, null, onComplete);
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state, Action<GitAsyncOperation> onComplete,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state, Action<GitAsyncOperation> onComplete,object lockObj)
 		{
 			return QueueWorkerWithLock(waitCallback, state, null, onComplete, lockObj);
 		}
 
-		public static GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, string name)
+		public GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, string name)
 		{
 			return QueueWorker(waitCallback,state, name, null);
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state, string name,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state, string name,object lockObj)
 		{
 			return QueueWorkerWithLock(waitCallback, state, name, null, lockObj);
 		}
 
-		public static GitAsyncOperation QueueWorker<T>(Action<T> waitCallback, T state)
+		public GitAsyncOperation QueueWorker<T>(Action<T> waitCallback, T state)
 		{
 			return QueueWorker(waitCallback, state, null, null);
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state,object lockObj)
 		{
 			return QueueWorkerWithLock(waitCallback, state, null, null, lockObj);
 		}
 
-		public static GitAsyncOperation QueueWorker(Action waitCallback, Action<GitAsyncOperation> onComplete)
+		public GitAsyncOperation QueueWorker(Action waitCallback, Action<GitAsyncOperation> onComplete)
 		{
 			return QueueWorker(waitCallback, null, onComplete);
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock(Action waitCallback, Action<GitAsyncOperation> onComplete,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock(Action waitCallback, Action<GitAsyncOperation> onComplete,object lockObj)
 		{
 			return QueueWorkerWithLock(waitCallback, null, onComplete, lockObj);
 		}
 
-		public static GitAsyncOperation QueueWorker(Action waitCallback, string name)
+		public GitAsyncOperation QueueWorker(Action waitCallback, string name)
 		{
 			return QueueWorker(waitCallback, name, null);
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock(Action waitCallback, string name,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock(Action waitCallback, string name,object lockObj)
 		{
 			return QueueWorkerWithLock(waitCallback, name, null, lockObj);
 		}
 
-		public static GitAsyncOperation QueueWorker(Action waitCallback)
+		public GitAsyncOperation QueueWorker(Action waitCallback)
 		{
 			return QueueWorker(waitCallback, null, null);
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock(Action waitCallback,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock(Action waitCallback,object lockObj)
 		{
 			return QueueWorkerWithLock(waitCallback, null, null, lockObj);
 		}
 
-		public static GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, string name, Action<GitAsyncOperation> onComplete)
+		public GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, string name, Action<GitAsyncOperation> onComplete)
 		{
 			var operation = GitAsyncOperation.Create(string.IsNullOrEmpty(name) ? GUID.Generate().ToString() : name);
 			if (onComplete != null)
@@ -118,7 +118,7 @@ namespace UniGit.Utils
 			return operation;
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state, string name, Action<GitAsyncOperation> onComplete,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock<T>(Action<T> waitCallback, T state, string name, Action<GitAsyncOperation> onComplete,object lockObj)
 		{
 			var operation = GitAsyncOperation.Create(string.IsNullOrEmpty(name) ? GUID.Generate().ToString() : name);
 			if (onComplete != null)
@@ -160,7 +160,7 @@ namespace UniGit.Utils
 			return operation;
 		}
 
-		public static GitAsyncOperation QueueWorker(Action waitCallback, string name, Action<GitAsyncOperation> onComplete)
+		public GitAsyncOperation QueueWorker(Action waitCallback, string name, Action<GitAsyncOperation> onComplete)
 		{
 			var operation = GitAsyncOperation.Create(string.IsNullOrEmpty(name) ? GUID.Generate().ToString() : name);
 			if (onComplete != null)
@@ -200,7 +200,7 @@ namespace UniGit.Utils
 			return operation;
 		}
 
-		public static GitAsyncOperation QueueWorkerWithLock(Action waitCallback, string name, Action<GitAsyncOperation> onComplete,object lockObj)
+		public GitAsyncOperation QueueWorkerWithLock(Action waitCallback, string name, Action<GitAsyncOperation> onComplete,object lockObj)
 		{
 			var operation = GitAsyncOperation.Create(string.IsNullOrEmpty(name) ? GUID.Generate().ToString() : name);
 			if (onComplete != null)
@@ -242,12 +242,12 @@ namespace UniGit.Utils
 			return operation;
 		}
 
-		private static void ShowUnableToQueueError(string name)
+		private void ShowUnableToQueueError(string name)
 		{
 			Debug.LogError("Could not Queue Git Async Operation with name: " + name);
 		}
 
-		private static void OnEditorUpdate()
+		private void OnEditorUpdate()
 		{
 			for (int i = activeOperations.Count-1; i >= 0; i--)
 			{

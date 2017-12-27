@@ -45,24 +45,9 @@ namespace UniGit
 		}
 
 		internal static Icons icons;
-		private static GUIStyle IconStyle;
-		private static GitManager gitManager;
 
-		internal static void Initlize(GitManager gitManager)
+		internal static void Initlize()
 		{
-			GitOverlay.gitManager = gitManager;
-			EditorApplication.projectWindowItemOnGUI += CustomIcons;
-
-			if (IconStyle == null)
-			{
-				IconStyle = new GUIStyle
-				{
-					imagePosition = ImagePosition.ImageOnly,
-					alignment = TextAnchor.LowerLeft,
-					padding = new RectOffset(2, 2, 2, 2)
-				};
-			}
-
 			if (icons == null)
 			{
 				icons = new Icons()
@@ -165,32 +150,6 @@ namespace UniGit
 					return small ? icons.renamedIconSmall : icons.renamedIcon;
 			}
 			return null;
-		}
-
-		private static void CustomIcons(string guid, Rect rect)
-		{
-			if (gitManager.StatusTree == null) return;
-			string path = AssetDatabase.GUIDToAssetPath(guid);
-			var status = gitManager.StatusTree.GetStatus(path);
-			if (status != null)
-			{
-				Object assetObject = AssetDatabase.LoadMainAssetAtPath(path);
-				if (assetObject != null && ProjectWindowUtil.IsFolder(assetObject.GetInstanceID()))
-				{
-					//exclude the Assets folder
-					if (status.Depth == 0) return;
-					//todo cache expandedProjectWindowItems into a HashSet for faster Contains
-					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(assetObject.GetInstanceID())) return;
-				}
-				DrawFileIcon(rect, GetDiffTypeIcon(status.State, rect.height <= 16));
-			}
-		}
-
-		private static void DrawFileIcon(Rect rect, GUIContent icon)
-		{
-			float width = Mathf.Min(rect.width, 32);
-			float height = Mathf.Min(rect.height, 32);
-			GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, IconStyle);
 		}
 	}
 }

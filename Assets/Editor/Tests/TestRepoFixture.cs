@@ -7,32 +7,26 @@ using UniGit.Utils;
 
 public class TestRepoFixture
 {
-	protected GitManager gitManager;
-	protected GitSettingsJson gitSettings;
-	protected GitCallbacks gitCallbacks;
 	protected Signature signature;
-	protected GitPrefs gitPrefs;
+	protected GitManager gitManager;
     protected InjectionHelper injectionHelper;
 
 	[SetUp]
 	public void Setup()
 	{
 	    injectionHelper = new InjectionHelper();
-        string repoPath = @"D:\Test_Repo";
-		gitSettings = new GitSettingsJson();
-		gitSettings.Threading = 0;
-        gitCallbacks = new GitCallbacks();
-        gitPrefs = new GitPrefs();
-		gitManager = new GitManager(repoPath, gitCallbacks, gitSettings, gitPrefs);
-	    gitManager.InitilizeRepository();
+		injectionHelper.Bind<string>().WithId("repoPath").FromInstance(@"D:\Test_Repo");
+		injectionHelper.Bind<GitSettingsJson>().FromInstance(new GitSettingsJson {Threading = 0});
+		injectionHelper.Bind<GitCallbacks>();
+		injectionHelper.Bind<IGitPrefs>().To<GitPrefs>();
+		injectionHelper.Bind<GitAsyncManager>();
+		injectionHelper.Bind<GitManager>();
+
+		gitManager = injectionHelper.GetInstance<GitManager>();
+		gitManager.InitilizeRepository();
         signature = new Signature("Test", "Test@Test.com", DateTime.Now);
 
-	    injectionHelper.Bind<GitSettingsJson>().FromInstance(gitSettings);
-        injectionHelper.Bind<GitCallbacks>().FromInstance(gitCallbacks);
-	    injectionHelper.Bind<IGitPrefs>().To<GitPrefs>().FromInstance(gitPrefs);
-	    injectionHelper.Bind<GitManager>().FromInstance(gitManager);
-
-        gitCallbacks.IssueEditorUpdate();
+		injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();
 	}
 
 	[TearDown]

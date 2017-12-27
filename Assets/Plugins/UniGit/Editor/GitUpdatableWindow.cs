@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
@@ -7,12 +8,14 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public abstract class GitUpdatableWindow : EditorWindow
+	public abstract class GitUpdatableWindow : EditorWindow, IGitWatcher
 	{
 		//used an object because the EditorWindow saves Booleans even if private
 		[NonSerialized] private object initilized;
-		[NonSerialized] private object hasFocused;
+		[NonSerialized] private object isRepositoryDirty;
 		[NonSerialized] protected GitManager gitManager;
+		protected GitRepoStatus cachedStatus;
+		private Func<bool> hasFocusFunc;
 
 		protected virtual void OnEnable()
 		{
@@ -34,6 +37,7 @@ namespace UniGit
 				Unsubscribe(this.gitManager.Callbacks);
 			}
 			this.gitManager = gitManager;
+			this.gitManager.AddWatcher(this);
 			Subscribe(gitManager.Callbacks);
 		}
 
@@ -55,10 +59,9 @@ namespace UniGit
 				return;
 			}
 			callbacks.EditorUpdate += OnEditorUpdateInternal;
-			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
+			callbacks.UpdateRepository += OnGitManagerUpdateRepositoryInternal;
 			callbacks.OnRepositoryLoad += OnRepositoryLoad;
 			callbacks.UpdateRepositoryStart += UpdateTitleIcon;
-			callbacks.UpdateRepositoryFinish += UpdateTitleIcon;
 			callbacks.RepositoryCreate += OnRepositoryCreate;
 		}
 
@@ -66,19 +69,28 @@ namespace UniGit
 		{
 			if (callbacks == null) return;
 			callbacks.EditorUpdate -= OnEditorUpdateInternal;
-			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			callbacks.UpdateRepository -= OnGitManagerUpdateRepositoryInternal;
 			callbacks.OnRepositoryLoad -= OnRepositoryLoad;
 			callbacks.UpdateRepositoryStart -= UpdateTitleIcon;
-			callbacks.UpdateRepositoryFinish -= UpdateTitleIcon;
 			callbacks.RepositoryCreate -= OnRepositoryCreate;
 		}
 
 		protected virtual void OnFocus()
 		{
-			hasFocused = true;
+			
 		}
 
-		private void OnGitManagerUpdateInternal(GitRepoStatus status,string[] paths)
+		protected virtual void OnLostFocus()
+		{
+			//the window is docked and has become hidden reset the initialization
+			if (!HasFocus)
+			{
+				initilized = null;
+				cachedStatus = null;
+			}
+		}
+
+		private void OnGitManagerUpdateRepositoryInternal(GitRepoStatus status,string[] paths)
 		{
 			UpdateTitleIcon();
 
@@ -97,21 +109,23 @@ namespace UniGit
 		private void OnEditorUpdateInternal()
 		{
 			//Only initialize if the editor Window is focused
-			if (hasFocused != null && initilized == null && gitManager.Repository != null)
+			if (HasFocus && initilized == null && gitManager.Repository != null)
 			{
-				if (gitManager.LastStatus != null)
+				var gitManagerStatus = gitManager.GetCachedStatus();
+				if (gitManagerStatus != null)
 				{
+					cachedStatus = gitManagerStatus;
 					initilized = true;
 					if (!gitManager.IsValidRepo) return;
 					OnInitialize();
-					OnGitManagerUpdateInternal(gitManager.LastStatus,null);
+					OnGitManagerUpdateRepositoryInternal(gitManagerStatus, null);
 					//simulate repository loading for first initialization
 					OnRepositoryLoad(gitManager.Repository);
 					Repaint();
 				}
 			}
 
-			if (hasFocused != null)
+			if (HasFocus)
 			{
 				OnEditorUpdate();
 			}
@@ -124,8 +138,11 @@ namespace UniGit
 
 		protected void OnDestroy()
 		{
-			if(gitManager != null && gitManager.Callbacks != null)
-				Unsubscribe(gitManager.Callbacks);
+			if (gitManager != null)
+			{
+				if(gitManager.Callbacks != null) Unsubscribe(gitManager.Callbacks);
+				gitManager.RemoveWatcher(this);
+			}
 		}
 
 		#region Safe Controlls
@@ -138,6 +155,26 @@ namespace UniGit
 		}
 
 		#endregion
+
+		public bool HasFocus
+		{
+			get
+			{
+				if (hasFocusFunc == null)
+					hasFocusFunc = (Func<bool>)Delegate.CreateDelegate(typeof(Func<bool>), this, typeof(EditorWindow).GetProperty("hasFocus", BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(true));
+				return hasFocusFunc.Invoke();
+			}
+		}
+
+		public virtual bool IsWatching
+		{
+			get { return HasFocus; }
+		}
+
+		public bool IsValid
+		{
+			get { return this; }
+		}
 
 		protected abstract void OnGitUpdate(GitRepoStatus status,string[] paths);
 		protected abstract void OnInitialize();

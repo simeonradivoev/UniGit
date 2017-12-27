@@ -9,26 +9,29 @@ using UnityEngine;
 public class GitDiffWindowTests : TestRepoFixture
 {
 	private GitDiffWindow diffWindow;
-	private EditorWindow prevFocusWindow;
+	private GitDiffWindow diffWindow2;
 
 	[SetUp]
 	public void GitDiffTestsSetup()
 	{
-		prevFocusWindow = EditorWindow.focusedWindow;
-        injectionHelper.Bind<GitExternalManager>();
-	    injectionHelper.Bind<GitCredentialsManager>();
+		injectionHelper.Bind<GitExternalManager>();
+		injectionHelper.Bind<GitCredentialsManager>();
 		injectionHelper.Bind<GitLfsHelper>();
 		injectionHelper.Bind<FileLinesReader>();
 		injectionHelper.Bind<string>().WithId("repoPath").FromInstance("");
 		diffWindow = ScriptableObject.CreateInstance<GitDiffWindow>();
-        injectionHelper.Inject(diffWindow);
-	    diffWindow.Show();
+		diffWindow2 = ScriptableObject.CreateInstance<GitDiffWindow>();
+		injectionHelper.Inject(diffWindow);
+		injectionHelper.Inject(diffWindow2);
+		diffWindow.Show();
+		diffWindow2.Show();
     }
 
 	[TearDown]
 	public void GitDiffTestsTearDown()
 	{
 		diffWindow.Close();
+		diffWindow2.Close();
 	}
 
 	[Test]
@@ -45,7 +48,7 @@ public class GitDiffWindowTests : TestRepoFixture
 	[Test]
 	public void OnCommit_CommitChangesWithFileCommitMessage()
 	{
-		gitSettings.ReadFromFile = true;
+		injectionHelper.GetInstance<GitSettingsJson>().ReadFromFile = true;
 
 		const string commitText = "First Commit from File Commit Message";
 		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
@@ -57,21 +60,19 @@ public class GitDiffWindowTests : TestRepoFixture
 	[Test]
 	public void OnOpen_ReadCommitFileContents()
 	{
-		gitSettings.ReadFromFile = true;
+		injectionHelper.GetInstance<GitSettingsJson>().ReadFromFile = true;
 
 		const string commitText = "Test Message";
+		diffWindow2.Focus();
 		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
-		prevFocusWindow.Focus();
-		Assert.AreNotEqual(EditorWindow.focusedWindow, diffWindow);
 		diffWindow.Focus();
-		Assert.AreEqual(EditorWindow.focusedWindow, diffWindow);
 		Assert.AreEqual(commitText, diffWindow.GitDiffSettings.commitMessageFromFile);
 	}
 
 	[Test]
 	public void OnAmmendCommit_AmmendCommitMessage()
 	{
-		gitSettings.ReadFromFile = true;
+		injectionHelper.GetInstance<GitSettingsJson>().ReadFromFile = true;
 
 		const string commitMessage = "First Commit";
 		diffWindow.SetCommitMessage(commitMessage);

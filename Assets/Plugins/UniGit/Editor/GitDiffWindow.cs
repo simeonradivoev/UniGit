@@ -46,6 +46,7 @@ namespace UniGit
 		private bool needsAsyncStatusListUpdate;
 		private GitExternalManager externalManager;
 		private GitLfsHelper lfsHelper;
+		private GitAsyncManager asyncManager;
 
 		[Serializable]
 		public class Settings
@@ -105,10 +106,11 @@ namespace UniGit
 		}
 
 		[UniGitInject]
-		private void Construct(GitExternalManager externalManager, GitLfsHelper lfsHelper)
+		private void Construct(GitExternalManager externalManager, GitLfsHelper lfsHelper, GitAsyncManager asyncManager)
 		{
 			this.externalManager = externalManager;
 			this.lfsHelper = lfsHelper;
+			this.asyncManager = asyncManager;
 			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
 		}
 
@@ -117,7 +119,7 @@ namespace UniGit
 		protected override void OnRepositoryCreate()
 		{
 			base.OnRepositoryCreate();
-			Construct(UniGitLoader.ExternalManager, UniGitLoader.LfsHelper);
+			Construct(UniGitLoader.ExternalManager, UniGitLoader.LfsHelper,UniGitLoader.AsyncManager);
 		}
 		#endregion
 
@@ -161,11 +163,11 @@ namespace UniGit
 
 		private void UpdateStatusList()
 		{
-			if(gitManager.Repository == null) return;
+			if(gitManager.Repository == null || cachedStatus == null) return;
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
-				CreateStatusListThreaded(gitManager.LastStatus,null);
+				CreateStatusListThreaded(cachedStatus, null);
 			else
-				CreateStatusList(gitManager.LastStatus);
+				CreateStatusList(cachedStatus);
 		}
 
 		protected override void OnInitialize()
@@ -181,10 +183,10 @@ namespace UniGit
 
 		protected override void OnEditorUpdate()
 		{
-			if (needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
+			if (cachedStatus != null && needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
 			{
 				needsAsyncStatusListUpdate = false;
-				CreateStatusListThreaded(gitManager.LastStatus, null);
+				CreateStatusListThreaded(cachedStatus, null);
 			}
 		}
 
@@ -203,7 +205,7 @@ namespace UniGit
 			}
 			else
 			{
-				statusListUpdateOperation = GitAsyncManager.QueueWorkerWithLock(CreateStatusListInternal, status, (o) =>
+				statusListUpdateOperation = asyncManager.QueueWorkerWithLock(CreateStatusListInternal, status, (o) =>
 				{
 					updatingPaths.Clear();
 					Repaint();
@@ -252,13 +254,6 @@ namespace UniGit
 			{
 				Debug.LogException(e);
 			}
-		}
-
-		[UsedImplicitly]
-		private void OnUnfocus()
-		{
-			if(!gitManager.IsValidRepo) return;
-			if(statusList != null) ClearSelection();
 		}
 
 		[UsedImplicitly]

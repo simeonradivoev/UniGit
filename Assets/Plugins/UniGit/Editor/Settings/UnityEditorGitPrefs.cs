@@ -4,6 +4,8 @@ namespace UniGit.Settings
 {
 	public class UnityEditorGitPrefs : IGitPrefs
 	{
+		public const string DisablePostprocess = "UniGit_DisablePostprocess";
+
 		public void DeleteAll()
 		{
 			EditorPrefs.DeleteAll();

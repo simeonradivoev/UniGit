@@ -36,6 +36,12 @@ namespace UniGit.Settings
 			hasFocused = true;
 		}
 
+		public void OnLostFocus()
+		{
+			hasFocused = false;
+			initilized = false;
+		}
+
 		public virtual void OnGitUpdate(GitRepoStatus status, string[] paths)
 		{
 			
@@ -54,13 +60,11 @@ namespace UniGit.Settings
 			//Only initialize if the editor Window is focused
 			if (hasFocused && !initilized && gitManager.Repository != null)
 			{
-				if (gitManager.LastStatus != null)
-				{
-					initilized = true;
-					if (!gitManager.IsValidRepo) return;
-					OnInitialize();
-					OnGitManagerUpdateInternal(gitManager.LastStatus, null);
-				}
+				var cachedStatus = gitManager.GetCachedStatus();
+				initilized = true;
+				if (!gitManager.IsValidRepo) return;
+				OnInitialize();
+				OnGitManagerUpdateInternal(cachedStatus, null);
 			}
 		}
 

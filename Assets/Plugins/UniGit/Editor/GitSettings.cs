@@ -71,6 +71,7 @@ namespace UniGit
 		public bool UseSimpleContextMenus;
 		public bool ReadFromFile;
 		public bool DisableGitLFS;
+		public bool LazyMode;
 		private bool isDirty;
 
 		[Flags]

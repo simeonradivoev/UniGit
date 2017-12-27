@@ -33,7 +33,7 @@ namespace UniGit
 		{
 			EditorGUILayout.LabelField(GitGUI.GetTempContent("Stash Message:"));
 			stashMessage = EditorGUILayout.TextArea(stashMessage, GUILayout.Height(EditorGUIUtility.singleLineHeight * 6));
-			stashModifiers = (StashModifiers)EditorGUILayout.EnumMaskPopup("Stash Modifiers",stashModifiers);
+			stashModifiers = (StashModifiers)EditorGUILayout.EnumFlagsField("Stash Modifiers",stashModifiers);
 			return false;
 		}
 

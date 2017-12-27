@@ -152,6 +152,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitProjectContextMenus.cs">
       <Link>GitProjectContextMenus.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitProjectOverlay.cs">
+      <Link>GitProjectOverlay.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitPullWizard.cs">
       <Link>GitPullWizard.cs</Link>
     </Compile>
@@ -193,6 +196,9 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Hooks\GitPushHookBase.cs">
       <Link>GitPushHookBase.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\IGitWatcher.cs">
+      <Link>IGitWatcher.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\IGitWindow.cs">
       <Link>IGitWindow.cs</Link>

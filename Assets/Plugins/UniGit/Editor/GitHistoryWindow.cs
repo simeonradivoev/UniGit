@@ -43,6 +43,7 @@ namespace UniGit
 		private readonly object commitCachesLock = new object();
 		private GitAsyncOperation loadingCommits;
 		private GitExternalManager externalManager;
+		private GitAsyncManager asyncManager;
 
 		#region Styles
 		public class Styles
@@ -106,9 +107,10 @@ namespace UniGit
 		#endregion
 
         [UniGitInject]
-		private void Construct(GitExternalManager externalManager)
+		private void Construct(GitExternalManager externalManager, GitAsyncManager asyncManager)
 		{
 			this.externalManager = externalManager;
+			this.asyncManager = asyncManager;
 		}
 
 		#region Editor Specific Updates
@@ -116,7 +118,7 @@ namespace UniGit
 		protected override void OnRepositoryCreate()
 		{
 			base.OnRepositoryCreate();
-			Construct(UniGitLoader.ExternalManager);
+			Construct(UniGitLoader.ExternalManager,UniGitLoader.AsyncManager);
 		}
 		#endregion
 
@@ -140,7 +142,7 @@ namespace UniGit
 		{
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.CommitListGui))
 			{
-				loadingCommits = GitAsyncManager.QueueWorkerWithLock(UpdateChaches, status, "Loading Commits", (o) =>
+				loadingCommits = asyncManager.QueueWorkerWithLock(UpdateChaches, status, "Loading Commits", (o) =>
 				{
 					OnCachesUpdated();
 				}, commitCachesLock);
@@ -403,7 +405,7 @@ namespace UniGit
 					selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), selectedBranchName == cachedBranch.CanonicalName, (b) =>
 					{
 						SetSelectedBranch((string)b);
-						StartUpdateChaches(gitManager.LastStatus);
+						StartUpdateChaches(cachedStatus);
 					}, cachedBranch.CanonicalName);
 				}
 				selectBranchMenu.ShowAsContext();
@@ -555,7 +557,7 @@ namespace UniGit
 				if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More","Show more commits."), styles.loadMoreCommitsBtn))
 				{
 					maxCommitsCount += CommitsPerExpand;
-					StartUpdateChaches(gitManager.LastStatus);
+					StartUpdateChaches(cachedStatus);
 				}
 				GitGUI.StartEnable(maxCommitsCount != MaxFirstCommitCount);
 				if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset","Reset the number of commits show."), styles.resetCommitsBtn))
@@ -568,7 +570,7 @@ namespace UniGit
 					else
 					{
 						maxCommitsCount = MaxFirstCommitCount;
-						StartUpdateChaches(gitManager.LastStatus);
+						StartUpdateChaches(cachedStatus);
 					}
 				}
 				GitGUI.EndEnable();
@@ -766,7 +768,7 @@ namespace UniGit
 		private void ViewBranchCallback(BranchInfo branch)
 		{
 			SetSelectedBranch(branch.CanonicalName);
-			StartUpdateChaches(gitManager.LastStatus);
+			StartUpdateChaches(cachedStatus);
 		}
 
 		private void SwitchToBranchCallback(BranchInfo branch,Rect rect)

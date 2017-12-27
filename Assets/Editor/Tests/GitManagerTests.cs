@@ -41,14 +41,17 @@ public class GitManagerTests : TestRepoFixture
         {
             lockFileStream.WriteLine("This is a locked test file");
         }
-        Assert.IsTrue(File.Exists(lockedFilePath));
+	    injectionHelper.Bind<GitProjectOverlay>();
+	    var projectOverlays = injectionHelper.GetInstance<GitProjectOverlay>();
+
+		Assert.IsTrue(File.Exists(lockedFilePath));
         GitCommands.Stage(gitManager.Repository, lockedFilePathName);
         FileStream lockedFileStream = new FileStream(lockedFilePath, FileMode.Open, FileAccess.Read, FileShare.None);
         try
         {
             gitManager.MarkDirty();
-            gitCallbacks.IssueEditorUpdate();
-            Assert.AreEqual(FileStatus.Ignored, gitManager.StatusTree.GetStatus(lockedFilePathName).State);
+            injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();
+            Assert.AreEqual(FileStatus.Ignored, projectOverlays.StatusTree.GetStatus(lockedFilePathName).State);
         }
         finally
         {

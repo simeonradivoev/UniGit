@@ -3,6 +3,7 @@ using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
+using UnityEngine;
 
 namespace UniGit
 {
@@ -43,13 +44,6 @@ namespace UniGit
 				UpdateRepositoryStart.Invoke();
 		}
 
-		public event Action UpdateRepositoryFinish;
-		public void IssueUpdateRepositoryFinish()
-		{
-			if(UpdateRepositoryFinish != null)
-				UpdateRepositoryFinish.Invoke();
-		}
-
 		public event Action RefreshAssetDatabase;
 		public void IssueAssetDatabaseRefresh()
 		{
@@ -69,6 +63,48 @@ namespace UniGit
 		{
 			if (AsyncStageOperationDone != null)
 				AsyncStageOperationDone.Invoke(operation);
+		}
+
+		public event Action DelayCall;
+		public void IssueDelayCall()
+		{
+			if(DelayCall != null)
+				DelayCall.Invoke();
+		}
+
+		#region Asset Postprocessing Events
+
+		public event GitAssetPostprocessors.OnWillSaveAssetsDelegate OnWillSaveAssets;
+		public void IssueOnWillSaveAssets(string[] paths,ref string[] outputs)
+		{
+			if(OnWillSaveAssets != null) OnWillSaveAssets.Invoke(paths, ref outputs);
+		}
+
+		public event Action<string[]> OnPostprocessImportedAssets;
+		public void IssueOnPostprocessImportedAssets(string[] paths)
+		{
+			if (OnPostprocessImportedAssets != null) OnPostprocessImportedAssets.Invoke(paths);
+		}
+
+		public event Action<string[]> OnPostprocessDeletedAssets;
+		public void IssueOnPostprocessDeletedAssets(string[] paths)
+		{
+			if (OnPostprocessDeletedAssets != null) OnPostprocessDeletedAssets.Invoke(paths);
+		}
+
+		public event Action<string[],string[]> OnPostprocessMovedAssets;
+		public void IssueOnPostprocessMovedAssets(string[] paths,string[] movedFrom)
+		{
+			if (OnPostprocessMovedAssets != null) OnPostprocessMovedAssets.Invoke(paths, movedFrom);
+		}
+
+		#endregion
+
+		public event Action<string, Rect> ProjectWindowItemOnGUI;
+		public void IssueProjectWindowItemOnGUI(string guid,Rect rect)
+		{
+			if (ProjectWindowItemOnGUI != null)
+				ProjectWindowItemOnGUI.Invoke(guid, rect);
 		}
 	}
 }

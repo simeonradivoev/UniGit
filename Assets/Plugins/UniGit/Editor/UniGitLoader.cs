@@ -21,6 +21,7 @@ namespace UniGit
 		public static GitExternalManager ExternalManager;
 		public static GitLfsHelper LfsHelper;
 		private static readonly InjectionHelper injectionHelper;
+		public static GitAsyncManager AsyncManager;
 
 		static UniGitLoader()
 		{
@@ -44,19 +45,26 @@ namespace UniGit
 					EditorApplication.update += c.IssueEditorUpdate;
 					c.RefreshAssetDatabase += AssetDatabase.Refresh;
 					c.SaveAssetDatabase += AssetDatabase.SaveAssets;
+					EditorApplication.projectWindowItemOnGUI += c.IssueProjectWindowItemOnGUI;
+					//asset postprocessing
+					GitAssetPostprocessors.OnWillSaveAssetsEvent += c.IssueOnWillSaveAssets;
+					GitAssetPostprocessors.OnPostprocessImportedAssetsEvent += c.IssueOnPostprocessImportedAssets;
+					GitAssetPostprocessors.OnPostprocessDeletedAssetsEvent += c.IssueOnPostprocessDeletedAssets;
+					GitAssetPostprocessors.OnPostprocessMovedAssetsEvent += c.IssueOnPostprocessMovedAssets;
 					return c;
 				});
 				injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
 				injectionHelper.Bind<GitManager>();
 				injectionHelper.Bind<GitSettingsJson>();
 				injectionHelper.Bind<GitSettingsManager>();
+				injectionHelper.Bind<GitAsyncManager>();
 
 				GitManager = injectionHelper.GetInstance<GitManager>();
 				GitManager.Callbacks.RepositoryCreate += OnRepositoryCreate;
 
 				GitUnityMenu.Init(GitManager);
 				GitResourceManager.Initilize();
-				GitOverlay.Initlize(GitManager);
+				GitOverlay.Initlize();
 
 				//credentials
 				injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
@@ -72,15 +80,18 @@ namespace UniGit
 				//helpers
 				injectionHelper.Bind<GitLfsHelper>();
 				injectionHelper.Bind<FileLinesReader>();
-
-				EditorApplication.delayCall += OnDelayedInit;
+				//project window overlays
+				injectionHelper.Bind<GitProjectOverlay>();
 
 				if (!Repository.IsValid(repoPath))
 				{
-					return;
+					EditorApplication.delayCall += OnDelayedInit;
 				}
-
-				Rebuild(injectionHelper);
+				else
+				{
+					Rebuild(injectionHelper);
+					EditorApplication.delayCall += OnDelayedInit;
+				}
 			}
 			finally
 			{
@@ -97,7 +108,6 @@ namespace UniGit
 			EditorApplication.delayCall += () =>
 			{
 				settingsManager.LoadOldSettingsFile();
-				GitManager.MarkDirty(true);
 			};
 
 			HookManager = injectionHelper.GetInstance<GitHookManager>();
@@ -105,8 +115,10 @@ namespace UniGit
 			ExternalManager = injectionHelper.GetInstance<GitExternalManager>();
 			CredentialsManager = injectionHelper.GetInstance<GitCredentialsManager>();
 			LfsHelper = injectionHelper.GetInstance<GitLfsHelper>();
+			AsyncManager = injectionHelper.GetInstance<GitAsyncManager>();
 
 			injectionHelper.GetInstance<GitAutoFetcher>();
+			injectionHelper.GetInstance<GitProjectOverlay>();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
 		}
@@ -127,6 +139,9 @@ namespace UniGit
 			{
 				Profiler.EndSample();
 			}
+
+			//call delayed call here after all loaded delayed calls have been made
+			GitManager.Callbacks.IssueDelayCall();
 		}
 
 		private static void OnRepositoryCreate()
@@ -136,7 +151,7 @@ namespace UniGit
 
 		private static void OnBeforeAssemblyReload()
 		{
-			if(GitManager != null) GitManager.Dispose();
+			
 		}
 
 	    public static T FindWindow<T>() where T : EditorWindow
@@ -159,7 +174,8 @@ namespace UniGit
 	        var editorWindow = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
 	        if (editorWindow != null)
 	        {
-	            return editorWindow;
+		        editorWindow.Show();
+				return editorWindow;
 	        }
 	        var newWindow = ScriptableObject.CreateInstance<T>();
             injectionHelper.Inject(newWindow);

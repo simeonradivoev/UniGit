@@ -23,11 +23,9 @@ namespace UniGit
 		public string RepoPath { get { return repoPath; } }
 
 		private Repository repository;
-		private StatusTreeClass statusTree;
 		private readonly GitSettingsJson gitSettings;
-		private static readonly Queue<Action> actionQueue = new Queue<Action>();	//queue for executing actions on main thread
+		private readonly Queue<Action> actionQueue = new Queue<Action>();	//queue for executing actions on main thread
 		private GitRepoStatus status;	//intermediate repository status cache with only a path and a meta change flag
-		private readonly object statusTreeLock = new object();
 		private readonly object statusRetriveLock = new object();
 		private bool repositoryDirty;	//is the whole repository dirty
 		private bool forceSingleThread;	//force single threaded update
@@ -39,13 +37,16 @@ namespace UniGit
 		private readonly GitCallbacks callbacks;
 		private readonly IGitPrefs prefs;
 		private readonly List<ISettingsAffector> settingsAffectors = new List<ISettingsAffector>();
+		private readonly GitAsyncManager asyncManager;
+		private readonly List<IGitWatcher> watchers = new List<IGitWatcher>();
 
 		[UniGitInject]
-		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs)
+		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs, GitAsyncManager asyncManager)
 		{
 			this.repoPath = repoPath;
 			this.callbacks = callbacks;
 			this.prefs = prefs;
+			this.asyncManager = asyncManager;
 			gitSettings = settings;
 			gitPath = UniGitPath.Combine(repoPath, ".git");
 
@@ -58,9 +59,18 @@ namespace UniGit
 			{
 				return;
 			}
-
-			repositoryDirty = true;
 			callbacks.EditorUpdate += OnEditorUpdate;
+			callbacks.DelayCall += OnDelayedCall;
+			//asset postprocessing
+			callbacks.OnWillSaveAssets += OnWillSaveAssets;
+			callbacks.OnPostprocessImportedAssets += OnPostprocessImportedAssets;
+			callbacks.OnPostprocessDeletedAssets += OnPostprocessDeletedAssets;
+			callbacks.OnPostprocessMovedAssets += OnPostprocessMovedAssets;
+		}
+
+		private void OnDelayedCall()
+		{
+			MarkDirty();
 		}
 
 		public void InitilizeRepository()
@@ -130,18 +140,24 @@ namespace UniGit
 			var updateStatus = GetUpdateStatus();
 			if (updateStatus == UpdateStatusEnum.Ready)
 			{
-				if ((repository == null || repositoryDirty))
+				CheckNullRepository();
+				if (CanUpdate())
 				{
-					Update(reloadDirty);
-					reloadDirty = false;
-					repositoryDirty = false;
-					dirtyFileQueue.Clear();
+					if (repositoryDirty)
+					{
+						Update(reloadDirty);
+						reloadDirty = false;
+						repositoryDirty = false;
+						dirtyFileQueue.Clear();
+
+					}
+					else if (dirtyFileQueue.Count > 0)
+					{
+						Update(reloadDirty || repository == null, dirtyFileQueue.ToArray());
+						dirtyFileQueue.Clear();
+					}
 				}
-				else if (dirtyFileQueue.Count > 0)
-				{
-					Update(reloadDirty || repository == null, dirtyFileQueue.ToArray());
-					dirtyFileQueue.Clear();
-				}
+
 			}
 
 			if (actionQueue.Count > 0)
@@ -160,13 +176,20 @@ namespace UniGit
 					}
 				}
 			}
+
+			watchers.RemoveAll(w => !w.IsValid);
+		}
+
+		private bool CanUpdate()
+		{
+			return !gitSettings.LazyMode || watchers.Any(watcher => watcher.IsValid && watcher.IsWatching);
 		}
 
 		private void Update(bool reloadRepository,string[] paths = null)
 		{
 			StartUpdating(paths);
 
-			if ((repository == null || reloadRepository) && IsValidRepo)
+			if (reloadRepository && IsValidRepo)
 			{
 				if (repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
@@ -177,6 +200,88 @@ namespace UniGit
 			{
 				if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
 				else RetreiveStatus(paths);
+			}
+		}
+
+		#region Asset Postprocessing
+
+		private void OnWillSaveAssets(string[] paths,ref string[] outputs)
+		{
+			PostprocessStage(paths);
+		}
+
+		private void OnPostprocessImportedAssets(string[] paths)
+		{
+			PostprocessStage(paths);
+		}
+
+		private void OnPostprocessDeletedAssets(string[] paths)
+		{
+			//automatic deletion is necessary even if AutoStage is off
+			PostprocessUnstage(paths);
+		}
+
+		private void OnPostprocessMovedAssets(string[] paths,string[] movedFrom)
+		{
+			PostprocessStage(paths);
+			//automatic deletion of previously moved asset is necessary even if AutoStage is off
+			PostprocessUnstage(movedFrom);
+		}
+
+		private void PostprocessStage(string[] paths)
+		{
+			if(repository == null || !IsValidRepo) return;
+			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
+			string[] pathsFinal = paths.Where(a => !IsEmptyFolder(a)).SelectMany(GetPathWithMeta).ToArray();
+			if (pathsFinal.Length > 0)
+			{
+				bool autoStage = gitSettings != null && gitSettings.AutoStage;
+				if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
+				{
+					if (autoStage)
+					{
+						AsyncStage(pathsFinal);
+					}
+					else
+					{
+						MarkDirty(pathsFinal);
+					}
+				}
+				else
+				{
+					if (autoStage) GitCommands.Stage(repository, pathsFinal);
+					MarkDirty(pathsFinal);
+				}
+			}
+		}
+
+		private void PostprocessUnstage(string[] paths)
+		{
+			if (repository == null || !IsValidRepo) return;
+			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
+			string[] pathsFinal = paths.SelectMany(GetPathWithMeta).ToArray();
+			if (pathsFinal.Length > 0)
+			{
+				if (gitSettings != null && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
+				{
+					AsyncUnstage(pathsFinal);
+				}
+				else
+				{
+					GitCommands.Unstage(repository, pathsFinal);
+					MarkDirty(pathsFinal);
+				}
+			}
+		}
+
+		#endregion
+
+		private void CheckNullRepository()
+		{
+			if (IsValidRepo && repository == null)
+			{
+				repository = new Repository(RepoPath);
+				callbacks.IssueOnRepositoryLoad(repository);
 			}
 		}
 
@@ -204,7 +309,6 @@ namespace UniGit
 				if(!dirtyFileQueue.Contains(fixedPath))
 					dirtyFileQueue.Add(fixedPath);
 			}
-			
 		}
 
 		private void RebuildStatus(string[] paths)
@@ -238,7 +342,7 @@ namespace UniGit
 
 		private void RetreiveStatusThreaded(string[] paths)
 		{
-			GitAsyncManager.QueueWorkerWithLock(() => { RetreiveStatus(paths, true); }, statusRetriveLock);
+			asyncManager.QueueWorkerWithLock(() => { RetreiveStatus(paths, true); }, statusRetriveLock);
 		}
 
 		private void RetreiveStatus(string[] paths)
@@ -256,20 +360,8 @@ namespace UniGit
 			{
 				if (!threaded) GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 				RebuildStatus(paths);
-				if (threaded)
-				{
-					actionQueue.Enqueue(() =>
-					{
-						callbacks.IssueUpdateRepository(status, paths);
-						UpdateStatusTreeThreaded(status);
-					});
-				}
-				else
-				{
-					GitProfilerProxy.EndSample();
-					callbacks.IssueUpdateRepository(status, paths);
-					UpdateStatusTree(status);
-				}
+				FinishUpdating(threaded, paths);
+				if(!threaded) GitProfilerProxy.EndSample();
 			}
 			catch (ThreadAbortException)
 			{
@@ -284,46 +376,12 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				if (threaded)
-				{
-					//mark dirty if threaded failed
-					actionQueue.Enqueue(() =>
-					{
-						FinishUpdating();
-						forceSingleThread = true;
-						MarkDirty();
-					});
-				}
-				else
-				{
-					FinishUpdating();
-				}
+				//mark dirty if thread failed
+				if (threaded) MarkDirty();
+				FinishUpdating(threaded, paths);
 
 				Debug.LogError("Could not retrive Git Status");
 				Debug.LogException(e);
-			}
-		}
-
-		private void UpdateStatusTreeThreaded(GitRepoStatus status)
-		{
-			GitAsyncManager.QueueWorkerWithLock(() => { UpdateStatusTree(status, true); }, statusTreeLock);
-		}
-
-		private void UpdateStatusTree(GitRepoStatus status,bool threaded = false)
-		{
-			try
-			{
-				var newStatusTree = new StatusTreeClass(this, status);
-				statusTree = newStatusTree;
-				ExecuteAction(RepaintProjectWidnow, threaded);
-			}
-			catch (Exception e)
-			{
-				Debug.LogException(e);
-			}
-			finally
-			{
-				ExecuteAction(FinishUpdating, threaded);
 			}
 		}
 
@@ -341,11 +399,26 @@ namespace UniGit
 			callbacks.IssueUpdateRepositoryStart();
 		}
 
-		private void FinishUpdating()
+		private void FinishUpdating(bool treaded, string[] paths)
+		{
+			if (treaded)
+			{
+				actionQueue.Enqueue(() =>
+				{
+					FinishUpdating(paths);
+				});
+			}
+			else
+			{
+				FinishUpdating(paths);
+			}
+		}
+
+		private void FinishUpdating(string[] paths)
 		{
 			isUpdating = false;
 			updatingFiles.Clear();
-			callbacks.IssueUpdateRepositoryFinish();
+			callbacks.IssueUpdateRepository(status, paths);
 		}
 
 		internal bool IsFileDirty(string path)
@@ -394,6 +467,16 @@ namespace UniGit
 			{
 				repository.Dispose();
 				repository = null;
+			}
+			if (callbacks != null)
+			{
+				callbacks.EditorUpdate -= OnEditorUpdate;
+				callbacks.DelayCall -= OnDelayedCall;
+				//asset postprocessing
+				callbacks.OnWillSaveAssets -= OnWillSaveAssets;
+				callbacks.OnPostprocessImportedAssets -= OnPostprocessImportedAssets;
+				callbacks.OnPostprocessDeletedAssets -= OnPostprocessDeletedAssets;
+				callbacks.OnPostprocessMovedAssets -= OnPostprocessMovedAssets;
 			}
 		}
 
@@ -491,7 +574,7 @@ namespace UniGit
 
 		public GitAsyncOperation AsyncStage(string[] paths)
 		{
-			var operation = GitAsyncManager.QueueWorker(() =>
+			var operation = asyncManager.QueueWorker(() =>
 			{
 			    GitCommands.Stage(repository,paths);
 			}, (o) =>
@@ -519,7 +602,7 @@ namespace UniGit
 
 		public GitAsyncOperation AsyncUnstage(string[] paths)
 		{
-			var operation = GitAsyncManager.QueueWorker(() =>
+			var operation = asyncManager.QueueWorker(() =>
 			{
 			    GitCommands.Unstage(repository,paths);
 			}, (o) =>
@@ -543,18 +626,20 @@ namespace UniGit
 				action.Invoke();
 			}
 		}
+
+		public void AddWatcher(IGitWatcher watcher)
+		{
+			if(watchers.Contains(watcher)) return;
+			watchers.Add(watcher);
+		}
+
+		public bool RemoveWatcher(IGitWatcher watcher)
+		{
+			return watchers.Remove(watcher);
+		}
 		#endregion
 
 		#region Static Helpers
-		public static void RepaintProjectWidnow()
-		{
-			Type type = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
-			var projectWindow = Resources.FindObjectsOfTypeAll(type).FirstOrDefault();
-			if (projectWindow != null)
-			{
-				((EditorWindow)projectWindow).Repaint();
-			}
-		}
 
 		public static bool IsEmptyFolderMeta(string path)
 		{
@@ -647,12 +732,12 @@ namespace UniGit
 
 		public void DisablePostprocessing()
 		{
-			prefs.SetBool("UniGit_DisablePostprocess",true);
+			prefs.SetBool(UnityEditorGitPrefs.DisablePostprocess, true);
 		}
 
 		public void EnablePostprocessing()
 		{
-			prefs.SetBool("UniGit_DisablePostprocess", false);
+			prefs.SetBool(UnityEditorGitPrefs.DisablePostprocess, false);
 		}
 
 		#region Getters and Setters
@@ -737,11 +822,6 @@ namespace UniGit
 			get { return repository; }
 		}
 
-		public StatusTreeClass StatusTree
-		{
-			get { return statusTree; }
-		}
-
 		public GitSettingsJson.ThreadingType Threading
 		{
 			get
@@ -770,9 +850,13 @@ namespace UniGit
 			get { return UniGitPath.Combine(gitPath,"UniGit", "Settings.json"); }
 		}
 
-		public GitRepoStatus LastStatus
+		public GitRepoStatus GetCachedStatus()
 		{
-			get { return status; }
+			if (status == null && gitSettings.LazyMode && !isUpdating)
+			{
+				repositoryDirty = true;
+			}
+			return status;
 		}
 
 		public Queue<Action> ActionQueue
@@ -869,124 +953,6 @@ namespace UniGit
 			}
 		}
 
-		#region Status Tree
-		public class StatusTreeClass
-		{
-			private Dictionary<string, StatusTreeEntry> entries = new Dictionary<string, StatusTreeEntry>();
-			private string currentPath;
-			private string[] currentPathArray;
-			private FileStatus currentStatus;
-			private readonly GitManager gitManager;
-
-			public StatusTreeClass(GitManager gitManager)
-			{
-				this.gitManager = gitManager;
-			}
-
-			public StatusTreeClass(GitManager gitManager,IEnumerable<GitStatusEntry> status) : this(gitManager)
-			{
-				Build(status);
-			}
-
-			private void Build(IEnumerable<GitStatusEntry> status)
-			{
-				foreach (var entry in status)
-				{
-					currentPath = entry.Path;
-					currentPathArray = entry.Path.Split('\\');
-					currentStatus = !gitManager.Settings.ShowEmptyFolders && IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.Status;
-					AddRecursive(0, entries);
-				}
-			}
-
-			private void AddRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
-			{
-				StatusTreeEntry entry;
-				string pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
-
-				//should a state change be marked at this level (inverse depth)
-				//bool markState = Settings.ProjectStatusOverlayDepth < 0 || (Mathf.Abs(currentPathArray.Length - entryNameIndex)) <= Math.Max(1, Settings.ProjectStatusOverlayDepth);
-				//markState = true;
-				if (entries.TryGetValue(pathChunk, out entry))
-				{
-					entry.State = entry.State.SetFlags(currentStatus, true);
-				}
-				else
-				{
-					entry = new StatusTreeEntry(entryNameIndex);
-					entry.State = entry.State.SetFlags(currentStatus);
-					entries.Add(pathChunk, entry);
-				}
-				//check if it's at a allowed depth for status forcing on folders
-				if (currentPathArray.Length - entryNameIndex < (gitManager.Settings.ProjectStatusOverlayDepth+1))
-				{
-					entry.forceStatus = true;
-				}
-				if (entryNameIndex < currentPathArray.Length - 1)
-				{
-					AddRecursive(entryNameIndex + 1, entry.SubEntiEntries);
-				}
-			}
-
-			public StatusTreeEntry GetStatus(string path)
-			{
-				StatusTreeEntry entry;
-				GetStatusRecursive(0, path.Split(new[] {UniGitPath.UnityDeirectorySeparatorChar}, StringSplitOptions.RemoveEmptyEntries), entries, out entry);
-				return entry;
-			}
-
-			private void GetStatusRecursive(int entryNameIndex, string[] path, Dictionary<string, StatusTreeEntry> entries, out StatusTreeEntry entry)
-			{
-				if (path.Length <= 0)
-				{
-					entry = null;
-					return;
-				}
-				StatusTreeEntry entryTmp;
-				if (entries.TryGetValue(path[entryNameIndex], out entryTmp))
-				{
-					if (entryNameIndex < path.Length - 1)
-					{
-						GetStatusRecursive(entryNameIndex + 1, path, entryTmp.SubEntiEntries, out entry);
-						return;
-					}
-					entry = entryTmp;
-					return;
-				}
-
-				entry = null;
-			}
-		}
-
-		public class StatusTreeEntry
-		{
-			private Dictionary<string, StatusTreeEntry> subEntiEntries = new Dictionary<string, StatusTreeEntry>();
-			internal bool forceStatus;
-			private readonly int depth;
-			public FileStatus State { get; set; }
-
-			public StatusTreeEntry(int depth)
-			{
-				this.depth = depth;
-			}
-
-			public int Depth
-			{
-				get { return depth; }
-			}
-
-			public bool ForceStatus
-			{
-				get { return forceStatus; }
-			}
-
-			public Dictionary<string, StatusTreeEntry> SubEntiEntries
-			{
-				get { return subEntiEntries; }
-				set { subEntiEntries = value; }
-			}
-		}
-
 		public enum UpdateStatusEnum
 		{
 			Ready,
@@ -997,6 +963,5 @@ namespace UniGit
 			UpdatingAssetDatabase,
 			Updating
 		}
-		#endregion
 	}
 }

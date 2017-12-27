@@ -21,7 +21,7 @@ namespace UniGit.Settings
 			if (settings == null) return;
 
 			EditorGUI.BeginChangeCheck();
-			settings.ExternalsType = (GitSettingsJson.ExternalsTypeEnum)EditorGUILayout.EnumMaskField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), settings.ExternalsType);
+			settings.ExternalsType = (GitSettingsJson.ExternalsTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), settings.ExternalsType);
 			if (EditorGUI.EndChangeCheck())
 			{
 				settings.MarkDirty();

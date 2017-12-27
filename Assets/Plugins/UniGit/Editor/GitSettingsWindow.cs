@@ -70,9 +70,10 @@ namespace UniGit
 			OnGitUpdate(null, null);
 		}
 
-		[UsedImplicitly]
-		private void OnUnfocus()
+		protected override void OnLostFocus()
 		{
+			base.OnLostFocus();
+			if (currentTab != null) currentTab.OnLostFocus();
 			LoseFocus();
 		}
 
@@ -191,6 +192,12 @@ namespace UniGit
 					return tabs[tabIndex];
 				return null;
 			}
+		}
+
+		//we don't have any need to Git Status in settings
+		public override bool IsWatching
+		{
+			get { return false; }
 		}
 	}
 }
