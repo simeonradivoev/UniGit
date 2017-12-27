@@ -1178,6 +1178,7 @@ namespace UniGit
 		public void AddItemsToMenu(GenericMenu menu)
 		{
 			BuildCommitMenu(menu);
+			menu.AddItem(new GUIContent("Reload"),false, ReloadCallback);
 			menu.AddItem(new GUIContent("Donate"),false, ()=>{GitLinks.GoTo(GitLinks.Donate);});
 			menu.AddItem(new GUIContent("Help"),false, ()=>{GitLinks.GoTo(GitLinks.DiffWindowHelp);});
 		}
@@ -1276,7 +1277,7 @@ namespace UniGit
 					editMenu.AddItem(new GUIContent("Resolve (Using Ours)"), false, ResolveConflictsOursCallback, entries[0].Path);
 					editMenu.AddItem(new GUIContent("Resolve (Using Theirs)"), false, ResolveConflictsTheirsCallback, entries[0].Path);
 				}
-				else
+				else if(!selectedFlags.IsFlagSet(FileStatus.Ignored))
 				{
 					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 					{
@@ -1297,11 +1298,20 @@ namespace UniGit
 					{
 						editMenu.AddItem(new GUIContent("Difference with previous version", diffIcon), false, () => { SeeDifferencePrevAuto(entries[0]); });
 					}
-					
+				}
+				else
+				{
+					editMenu.AddDisabledItem(new GUIContent("Difference", diffIcon));
+					editMenu.AddDisabledItem(new GUIContent("Difference with previous version", diffIcon));
 				}
 				editMenu.AddSeparator("");
 			}
-			editMenu.AddItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow), false, RevertSelectedCallback);
+
+			if(selectedFlags.IsFlagSet(FileStatus.Ignored))
+				editMenu.AddDisabledItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow));
+			else
+				editMenu.AddItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow), false, RevertSelectedCallback);
+
 			if (entries.Length == 1)
 			{
 				editMenu.AddSeparator("");
