@@ -5,26 +5,28 @@ using System.Linq;
 using LibGit2Sharp;
 using UniGit.Filters;
 using UniGit.Settings;
+using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
 {
-	public class GitLfsManager : ISettingsAffector
+	public class GitLfsManager : ISettingsAffector, IDisposable
 	{
 		private readonly bool isInstalled;
 		private bool initilized;
 		private readonly string version;
-		private FilterRegistration lfsRegistration;
 		private GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
 		private readonly GitManager gitManager;
+		private readonly GitCallbacks gitCallbacks;
 
 		[UniGitInject]
-		public GitLfsManager(GitManager gitManager,GitCallbacks callbacks)
+		public GitLfsManager(GitManager gitManager,GitCallbacks gitCallbacks)
 		{
 			this.gitManager = gitManager;
-			callbacks.UpdateRepository += (s,p) => { UpdateInitilized(); };
+			this.gitCallbacks = gitCallbacks;
+			gitCallbacks.UpdateRepository += OnUpdateRepository;
 			gitManager.AddSettingsAffector(this);
 
 			try
@@ -44,6 +46,11 @@ namespace UniGit
 				RegisterFilter();
 				Update();
 			}
+		}
+
+		private void OnUpdateRepository(GitRepoStatus status, string[] paths)
+		{
+			UpdateInitilized();
 		}
 
 		public void Update()
@@ -148,6 +155,12 @@ namespace UniGit
 		public bool CheckInitialized()
 		{
 			return Directory.Exists(UniGitPath.Combine(gitManager.RepoPath, ".git", "lfs")) && File.Exists(UniGitPath.Combine(gitManager.RepoPath,".git","hooks", "pre-push"));
+		}
+
+		public void Dispose()
+		{
+			if(gitCallbacks != null) gitCallbacks.UpdateRepository -= OnUpdateRepository;
+			if(gitManager != null) gitManager.RemoveSettingsAffector(this);
 		}
 
 		public bool Initilized

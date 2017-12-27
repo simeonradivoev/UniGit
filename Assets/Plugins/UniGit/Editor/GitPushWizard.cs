@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using LibGit2Sharp.Handlers;

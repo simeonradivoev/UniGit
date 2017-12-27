@@ -1,4 +1,5 @@
-﻿using LibGit2Sharp;
+﻿using JetBrains.Annotations;
+using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace UniGit
 			this.gitManager = gitManager;
 		}
 
+		[UsedImplicitly]
 		private void OnEnable()
 		{
             GitWindows.AddWindow(this);
@@ -24,7 +26,8 @@ namespace UniGit
 			titleContent = new GUIContent("Stash Save",GitOverlay.icons.stashIcon.image);
 		}
 
-	    private void OnDisable()
+		[UsedImplicitly]
+		private void OnDisable()
 	    {
 	        GitWindows.RemoveWindow(this);
         }
@@ -37,6 +40,7 @@ namespace UniGit
 			return false;
 		}
 
+		[UsedImplicitly]
 		private void OnWizardCreate()
 		{
 			gitManager.Repository.Stashes.Add(gitManager.Signature, stashMessage, stashModifiers);

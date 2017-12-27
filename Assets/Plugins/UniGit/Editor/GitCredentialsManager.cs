@@ -12,7 +12,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitCredentialsManager
+	public class GitCredentialsManager : IDisposable
 	{
 		private readonly ICredentialsAdapter[] adapters;
 		private readonly GUIContent[] adapterNames;
@@ -23,17 +23,19 @@ namespace UniGit
 		private GitCredentialsJson gitCredentials;
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
+		private GitCallbacks gitCallbacks;
 
 		[UniGitInject]
-		public GitCredentialsManager(GitManager gitManager,GitSettingsJson gitSettings,List<ICredentialsAdapter> adapters)
+		public GitCredentialsManager(GitManager gitManager,GitSettingsJson gitSettings,List<ICredentialsAdapter> adapters, GitCallbacks gitCallbacks)
 		{
 			this.gitSettings = gitSettings;
 			this.gitManager = gitManager;
 			this.adapters = adapters.ToArray();
+			this.gitCallbacks = gitCallbacks;
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 			adapterIds = adapters.Select(GetAdapterId).ToArray();
 
-			EditorApplication.update += EditorUpdate;
+			gitCallbacks.EditorUpdate += EditorUpdate;
 
 			LoadGitCredentials();
 
@@ -414,6 +416,11 @@ namespace UniGit
 				entry.EncryptPassword(password);
 				gitCredentials.MarkDirty();
 			}
+		}
+
+		public void Dispose()
+		{
+			if(gitCallbacks != null) gitCallbacks.EditorUpdate -= EditorUpdate;
 		}
 
 		public GitCredentialsJson GitCredentials

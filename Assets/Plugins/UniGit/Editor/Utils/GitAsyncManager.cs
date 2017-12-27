@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
 namespace UniGit.Utils
 {
-	public class GitAsyncManager
+	public class GitAsyncManager : IDisposable
 	{
-		private List<GitAsyncOperation> activeOperations;
+		private readonly List<GitAsyncOperation> activeOperations;
+		private readonly GitCallbacks gitCallbacks;
 
 		[UniGitInject]
-		public GitAsyncManager(GitCallbacks callbacks)
+		public GitAsyncManager(GitCallbacks gitCallbacks)
 		{
+			this.gitCallbacks = gitCallbacks;
 			activeOperations = new List<GitAsyncOperation>();
-			callbacks.EditorUpdate += OnEditorUpdate;
+			gitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
 
 		public GitAsyncOperation QueueWorker<T>(Action<T> waitCallback,T state, Action<GitAsyncOperation> onComplete)
@@ -268,6 +269,11 @@ namespace UniGit.Utils
 					}
 				}
 			}
+		}
+
+		public void Dispose()
+		{
+			if(gitCallbacks != null) gitCallbacks.EditorUpdate -= OnEditorUpdate;
 		}
 	}
 }

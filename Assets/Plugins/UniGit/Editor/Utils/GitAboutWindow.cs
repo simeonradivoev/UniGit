@@ -1,4 +1,5 @@
-﻿using LibGit2Sharp;
+﻿using JetBrains.Annotations;
+using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ namespace UniGit.Utils
 	{
 		private string gitVersion;
 
+		[UsedImplicitly]
 		private void OnEnable()
 		{
 			GetGitVersion();
@@ -33,6 +35,7 @@ namespace UniGit.Utils
 			process.Dispose();
 		}
 
+		[UsedImplicitly]
 		private void OnGUI()
 		{
 			var version = GlobalSettings.Version;

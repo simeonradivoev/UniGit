@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 
 namespace UniGit
 {
-	public class GitProjectOverlay
+	public class GitProjectOverlay : IDisposable
 	{
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
@@ -19,9 +19,10 @@ namespace UniGit
 		private StatusTreeClass statusTree;
 		private readonly object statusTreeLock = new object();
 		private readonly GitAsyncManager asyncManager;
+		private readonly GitCallbacks gitCallbacks;
 
 		[UniGitInject]
-		public GitProjectOverlay(GitManager gitManager,GitCallbacks callbacks,GitSettingsJson gitSettings, GitAsyncManager asyncManager)
+		public GitProjectOverlay(GitManager gitManager,GitCallbacks gitCallbacks, GitSettingsJson gitSettings, GitAsyncManager asyncManager)
 		{
 			if (iconStyle == null)
 			{
@@ -36,8 +37,9 @@ namespace UniGit
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
 			this.asyncManager = asyncManager;
-			callbacks.ProjectWindowItemOnGUI += CustomIcons;
-			callbacks.UpdateRepository += OnUpdateRepository;
+			this.gitCallbacks = gitCallbacks;
+			gitCallbacks.ProjectWindowItemOnGUI += CustomIcons;
+			gitCallbacks.UpdateRepository += OnUpdateRepository;
 		}
 
 		private void OnUpdateRepository(GitRepoStatus status,string[] paths)
@@ -100,6 +102,12 @@ namespace UniGit
 			{
 				Debug.LogException(e);
 			}
+		}
+
+		public void Dispose()
+		{
+			gitCallbacks.ProjectWindowItemOnGUI -= CustomIcons;
+			gitCallbacks.UpdateRepository -= OnUpdateRepository;
 		}
 
 		public StatusTreeClass StatusTree

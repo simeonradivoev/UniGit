@@ -1,0 +1,8 @@
+{
+    "name": "UniGit",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

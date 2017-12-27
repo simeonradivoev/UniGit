@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace UniGit.Utils
@@ -7,6 +8,7 @@ namespace UniGit.Utils
 	{
 		internal Action OnBeforeReloadAction;
 
+		[UsedImplicitly]
 		private void OnDisable()
 		{
 			if(OnBeforeReloadAction != null) OnBeforeReloadAction.Invoke();

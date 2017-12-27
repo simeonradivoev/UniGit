@@ -7,18 +7,20 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitAutoFetcher
+	public class GitAutoFetcher : IDisposable
 	{
 		private readonly GitCredentialsManager credentialsManager;
 		private readonly GitManager gitManager;
+		private readonly GitCallbacks gitCallbacks;
 		private bool needsFetch;
 
 		[UniGitInject]
-		public GitAutoFetcher(GitManager gitManager,GitCredentialsManager credentialsManager,GitCallbacks callbacks)
+		public GitAutoFetcher(GitManager gitManager,GitCredentialsManager credentialsManager,GitCallbacks gitCallbacks)
 		{
 			this.gitManager = gitManager;
 			this.credentialsManager = credentialsManager;
-			callbacks.EditorUpdate += OnEditorUpdate;
+			this.gitCallbacks = gitCallbacks;
+			gitCallbacks.EditorUpdate += OnEditorUpdate;
 			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 		}
 
@@ -69,6 +71,11 @@ namespace UniGit
 			}
 			GitProfilerProxy.EndSample();
 			return false;
+		}
+
+		public void Dispose()
+		{
+			if(gitCallbacks != null) gitCallbacks.EditorUpdate -= OnEditorUpdate;
 		}
 	}
 }

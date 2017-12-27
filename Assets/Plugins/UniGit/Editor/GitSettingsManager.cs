@@ -3,22 +3,24 @@ using System.IO;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-#pragma warning disable 618
+#pragma warning disable 618   //disables warrnings for the use of depricated GitSettings
 
 namespace UniGit
 {
-	public class GitSettingsManager
+	public class GitSettingsManager : IDisposable
 	{
-		private GitSettingsJson settings;
-		private string settingsPath;
+		private readonly GitSettingsJson settings;
+		private readonly GitCallbacks gitCallbacks;
+		private readonly string settingsPath;
 
 		[UniGitInject]
-		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks callbacks)
+		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks gitCallbacks)
 		{
 			this.settings = settings;
 			this.settingsPath = settingsPath;
+			this.gitCallbacks = gitCallbacks;
 
-			callbacks.EditorUpdate += OnEditorUpdate;
+			gitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
 
 		private void OnEditorUpdate()
@@ -85,6 +87,11 @@ namespace UniGit
 				Debug.LogError("Could not serialize GitSettingsJson to json file at: " + settingsFilePath);
 				Debug.LogException(e);
 			}
+		}
+
+		public void Dispose()
+		{
+			if (gitCallbacks != null) gitCallbacks.EditorUpdate -= OnEditorUpdate;
 		}
 	}
 }

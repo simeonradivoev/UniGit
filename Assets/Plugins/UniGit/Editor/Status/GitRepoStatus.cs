@@ -7,7 +7,7 @@ namespace UniGit.Status
 {
 	public class GitRepoStatus : IEnumerable<GitStatusEntry>
 	{
-		private List<GitStatusEntry> entries = new List<GitStatusEntry>();
+		private readonly List<GitStatusEntry> entries = new List<GitStatusEntry>();
 
 		public GitRepoStatus(RepositoryStatus status)
 		{

@@ -8,9 +8,9 @@ namespace UniGit.Utils
 {
 	public class GitLfsHelper
 	{
-		private FileLinesReader fileLinesReader;
-		private string repoPath;
-		private List<Regex> lfsFilters;
+		private readonly FileLinesReader fileLinesReader;
+		private readonly string repoPath;
+		private readonly List<Regex> lfsFilters;
 
 		[UniGitInject]
 		public GitLfsHelper(string repoPath, FileLinesReader fileLinesReader)

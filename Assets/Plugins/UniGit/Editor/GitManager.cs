@@ -16,7 +16,7 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.2.3";
+		public const string Version = "1.2.4";
 
 		private readonly string repoPath;
 		private readonly string gitPath;
