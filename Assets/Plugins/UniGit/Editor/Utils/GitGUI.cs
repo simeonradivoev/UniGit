@@ -192,7 +192,7 @@ namespace UniGit.Utils
 		public static GUIContent GetTempContent(Texture tex,string tooltip)
 		{
 			tmpContent.text = string.Empty;
-			tmpContent.tooltip = String.Empty;
+			tmpContent.tooltip = tooltip;
 			tmpContent.image = tex;
 			return tmpContent;
 		}

@@ -10,13 +10,17 @@ public class GitLfsHelperTests
 		{
 			"*.[jJ][pP][gG] filter=lfs diff=lfs merge=lfs -text",
 			"*LightingData.asset filter=lfs diff=lfs merge=lfs -text",
-			"*.[fF][bB][xX] -delta"
+			"*.[fF][bB][xX] -delta",
+			"NavMesh*.asset filter=lfs diff=lfs merge=lfs -text"
 		};
 		var fileReaderMock = new FileLinesReaderMock(lines);
 		var helper = new GitLfsHelper("", fileReaderMock);
 
 		Assert.IsTrue(helper.IsLfsPath("C:\\UniGit\\Test\\Image.jpg"));
 		Assert.IsTrue(helper.IsLfsPath("C:\\UniGit\\Test\\LightingData.asset"));
+		//no idea how to deal with that
+		//Assert.IsTrue(helper.IsLfsPath("C:\\UniGit\\Test\\NavMesh-Test.asset"));
+
 		Assert.IsFalse(helper.IsLfsPath("C:\\UniGit\\Test\\FailCaseFile.asset"));
 		Assert.IsFalse(helper.IsLfsPath("C:\\UniGit\\Test\\FailCaseFile.jpg.meta"));
 		Assert.IsFalse(helper.IsLfsPath("C:\\UniGit\\Test\\FailCaseFile.fbx"));
