@@ -56,6 +56,13 @@ namespace UniGit.Utils
 
 		public object CreateInstance(Type type)
 		{
+			if (type == typeof(ScriptableObject) || typeof(ScriptableObject).IsSubclassOf(type))
+			{
+				var instance = ScriptableObject.CreateInstance(type);
+				Inject(instance);
+				return instance;
+			}
+
 			var constructor = GetInjectConstructor(type);
 			if (constructor != null)
 			{
@@ -66,6 +73,7 @@ namespace UniGit.Utils
 					args[i] = HandleParameter(parameterInfos[i], type);
 				}
 				object instance = constructor.Invoke(args);
+				Inject(instance);
 				return instance;
 			}
 			return Activator.CreateInstance(type);

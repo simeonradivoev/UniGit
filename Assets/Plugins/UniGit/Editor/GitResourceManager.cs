@@ -9,18 +9,13 @@ using UnityEngine.Profiling;
 
 namespace UniGit
 {
-	public class GitResourceManager
+	public class GitResourceManager : IGitResourceManager, IDisposable
 	{
-		private Dictionary<string,Texture2D> textures;
+		private readonly Dictionary<string,Texture2D> textures;
 
 		public GitResourceManager()
 		{
 			textures = new Dictionary<string, Texture2D>();
-			Initilize();
-		}
-
-		void Initilize()
-		{
 			Profiler.BeginSample("UniGit Resource Loading");
 			try
 			{
@@ -44,7 +39,7 @@ namespace UniGit
 			return null;
 		}
 
-		public void LoadDLLResources()
+		private void LoadDLLResources()
 		{
 			try
 			{
@@ -99,6 +94,15 @@ namespace UniGit
 			img.Apply();
 
 			return img;
+		}
+
+		public void Dispose()
+		{
+			foreach (var texture in textures)
+			{
+				UnityEngine.Object.DestroyImmediate(texture.Value,false);
+			}
+			textures.Clear();
 		}
 	}
 }

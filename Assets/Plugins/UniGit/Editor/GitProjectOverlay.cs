@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LibGit2Sharp;
+using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
@@ -16,6 +17,8 @@ namespace UniGit
 	/// </summary>
 	public class GitProjectOverlay : IDisposable, IGitWatcher
 	{
+		public const string ForceUpdateKey = "ForceUpdateProjectOverlay";
+
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GUIStyle iconStyle;
@@ -24,6 +27,7 @@ namespace UniGit
 		private readonly GitCallbacks gitCallbacks;
 		private readonly GitReflectionHelper reflectionHelper;
 		private readonly GitOverlay gitOverlay;
+		private readonly IGitPrefs prefs;
 
 		private StatusTreeClass statusTree;
 		private bool isDirty = true;
@@ -36,7 +40,8 @@ namespace UniGit
 			GitSettingsJson gitSettings, 
 			GitAsyncManager asyncManager,
 			GitReflectionHelper reflectionHelper,
-			GitOverlay gitOverlay)
+			GitOverlay gitOverlay,
+			IGitPrefs prefs)
 		{
 			if (iconStyle == null)
 			{
@@ -54,6 +59,7 @@ namespace UniGit
 			this.gitCallbacks = gitCallbacks;
 			this.reflectionHelper = reflectionHelper;
 			this.gitOverlay = gitOverlay;
+			this.prefs = prefs;
 
 			gitManager.AddWatcher(this);
 
@@ -75,7 +81,7 @@ namespace UniGit
 
 		private void OnEditorUpdate()
 		{
-			if (isDirty && !isUpdating && projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke))
+			if (isDirty && !isUpdating && ((projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke)) | prefs.GetBool(ForceUpdateKey,false)))
 			{
 				var cachedStatus = gitManager.GetCachedStatus();
 				if (cachedStatus.Initilzied)

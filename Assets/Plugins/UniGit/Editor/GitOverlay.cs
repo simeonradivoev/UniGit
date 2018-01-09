@@ -45,7 +45,7 @@ namespace UniGit
 		private Icons m_icons;
 
 		[UniGitInject]
-		public GitOverlay(GitResourceManager resourceManager)
+		public GitOverlay(IGitResourceManager resourceManager)
 		{
 			m_icons = new Icons()
 			{

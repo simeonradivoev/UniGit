@@ -62,7 +62,7 @@ namespace UniGit
 				injectionHelper.Bind<GitAsyncManager>();
 				injectionHelper.Bind<GitFileWatcher>().NonLazy();
 				injectionHelper.Bind<GitReflectionHelper>();
-				injectionHelper.Bind<GitResourceManager>();
+				injectionHelper.Bind<IGitResourceManager>().To<GitResourceManager>();
 				injectionHelper.Bind<GitOverlay>();
 				injectionHelper.Bind<GitAutoFetcher>().NonLazy();
 
@@ -112,6 +112,8 @@ namespace UniGit
 			};
 
 			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
+			var uniGitData = injectionHelper.GetInstance<UniGitData>();
+			uniGitData.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
 			injectionHelper.CreateNonLazy();
 
@@ -142,7 +144,7 @@ namespace UniGit
 
 		private static void OnBeforeAssemblyReload()
 		{
-			
+			injectionHelper.Dispose();
 		}
 
 		private static UniGitData GetUniGitData()

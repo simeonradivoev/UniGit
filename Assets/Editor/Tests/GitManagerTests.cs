@@ -2,6 +2,7 @@
 using LibGit2Sharp;
 using NUnit.Framework;
 using UniGit;
+using UniGit.Settings;
 using UniGit.Utils;
 using UnityEngine;
 
@@ -43,6 +44,8 @@ public class GitManagerTests : TestRepoFixture
         }
 	    injectionHelper.Bind<GitProjectOverlay>();
 	    var projectOverlays = injectionHelper.GetInstance<GitProjectOverlay>();
+	    var prefs = injectionHelper.GetInstance<IGitPrefs>();
+		prefs.SetBool(GitProjectOverlay.ForceUpdateKey,true);
 
 		Assert.IsTrue(File.Exists(lockedFilePath));
         GitCommands.Stage(gitManager.Repository, lockedFilePathName);
