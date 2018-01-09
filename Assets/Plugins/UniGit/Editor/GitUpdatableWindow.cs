@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
@@ -11,11 +10,10 @@ namespace UniGit
 	public abstract class GitUpdatableWindow : EditorWindow, IGitWatcher
 	{
 		//used an object because the EditorWindow saves Booleans even if private
-		[NonSerialized] private object initilized;
+		[NonSerialized] private object initialized;
 		[NonSerialized] private object isRepositoryDirty;
 		[NonSerialized] protected GitManager gitManager;
-		protected GitRepoStatus cachedStatus;
-		private Func<bool> hasFocusFunc;
+		[NonSerialized] protected GitReflectionHelper reflectionHelper;
 
 		protected virtual void OnEnable()
 		{
@@ -25,7 +23,7 @@ namespace UniGit
 		}
 
         [UniGitInject]
-		private void Construct(GitManager gitManager)
+		private void Construct(GitManager gitManager,GitReflectionHelper reflectionHelper)
 		{
 			if (gitManager == null)
 			{
@@ -38,6 +36,7 @@ namespace UniGit
 			}
 			this.gitManager = gitManager;
 			this.gitManager.AddWatcher(this);
+			this.reflectionHelper = reflectionHelper;
 			Subscribe(gitManager.Callbacks);
 		}
 
@@ -85,8 +84,7 @@ namespace UniGit
 			//the window is docked and has become hidden reset the initialization
 			if (!HasFocus)
 			{
-				initilized = null;
-				cachedStatus = null;
+				initialized = null;
 			}
 		}
 
@@ -96,7 +94,7 @@ namespace UniGit
 
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
-			if (initilized == null || !gitManager.IsValidRepo) return;
+			if (initialized == null || !gitManager.IsValidRepo) return;
 			OnGitUpdate(status, paths);
 		}
 
@@ -109,13 +107,12 @@ namespace UniGit
 		private void OnEditorUpdateInternal()
 		{
 			//Only initialize if the editor Window is focused
-			if (HasFocus && initilized == null && gitManager.Repository != null)
+			if (HasFocus && initialized == null && gitManager.Repository != null)
 			{
 				var gitManagerStatus = gitManager.GetCachedStatus();
-				if (gitManagerStatus != null)
+				if (gitManagerStatus.Initilzied)
 				{
-					cachedStatus = gitManagerStatus;
-					initilized = true;
+					initialized = true;
 					if (!gitManager.IsValidRepo) return;
 					OnInitialize();
 					OnGitManagerUpdateRepositoryInternal(gitManagerStatus, null);
@@ -156,13 +153,16 @@ namespace UniGit
 
 		#endregion
 
+		public bool IsInitialized
+		{
+			get { return initialized != null; }
+		}
+
 		public bool HasFocus
 		{
 			get
 			{
-				if (hasFocusFunc == null)
-					hasFocusFunc = (Func<bool>)Delegate.CreateDelegate(typeof(Func<bool>), this, typeof(EditorWindow).GetProperty("hasFocus", BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(true));
-				return hasFocusFunc.Invoke();
+				return reflectionHelper.HasFocusFucntion.Invoke(this);
 			}
 		}
 

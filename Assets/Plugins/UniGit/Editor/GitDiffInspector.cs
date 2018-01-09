@@ -31,6 +31,7 @@ namespace UniGit
 		private bool isResizingFileWindow;
 		private bool synataxHighlight;
 		private GitManager gitManager;
+		private GitOverlay gitOverlay;
 
 		private class Styles
 		{
@@ -53,9 +54,10 @@ namespace UniGit
 		private UnityEngine.Object asset;
 
         [UniGitInject]
-		private void Construct(GitManager gitManager)
+		private void Construct(GitManager gitManager,GitOverlay gitOverlay)
 		{
 			this.gitManager = gitManager;
+			this.gitOverlay = gitOverlay;
 		}
 
 		private void OnEnable()
@@ -162,7 +164,17 @@ namespace UniGit
 		private void BuildChangeSections(Commit commit)
 		{
 			int lastIndexFileLine = 0;
-			Stream indexFileContent = File.OpenRead(UniGitPath.Combine(gitManager.RepoPath,path));
+			Stream indexFileContent;
+			string indexFilePath = UniGitPath.Combine(gitManager.RepoPath, path);
+			if (File.Exists(indexFilePath))
+			{
+				indexFileContent = File.OpenRead(indexFilePath);
+			}
+			else
+			{
+				indexFileContent = new MemoryStream();
+			}
+
 			StreamReader indexFileReader = new StreamReader(indexFileContent);
 
 			var lines = GetLines(commit);
@@ -524,7 +536,7 @@ namespace UniGit
 			}
 			GUILayout.FlexibleSpace();
 			GUILayout.Label(GitGUI.GetTempContent(path));
-			if (GitGUI.LinkButtonLayout(GitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
+			if (GitGUI.LinkButtonLayout(gitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
 				GitLinks.GoTo(GitLinks.Donate);
 			}
@@ -632,14 +644,14 @@ namespace UniGit
 
 			if (Event.current.type == EventType.MouseDrag && (Event.current.button == 2 || (Event.current.button == 0 && Event.current.shift)))
 			{
-				Vector2 scrollDelta = new Vector2(Event.current.delta.x / totalLineWidth, Event.current.delta.y * 0.5f);
+				Vector2 scrollDelta = new Vector2(Event.current.delta.x / scrollMaxHorizontal * 0.5f, Event.current.delta.y * 0.5f);
 				scrollHorizontalNormal -= scrollDelta.x;
 				scrollVertical -= scrollDelta.y;
 				Repaint();
 			}
 
 			GUI.color = new Color(0, 0, 0, 0.2f);
-			GUI.DrawTexture(new Rect((scrollHorizontalNormal * (totalLineWidth - otherRect.width)), 0, 1, totalLinesHeight), Texture2D.whiteTexture);
+			GUI.DrawTexture(new Rect((scrollHorizontalNormal * (totalLineWidth - rect.width)), 0, 1, totalLinesHeight), Texture2D.whiteTexture);
 			GUI.DrawTexture(new Rect(otherRect.width + (scrollHorizontalNormal * (totalLineWidth - otherRect.width)) - 1, 0, 1, totalLinesHeight), Texture2D.whiteTexture);
 			GUI.color = Color.white;
 

@@ -131,6 +131,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitFetchWizard.cs">
       <Link>GitFetchWizard.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitFileWatcher.cs">
+      <Link>GitFileWatcher.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitHelper.cs">
       <Link>GitHelper.cs</Link>
     </Compile>
@@ -266,9 +269,6 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\UniGitLoader.cs">
       <Link>UniGitLoader.cs</Link>
     </Compile>
-    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\AssemblyReloadScriptableChecker.cs">
-      <Link>AssemblyReloadScriptableChecker.cs</Link>
-    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\ContextGenericMenuPopup.cs">
       <Link>ContextGenericMenuPopup.cs</Link>
     </Compile>
@@ -305,6 +305,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitProfilerProxy.cs">
       <Link>GitProfilerProxy.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitReflectionHelper.cs">
+      <Link>GitReflectionHelper.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\IGenericMenu.cs">
       <Link>IGenericMenu.cs</Link>
     </Compile>
@@ -316,6 +319,9 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\StreamExtensions.cs">
       <Link>StreamExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\UniGitData.cs">
+      <Link>UniGitData.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\UniGitInject.cs">
       <Link>UniGitInject.cs</Link>

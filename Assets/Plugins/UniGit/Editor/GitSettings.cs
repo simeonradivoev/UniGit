@@ -37,7 +37,7 @@ namespace UniGit
 		
 
 		[Flags]
-		[SerializeField]
+		[Serializable]
 		public enum ExternalsTypeEnum
 		{
 			Pull = 1 << 0,
@@ -72,6 +72,7 @@ namespace UniGit
 		public bool ReadFromFile;
 		public bool DisableGitLFS;
 		public bool LazyMode;
+		public bool TrackSystemFiles = true;
 		private bool isDirty;
 
 		[Flags]

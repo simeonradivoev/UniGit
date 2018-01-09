@@ -7,12 +7,20 @@ namespace UniGit.Utils
 {
 	public class GitAboutWindow : EditorWindow
 	{
+		private GitOverlay gitOverlay;
 		private string gitVersion;
 
 		[UsedImplicitly]
 		private void OnEnable()
 		{
+			GitWindows.AddWindow(this);
 			GetGitVersion();
+		}
+
+		[UniGitInject]
+		private void Construct(GitOverlay gitOverlay)
+		{
+			this.gitOverlay = gitOverlay;
 		}
 
 		private void GetGitVersion()
@@ -55,13 +63,13 @@ namespace UniGit.Utils
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.GetTempContent("Donate", GitOverlay.icons.donateSmall.image, "Support UniGit"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Donate", gitOverlay.icons.donateSmall.image, "Support UniGit"), "CN CountBadge"))
 			{
 				GitLinks.GoTo(GitLinks.Donate);
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
 			EditorGUILayout.Space();
-			if (GUILayout.Button(GitGUI.GetTempContent("Source", GitOverlay.icons.starSmall.image, "View Source on GitHub"), "CN CountBadge"))
+			if (GUILayout.Button(GitGUI.GetTempContent("Source", gitOverlay.icons.starSmall.image, "View Source on GitHub"), "CN CountBadge"))
 			{
 				GitLinks.GoTo(GitLinks.Homepage);
 			}

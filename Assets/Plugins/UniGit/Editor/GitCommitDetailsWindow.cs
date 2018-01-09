@@ -17,12 +17,14 @@ namespace UniGit
 		private Vector2 scroll;
 		private readonly GitManager gitManager;
 		private readonly GitExternalManager externalManager;
+		private readonly GitOverlay gitOverlay;
 
-		public GitCommitDetailsWindow(GitManager gitManager,GitExternalManager externalManager,Commit commit)
+		public GitCommitDetailsWindow(GitManager gitManager,GitExternalManager externalManager,Commit commit,GitOverlay gitOverlay)
 		{
 			this.gitManager = gitManager;
 			this.commit = commit;
 			this.externalManager = externalManager;
+			this.gitOverlay = gitOverlay;
 			commitTree = commit.Tree;
 			Commit parentCommit = commit.Parents.FirstOrDefault();
 
@@ -52,7 +54,7 @@ namespace UniGit
 					//EditorGUILayout.BeginHorizontal();
 					//GUILayout.Label(change.Status.ToString(), "AssetLabel");
 					EditorGUILayout.BeginHorizontal("ProjectBrowserHeaderBgTop");
-					GUILayout.Label(new GUIContent(GitOverlay.GetDiffTypeIcon(change.Status, true)) {tooltip = change.Status.ToString()}, GUILayout.Width(16));
+					GUILayout.Label(new GUIContent(gitOverlay.GetDiffTypeIcon(change.Status, true)) {tooltip = change.Status.ToString()}, GUILayout.Width(16));
 					GUILayout.Space(8);
 					string[] pathChunks = change.Path.Split(Path.DirectorySeparatorChar);
 					for (int i = 0; i < pathChunks.Length; i++)

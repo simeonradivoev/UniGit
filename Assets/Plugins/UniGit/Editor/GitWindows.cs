@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -6,6 +7,9 @@ namespace UniGit
 {
 	public static class GitWindows
 	{
+		public static event Action<EditorWindow> OnWindowAddedEvent;
+		public static event Action<EditorWindow> OnWindowRemovedEvent;
+
 		private static List<EditorWindow> windows;
 		public static IEnumerable<EditorWindow> Windows { get { return windows; } }
 
@@ -24,12 +28,16 @@ namespace UniGit
 				return;
 			}
 			windows.Add(window);
+			if(OnWindowAddedEvent != null) OnWindowAddedEvent.Invoke(window);
 		}
 
 		public static void RemoveWindow(EditorWindow window)
 		{
 			if(windows == null) return;
-			windows.Remove(window);
+			if (windows.Remove(window))
+			{
+				if(OnWindowRemovedEvent != null) OnWindowRemovedEvent.Invoke(window);
+			}
 		}
 	}
 }

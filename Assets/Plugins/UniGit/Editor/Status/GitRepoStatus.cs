@@ -1,17 +1,27 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using LibGit2Sharp;
+using UnityEngine;
 
 namespace UniGit.Status
 {
+	[Serializable]
 	public class GitRepoStatus : IEnumerable<GitStatusEntry>
 	{
-		private readonly List<GitStatusEntry> entries = new List<GitStatusEntry>();
+		[SerializeField] private List<GitStatusEntry> entries = new List<GitStatusEntry>();
+		[SerializeField] private bool initilzied;
+		private object lockObj;
 
-		public GitRepoStatus(RepositoryStatus status)
+		public GitRepoStatus()
 		{
-			entries.AddRange(status.Select(e => new GitStatusEntry(e.FilePath,e.State)));
+			lockObj = new object();
+		}
+
+		public void Clear()
+		{
+			entries.Clear();
 		}
 
 		public void Combine(RepositoryStatus other)
@@ -37,6 +47,36 @@ namespace UniGit.Status
 			}
 		}
 
+		public bool Get(string path,out GitStatusEntry entry)
+		{
+			foreach (var e in entries)
+			{
+				if (e.Path == path)
+				{
+					entry = e;
+					return true;
+				}
+			}
+
+			entry = new GitStatusEntry();
+			return false;
+		}
+
+		public bool TryEnterLock()
+		{
+			return Monitor.TryEnter(lockObj);
+		}
+
+		public void Lock()
+		{
+			Monitor.Enter(lockObj);
+		}
+
+		public void Unlock()
+		{
+			Monitor.Exit(lockObj);
+		}
+
 		IEnumerator IEnumerable.GetEnumerator()
 		{
 			return GetEnumerator();
@@ -45,6 +85,12 @@ namespace UniGit.Status
 		public IEnumerator<GitStatusEntry> GetEnumerator()
 		{
 			return entries.GetEnumerator();
+		}
+
+		public bool Initilzied
+		{
+			get { return initilzied; }
+			set { initilzied = value; }
 		}
 	}
 }

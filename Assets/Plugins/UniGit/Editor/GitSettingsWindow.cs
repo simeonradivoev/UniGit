@@ -16,10 +16,12 @@ namespace UniGit
 		private GitSettingsTab[] tabs;
 		[SerializeField] private int tab;
 		[NonSerialized] private readonly InjectionHelper injectionHelper = new InjectionHelper();
+		[NonSerialized] private GitOverlay gitOverlay;
 
         [UniGitInject]
-		private void Construct(InjectionHelper parentInjectionHelper)
-		{
+		private void Construct(InjectionHelper parentInjectionHelper,GitOverlay gitOverlay)
+        {
+	        this.gitOverlay = gitOverlay;
 			injectionHelper.SetParent(parentInjectionHelper);
             injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
 			injectionHelper.Bind<GitSettingsTab>().To<GitExternalsSettingsTab>();
@@ -117,7 +119,7 @@ namespace UniGit
 				if(currentTab != null) currentTab.OnFocus();
 			}
 			GUILayout.FlexibleSpace();
-			if (GitGUI.LinkButtonLayout(GitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
+			if (GitGUI.LinkButtonLayout(gitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
 				GitLinks.GoTo(GitLinks.Donate);
 			}

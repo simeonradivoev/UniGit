@@ -7,15 +7,17 @@ using UnityEngine;
 
 namespace UniGit.Utils
 {
-	public class InjectionHelper
+	public class InjectionHelper : IDisposable
 	{
 		private readonly List<Resolve> resolves;
 	    private InjectionHelper parent;
+		private Resolve injectorResolve;
+		private bool disposed;
 
 		public InjectionHelper()
 		{
 			resolves = new List<Resolve>();
-		    Bind<InjectionHelper>().FromInstance(this);
+			injectorResolve = Bind<InjectionHelper>().FromInstance(this);
 		}
 
 		public void Clear()
@@ -35,6 +37,11 @@ namespace UniGit.Utils
 			var resolve = new Resolve<T>(this);
 			resolves.Add(resolve);
 			return resolve;
+		}
+
+		public void Unbind<T>()
+		{
+			resolves.RemoveAll(r => r.Type == typeof(T) || r.InstanceType == typeof(T));
 		}
 
 	    public void SetParent(InjectionHelper parent)
@@ -238,12 +245,10 @@ namespace UniGit.Utils
 
 		public T GetInstance<T>()
 		{
-			HashSet<Resolve> resolveCallList = new HashSet<Resolve>();
 			foreach (var resolve in resolves)
 			{
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && string.IsNullOrEmpty(resolve.id))
 				{
-					resolveCallList.Add(resolve);
 					return (T) resolve.GetInstance();
 				}
 			}
@@ -263,6 +268,31 @@ namespace UniGit.Utils
 				}
 			}
 			return instances;
+		}
+
+		public void CreateNonLazy()
+		{
+			foreach (var resolve in resolves)
+			{
+				if (resolve.IsNonLazy)
+				{
+					resolve.EnsureInstance();
+				}
+			}
+		}
+
+		public void Dispose()
+		{
+			if(disposed) return;
+
+			disposed = true;
+			resolves.Remove(injectorResolve);
+
+			foreach (var resolve in resolves)
+			{
+				resolve.Dispose();
+			}
+
 		}
 
 		public class Resolve<T> : Resolve
@@ -308,7 +338,7 @@ namespace UniGit.Utils
 			}
 		}
 
-		public class Resolve : IEquatable<Resolve>
+		public class Resolve : IEquatable<Resolve>, IDisposable
 		{
 			private Type type;
 			private Type instanceType;
@@ -318,6 +348,7 @@ namespace UniGit.Utils
 			internal string id;
 			private object instance;
 			private readonly InjectionHelper injectionHelper;
+			private bool nonLazy;
 
 			public Resolve(InjectionHelper injectionHelper,Type type)
 			{
@@ -388,16 +419,30 @@ namespace UniGit.Utils
 				return this;
 			}
 
+			public Resolve NonLazy()
+			{
+				nonLazy = true;
+				return this;
+			}
+
 			public object GetInstance()
+			{
+				EnsureInstance();
+				return instance;
+			}
+
+			internal void EnsureInstance()
 			{
 				if (instance == null)
 				{
-					if (method != null)
-						instance = method.Invoke();
-					else
-						instance = injectionHelper.CreateInstance(instanceType);
+					instance = method != null ? method.Invoke() : injectionHelper.CreateInstance(instanceType);
 				}
-				return instance;
+			}
+
+			public void Dispose()
+			{
+				IDisposable disposableInstance = instance as IDisposable;
+				if(disposableInstance != null) disposableInstance.Dispose();
 			}
 
 			public bool HasInstance { get { return instance != null; } }
@@ -420,6 +465,11 @@ namespace UniGit.Utils
 			public string Id
 			{
 				get { return id; }
+			}
+
+			public bool IsNonLazy
+			{
+				get { return nonLazy; }
 			}
 		}
 	}

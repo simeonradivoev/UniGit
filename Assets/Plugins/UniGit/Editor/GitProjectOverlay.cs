@@ -11,18 +11,32 @@ using Object = UnityEngine.Object;
 
 namespace UniGit
 {
-	public class GitProjectOverlay : IDisposable
+	/// <summary>
+	/// The overlays for the project windows
+	/// </summary>
+	public class GitProjectOverlay : IDisposable, IGitWatcher
 	{
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GUIStyle iconStyle;
-		private StatusTreeClass statusTree;
 		private readonly object statusTreeLock = new object();
 		private readonly GitAsyncManager asyncManager;
 		private readonly GitCallbacks gitCallbacks;
+		private readonly GitReflectionHelper reflectionHelper;
+		private readonly GitOverlay gitOverlay;
+
+		private StatusTreeClass statusTree;
+		private bool isDirty = true;
+		private bool isUpdating;
+		private List<EditorWindow> projectWindows;
 
 		[UniGitInject]
-		public GitProjectOverlay(GitManager gitManager,GitCallbacks gitCallbacks, GitSettingsJson gitSettings, GitAsyncManager asyncManager)
+		public GitProjectOverlay(GitManager gitManager,
+			GitCallbacks gitCallbacks, 
+			GitSettingsJson gitSettings, 
+			GitAsyncManager asyncManager,
+			GitReflectionHelper reflectionHelper,
+			GitOverlay gitOverlay)
 		{
 			if (iconStyle == null)
 			{
@@ -38,24 +52,74 @@ namespace UniGit
 			this.gitSettings = gitSettings;
 			this.asyncManager = asyncManager;
 			this.gitCallbacks = gitCallbacks;
+			this.reflectionHelper = reflectionHelper;
+			this.gitOverlay = gitOverlay;
+
+			gitManager.AddWatcher(this);
+
+			gitCallbacks.EditorUpdate += OnEditorUpdate;
 			gitCallbacks.ProjectWindowItemOnGUI += CustomIcons;
 			gitCallbacks.UpdateRepository += OnUpdateRepository;
+
+			//project browsers only get created before delay call but not before constructor
+			gitCallbacks.DelayCall += () =>
+			{
+				projectWindows = new List<EditorWindow>(Resources.FindObjectsOfTypeAll(reflectionHelper.ProjectWindowType).Cast<EditorWindow>()); 
+			};
 		}
 
 		private void OnUpdateRepository(GitRepoStatus status,string[] paths)
 		{
-			if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+			isDirty = true;
+		}
+
+		private void OnEditorUpdate()
+		{
+			if (isDirty && !isUpdating && projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke))
 			{
-				gitManager.ActionQueue.Enqueue(() =>
+				var cachedStatus = gitManager.GetCachedStatus();
+				if (cachedStatus.Initilzied)
 				{
-					UpdateStatusTreeThreaded(status);
-				});
-			}
-			else
-			{
-				GitProfilerProxy.BeginSample("Git Project Window status tree building");
-				UpdateStatusTree(status);
-				GitProfilerProxy.EndSample();
+					isUpdating = true;
+					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+					{
+						gitManager.ActionQueue.Enqueue(() =>
+						{
+							try
+							{
+								UpdateStatusTreeThreaded(cachedStatus);
+							}
+							finally
+							{
+								isUpdating = false;
+							}
+						});
+						isDirty = false;
+					}
+					else
+					{
+						if(!cachedStatus.TryEnterLock()) return;
+						try
+						{
+							GitProfilerProxy.BeginSample("Git Project Window status tree building");
+							try
+							{
+								UpdateStatusTree(cachedStatus);
+							}
+							finally
+							{
+								isUpdating = false;
+							}
+							GitProfilerProxy.EndSample();
+						}
+						finally
+						{
+							cachedStatus.Unlock();
+						}
+						isDirty = false;
+					}
+					
+				}
 			}
 		}
 
@@ -74,7 +138,16 @@ namespace UniGit
 					//todo cache expandedProjectWindowItems into a HashSet for faster Contains
 					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(assetObject.GetInstanceID())) return;
 				}
-				DrawFileIcon(rect, GitOverlay.GetDiffTypeIcon(status.State, rect.height <= 16));
+				bool small = rect.height <= 16;
+				if (small)
+				{
+					DrawFileIcons(rect, gitOverlay.GetDiffTypeIcons(status.State,true));
+				}
+				else
+				{
+					DrawFileIcon(rect, gitOverlay.GetDiffTypeIcon(status.State, false));
+				}
+				
 			}
 		}
 
@@ -85,9 +158,27 @@ namespace UniGit
 			GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, iconStyle);
 		}
 
+		private void DrawFileIcons(Rect rect, IEnumerable<GUIContent> contents)
+		{
+			float width = Mathf.Min(rect.width, 16);
+			float height = Mathf.Min(rect.height, 16);
+			int index = 0;
+			foreach (var content in contents)
+			{
+				GUI.Label(new Rect(rect.x + rect.width - width - (width * index), rect.y, width, height), content, iconStyle);
+				index++;
+			}
+		}
+
 		private void UpdateStatusTreeThreaded(GitRepoStatus status)
 		{
-			asyncManager.QueueWorkerWithLock(() => { UpdateStatusTree(status, true); }, statusTreeLock);
+			asyncManager.QueueWorkerWithLock(() =>
+			{
+				status.Lock();
+				UpdateStatusTree(status, true);
+				status.Unlock();
+
+			}, statusTreeLock);
 		}
 
 		private void UpdateStatusTree(GitRepoStatus status, bool threaded = false)
@@ -106,6 +197,7 @@ namespace UniGit
 
 		public void Dispose()
 		{
+			gitCallbacks.EditorUpdate -= OnEditorUpdate;
 			gitCallbacks.ProjectWindowItemOnGUI -= CustomIcons;
 			gitCallbacks.UpdateRepository -= OnUpdateRepository;
 		}
@@ -125,6 +217,20 @@ namespace UniGit
 			{
 				((EditorWindow)projectWindow).Repaint();
 			}
+		}
+
+		#endregion
+
+		#region GitWatcher
+
+		public bool IsWatching
+		{
+			get { return projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke); }
+		}
+
+		public bool IsValid
+		{
+			get { return true; }
 		}
 
 		#endregion

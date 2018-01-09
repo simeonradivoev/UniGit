@@ -12,6 +12,7 @@ namespace UniGit
 		private readonly Branch branch;
 		private readonly GitManager gitManager;
 
+		[UniGitInject]
 		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch)
 		{
 			this.gitManager = gitManager;

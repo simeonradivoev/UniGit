@@ -11,11 +11,13 @@ namespace UniGit
 		private string stashMessage;
 		private StashModifiers stashModifiers = StashModifiers.Default;
 		private GitManager gitManager;
+		private GitOverlay gitOverlay;
 
         [UniGitInject]
-		private void Construct(GitManager gitManager)
+		private void Construct(GitManager gitManager,GitOverlay gitOverlay)
 		{
 			this.gitManager = gitManager;
+			this.gitOverlay = gitOverlay;
 		}
 
 		[UsedImplicitly]
@@ -23,7 +25,7 @@ namespace UniGit
 		{
             GitWindows.AddWindow(this);
 			createButtonName = "Save";
-			titleContent = new GUIContent("Stash Save",GitOverlay.icons.stashIcon.image);
+			titleContent = new GUIContent("Stash Save",gitOverlay.icons.stashIcon.image);
 		}
 
 		[UsedImplicitly]

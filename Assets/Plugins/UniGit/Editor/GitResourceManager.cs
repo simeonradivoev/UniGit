@@ -11,9 +11,15 @@ namespace UniGit
 {
 	public class GitResourceManager
 	{
-		private static Dictionary<string,Texture2D> textures = new Dictionary<string, Texture2D>();
+		private Dictionary<string,Texture2D> textures;
 
-		internal static void Initilize()
+		public GitResourceManager()
+		{
+			textures = new Dictionary<string, Texture2D>();
+			Initilize();
+		}
+
+		void Initilize()
 		{
 			Profiler.BeginSample("UniGit Resource Loading");
 			try
@@ -26,7 +32,7 @@ namespace UniGit
 			}
 		}
 
-		public static Texture2D GetTexture(string name, bool throwError = true)
+		public Texture2D GetTexture(string name, bool throwError = true)
 		{
 			Texture2D tex;
 			if (textures.TryGetValue(name, out tex))
@@ -38,7 +44,7 @@ namespace UniGit
 			return null;
 		}
 
-		public static void LoadDLLResources()
+		public void LoadDLLResources()
 		{
 			try
 			{
@@ -60,7 +66,7 @@ namespace UniGit
 			}
 		}
 
-		private static Texture2D LoadTextureFromBitmap(string name, object resource)
+		private Texture2D LoadTextureFromBitmap(string name, object resource)
 		{
 			var bitmapType = resource.GetType();
 

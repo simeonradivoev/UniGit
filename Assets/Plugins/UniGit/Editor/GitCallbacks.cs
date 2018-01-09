@@ -66,10 +66,20 @@ namespace UniGit
 		}
 
 		public event Action DelayCall;
-		public void IssueDelayCall()
+		public void IssueDelayCall(bool clear)
 		{
-			if(DelayCall != null)
+			if (DelayCall != null)
+			{
 				DelayCall.Invoke();
+				if (clear) DelayCall = null;
+			}
+		}
+
+		public event Action OnSettingsChange;
+		public void IssueSettingsChange()
+		{
+			if(OnSettingsChange != null)
+				OnSettingsChange.Invoke();
 		}
 
 		#region Asset Postprocessing Events

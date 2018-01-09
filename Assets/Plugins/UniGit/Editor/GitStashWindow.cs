@@ -8,15 +8,18 @@ namespace UniGit
 {
 	public class GitStashWindow : PopupWindowContent
 	{
+		private readonly GitManager gitManager;
+		private readonly GitOverlay gitOverlay;
+
 		private StashCollection stashCollection;
 		private Vector2 stashScroll;
 		private int selectedStash;
 		private GUIStyle stashStyle;
-		private readonly GitManager gitManager;
 
-		public GitStashWindow(GitManager gitManager)
+		public GitStashWindow(GitManager gitManager,GitOverlay gitOverlay)
 		{
 			this.gitManager = gitManager;
+			this.gitOverlay = gitOverlay;
 		}
 
 		public override void OnOpen()
@@ -31,7 +34,7 @@ namespace UniGit
 			if(Event.current.type == EventType.MouseMove) editorWindow.Repaint();
 			int stashCount = stashCollection.Count();
 			EditorGUILayout.BeginHorizontal("IN BigTitle");
-			if (GUILayout.Button(GitGUI.GetTempContent("Stash Save",GitOverlay.icons.stashIcon.image,"Save changes in working directory to stash.")))
+			if (GUILayout.Button(GitGUI.GetTempContent("Stash Save",gitOverlay.icons.stashIcon.image,"Save changes in working directory to stash.")))
 			{
 				UniGitLoader.GetWindow<GitStashSaveWizard>(true);
 			}

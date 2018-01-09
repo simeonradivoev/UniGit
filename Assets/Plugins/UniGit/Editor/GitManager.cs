@@ -25,14 +25,13 @@ namespace UniGit
 		private Repository repository;
 		private readonly GitSettingsJson gitSettings;
 		private readonly Queue<Action> actionQueue = new Queue<Action>();	//queue for executing actions on main thread
-		private GitRepoStatus status;	//intermediate repository status cache with only a path and a meta change flag
+		private UniGitData gitData;
 		private readonly object statusRetriveLock = new object();
 		private bool repositoryDirty;	//is the whole repository dirty
 		private bool forceSingleThread;	//force single threaded update
 		private bool reloadDirty;	//should the GitLib2Sharp repository be recreated with a new instance
 		private bool isUpdating;
 		private readonly List<AsyncStageOperation> asyncStages = new List<AsyncStageOperation>();
-		private readonly HashSet<string> dirtyFileQueue = new HashSet<string>();	//dirty files to update as soon as possible
 		private readonly HashSet<string> updatingFiles = new HashSet<string>();		//currently updating files, mainly for multi threaded update
 		private readonly GitCallbacks callbacks;
 		private readonly IGitPrefs prefs;
@@ -41,8 +40,9 @@ namespace UniGit
 		private readonly List<IGitWatcher> watchers = new List<IGitWatcher>();
 
 		[UniGitInject]
-		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs, GitAsyncManager asyncManager)
+		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs, GitAsyncManager asyncManager,UniGitData gitData)
 		{
+			this.gitData = gitData;
 			this.repoPath = repoPath;
 			this.callbacks = callbacks;
 			this.prefs = prefs;
@@ -66,11 +66,14 @@ namespace UniGit
 			callbacks.OnPostprocessImportedAssets += OnPostprocessImportedAssets;
 			callbacks.OnPostprocessDeletedAssets += OnPostprocessDeletedAssets;
 			callbacks.OnPostprocessMovedAssets += OnPostprocessMovedAssets;
+
+			CheckNullRepository();
 		}
 
 		private void OnDelayedCall()
 		{
-			MarkDirty();
+			if(!gitSettings.LazyMode)
+				MarkDirty();
 		}
 
 		public void InitilizeRepository()
@@ -148,13 +151,14 @@ namespace UniGit
 						Update(reloadDirty);
 						reloadDirty = false;
 						repositoryDirty = false;
-						dirtyFileQueue.Clear();
+						gitData.RepositoryStatus.Initilzied = true;
+						gitData.DirtyFilesQueue.Clear();
 
 					}
-					else if (dirtyFileQueue.Count > 0)
+					else if (gitData.DirtyFilesQueue.Count > 0)
 					{
-						Update(reloadDirty || repository == null, dirtyFileQueue.ToArray());
-						dirtyFileQueue.Clear();
+						Update(reloadDirty || repository == null, gitData.DirtyFilesQueue.ToArray());
+						gitData.DirtyFilesQueue.Clear();
 					}
 				}
 
@@ -296,7 +300,7 @@ namespace UniGit
 			reloadDirty = reloadRepo;
 		}
 
-		public void MarkDirty(string[] paths)
+		public void MarkDirty(params string[] paths)
 		{
 			MarkDirty((IEnumerable<string>)paths);
 		}
@@ -306,27 +310,36 @@ namespace UniGit
 			foreach (var path in paths)
 			{
 				string fixedPath = path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
-				if(!dirtyFileQueue.Contains(fixedPath))
-					dirtyFileQueue.Add(fixedPath);
+				if(!gitData.DirtyFilesQueue.Contains(fixedPath))
+					gitData.DirtyFilesQueue.Add(fixedPath);
 			}
 		}
 
 		private void RebuildStatus(string[] paths)
 		{
-			if (paths != null && paths.Length > 0 && status != null)
+			gitData.RepositoryStatus.Lock();
+
+			try
 			{
-				foreach (string path in paths)
+				if (paths != null && paths.Length > 0)
 				{
-					status.Update(path, repository.RetrieveStatus(path));
+					foreach (string path in paths)
+					{
+						gitData.RepositoryStatus.Update(path, repository.RetrieveStatus(path));
+					}
+				}
+				else
+				{
+					var options = GetStatusOptions();
+					var s = repository.RetrieveStatus(options);
+					gitData.RepositoryStatus.Clear();
+					gitData.RepositoryStatus.Combine(s);
 				}
 			}
-			else
+			finally
 			{
-				var options = GetStatusOptions();
-				var s = repository.RetrieveStatus(options);
-				status = new GitRepoStatus(s);
+				gitData.RepositoryStatus.Unlock();
 			}
-			
 		}
 
 		private StatusOptions GetStatusOptions()
@@ -418,13 +431,13 @@ namespace UniGit
 		{
 			isUpdating = false;
 			updatingFiles.Clear();
-			callbacks.IssueUpdateRepository(status, paths);
+			callbacks.IssueUpdateRepository(gitData.RepositoryStatus, paths);
 		}
 
 		internal bool IsFileDirty(string path)
 		{
-			if (dirtyFileQueue.Count <= 0) return false;
-			return dirtyFileQueue.Contains(path);
+			if (gitData.DirtyFilesQueue.Count <= 0) return false;
+			return gitData.DirtyFilesQueue.Contains(path);
 		}
 
 		internal bool IsFileUpdating(string path)
@@ -471,7 +484,7 @@ namespace UniGit
 			if (callbacks != null)
 			{
 				callbacks.EditorUpdate -= OnEditorUpdate;
-				callbacks.DelayCall -= OnDelayedCall;
+				//callbacks.DelayCall -= OnDelayedCall;
 				//asset postprocessing
 				callbacks.OnWillSaveAssets -= OnWillSaveAssets;
 				callbacks.OnPostprocessImportedAssets -= OnPostprocessImportedAssets;
@@ -659,6 +672,11 @@ namespace UniGit
 			return false;
 		}
 
+		public static bool IsDirectory(string path)
+		{
+			return Directory.Exists(path);
+		}
+
 		public static string AssetPathFromMeta(string metaPath)
 		{
 			if (metaPath.EndsWith(".meta"))
@@ -681,6 +699,12 @@ namespace UniGit
 		public static bool CanUnstage(FileStatus fileStatus)
 		{
 			return fileStatus.IsFlagSet(FileStatus.ModifiedInIndex | FileStatus.NewInIndex | FileStatus.RenamedInIndex | FileStatus.TypeChangeInIndex | FileStatus.DeletedFromIndex);
+		}
+
+		public static bool IsPathInAssetFolder(string path)
+		{
+			return path.StartsWith("Assets");
+
 		}
 		#endregion
 
@@ -804,7 +828,7 @@ namespace UniGit
 
 		public bool IsDirty
 		{
-			get { return dirtyFileQueue.Count > 0 || repositoryDirty; }
+			get { return gitData.DirtyFilesQueue.Count > 0 || repositoryDirty; }
 		}
 
 		public Signature Signature
@@ -852,11 +876,11 @@ namespace UniGit
 
 		public GitRepoStatus GetCachedStatus()
 		{
-			if (status == null && gitSettings.LazyMode && !isUpdating)
+			if (!gitData.RepositoryStatus.Initilzied)
 			{
-				repositoryDirty = true;
+				MarkDirty();
 			}
-			return status;
+			return gitData.RepositoryStatus;
 		}
 
 		public Queue<Action> ActionQueue

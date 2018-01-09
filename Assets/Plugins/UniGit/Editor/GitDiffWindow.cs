@@ -4,11 +4,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -30,13 +33,13 @@ namespace UniGit
 		[SerializeField] private string filter = "";
 		[SerializeField] private Vector2 commitScroll;
 		[SerializeField] private List<SelectionId> selections;
+		[SerializeField] private Settings settings;
+		[SerializeField] private StatusList statusList;
 
 		private SerializedObject editoSerializedObject;
 		private Rect commitsRect;
 		private Styles styles;
-		[SerializeField] private Settings settings;
 		private int lastSelectedIndex;
-		private StatusList statusList;
 		private readonly object statusListLock = new object();
 		private char commitMessageLastChar;
 		private GitConflictsHandler conflictsHandler;
@@ -47,6 +50,9 @@ namespace UniGit
 		private GitExternalManager externalManager;
 		private GitLfsHelper lfsHelper;
 		private GitAsyncManager asyncManager;
+		private SearchField searchField;
+		private GitOverlay gitOverlay;
+		private InjectionHelper injectionHelper;
 
 		[Serializable]
 		public class Settings
@@ -76,8 +82,6 @@ namespace UniGit
 			public GUIStyle mergeIndicator;
 			public GUIStyle commitMessageFoldoud;
 			public GUIStyle commitButton;
-			public GUIStyle searchTextField;
-			public GUIStyle searchCancelButton;
 		}
 
 		private void CreateStyles()
@@ -97,31 +101,26 @@ namespace UniGit
 					toggle = new GUIStyle("IN Toggle") { normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedHeight = 0, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() },
 					mergeIndicator = "AssetLabel",
 					commitMessageFoldoud = "IN Foldout",
-					commitButton = "DropDownButton",
-					searchTextField = "ToolbarSeachTextField",
-					searchCancelButton = "ToolbarSeachCancelButtonEmpty"
+					commitButton = "DropDownButton"
 				};
 				GitProfilerProxy.EndSample();
 			}
 		}
 
 		[UniGitInject]
-		private void Construct(GitExternalManager externalManager, GitLfsHelper lfsHelper, GitAsyncManager asyncManager)
+		private void Construct(GitExternalManager externalManager, 
+			GitLfsHelper lfsHelper, 
+			GitAsyncManager asyncManager,
+			GitOverlay gitOverlay,
+			InjectionHelper injectionHelper)
 		{
 			this.externalManager = externalManager;
 			this.lfsHelper = lfsHelper;
 			this.asyncManager = asyncManager;
+			this.gitOverlay = gitOverlay;
+			this.injectionHelper = injectionHelper;
 			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
 		}
-
-		#region Editor Specific Updates
-
-		protected override void OnRepositoryCreate()
-		{
-			base.OnRepositoryCreate();
-			Construct(UniGitLoader.ExternalManager, UniGitLoader.LfsHelper,UniGitLoader.AsyncManager);
-		}
-		#endregion
 
 		protected override void Subscribe(GitCallbacks callbacks)
 		{
@@ -137,6 +136,7 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
+			if(searchField == null) searchField = new SearchField();
 			if(selections == null) selections = new List<SelectionId>();
 			titleContent.text = WindowName;
 			base.OnEnable();
@@ -158,16 +158,20 @@ namespace UniGit
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
 				CreateStatusListThreaded(status, paths);
 			else
-				CreateStatusList(status);
+				CreateStatusList(status,paths);
 		}
 
 		private void UpdateStatusList()
 		{
-			if(gitManager.Repository == null || cachedStatus == null) return;
-			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
-				CreateStatusListThreaded(cachedStatus, null);
-			else
-				CreateStatusList(cachedStatus);
+			if(gitManager.Repository == null || !IsInitialized) return;
+			var gitStatus = gitManager.GetCachedStatus();
+			if (gitStatus.Initilzied)
+			{
+				if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
+					CreateStatusListThreaded(gitStatus, null);
+				else
+					CreateStatusList(gitStatus);
+			}
 		}
 
 		protected override void OnInitialize()
@@ -183,10 +187,14 @@ namespace UniGit
 
 		protected override void OnEditorUpdate()
 		{
-			if (cachedStatus != null && needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
+			if (IsInitialized && needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
 			{
-				needsAsyncStatusListUpdate = false;
-				CreateStatusListThreaded(cachedStatus, null);
+				var cachedStatus = gitManager.GetCachedStatus();
+				if (cachedStatus.Initilzied)
+				{
+					needsAsyncStatusListUpdate = false;
+					CreateStatusListThreaded(cachedStatus, null);
+				}
 			}
 		}
 
@@ -205,7 +213,11 @@ namespace UniGit
 			}
 			else
 			{
-				statusListUpdateOperation = asyncManager.QueueWorkerWithLock(CreateStatusListInternal, status, (o) =>
+				statusListUpdateOperation = asyncManager.QueueWorkerWithLock(() =>
+				{
+					CreateStatusListInternal(status,paths);
+				}, 
+					(o) =>
 				{
 					updatingPaths.Clear();
 					Repaint();
@@ -227,13 +239,19 @@ namespace UniGit
 			}
 		}
 
-		private void CreateStatusList(GitRepoStatus param)
+		private void CreateStatusList(GitRepoStatus param,string[] paths)
 		{
-			CreateStatusListInternal(param);
+			CreateStatusListInternal(param,paths);
 			Repaint();
 		}
 
-		private void CreateStatusListInternal(GitRepoStatus status)
+		private void CreateStatusList(GitRepoStatus param)
+		{
+			CreateStatusListInternal(param,null);
+			Repaint();
+		}
+
+		private void CreateStatusListInternal(GitRepoStatus status,string[] paths)
 		{
 			if (status == null)
 			{
@@ -242,13 +260,53 @@ namespace UniGit
 			}
 			try
 			{
-				var newStatusList = new StatusList(settings.sortType, settings.sortDir, gitManager.Settings, gitManager.RepoPath);
-				foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
+				if(statusList == null)statusList = new StatusList();
+				statusList.Setup(settings.sortType, settings.sortDir, gitManager.Settings, gitManager.RepoPath);
+
+				if (paths == null || paths.Length <= 0)
 				{
-					newStatusList.Add(entry);
+					statusList.Lock();
+
+					try
+					{
+						statusList.Clear();
+						status.Lock();
+						foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
+						{
+							statusList.Add(entry,false);
+						}
+						statusList.Sort();
+						status.Unlock();
+					}
+					finally
+					{
+						statusList.Unlock();
+						status.Unlock();
+					}
 				}
-				newStatusList.Sort();
-				statusList = newStatusList;
+				else
+				{
+					statusList.Lock();
+
+					try
+					{
+						statusList.RemoveRange(paths);
+						foreach (var path in paths)
+						{
+							GitStatusEntry entry;
+							if (status.Get(path,out entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
+							{
+								statusList.Add(entry,true);
+							}
+						}
+					}
+					finally
+					{
+						statusList.Unlock();
+					}
+				}
+				
+				//statusList.Sort();
 			}
 			catch (Exception e)
 			{
@@ -393,7 +451,7 @@ namespace UniGit
 			settings.prettify = GUILayout.Toggle(settings.prettify, GitGUI.GetTempContent("Prettify", "Prettify the commit message"));
 			GitGUI.EndEnable();
 			GUILayout.FlexibleSpace();
-			if (GitGUI.LinkButtonLayout(GitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
+			if (GitGUI.LinkButtonLayout(gitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
 				GitLinks.GoTo(GitLinks.Donate);
 			}
@@ -653,99 +711,96 @@ namespace UniGit
 				GUILayout.Label(statusContent,EditorStyles.toolbarButton);
 
 			GUILayout.FlexibleSpace();
-			filter = EditorGUILayout.TextField(GUIContent.none, filter, styles.searchTextField);
-			if (string.IsNullOrEmpty(filter))
-			{
-				GUILayout.Box(GUIContent.none, styles.searchCancelButton);
-			}
-			else
-			{
-				if (GUILayout.Button(GUIContent.none, styles.searchCancelButton))
-				{
-					filter = "";
-					GUI.FocusControl("");
-				}
-			}
+			filter = searchField.OnToolbarGUI(filter);
 			EditorGUILayout.EndHorizontal();
 			GUILayout.EndArea();
 		}
 
 		private void DoDiffScroll(Event current)
 		{
-			float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-			float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount)  * elementHeight;
+			if(!statusList.TryLock()) return;
 
-			diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,420), elementsTotalHeight);
-			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
-
-			int index = 0;
-			FileStatus? lastFileStatus = null;
-			float infoX = 0;
-
-			foreach (var info in statusList)
+			try
 			{
-				FileStatus mergedStatus = GetMergedStatus(info.State);
-				bool isExpanded = IsVisible(info);
-				Rect elementRect;
+				float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
+				float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount)  * elementHeight;
 
-				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
+				diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,420), elementsTotalHeight);
+				diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
+
+				int index = 0;
+				FileStatus? lastFileStatus = null;
+				float infoX = 0;
+
+				foreach (var info in statusList)
 				{
-					elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-					lastFileStatus = mergedStatus;
-					FileStatus newState = lastFileStatus.Value;
-					if (current.type == EventType.Repaint)
+					FileStatus mergedStatus = GetMergedStatus(info.State);
+					bool isExpanded = IsVisible(info);
+					Rect elementRect;
+
+					if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
 					{
-						styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false,false,false,false);
-						GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(GitOverlay.GetDiffTypeIcon(info.State, false).image),false,false,false,false);
+						elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
+						lastFileStatus = mergedStatus;
+						FileStatus newState = lastFileStatus.Value;
+						if (current.type == EventType.Repaint)
+						{
+							styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false,false,false,false);
+							GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(gitOverlay.GetDiffTypeIcon(info.State, false).image),false,false,false,false);
+						}
+
+						if (elementRect.Contains(current.mousePosition))
+						{
+							if (current.type == EventType.ContextClick)
+							{
+								GenericMenu selectAllMenu = new GenericMenu();
+								DoDiffStatusContex(newState, selectAllMenu);
+								selectAllMenu.ShowAsContext();
+								current.Use();
+							}
+							else if(current.type == EventType.MouseDown && current.button == 0)
+							{
+								settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isExpanded);
+								if (!isExpanded)
+								{
+									ClearSelected(e => e.State == newState);
+								}
+								Repaint();
+								current.Use();
+							}
+						
+						}
+						infoX += elementRect.height;
 					}
 
-					if (elementRect.Contains(current.mousePosition))
+					if (!isExpanded) continue;
+					elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
+					//check visibility
+					if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
 					{
-						if (current.type == EventType.ContextClick)
-						{
-							GenericMenu selectAllMenu = new GenericMenu();
-							DoDiffStatusContex(newState, selectAllMenu);
-							selectAllMenu.ShowAsContext();
-							current.Use();
-						}
-						else if(current.type == EventType.MouseDown && current.button == 0)
-						{
-							settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isExpanded);
-							if (!isExpanded)
-							{
-								ClearSelected(e => e.State == newState);
-							}
-							Repaint();
-							current.Use();
-						}
-						
+						bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || updatingPaths.Contains(info.Path) || pathsToBeUpdated.Contains(info.Path);
+						bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
+						bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
+
+						bool selected = IsSelected(info);
+						bool enabled = !isUpdating && !isDirty && !isStaging;
+						DoFileDiff(elementRect, info, enabled, selected);
+						DoFileDiffSelection(elementRect, info, index, enabled, selected);
 					}
 					infoX += elementRect.height;
+					index++;
 				}
+				GUI.EndScrollView();
 
-				if (!isExpanded) continue;
-				elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-				//check visibility
-				if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
+				if (current.type == EventType.MouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
 				{
-					bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || updatingPaths.Contains(info.Path) || pathsToBeUpdated.Contains(info.Path);
-					bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
-					bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
-
-					bool selected = IsSelected(info);
-					bool enabled = !isUpdating && !isDirty && !isStaging;
-					DoFileDiff(elementRect, info, enabled, selected);
-					DoFileDiffSelection(elementRect, info, index, enabled, selected);
+					diffScroll.y -= current.delta.y;
+					Repaint();
 				}
-				infoX += elementRect.height;
-				index++;
 			}
-			GUI.EndScrollView();
-
-			if (current.type == EventType.MouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
+			finally
 			{
-				diffScroll.y -= current.delta.y;
-				Repaint();
+				statusList.Unlock();
 			}
 		}
 
@@ -789,7 +844,9 @@ namespace UniGit
 
 			if (current.type == EventType.Repaint)
 			{
-				Object asset = AssetDatabase.LoadAssetAtPath(filePath.EndsWith(".meta") ? AssetDatabase.GetAssetPathFromTextMetaFilePath(filePath) : filePath, typeof(Object));
+				Object asset = null;
+				if(GitManager.IsPathInAssetFolder(filePath))
+					asset = AssetDatabase.LoadAssetAtPath(filePath.EndsWith(".meta") ? AssetDatabase.GetAssetPathFromTextMetaFilePath(filePath) : filePath, typeof(Object));
 
 				string extension = Path.GetExtension(filePath);
 				GUIContent tmpContent = GUIContent.none;
@@ -817,21 +874,21 @@ namespace UniGit
 				styles.diffElementName.Draw(new Rect(x, rect.y + elementTopBottomMargin + 2, rect.width - elementSideMargin - iconSize - rect.height, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(fileName), false, selected, selected, false);
 
 				x = rect.x + elementSideMargin + iconSize + 8;
-				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitOverlay.GetDiffTypeIcon(info.State, false), GUIStyle.none);
+				GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), gitOverlay.GetDiffTypeIcon(info.State, false), GUIStyle.none);
 				x += 25;
 				if (info.MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.objectIconSmall.image, "main asset file changed"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.objectIconSmall.image, "main asset file changed"), GUIStyle.none);
 					x += 25;
 				}
 				if (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.metaIconSmall.image, ".meta file changed"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.metaIconSmall.image, ".meta file changed"), GUIStyle.none);
 					x += 25;
 				}
 				if (lfsHelper.IsLfsPath(info.Path))
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitOverlay.icons.lfsObjectIconSmall.image, "Lfs Object"), GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.lfsObjectIconSmall.image, "Lfs Object"), GUIStyle.none);
 					x += 25;
 				}
 
@@ -913,7 +970,7 @@ namespace UniGit
 					}
 					else
 					{
-						ContextGenericMenuPopup popup = new ContextGenericMenuPopup();
+						ContextGenericMenuPopup popup = injectionHelper.CreateInstance<ContextGenericMenuPopup>();
 						DoDiffElementContex(popup);
 						PopupWindow.Show(new Rect(Event.current.mousePosition, Vector2.zero), popup);
 					}
@@ -1113,7 +1170,7 @@ namespace UniGit
 
 		private SelectionId CreateSelectionId(StatusListEntry entry)
 		{
-			string guid = AssetDatabase.AssetPathToGUID(entry.Path);
+			string guid = GitManager.IsPathInAssetFolder(entry.Path) ? AssetDatabase.AssetPathToGUID(entry.Path) : entry.Path;
 			return string.IsNullOrEmpty(guid) ? new SelectionId(entry.Path,true) : new SelectionId(guid,false);
 		}
 
@@ -1477,7 +1534,7 @@ namespace UniGit
 			if (currentSteps >= totalSteps)
 			{
 				EditorUtility.ClearProgressBar();
-				gitManager.MarkDirty();
+				gitManager.MarkDirty(path);
 				GitGUI.ShowNotificationOnWindow<GitDiffWindow>(new GUIContent("Revert Complete!"),false);
 			}
 		}
@@ -1573,52 +1630,77 @@ namespace UniGit
 
 		#region Status List
 
+		[Serializable]
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
-			private List<StatusListEntry> entires;
+			[SerializeField] private List<StatusListEntry> entires;
 			private SortType sortType;
 			private SortDir sortDir;
 			private GitSettingsJson gitSettings;
 			private string gitPath;
+			private object lockObj;
 
-			public StatusList(SortType sortType, SortDir sortDir, GitSettingsJson gitSettings,string gitPath)
+			public StatusList()
+			{
+				entires = new List<StatusListEntry>();
+				lockObj = new object();
+			}
+
+			internal void Setup(SortType sortType, SortDir sortDir, GitSettingsJson gitSettings,string gitPath)
 			{
 				this.gitPath = gitPath;
 				this.gitSettings = gitSettings;
-				entires = new List<StatusListEntry>();
 				this.sortType = sortType;
 				this.sortDir = sortDir;
 			}
 
-			internal void Add(GitStatusEntry entry)
+			internal void Add(GitStatusEntry entry,bool sorted)
 			{
+				StatusListEntry statusEntry;
+
 				if (entry.Path.EndsWith(".meta"))
 				{
 					string mainAssetPath = GitManager.AssetPathFromMeta(entry.Path);
 					if (!gitSettings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) return;
 
-					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
+					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath && e.State == entry.Status);
 					if (ent != null)
 					{
 						ent.MetaChange |= MetaChangeEnum.Meta;
+						return;
 					}
-					else
-					{
-						entires.Add(new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta));
-					}
+
+					statusEntry = new StatusListEntry(mainAssetPath, entry.Status, MetaChangeEnum.Meta);
 				}
 				else
 				{
-					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.Path);
+					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.Path && e.State == entry.Status);
 					if (ent != null)
 					{
 						ent.State = entry.Status;
+						return;
 					}
-					else
+
+					statusEntry = new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object);
+				}
+
+				if(sorted) AddSorted(statusEntry);
+				else entires.Add(statusEntry);
+			}
+
+			private void AddSorted(StatusListEntry entry)
+			{
+				for (int i = 0; i < entires.Count; i++)
+				{
+					int compare = SortHandler(entires[i], entry);
+					if (compare > 0)
 					{
-						entires.Add(new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object));
+						entires.Insert(i,entry);
+						return;
 					}
 				}
+
+				entires.Add(entry);
 			}
 
 			public void Sort()
@@ -1660,6 +1742,10 @@ namespace UniGit
 							throw new ArgumentOutOfRangeException();
 					}
 				}
+				if (stateCompare == 0)
+				{
+					stateCompare = String.Compare(left.Path, right.Path, StringComparison.Ordinal);
+				}
 				return stateCompare;
 			}
 
@@ -1678,6 +1764,67 @@ namespace UniGit
 				return closest;
 			}
 
+			public void RemoveRange(string[] paths)
+			{
+				foreach (var path in paths)
+				{
+					if (path.EndsWith(".meta"))
+					{
+						var assetPath = GitManager.AssetPathFromMeta(path);
+						for (int i = entires.Count-1; i >= 0; i--)
+						{
+							var entry = entires[i];
+							if (entry.Path == assetPath)
+							{
+								if (entry.MetaChange.HasFlag(MetaChangeEnum.Object))
+									entry.MetaChange = entry.MetaChange.ClearFlags(MetaChangeEnum.Meta);
+								else
+									entires.RemoveAt(i);
+							}
+						}
+					}
+					else
+					{
+						for (int i = entires.Count-1; i >= 0; i--)
+						{
+							var entry = entires[i];
+							if (entry.Path == path)
+							{
+								if (entry.MetaChange.HasFlag(MetaChangeEnum.Meta))
+									entry.MetaChange = entry.MetaChange.ClearFlags(MetaChangeEnum.Object);
+								else
+									entires.RemoveAt(i);
+							}
+						}
+					}
+				}
+			}
+
+			public void Clear()
+			{
+				entires.Clear();
+			}
+
+			public bool TryLock()
+			{
+				return Monitor.TryEnter(lockObj);
+			}
+
+			public void Lock()
+			{
+				Monitor.Enter(lockObj);
+			}
+
+			public void Unlock()
+			{
+				Monitor.Exit(lockObj);
+			}
+
+			public bool IsLocked()
+			{
+				return Monitor.Wait(lockObj);
+			}
+
 			IEnumerator IEnumerable.GetEnumerator()
 			{
 				return GetEnumerator();
@@ -1689,6 +1836,7 @@ namespace UniGit
 			}
 		}
 
+		[Serializable]
 		public class StatusListEntry
 		{
 			[SerializeField]
@@ -1712,7 +1860,7 @@ namespace UniGit
 
 			public string Guid
 			{
-				get { return guid ?? (guid = AssetDatabase.AssetPathToGUID(path)); }
+				get { return guid ?? (guid = GitManager.IsPathInAssetFolder(path) ? AssetDatabase.AssetPathToGUID(path) : path); }
 			}
 
 			public string Path

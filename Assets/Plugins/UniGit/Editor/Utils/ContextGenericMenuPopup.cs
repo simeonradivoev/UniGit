@@ -24,6 +24,7 @@ namespace UniGit.Utils
 
 			public bool IsParent { get { return children != null && children.Count > 0; } }
 		}
+		private readonly GitOverlay gitOverlay;
 		private readonly List<Element> elements;
 		private GUIStyle elementStyle;
 		private GUIStyle separatorStyle;
@@ -36,8 +37,10 @@ namespace UniGit.Utils
 		private int lastHoverControlId;
 		private double lastHoverStartTime;
 
-		public ContextGenericMenuPopup()
+		[UniGitInject]
+		public ContextGenericMenuPopup(GitOverlay gitOverlay)
 		{
+			this.gitOverlay = gitOverlay;
 			elements = new List<Element>();
 		}
 
@@ -334,7 +337,7 @@ namespace UniGit.Utils
 			if (Event.current.type == EventType.Repaint)
 			{
 				GUI.color = new Color(1,1,1,0.3f);
-				var tex = GitOverlay.icons.loadingCircle.image;
+				var tex = gitOverlay.icons.loadingCircle.image;
 				int index = Mathf.RoundToInt(Mathf.Lerp(0, 7, (float) (EditorApplication.timeSinceStartup - lastHoverStartTime) / HoverPressTime));
 				GUI.DrawTextureWithTexCoords(new Rect(Event.current.mousePosition - new Vector2(12,5),new Vector2(34,34)), tex,new Rect((index % 4 / 4f), 0.5f - Mathf.FloorToInt(index / 4f) * 0.5f, 1/4f,0.5f));
 				GUI.color = Color.white;

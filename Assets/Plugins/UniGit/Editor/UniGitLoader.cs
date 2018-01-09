@@ -19,19 +19,20 @@ namespace UniGit
 		public static GitHookManager HookManager;
 		public static GitCredentialsManager CredentialsManager;
 		public static GitExternalManager ExternalManager;
-		public static GitLfsHelper LfsHelper;
 		private static readonly InjectionHelper injectionHelper;
-		public static GitAsyncManager AsyncManager;
+		public static GitCallbacks GitCallbacks;
 
 		static UniGitLoader()
 		{
 			Profiler.BeginSample("UniGit Initialization");
 			try
 			{
+				GitWindows.OnWindowAddedEvent += OnWindowAdded;
+				EditorApplication.update += OnEditorUpdate;
+
 				injectionHelper = new InjectionHelper();
+
 				GitWindows.Init();
-				var recompileChecker = ScriptableObject.CreateInstance<AssemblyReloadScriptableChecker>();
-				recompileChecker.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
 				string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
 				string settingsPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "Settings.json");
@@ -39,6 +40,7 @@ namespace UniGit
 				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
 
+				injectionHelper.Bind<UniGitData>().FromMethod(GetUniGitData).NonLazy();
 				injectionHelper.Bind<GitCallbacks>().FromMethod(() =>
 				{
 					var c = new GitCallbacks();
@@ -58,39 +60,38 @@ namespace UniGit
 				injectionHelper.Bind<GitSettingsJson>();
 				injectionHelper.Bind<GitSettingsManager>();
 				injectionHelper.Bind<GitAsyncManager>();
+				injectionHelper.Bind<GitFileWatcher>().NonLazy();
+				injectionHelper.Bind<GitReflectionHelper>();
+				injectionHelper.Bind<GitResourceManager>();
+				injectionHelper.Bind<GitOverlay>();
+				injectionHelper.Bind<GitAutoFetcher>().NonLazy();
 
 				GitManager = injectionHelper.GetInstance<GitManager>();
 				GitManager.Callbacks.RepositoryCreate += OnRepositoryCreate;
 
 				GitUnityMenu.Init(GitManager);
-				GitResourceManager.Initilize();
-				GitOverlay.Initlize();
 
 				//credentials
 				injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
-				injectionHelper.Bind<GitCredentialsManager>();
+				injectionHelper.Bind<GitCredentialsManager>().NonLazy();
 				//externals
 				injectionHelper.Bind<IExternalAdapter>().To<GitExtensionsAdapter>();
 				injectionHelper.Bind<IExternalAdapter>().To<TortoiseGitAdapter>();
 				injectionHelper.Bind<GitExternalManager>();
-				injectionHelper.Bind<GitLfsManager>();
+				//must be non lazy as it add itself as a filter
+				injectionHelper.Bind<GitLfsManager>().NonLazy();
 				//hooks
 				injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
-				injectionHelper.Bind<GitHookManager>();
+				injectionHelper.Bind<GitHookManager>().NonLazy();
 				//helpers
 				injectionHelper.Bind<GitLfsHelper>();
 				injectionHelper.Bind<FileLinesReader>();
 				//project window overlays
-				injectionHelper.Bind<GitProjectOverlay>();
+				injectionHelper.Bind<GitProjectOverlay>().NonLazy();
 
-				if (!Repository.IsValid(repoPath))
-				{
-					EditorApplication.delayCall += OnDelayedInit;
-				}
-				else
+				if (Repository.IsValid(repoPath))
 				{
 					Rebuild(injectionHelper);
-					EditorApplication.delayCall += OnDelayedInit;
 				}
 			}
 			finally
@@ -110,48 +111,48 @@ namespace UniGit
 				settingsManager.LoadOldSettingsFile();
 			};
 
-			HookManager = injectionHelper.GetInstance<GitHookManager>();
-			LfsManager = injectionHelper.GetInstance<GitLfsManager>();
-			ExternalManager = injectionHelper.GetInstance<GitExternalManager>();
-			CredentialsManager = injectionHelper.GetInstance<GitCredentialsManager>();
-			LfsHelper = injectionHelper.GetInstance<GitLfsHelper>();
-			AsyncManager = injectionHelper.GetInstance<GitAsyncManager>();
+			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
 
-			injectionHelper.GetInstance<GitAutoFetcher>();
-			injectionHelper.GetInstance<GitProjectOverlay>();
+			injectionHelper.CreateNonLazy();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
 		}
 
-		private static void OnDelayedInit()
+		private static void OnWindowAdded(EditorWindow editorWindow)
 		{
-			Profiler.BeginSample("UniGit Delayed Window Injection");
-			try
-			{
-				//inject all windows that are open
-				//windows should add themselves on OnEnable
-				foreach (var editorWindow in GitWindows.Windows)
-				{
-					injectionHelper.Inject(editorWindow);
-				}
-			}
-			finally
-			{
-				Profiler.EndSample();
-			}
+			injectionHelper.Inject(editorWindow);
+			editorWindow.Repaint();
+		}
 
-			//call delayed call here after all loaded delayed calls have been made
-			GitManager.Callbacks.IssueDelayCall();
+		//emulate Unity's delayed call
+		private static void OnEditorUpdate()
+		{
+			GitCallbacks.IssueDelayCall(true);
 		}
 
 		private static void OnRepositoryCreate()
 		{
 			Rebuild(injectionHelper);
+			foreach (var window in GitWindows.Windows)
+			{
+				injectionHelper.Inject(window);
+				window.Repaint();
+			}
 		}
 
 		private static void OnBeforeAssemblyReload()
 		{
 			
+		}
+
+		private static UniGitData GetUniGitData()
+		{
+			var existentData = Resources.FindObjectsOfTypeAll<UniGitData>().FirstOrDefault();
+			if (existentData == null)
+			{
+				return ScriptableObject.CreateInstance<UniGitData>();
+			}
+			return existentData;
 		}
 
 	    public static T FindWindow<T>() where T : EditorWindow
@@ -178,7 +179,6 @@ namespace UniGit
 				return editorWindow;
 	        }
 	        var newWindow = ScriptableObject.CreateInstance<T>();
-            injectionHelper.Inject(newWindow);
             if(utility)
                 newWindow.ShowUtility();
             else
@@ -195,7 +195,6 @@ namespace UniGit
 	    public static T DisplayWizard<T>(string title,string createButtonName,string otherButtonName) where T : ScriptableWizard
 	    {
 	        var instance = ScriptableWizard.DisplayWizard<T>(title, createButtonName, otherButtonName);
-            injectionHelper.Inject(instance);
             return instance;
         }
 	}

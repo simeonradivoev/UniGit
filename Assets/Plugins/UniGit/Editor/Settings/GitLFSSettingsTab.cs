@@ -9,11 +9,16 @@ namespace UniGit.Settings
 	{
 		private Rect trackFileRect;
 		private readonly GitLfsManager lfsManager;
+		private readonly InjectionHelper injectionHelper;
 
 		[UniGitInject]
-		public GitLFSSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitLfsManager lfsManager) 
+		public GitLFSSettingsTab(GitManager gitManager, 
+			GitSettingsWindow settingsWindow,
+			GitLfsManager lfsManager,
+			InjectionHelper injectionHelper) 
 			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow)
 		{
+			this.injectionHelper = injectionHelper;
 			this.lfsManager = lfsManager;
 		}
 
@@ -79,7 +84,7 @@ namespace UniGit.Settings
 
 					if (GUILayout.Button("Track File"))
 					{
-						PopupWindow.Show(trackFileRect, new GitLfsTrackPopupWindow(settingsWindow, lfsManager));
+						PopupWindow.Show(trackFileRect, injectionHelper.CreateInstance<GitLfsTrackPopupWindow>());
 					}
 					if (current.type == EventType.Repaint)
 					{

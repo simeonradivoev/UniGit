@@ -10,6 +10,7 @@ namespace UniGit
 		private readonly GitLfsManager lfsManager;
 		private string extension;
 
+		[UniGitInject]
 		public GitLfsTrackPopupWindow(EditorWindow focusWindow,GitLfsManager lfsManager)
 		{
 			this.focusWindow = focusWindow;

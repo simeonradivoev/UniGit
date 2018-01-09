@@ -10,15 +10,21 @@ namespace UniGit.Settings
 {
 	public class GitBranchesSettingsTab : GitSettingsTab
 	{
+		private readonly GitExternalManager externalManager;
+		private readonly InjectionHelper injectionHelper;
+
 		private string[] remoteNames;
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
 		private Vector2 scroll;
-		private readonly GitExternalManager externalManager;
 
 		[UniGitInject]
-		public GitBranchesSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow, GitExternalManager externalManager) 
+		public GitBranchesSettingsTab(GitManager gitManager,
+			GitSettingsWindow settingsWindow, 
+			GitExternalManager externalManager,
+			InjectionHelper injectionHelper) 
 			: base(new GUIContent("Branches"), gitManager,settingsWindow)
 		{
+			this.injectionHelper = injectionHelper;
 			this.externalManager = externalManager;
 		}
 
@@ -113,7 +119,10 @@ namespace UniGit.Settings
 				}
 				else
 				{
-					PopupWindow.Show(switchButtonRect,new GitCheckoutWindowPopup(gitManager,branch));
+
+					injectionHelper.Bind<Branch>().FromInstance(branch);
+					PopupWindow.Show(switchButtonRect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>());
+					injectionHelper.Bind<Branch>();
 				}
 			}
 			GUI.enabled = !isHead;

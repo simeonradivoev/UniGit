@@ -28,6 +28,7 @@ namespace UniGit
 			if (settings.IsDirty)
 			{
 				SaveSettingsToFile();
+				gitCallbacks.IssueSettingsChange();
 				settings.ResetDirty();
 			}
 		}

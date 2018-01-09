@@ -61,10 +61,13 @@ namespace UniGit.Settings
 			if (hasFocused && !initilized && gitManager.Repository != null)
 			{
 				var cachedStatus = gitManager.GetCachedStatus();
-				initilized = true;
-				if (!gitManager.IsValidRepo) return;
-				OnInitialize();
-				OnGitManagerUpdateInternal(cachedStatus, null);
+				if (cachedStatus.Initilzied)
+				{
+					initilized = true;
+					if (!gitManager.IsValidRepo) return;
+					OnInitialize();
+					OnGitManagerUpdateInternal(cachedStatus, null);
+				}
 			}
 		}
 
