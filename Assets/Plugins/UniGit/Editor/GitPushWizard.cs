@@ -12,10 +12,10 @@ namespace UniGit
 	{
 		private PushOptions pushOptions;
 
-		protected override void OnEnable()
+		[UniGitInject]
+		private void Construct(GitHookManager hookManager)
 		{
-			base.OnEnable();
-			pushOptions = new PushOptions() {CredentialsProvider = CredentialsHandler, OnPackBuilderProgress = OnPackBuildProgress, OnPushTransferProgress = PushTransferProgress, OnPushStatusError = OnFail,OnNegotiationCompletedBeforePush = UniGitLoader.HookManager.PrePushHandler};
+			pushOptions = new PushOptions() {CredentialsProvider = CredentialsHandler, OnPackBuilderProgress = OnPackBuildProgress, OnPushTransferProgress = PushTransferProgress, OnPushStatusError = OnFail,OnNegotiationCompletedBeforePush = hookManager.PrePushHandler};
 		}
 
 		protected override bool DrawWizardGUI()

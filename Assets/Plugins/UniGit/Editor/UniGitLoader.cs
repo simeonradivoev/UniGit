@@ -14,10 +14,7 @@ namespace UniGit
 	[InitializeOnLoad]
 	public static class UniGitLoader
 	{
-		public static GitLfsManager LfsManager;
-		public static readonly GitManager GitManager;
-		public static GitHookManager HookManager;
-		public static GitCredentialsManager CredentialsManager;
+		public static GitManager GitManager;
 		public static GitExternalManager ExternalManager;
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
@@ -56,7 +53,7 @@ namespace UniGit
 					return c;
 				});
 				injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
-				injectionHelper.Bind<GitManager>();
+				injectionHelper.Bind<GitManager>().NonLazy();
 				injectionHelper.Bind<GitSettingsJson>();
 				injectionHelper.Bind<GitSettingsManager>();
 				injectionHelper.Bind<GitAsyncManager>();
@@ -65,11 +62,6 @@ namespace UniGit
 				injectionHelper.Bind<IGitResourceManager>().To<GitResourceManager>();
 				injectionHelper.Bind<GitOverlay>();
 				injectionHelper.Bind<GitAutoFetcher>().NonLazy();
-
-				GitManager = injectionHelper.GetInstance<GitManager>();
-				GitManager.Callbacks.RepositoryCreate += OnRepositoryCreate;
-
-				GitUnityMenu.Init(GitManager);
 
 				//credentials
 				injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
@@ -111,13 +103,16 @@ namespace UniGit
 				settingsManager.LoadOldSettingsFile();
 			};
 
+			GitManager = injectionHelper.GetInstance<GitManager>();
 			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
+			GitCallbacks.RepositoryCreate += OnRepositoryCreate;
 			var uniGitData = injectionHelper.GetInstance<UniGitData>();
 			uniGitData.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
 			injectionHelper.CreateNonLazy();
 
 			GitProjectContextMenus.Init(GitManager, ExternalManager);
+			GitUnityMenu.Init(GitManager);
 		}
 
 		private static void OnWindowAdded(EditorWindow editorWindow)
