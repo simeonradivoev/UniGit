@@ -19,6 +19,7 @@ namespace UniGit
 		private readonly GitExternalManager externalManager;
 		private readonly GitOverlay gitOverlay;
 
+		[UniGitInject]
 		public GitCommitDetailsWindow(GitManager gitManager,GitExternalManager externalManager,Commit commit,GitOverlay gitOverlay)
 		{
 			this.gitManager = gitManager;
@@ -91,7 +92,7 @@ namespace UniGit
 				menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
 				{
 					Commit parent = commit.Parents.Single();
-					gitManager.ShowDiff(changePath, commit, parent, externalManager);
+					gitManager.ShowDiff(changePath, parent,commit, externalManager);
 				});
 			}
 			else

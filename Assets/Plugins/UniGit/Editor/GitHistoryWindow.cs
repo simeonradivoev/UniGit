@@ -428,10 +428,7 @@ namespace UniGit
 				}
 				else
 				{
-
-					injectionHelper.Bind<Branch>().FromInstance(selectedBranch.LoadBranch(gitManager));
-					PopupWindow.Show(btRect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>());
-					injectionHelper.Unbind<Branch>();
+					PopupWindow.Show(btRect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>(selectedBranch.LoadBranch(gitManager)));
 				}
 			}
 			GitGUI.EndEnable();
@@ -761,7 +758,7 @@ namespace UniGit
 			buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
 			if (GUI.Button(buttonRect, GitGUI.GetTempContent("Details"), EditorStyles.miniButtonRight))
 			{
-				PopupWindow.Show(buttonRect, new GitCommitDetailsWindow(gitManager,externalManager,gitManager.Repository.Lookup<Commit>(commit.Id),gitOverlay));
+				PopupWindow.Show(buttonRect, injectionHelper.CreateInstance<GitCommitDetailsWindow>(gitManager.Repository.Lookup<Commit>(commit.Id)));
 			}
 
 			if (rect.Contains(current.mousePosition))
@@ -782,9 +779,7 @@ namespace UniGit
 
 		private void SwitchToBranchCallback(BranchInfo branch,Rect rect)
 		{
-			injectionHelper.Bind<Branch>().FromInstance(branch.LoadBranch(gitManager));
-			popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>()));
-			injectionHelper.Unbind<Branch>();
+			popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>(branch.LoadBranch(gitManager))));
 		}
 
 		private void DoWarningBox(Rect rect, RepositoryInformation info, BranchInfo branch)

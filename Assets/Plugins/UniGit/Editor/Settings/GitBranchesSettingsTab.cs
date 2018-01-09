@@ -119,10 +119,7 @@ namespace UniGit.Settings
 				}
 				else
 				{
-
-					injectionHelper.Bind<Branch>().FromInstance(branch);
-					PopupWindow.Show(switchButtonRect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>());
-					injectionHelper.Bind<Branch>();
+					PopupWindow.Show(switchButtonRect,injectionHelper.CreateInstance<GitCheckoutWindowPopup>(branch));
 				}
 			}
 			GUI.enabled = !isHead;

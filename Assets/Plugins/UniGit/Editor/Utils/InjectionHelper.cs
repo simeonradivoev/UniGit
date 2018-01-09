@@ -51,10 +51,15 @@ namespace UniGit.Utils
 
 		public T CreateInstance<T>()
 		{
-			return (T)CreateInstance(typeof(T));
+			return (T)CreateInstance(typeof(T),null);
 		}
 
-		public object CreateInstance(Type type)
+		public T CreateInstance<T>(params object[] additionalArguments)
+		{
+			return (T)CreateInstance(typeof(T),additionalArguments);
+		}
+
+		public object CreateInstance(Type type,object[] additionalArguments)
 		{
 			if (type == typeof(ScriptableObject) || typeof(ScriptableObject).IsSubclassOf(type))
 			{
@@ -70,7 +75,7 @@ namespace UniGit.Utils
 				object[] args = new object[parameterInfos.Length];
 				for (int i = 0; i < parameterInfos.Length; i++)
 				{
-					args[i] = HandleParameter(parameterInfos[i], type);
+					args[i] = HandleParameter(parameterInfos[i], type,additionalArguments);
 				}
 				object instance = constructor.Invoke(args);
 				Inject(instance);
@@ -89,7 +94,7 @@ namespace UniGit.Utils
 				object[] args = new object[parameterInfos.Length];
 				for (int i = 0; i < parameterInfos.Length; i++)
 				{
-					args[i] = HandleParameter(parameterInfos[i], type);
+					args[i] = HandleParameter(parameterInfos[i], type,null);
 				}
 				try
 				{
@@ -173,7 +178,7 @@ namespace UniGit.Utils
 			return typeof(ICollection<>).IsAssignableFrom(type) || typeof(IList<>).IsAssignableFrom(type) || typeof(List<>).IsAssignableFrom(type);
 		}
 
-		private object HandleParameter(ParameterInfo parameter,Type injecteeType)
+		private object HandleParameter(ParameterInfo parameter,Type injecteeType,object[] additionalArguments)
 		{
 			if (parameter.ParameterType.IsGenericType)
 			{
@@ -202,9 +207,20 @@ namespace UniGit.Utils
 				return resolve.GetInstance();
 			}
 
-		    if (parent != null)
+			if (additionalArguments != null)
+			{
+				foreach (var additionalArgument in additionalArguments)
+				{
+					if (parameter.ParameterType.IsInstanceOfType(additionalArgument))
+					{
+						return additionalArgument;
+					}
+				}
+			}
+
+			if (parent != null)
 		    {
-		        return parent.HandleParameter(parameter, injecteeType);
+		        return parent.HandleParameter(parameter, injecteeType,additionalArguments);
 		    }
 
 			throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameter.Name, parameter.ParameterType));
@@ -226,16 +242,20 @@ namespace UniGit.Utils
 
 		private bool FindResolve(ParameterInfo parameter, Type injecteeType,out Resolve resolveOut)
 		{
+			Resolve newResolve = null;
 			foreach (var resolve in resolves)
 			{
 				if (ValidResolve(resolve, parameter, injecteeType))
 				{
-					resolveOut = resolve;
-					return true;
+					if (newResolve != null)
+					{
+						Debug.LogErrorFormat("Found multiple resolve of type: {0}",parameter.ParameterType);
+					}
+					newResolve = resolve;
 				}
 			}
-			resolveOut = null;
-			return false;
+			resolveOut = newResolve;
+			return newResolve != null;
 		}
 
 		private bool ValidResolve(Resolve resolve, ParameterInfo parameter, Type injecteeType)
@@ -443,7 +463,7 @@ namespace UniGit.Utils
 			{
 				if (instance == null)
 				{
-					instance = method != null ? method.Invoke() : injectionHelper.CreateInstance(instanceType);
+					instance = method != null ? method.Invoke() : injectionHelper.CreateInstance(instanceType,null);
 				}
 			}
 
