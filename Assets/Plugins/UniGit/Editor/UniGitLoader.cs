@@ -18,6 +18,7 @@ namespace UniGit
 		public static GitExternalManager ExternalManager;
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
+		private static GitReflectionHelper ReflectionHelper;
 
 		static UniGitLoader()
 		{
@@ -105,6 +106,8 @@ namespace UniGit
 
 			GitManager = injectionHelper.GetInstance<GitManager>();
 			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
+			ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
+
 			GitCallbacks.RepositoryCreate += OnRepositoryCreate;
 			var uniGitData = injectionHelper.GetInstance<UniGitData>();
 			uniGitData.OnBeforeReloadAction = OnBeforeAssemblyReload;
@@ -125,6 +128,7 @@ namespace UniGit
 		private static void OnEditorUpdate()
 		{
 			GitCallbacks.IssueDelayCall(true);
+			
 		}
 
 		private static void OnRepositoryCreate()
@@ -139,7 +143,8 @@ namespace UniGit
 
 		private static void OnBeforeAssemblyReload()
 		{
-			injectionHelper.Dispose();
+			if(!(bool)ReflectionHelper.TestRunningField.GetValue(null))
+				injectionHelper.Dispose();
 		}
 
 		private static UniGitData GetUniGitData()

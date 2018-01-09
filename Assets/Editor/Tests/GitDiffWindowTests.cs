@@ -3,7 +3,6 @@ using System.Linq;
 using NUnit.Framework;
 using UniGit;
 using UniGit.Utils;
-using UnityEditor;
 using UnityEngine;
 
 public class GitDiffWindowTests : TestRepoFixture
@@ -18,7 +17,6 @@ public class GitDiffWindowTests : TestRepoFixture
 		injectionHelper.Bind<GitCredentialsManager>();
 		injectionHelper.Bind<GitLfsHelper>();
 		injectionHelper.Bind<FileLinesReader>();
-		injectionHelper.Bind<string>().WithId("repoPath").FromInstance("");
 		diffWindow = ScriptableObject.CreateInstance<GitDiffWindow>();
 		diffWindow2 = ScriptableObject.CreateInstance<GitDiffWindow>();
 		injectionHelper.Inject(diffWindow);

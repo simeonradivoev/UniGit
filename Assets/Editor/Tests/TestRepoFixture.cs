@@ -1,6 +1,7 @@
 ﻿using System;
 using LibGit2Sharp;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using UniGit;
 using UniGit.Settings;
 using UniGit.Utils;
