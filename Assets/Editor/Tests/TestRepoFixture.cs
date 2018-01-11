@@ -1,7 +1,6 @@
 ﻿using System;
 using LibGit2Sharp;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 using UniGit;
 using UniGit.Settings;
 using UniGit.Utils;
@@ -31,9 +30,10 @@ public class TestRepoFixture
 		injectionHelper.Bind<GitReflectionHelper>();
 		injectionHelper.Bind<GitOverlay>();
 		injectionHelper.Bind<IGitResourceManager>().To<GitResourceManagerMock>();
+		injectionHelper.Bind<ILogger>().FromInstance(Debug.unityLogger);
 
 		gitManager = injectionHelper.GetInstance<GitManager>();
-		gitManager.InitilizeRepository();
+		gitManager.InitializeRepository();
         signature = new Signature("Test", "Test@Test.com", DateTime.Now);
 
 		injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();

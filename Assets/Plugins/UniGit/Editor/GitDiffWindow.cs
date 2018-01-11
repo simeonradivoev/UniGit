@@ -253,7 +253,7 @@ namespace UniGit
 		{
 			if (status == null)
 			{
-				Debug.LogAssertion("Trying to create status list from empty status");
+				logger.Log(LogType.Assert,"Trying to create status list from empty status");
 				return;
 			}
 			try
@@ -308,7 +308,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 		}
 
@@ -511,7 +511,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 			finally
 			{
@@ -1074,7 +1074,7 @@ namespace UniGit
 			}
 			else
 			{
-				Debug.LogWarning("Commit message file missing. Creating new file.");
+				logger.Log(LogType.Error,"Commit message file missing. Creating new file.");
 				SaveCommitMessageToFile();
 			}
 		}
@@ -1103,8 +1103,8 @@ namespace UniGit
 			catch (Exception e)
 			{
 #if UNITY_EDITOR
-				Debug.LogError("Could not save commit message to file. Saving to Prefs");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"Could not save commit message to file. Saving to Prefs");
+				logger.LogException(e);
 #endif
 			}
 		}

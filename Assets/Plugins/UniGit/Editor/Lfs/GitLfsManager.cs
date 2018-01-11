@@ -20,12 +20,14 @@ namespace UniGit
 		private GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
 		private readonly GitManager gitManager;
 		private readonly GitCallbacks gitCallbacks;
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitLfsManager(GitManager gitManager,GitCallbacks gitCallbacks)
+		public GitLfsManager(GitManager gitManager,GitCallbacks gitCallbacks,ILogger logger)
 		{
 			this.gitManager = gitManager;
 			this.gitCallbacks = gitCallbacks;
+			this.logger = logger;
 			gitCallbacks.UpdateRepository += OnUpdateRepository;
 			gitManager.AddSettingsAffector(this);
 
@@ -91,7 +93,7 @@ namespace UniGit
 			if (GlobalSettings.GetRegisteredFilters().All(f => f.Name != "lfs"))
 			{
 				var filteredFiles = new List<FilterAttributeEntry> {new FilterAttributeEntry("lfs")};
-				var filter = new GitLfsFilter("lfs", filteredFiles,this, gitManager);
+				var filter = new GitLfsFilter("lfs", filteredFiles,this, gitManager,logger);
 				GlobalSettings.RegisterFilter(filter);
 			}
 		}
@@ -102,8 +104,8 @@ namespace UniGit
 			
 			if (!Directory.Exists(UniGitPath.Combine(gitManager.RepoPath,".git","lfs")))
 			{
-				Debug.LogError("Git-LFS install failed! (Try manually)");
-				Debug.LogError(output);
+				logger.Log(LogType.Error,"Git-LFS install failed! (Try manually)");
+				logger.Log(LogType.Error,output);
 				return false;
 			}
 			EditorUtility.DisplayDialog("Git LFS Initialized", output, "Ok");
@@ -120,8 +122,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogErrorFormat("There was a problem while trying to track an extension");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"There was a problem while trying to track an extension");
+				logger.LogException(e);
 			}
 		}
 
@@ -134,8 +136,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogErrorFormat("There was a problem while trying to untrack an extension");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"There was a problem while trying to untrack an extension");
+				logger.LogException(e);
 			}
 		}
 

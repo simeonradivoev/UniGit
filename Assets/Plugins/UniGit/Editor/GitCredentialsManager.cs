@@ -24,14 +24,20 @@ namespace UniGit
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private GitCallbacks gitCallbacks;
+		private ILogger logger;
 
 		[UniGitInject]
-		public GitCredentialsManager(GitManager gitManager,GitSettingsJson gitSettings,List<ICredentialsAdapter> adapters, GitCallbacks gitCallbacks)
+		public GitCredentialsManager(GitManager gitManager,
+			GitSettingsJson gitSettings,
+			List<ICredentialsAdapter> adapters, 
+			GitCallbacks gitCallbacks,
+			ILogger logger)
 		{
 			this.gitSettings = gitSettings;
 			this.gitManager = gitManager;
 			this.adapters = adapters.ToArray();
 			this.gitCallbacks = gitCallbacks;
+			this.logger = logger;
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 			adapterIds = adapters.Select(GetAdapterId).ToArray();
 
@@ -62,8 +68,8 @@ namespace UniGit
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("Could not deserialize git settings. Creating new settings.");
-					Debug.LogException(e);
+					logger.Log(LogType.Error,"Could not deserialize git settings. Creating new settings.");
+					logger.LogException(e);
 				}
 			}
 
@@ -92,7 +98,7 @@ namespace UniGit
 			if (oldCredentialsFile != null)
 			{
 				gitCredentials.Copy(oldCredentialsFile);
-				Debug.Log("Old Git Credentials transferred to new json credentials file. Old credentials file can now safely be removed.");
+				logger.Log(LogType.Log,"Old Git Credentials transferred to new json credentials file. Old credentials file can now safely be removed.");
 			}
 			SaveCredentialsToFile(gitCredentials);
 		}
@@ -109,8 +115,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("Could not serialize GitCredentialsJson to json file at: " + credentialsFilePath);
-				Debug.LogException(e);
+				logger.LogFormat(LogType.Error,"Could not serialize GitCredentialsJson to json file at: {0}",credentialsFilePath);
+				logger.LogException(e);
 			}
 		}
 
@@ -284,8 +290,8 @@ namespace UniGit
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("There was an error while trying to remove credentials form " + GetAdapterName(SeletedAdapter));
-					Debug.LogException(e);
+					logger.LogFormat(LogType.Error,"There was an error while trying to remove credentials form {0}",GetAdapterName(SeletedAdapter));
+					logger.LogException(e);
 				}
 			}
 
@@ -307,8 +313,8 @@ namespace UniGit
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("There was an error while trying to remove credentials form " + GetAdapterName(SeletedAdapter));
-					Debug.LogException(e);
+					logger.LogFormat(LogType.Error,"There was an error while trying to remove credentials form {0}",GetAdapterName(SeletedAdapter));
+					logger.LogException(e);
 				}
 			}
 
@@ -343,13 +349,13 @@ namespace UniGit
 				{
 					if (!SeletedAdapter.LoadPassword(SeletedAdapter.FormatUrl(entry.URL), ref pass))
 					{
-						Debug.LogFormat("Could not load password with URL: {0} from {1}",entry.URL,GetAdapterName(SeletedAdapter));
+						logger.LogFormat(LogType.Log,"Could not load password with URL: {0} from {1}",entry.URL,GetAdapterName(SeletedAdapter));
 					}
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("There was an error while trying to load credentials from Windows Credentials Manager");
-					Debug.LogException(e);
+					logger.Log(LogType.Error,"There was an error while trying to load credentials from Windows Credentials Manager");
+					logger.LogException(e);
 				}
 			}
 
@@ -364,14 +370,14 @@ namespace UniGit
 				{
 					if (!SeletedAdapter.SaveUsername(SeletedAdapter.FormatUrl(url), user))
 					{
-						Debug.LogErrorFormat("Could not save new Username to {0} with URL: {1}", GetAdapterName(SeletedAdapter), SeletedAdapter.FormatUrl(url));
+						logger.LogFormat(LogType.Error,"Could not save new Username to {0} with URL: {1}", GetAdapterName(SeletedAdapter), SeletedAdapter.FormatUrl(url));
 						return;
 					}
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("There was a problem while trying to save credentials to " + GetAdapterName(SeletedAdapter));
-					Debug.LogException(e);
+					logger.LogFormat(LogType.Error,"There was a problem while trying to save credentials to {0}",GetAdapterName(SeletedAdapter));
+					logger.LogException(e);
 				}
 			}
 
@@ -393,7 +399,7 @@ namespace UniGit
 				{
 					if (!SeletedAdapter.SavePassword(SeletedAdapter.FormatUrl(url), user, password, true))
 					{
-						Debug.LogErrorFormat("Could not save new Password to {0} with URL: {1}", GetAdapterName(SeletedAdapter), SeletedAdapter.FormatUrl(url));
+						logger.LogFormat(LogType.Error,"Could not save new Password to {0} with URL: {1}", GetAdapterName(SeletedAdapter), SeletedAdapter.FormatUrl(url));
 						return;
 					}
 
@@ -404,12 +410,11 @@ namespace UniGit
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("There was a problem while trying to save credentials to " + GetAdapterName(SeletedAdapter));
-					Debug.LogException(e);
+					logger.LogFormat(LogType.Error,"There was a problem while trying to save credentials to {0}",GetAdapterName(SeletedAdapter));
+					logger.LogException(e);
 				}
 				return;
 			}
-
 			
 			if (entry != null)
 			{

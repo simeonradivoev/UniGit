@@ -13,10 +13,13 @@ namespace UniGit
 {
 	public class GitDiffInspector : EditorWindow, IHasCustomMenu
 	{
-		private float scrollVertical;
-		private float scrollHorizontalNormal;
-		public string path;
-		public string commitSha;
+		private const float AnimationDuration = 0.4f;
+
+		[SerializeField] private float scrollVertical;
+		[SerializeField] private float scrollHorizontalNormal;
+		[SerializeField] private string path;
+		[SerializeField] private string commitSha;
+
 		private Styles styles;
 		private int maxLines;
 		private float totalLinesHeight;
@@ -32,6 +35,10 @@ namespace UniGit
 		private bool synataxHighlight;
 		private GitManager gitManager;
 		private GitOverlay gitOverlay;
+		private ILogger logger;
+		private GitAnimation gitAnimation;
+		private double animationTime;
+		private GitAnimation.GitTween animationTween;
 
 		private class Styles
 		{
@@ -54,10 +61,12 @@ namespace UniGit
 		private UnityEngine.Object asset;
 
         [UniGitInject]
-		private void Construct(GitManager gitManager,GitOverlay gitOverlay)
+		private void Construct(GitManager gitManager,GitOverlay gitOverlay,ILogger logger,GitAnimation gitAnimation)
 		{
 			this.gitManager = gitManager;
 			this.gitOverlay = gitOverlay;
+			this.logger = logger;
+			this.gitAnimation = gitAnimation;
 		}
 
 		private void OnEnable()
@@ -99,6 +108,7 @@ namespace UniGit
 			BuildChangeSections(null);
 			LoadAsset(path);
 			ScrollToFirstChange();
+			animationTween = null;
 		}
 
 		public void Init(string path,Commit commit)
@@ -110,6 +120,7 @@ namespace UniGit
 			BuildChangeSections(commit);
 			LoadAsset(path);
 			ScrollToFirstChange();
+			animationTween = null;
 		}
 
 		public void Init(string path, Commit oldCommit,Commit newCommit)
@@ -121,6 +132,7 @@ namespace UniGit
 			BuildChangeSections(oldCommit, newCommit);
 			LoadAsset(path);
 			ScrollToFirstChange();
+			animationTween = null;
 		}
 
 		private void LoadAsset(string path)
@@ -184,8 +196,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("There was a problem while loading changes");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"There was a problem while loading changes");
+				logger.LogException(e);
 			}
 			finally
 			{
@@ -207,8 +219,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("There was a problem while loading changes");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"There was a problem while loading changes");
+				logger.LogException(e);
 			}
 			finally
 			{
@@ -468,6 +480,11 @@ namespace UniGit
 				return;
 			}
 
+			if (animationTween == null)
+			{
+				animationTween = gitAnimation.StartManualAnimation(AnimationDuration,this,ref animationTime);
+			}
+
 			float toolbarHeight = EditorStyles.toolbar.fixedHeight;
 			float difHeight = position.height - toolbarHeight;
 
@@ -477,6 +494,12 @@ namespace UniGit
 			Rect indexFileRect = new Rect(position.width * otherFileWindowWidth + (resizeRect.width/2), toolbarHeight, position.width * (1 - otherFileWindowWidth) - (resizeRect.width / 2), difHeight);
 			Rect otherFileScrollRect = new Rect(0, toolbarHeight, position.width * otherFileWindowWidth - (resizeRect.width / 2), difHeight);
 
+			gitAnimation.Update(animationTween,ref animationTime);
+			float animTime = GitAnimation.ApplyEasing(animationTween.Percent);
+			Matrix4x4 lastMatrix = GUI.matrix;
+			float scale = Mathf.Lerp(1, 0.5f, animTime);
+
+			GUI.matrix = lastMatrix * Matrix4x4.Translate(new Vector3(-32 * (1-scale),0));
 			if (Event.current.type == EventType.MouseDown && otherFileScrollRect.Contains(Event.current.mousePosition))
 			{
 				selectedFile = FileType.OtherFile;
@@ -516,6 +539,12 @@ namespace UniGit
 				GUI.Box(indexFileRect,GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
 			else
 				GUI.Box(otherFileScrollRect, GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
+
+			GUI.matrix = lastMatrix;
+
+			GUI.color = new Color(1,1,1,Mathf.Lerp(0,1,animTime));
+			GUI.Box(new Rect(0,0,position.width,position.height - toolbarHeight), GUIContent.none);
+			GUI.color = Color.white;
 		}
 
 		private void DrawToolbar()

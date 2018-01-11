@@ -45,7 +45,7 @@ namespace UniGit
 			}
 			catch (CheckoutConflictException e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 			finally
 			{

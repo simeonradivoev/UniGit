@@ -10,11 +10,13 @@ namespace UniGit.Utils
 	{
 		private readonly List<GitAsyncOperation> activeOperations;
 		private readonly GitCallbacks gitCallbacks;
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitAsyncManager(GitCallbacks gitCallbacks)
+		public GitAsyncManager(GitCallbacks gitCallbacks,ILogger logger)
 		{
 			this.gitCallbacks = gitCallbacks;
+			this.logger = logger;
 			activeOperations = new List<GitAsyncOperation>();
 			gitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
@@ -104,7 +106,7 @@ namespace UniGit.Utils
 				}
 				catch (Exception e)
 				{
-					Debug.LogException(e);
+					logger.LogException(e);
 				}
 				finally
 				{
@@ -146,7 +148,7 @@ namespace UniGit.Utils
 				}
 				catch (Exception e)
 				{
-					Debug.LogException(e);
+					logger.LogException(e);
 				}
 				finally
 				{
@@ -186,7 +188,7 @@ namespace UniGit.Utils
 				}
 				catch (Exception e)
 				{
-					Debug.LogException(e);
+					logger.LogException(e);
 				}
 				finally
 				{
@@ -228,7 +230,7 @@ namespace UniGit.Utils
 				}
 				catch (Exception e)
 				{
-					Debug.LogException(e);
+					logger.LogException(e);
 				}
 				finally
 				{
@@ -260,8 +262,8 @@ namespace UniGit.Utils
 					}
 					catch (Exception e)
 					{
-						Debug.LogError("There was a problem while notifying async operation of completion");
-						Debug.LogException(e);
+						logger.Log(LogType.Error,"There was a problem while notifying async operation of completion");
+						logger.LogException(e);
 					}
 					finally
 					{

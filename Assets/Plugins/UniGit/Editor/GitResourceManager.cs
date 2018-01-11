@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using UniGit.Utils;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -12,9 +13,12 @@ namespace UniGit
 	public class GitResourceManager : IGitResourceManager, IDisposable
 	{
 		private readonly Dictionary<string,Texture2D> textures;
+		private readonly ILogger logger;
 
-		public GitResourceManager()
+		[UniGitInject]
+		public GitResourceManager(ILogger logger)
 		{
+			this.logger = logger;
 			textures = new Dictionary<string, Texture2D>();
 			Profiler.BeginSample("UniGit Resource Loading");
 			try
@@ -34,8 +38,11 @@ namespace UniGit
 			{
 				return tex;
 			}
+
 			if (throwError)
-				Debug.LogError("Could not find texture with key: " + name);
+			{
+				logger.LogFormat(LogType.Error,"Could not find texture with key: {0}",name);
+			}
 			return null;
 		}
 
@@ -57,7 +64,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 		}
 
@@ -89,7 +96,7 @@ namespace UniGit
 			};
 			if (!img.LoadImage(imageBytes))
 			{
-				Debug.Log("There was a problem while loading a texture: " + name);
+				logger.LogFormat(LogType.Warning,"There was a problem while loading a texture: {0}",name);
 			}
 			img.Apply();
 

@@ -59,7 +59,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 			finally
 			{

@@ -12,14 +12,16 @@ namespace UniGit
 		private readonly GitCredentialsManager credentialsManager;
 		private readonly GitManager gitManager;
 		private readonly GitCallbacks gitCallbacks;
+		private readonly ILogger logger;
 		private bool needsFetch;
 
 		[UniGitInject]
-		public GitAutoFetcher(GitManager gitManager,GitCredentialsManager credentialsManager,GitCallbacks gitCallbacks)
+		public GitAutoFetcher(GitManager gitManager,GitCredentialsManager credentialsManager,GitCallbacks gitCallbacks,ILogger logger)
 		{
 			this.gitManager = gitManager;
 			this.credentialsManager = credentialsManager;
 			this.gitCallbacks = gitCallbacks;
+			this.logger = logger;
 			gitCallbacks.EditorUpdate += OnEditorUpdate;
 			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 		}
@@ -54,7 +56,7 @@ namespace UniGit
 					OnTransferProgress = GitManager.FetchTransferProgressHandler,
 					RepositoryOperationStarting = (context) =>
 					{
-						Debug.Log("Repository Operation Starting");
+						logger.Log(LogType.Log,"Repository Operation Starting");
 						return true;
 					}
 				});
@@ -62,8 +64,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogErrorFormat("Automatic Fetching from remote: {0} with URL: {1} Failed!", remote.Name, remote.Url);
-				Debug.LogException(e);
+				logger.LogFormat(LogType.Error,"Automatic Fetching from remote: {0} with URL: {1} Failed!",remote.Name, remote.Url);
+				logger.LogException(e);
 			}
 			finally
 			{

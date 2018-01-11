@@ -223,6 +223,9 @@ namespace UniGit.Utils
 		        return parent.HandleParameter(parameter, injecteeType,additionalArguments);
 		    }
 
+			var customAttributes = parameter.GetCustomAttributes(typeof(UniGitInjectOptional),true);
+			if (customAttributes.Length > 0) return parameter.DefaultValue;
+
 			throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameter.Name, parameter.ParameterType));
 		}
 
@@ -335,9 +338,9 @@ namespace UniGit.Utils
 				return (T)base.GetInstance();
 			}
 
-			public Resolve<T> FromMethod(Func<T> method)
+			public Resolve<T> FromMethod(Func<InjectionHelper,T> method)
 			{
-				base.FromMethod(()=> method.Invoke());
+				base.FromMethod((h)=> method.Invoke(h));
 				return this;
 			}
 
@@ -371,7 +374,7 @@ namespace UniGit.Utils
 			private Type type;
 			private Type instanceType;
 			private Type whenInjectedInto;
-			private Func<object> method;
+			private Func<InjectionHelper,object> method;
 			internal KeyValuePair<string, Type>[] injectedParamsCached;
 			internal string id;
 			private object instance;
@@ -421,7 +424,7 @@ namespace UniGit.Utils
 				return WhenInjectedInto(typeof(T));
 			}
 
-			public Resolve FromMethod(Func<object> method)
+			public Resolve FromMethod(Func<InjectionHelper,object> method)
 			{
 				this.method = method;
 				return this;
@@ -463,7 +466,7 @@ namespace UniGit.Utils
 			{
 				if (instance == null)
 				{
-					instance = method != null ? method.Invoke() : injectionHelper.CreateInstance(instanceType,null);
+					instance = method != null ? method.Invoke(injectionHelper) : injectionHelper.CreateInstance(instanceType,null);
 				}
 			}
 

@@ -12,13 +12,15 @@ namespace UniGit
 		private readonly GitSettingsJson settings;
 		private readonly GitCallbacks gitCallbacks;
 		private readonly string settingsPath;
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks gitCallbacks)
+		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks gitCallbacks,ILogger logger)
 		{
 			this.settings = settings;
 			this.settingsPath = settingsPath;
 			this.gitCallbacks = gitCallbacks;
+			this.logger = logger;
 
 			gitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
@@ -55,8 +57,8 @@ namespace UniGit
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("Could not deserialize git settings. Creating new settings.");
-					Debug.LogException(e);
+					logger.Log(LogType.Error,"Could not deserialize git settings. Creating new settings.");
+					logger.LogException(e);
 				}
 			}
 		}
@@ -68,7 +70,7 @@ namespace UniGit
 			if (oldSettingsFile != null)
 			{
 				settings.Copy(oldSettingsFile);
-				Debug.Log("Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
+				logger.Log(LogType.Log,"Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
 			}
 			SaveSettingsToFile();
 		}
@@ -85,8 +87,8 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("Could not serialize GitSettingsJson to json file at: " + settingsFilePath);
-				Debug.LogException(e);
+				logger.LogFormat(LogType.Error,"Could not serialize GitSettingsJson to json file at: {0}",settingsFilePath);
+				logger.LogException(e);
 			}
 		}
 

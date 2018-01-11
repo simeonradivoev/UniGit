@@ -43,7 +43,7 @@ namespace UniGit
 					}
 					else
 					{
-						Debug.LogWarning("No Branch Selected.");
+						logger.Log(LogType.Warning,"No Branch Selected.");
 					}
 				}
 			}
@@ -61,7 +61,7 @@ namespace UniGit
 						GitGUI.ShowNotificationOnWindow<GitHistoryWindow>(content,false);
 					}
 				}
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 			finally
 			{
@@ -79,7 +79,7 @@ namespace UniGit
 			if (current == total)
 			{
 #if UNITY_EDITOR
-				Debug.Log("Pack Building completed.");
+				logger.Log(LogType.Log,"Pack Building completed.");
 #endif
 			}
 			return !cancel;
@@ -91,7 +91,7 @@ namespace UniGit
 			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Sent total of: {0} bytes. {1}%", bytes, (percent * 100).ToString("###")), percent);
 			if (total == current)
 			{
-				Debug.LogFormat("Push Transfer complete. Sent a total of {0} bytes.", bytes);
+				logger.LogFormat(LogType.Log,"Push Transfer complete. Sent a total of {0} bytes.", bytes);
 			}
 			return !cancel;
 		}

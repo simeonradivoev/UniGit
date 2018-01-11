@@ -14,21 +14,27 @@ namespace UniGit
 			GitUnityMenu.gitManager = gitManager;
 		}
 
-        #region
+        #region Windows
 
-	    [UsedImplicitly,MenuItem("Window/GIT History")]
+	    [UsedImplicitly,MenuItem("Window/Git/History")]
         private static void OpenGitHistoryWindow()
 	    {
 	        UniGitLoader.GetWindow<GitHistoryWindow>();
 	    }
 
-		[UsedImplicitly,MenuItem("Window/GIT Diff")]
+		[UsedImplicitly,MenuItem("Window/Git/Diff")]
 	    private static void OpenGitDiffWindow()
 	    {
 	        UniGitLoader.GetWindow<GitDiffWindow>();
 	    }
 
-		[UsedImplicitly,MenuItem("Window/GIT Settings")]
+		[UsedImplicitly,MenuItem("Window/Git/Log")]
+		private static void OpenGitLogWindow()
+		{
+			UniGitLoader.GetWindow<GitLogWindow>();
+		}
+
+		[UsedImplicitly,MenuItem("Window/Git/Settings")]
 	    private static void OpenGitSettingsWindow()
 	    {
 	        UniGitLoader.GetWindow<GitSettingsWindow>();
@@ -48,7 +54,7 @@ namespace UniGit
 		{
 			if (!gitManager.IsValidRepo && EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 			{
-				gitManager.InitilizeRepositoryAndRecompile();
+				gitManager.InitializeRepositoryAndRecompile();
 			}
 		}
 

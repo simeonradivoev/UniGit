@@ -9,4 +9,11 @@ namespace UniGit.Utils
 	{
 		
 	}
+
+	[AttributeUsage(AttributeTargets.Parameter)]
+	[MeansImplicitUse(ImplicitUseKindFlags.Assign)]
+	public class UniGitInjectOptional : Attribute
+	{
+		
+	}
 }

@@ -6,7 +6,6 @@ using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Settings;
-using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
@@ -38,15 +37,23 @@ namespace UniGit
 		private readonly List<ISettingsAffector> settingsAffectors = new List<ISettingsAffector>();
 		private readonly GitAsyncManager asyncManager;
 		private readonly List<IGitWatcher> watchers = new List<IGitWatcher>();
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitManager(string repoPath, GitCallbacks callbacks, GitSettingsJson settings, IGitPrefs prefs, GitAsyncManager asyncManager,UniGitData gitData)
+		public GitManager(string repoPath, 
+			GitCallbacks callbacks, 
+			GitSettingsJson settings, 
+			IGitPrefs prefs, 
+			GitAsyncManager asyncManager,
+			UniGitData gitData,
+			ILogger logger)
 		{
 			this.gitData = gitData;
 			this.repoPath = repoPath;
 			this.callbacks = callbacks;
 			this.prefs = prefs;
 			this.asyncManager = asyncManager;
+			this.logger = logger;
 			gitSettings = settings;
 			gitPath = UniGitPath.Combine(repoPath, ".git");
 
@@ -76,7 +83,7 @@ namespace UniGit
 				MarkDirty();
 		}
 
-		public void InitilizeRepository()
+		public void InitializeRepository()
 		{
 			Repository.Init(repoPath);
 			Directory.CreateDirectory(GitSettingsFolderPath);
@@ -87,14 +94,16 @@ namespace UniGit
 			}
 			else
 			{
-				Debug.Log("Git Ignore file already present");
+				logger.Log(LogType.Log,"Git Ignore file already present");
 			}
+
+			logger.Log(LogType.Log,"Repository Initialized");
 			Initialize();
 		}
 
-		internal void InitilizeRepositoryAndRecompile()
+		internal void InitializeRepositoryAndRecompile()
 		{
-			InitilizeRepository();
+			InitializeRepository();
 			callbacks.IssueAssetDatabaseRefresh();
 			callbacks.IssueSaveDatabaseRefresh();
 			callbacks.IssueRepositoryCreate();
@@ -151,6 +160,7 @@ namespace UniGit
 						Update(reloadDirty);
 						reloadDirty = false;
 						repositoryDirty = false;
+						if(!gitData.Initialized) logger.Log(LogType.Log,"UniGitData Initialized");
 						gitData.Initialized = true;
 						gitData.DirtyFilesQueue.Clear();
 
@@ -175,7 +185,7 @@ namespace UniGit
 					}
 					catch (Exception e)
 					{
-						Debug.LogException(e);
+						logger.LogException(e);
 						throw;
 					}
 				}
@@ -385,7 +395,7 @@ namespace UniGit
 				});
 				//handle thread abort gracefully
 				Thread.ResetAbort();
-				Debug.LogWarning("Git status threaded retrieval aborted, executing on main thread.");
+				logger.Log(LogType.Warning,"Git status threaded retrieval aborted, executing on main thread.");
 			}
 			catch (Exception e)
 			{
@@ -393,8 +403,8 @@ namespace UniGit
 				if (threaded) MarkDirty();
 				FinishUpdating(threaded, paths);
 
-				Debug.LogError("Could not retrive Git Status");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"Could not retrive Git Status");
+				logger.LogException(e);
 			}
 		}
 

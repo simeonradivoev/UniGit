@@ -15,6 +15,7 @@ namespace UniGit
 		[NonSerialized] protected GitManager gitManager;
 		[NonSerialized] protected GitReflectionHelper reflectionHelper;
 		[NonSerialized] protected UniGitData data;
+		[NonSerialized] protected ILogger logger;
 
 		protected virtual void OnEnable()
 		{
@@ -24,18 +25,20 @@ namespace UniGit
 		}
 
         [UniGitInject]
-		private void Construct(GitManager gitManager,GitReflectionHelper reflectionHelper,UniGitData data)
+		private void Construct(GitManager gitManager,GitReflectionHelper reflectionHelper,UniGitData data,ILogger logger)
 		{
+			this.logger = logger;
+
 			if (gitManager == null)
 			{
-				Debug.LogError("Git manager cannot be null.");
+				logger.Log(LogType.Error,"Git manager cannot be null.");
 				return;
 			}
 			if (this.gitManager != null && this.gitManager.Callbacks != null)
 			{
 				Unsubscribe(this.gitManager.Callbacks);
 			}
-
+			
 			this.data = data;
 			this.gitManager = gitManager;
 			this.gitManager.AddWatcher(this);
@@ -57,7 +60,7 @@ namespace UniGit
 		{
 			if (callbacks == null)
 			{
-				Debug.LogError("Trying to subscribe to null callbacks");
+				logger.Log(LogType.Error,"Trying to subscribe to null callbacks");
 				return;
 			}
 			callbacks.EditorUpdate += OnEditorUpdateInternal;

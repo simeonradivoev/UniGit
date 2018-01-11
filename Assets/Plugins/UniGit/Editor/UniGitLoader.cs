@@ -34,12 +34,14 @@ namespace UniGit
 
 				string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
 				string settingsPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "Settings.json");
+				string logPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "log.txt");
 
 				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
+				injectionHelper.Bind<string>().FromInstance(logPath).WithId("logPath");
 
 				injectionHelper.Bind<UniGitData>().FromMethod(GetUniGitData).NonLazy();
-				injectionHelper.Bind<GitCallbacks>().FromMethod(() =>
+				injectionHelper.Bind<GitCallbacks>().FromMethod(h =>
 				{
 					var c = new GitCallbacks();
 					EditorApplication.update += c.IssueEditorUpdate;
@@ -63,6 +65,9 @@ namespace UniGit
 				injectionHelper.Bind<IGitResourceManager>().To<GitResourceManager>();
 				injectionHelper.Bind<GitOverlay>();
 				injectionHelper.Bind<GitAutoFetcher>().NonLazy();
+				injectionHelper.Bind<GitLog>();
+				injectionHelper.Bind<ILogger>().FromMethod(h => new Logger(h.GetInstance<GitLog>()));
+				injectionHelper.Bind<GitAnimation>();
 
 				//credentials
 				injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
@@ -109,6 +114,7 @@ namespace UniGit
 			ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
 
 			GitCallbacks.RepositoryCreate += OnRepositoryCreate;
+			GitCallbacks.OnLogEntry += OnLogEntry;
 			var uniGitData = injectionHelper.GetInstance<UniGitData>();
 			uniGitData.OnBeforeReloadAction = OnBeforeAssemblyReload;
 
@@ -128,7 +134,6 @@ namespace UniGit
 		private static void OnEditorUpdate()
 		{
 			GitCallbacks.IssueDelayCall(true);
-			
 		}
 
 		private static void OnRepositoryCreate()
@@ -147,14 +152,20 @@ namespace UniGit
 				injectionHelper.Dispose();
 		}
 
-		private static UniGitData GetUniGitData()
+		private static void OnLogEntry(GitLog.LogEntry logEntry)
 		{
-			var existentData = Resources.FindObjectsOfTypeAll<UniGitData>().FirstOrDefault();
-			if (existentData == null)
+			if (!GitManager.Settings.UseUnityConsole)
+				GetWindow<GitLogWindow>();
+		}
+
+		private static UniGitData GetUniGitData(InjectionHelper injectionHelper)
+		{
+			var existentData = Resources.FindObjectsOfTypeAll<UniGitData>();
+			foreach (var data in existentData)
 			{
-				return ScriptableObject.CreateInstance<UniGitData>();
+				if (data.Initialized) return data;
 			}
-			return existentData;
+			return existentData.Length > 0 ? existentData[0] : ScriptableObject.CreateInstance<UniGitData>();
 		}
 
 	    public static T FindWindow<T>() where T : EditorWindow

@@ -11,13 +11,16 @@ namespace UniGit.Utils
 	{
 		[SerializeField] private GitRepoStatus repositoryStatus;
 		[SerializeField] private List<string> dirtyFilesQueue;
-		private bool initialized;
+		[SerializeField] private List<GitLog.LogEntry> logEntries;
+		[SerializeField] private bool logInitialized;
+		[SerializeField] private bool initialized;
 		private Action onBeforeReloadAction;
 
 		private void OnEnable()
 		{
 			if(repositoryStatus == null) repositoryStatus = new GitRepoStatus();
 			if(dirtyFilesQueue == null) dirtyFilesQueue = new List<string>();
+			if(logEntries == null) logEntries = new List<GitLog.LogEntry>();
 		}
 
 		[UsedImplicitly]
@@ -25,6 +28,11 @@ namespace UniGit.Utils
 		{
 			//the data needs to be initialized first, because starting the editor for the first time calls OnDisable
 			if(initialized && onBeforeReloadAction != null)  onBeforeReloadAction.Invoke();
+		}
+
+		public List<GitLog.LogEntry> LogEntries
+		{
+			get { return logEntries; }
 		}
 
 		public List<string> DirtyFilesQueue
@@ -47,6 +55,12 @@ namespace UniGit.Utils
 		{
 			get { return initialized; }
 			set { initialized = value; }
+		}
+
+		public bool LogInitialized
+		{
+			get { return logInitialized; }
+			set { logInitialized = value; }
 		}
 	}
 }

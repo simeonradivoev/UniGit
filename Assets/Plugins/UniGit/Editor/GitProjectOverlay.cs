@@ -29,6 +29,7 @@ namespace UniGit
 		private readonly GitOverlay gitOverlay;
 		private readonly IGitPrefs prefs;
 		private readonly UniGitData data;
+		private readonly ILogger logger;
 
 		private StatusTreeClass statusTree;
 		private bool isDirty = true;
@@ -43,7 +44,8 @@ namespace UniGit
 			GitReflectionHelper reflectionHelper,
 			GitOverlay gitOverlay,
 			IGitPrefs prefs,
-			UniGitData data)
+			UniGitData data,
+			ILogger logger)
 		{
 			if (iconStyle == null)
 			{
@@ -55,6 +57,7 @@ namespace UniGit
 				};
 			}
 
+			this.logger = logger;
 			this.data = data;
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
@@ -199,7 +202,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 		}
 

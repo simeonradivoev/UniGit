@@ -4,17 +4,20 @@ using System.Diagnostics;
 using LibGit2Sharp;
 using UniGit;
 using UniGit.Utils;
+using UnityEngine;
 
 namespace Assets.Plugins.UniGit.Editor.Hooks
 {
 	public class GitLfsPrePushHook : GitPushHookBase
 	{
 		private readonly GitLfsManager lfsManager;
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitLfsPrePushHook(GitManager gitManager, GitLfsManager lfsManager) : base(gitManager)
+		public GitLfsPrePushHook(GitManager gitManager, GitLfsManager lfsManager,ILogger logger) : base(gitManager)
 		{
 			this.lfsManager = lfsManager;
+			this.logger = logger;
 		}
 
 		public override bool OnPrePush(IEnumerable<PushUpdate> updates)
@@ -47,10 +50,10 @@ namespace Assets.Plugins.UniGit.Editor.Hooks
 
 				string output = process.StandardOutput.ReadToEnd();
 				string outputErr = process.StandardError.ReadToEnd();
-				if (!string.IsNullOrEmpty(output)) Console.WriteLine("git-lfs pre-push results: " + output);
+				if (!string.IsNullOrEmpty(output)) logger.LogFormat(LogType.Log,"git-lfs pre-push results: {0}",output);
 				if (!string.IsNullOrEmpty(outputErr))
 				{
-					UnityEngine.Debug.Log("git-lfs pre-push error results: " + outputErr);
+					logger.LogFormat(LogType.Error,"git-lfs pre-push error results: {0}",outputErr);
 					return false;
 				}
 			}

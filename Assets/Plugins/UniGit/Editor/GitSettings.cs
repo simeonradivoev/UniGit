@@ -73,6 +73,8 @@ namespace UniGit
 		public bool DisableGitLFS;
 		public bool LazyMode;
 		public bool TrackSystemFiles = true;
+		public bool UseUnityConsole;
+		public bool DisableAnimations;
 		private bool isDirty;
 
 		[Flags]

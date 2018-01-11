@@ -2,7 +2,6 @@
 using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
-using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
@@ -80,6 +79,13 @@ namespace UniGit
 		{
 			if(OnSettingsChange != null)
 				OnSettingsChange.Invoke();
+		}
+
+		public event Action<GitLog.LogEntry> OnLogEntry;
+		public void IssueLogEntry(GitLog.LogEntry entry)
+		{
+			if(OnLogEntry != null) 
+				OnLogEntry.Invoke(entry);
 		}
 
 		#region Asset Postprocessing Events

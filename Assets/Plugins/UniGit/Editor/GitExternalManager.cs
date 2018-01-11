@@ -7,7 +7,6 @@ using UniGit.Adapters;
 using UniGit.Attributes;
 using UniGit.Utils;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace UniGit
 {
@@ -19,9 +18,10 @@ namespace UniGit
 		private IExternalAdapter selectedAdapter;
 		private bool initiazlitedSelected;
 		private readonly GitManager gitManager;
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitExternalManager(GitManager gitManager,ICollection<IExternalAdapter> adapters)
+		public GitExternalManager(GitManager gitManager,ICollection<IExternalAdapter> adapters,ILogger logger)
 		{
 			var injectionHelper = new InjectionHelper();
 			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
@@ -29,7 +29,7 @@ namespace UniGit
 			this.gitManager = gitManager;
 			this.adapters = adapters.OrderBy(GetAdapterPriority).ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
-
+			this.logger = logger;
 		}
 
 		#region Selection
@@ -146,7 +146,7 @@ namespace UniGit
 		{
 			if (SelectedAdatapter == null)
 			{
-				Debug.LogWarning("No selected external program.");
+				logger.Log(LogType.Warning,"No selected external program.");
 				return;
 			}
 

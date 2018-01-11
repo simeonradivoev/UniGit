@@ -26,22 +26,24 @@ namespace UniGit.Utils
 		}
 		private readonly GitOverlay gitOverlay;
 		private readonly List<Element> elements;
+		private readonly GitAnimation gitAnimation;
 		private GUIStyle elementStyle;
 		private GUIStyle separatorStyle;
 		private Element currentElement;
 		private Element lastElement;
-		private bool animatingToCurrentElement;
-		private double lastAnimationTime;
+		private GitAnimation.GitTween transitionTween;
 		private int animDir = 1;
 		private bool isClickHovering;
 		private int lastHoverControlId;
 		private double lastHoverStartTime;
 
 		[UniGitInject]
-		public ContextGenericMenuPopup(GitOverlay gitOverlay)
+		public ContextGenericMenuPopup(GitOverlay gitOverlay,GitAnimation gitAnimation)
 		{
 			this.gitOverlay = gitOverlay;
+			this.gitAnimation = gitAnimation;
 			elements = new List<Element>();
+			transitionTween = GitAnimation.Empty;
 		}
 
 		private Element FindOrBuildTree(GUIContent content,ref GUIContent newContent)
@@ -124,7 +126,7 @@ namespace UniGit.Utils
 		{
 			if (elementStyle == null) InitStyles();
 			Vector2 maxSize = Vector2.zero;
-			if (animatingToCurrentElement)
+			if (transitionTween.Valid)
 			{
 				if(lastElement != null && lastElement.children != null) CalculateMaxSize(ref maxSize, lastElement.children,true);
 			}
@@ -179,7 +181,7 @@ namespace UniGit.Utils
 					elementStyle.Draw(backRect, GitGUI.GetTempContent("Back"), false, false, backRect.Contains(Event.current.mousePosition), false);
 					((GUIStyle)"AC LeftArrow").Draw(new Rect(backRect.x,backRect.y + ((backRect.height - 16) / 2f),16,16),GUIContent.none, false,false,false,false);
 
-					if (backRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)
+					if (backRect.Contains(Event.current.mousePosition) && !transitionTween.Valid)
 					{
 						if (lastHoverControlId != backControlId)
 						{
@@ -190,12 +192,11 @@ namespace UniGit.Utils
 						DrawHoverClickIndicator();
 					}
 				}
-				else if (((Event.current.type == EventType.MouseDown && Event.current.button == 0 && backRect.Contains(Event.current.mousePosition)) || (lastHoverControlId == backControlId && EditorApplication.timeSinceStartup > lastHoverStartTime + HoverPressTime)) && !animatingToCurrentElement && currentElement != null)
+				else if (((Event.current.type == EventType.MouseDown && Event.current.button == 0 && backRect.Contains(Event.current.mousePosition)) || (lastHoverControlId == backControlId && EditorApplication.timeSinceStartup > lastHoverStartTime + HoverPressTime)) && !transitionTween.Valid && currentElement != null)
 				{
 					lastElement = currentElement;
 					currentElement = currentElement.parent;
-					animatingToCurrentElement = true;
-					lastAnimationTime = EditorApplication.timeSinceStartup + AnimationTime;
+					transitionTween = gitAnimation.StartAnimation(AnimationTime, editorWindow);
 					lastHoverStartTime = EditorApplication.timeSinceStartup;
 					animDir = -1;
 				}
@@ -234,7 +235,7 @@ namespace UniGit.Utils
 						if(element.children != null)
 							((GUIStyle)"AC RightArrow").Draw(new Rect(elementRect.x + elementRect.width - 21, elementRect.y + ((elementRect.height - 21) / 2f), 21, 21),GUIContent.none,false,false,false,false);
 
-						if (elementRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)
+						if (elementRect.Contains(Event.current.mousePosition) && !transitionTween.Valid)
 						{
 							if (element.IsParent)
 							{
@@ -258,13 +259,12 @@ namespace UniGit.Utils
 					{
 						lastElement = currentElement;
 						currentElement = element;
-						animatingToCurrentElement = true;
-						lastAnimationTime = EditorApplication.timeSinceStartup + AnimationTime;
+						transitionTween = gitAnimation.StartAnimation(AnimationTime);
 						lastHoverStartTime = EditorApplication.timeSinceStartup;
 						animDir = 1;
 						editorWindow.Repaint();
 					}
-					else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && elementRect.Contains(Event.current.mousePosition) && !animatingToCurrentElement)
+					else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && elementRect.Contains(Event.current.mousePosition) && !transitionTween.Valid)
 					{
 						editorWindow.Close();
 						if (element.Func != null)
@@ -284,18 +284,16 @@ namespace UniGit.Utils
 		public override void OnGUI(Rect rect)
 		{
 			if (elementStyle == null) InitStyles();
-			if ((Event.current.type == EventType.MouseMove && rect.Contains(Event.current.mousePosition)) || animatingToCurrentElement || isClickHovering) editorWindow.Repaint();
+			if ((Event.current.type == EventType.MouseMove && rect.Contains(Event.current.mousePosition)) || transitionTween.Valid || isClickHovering) editorWindow.Repaint();
 
 			if (Event.current.type == EventType.Repaint)
 			{
 				isClickHovering = false;
 			}
 
-			if (animatingToCurrentElement)
+			if (transitionTween.Valid)
 			{
-				float animationTime = ApplyEasing((float)(lastAnimationTime - EditorApplication.timeSinceStartup) / AnimationTime);
-
-				Rect lastElementRect = new Rect(rect.x - (rect.width * (1 - animationTime) * animDir), rect.y,rect.width,rect.height);
+				Rect lastElementRect = new Rect(rect.x - (rect.width * (1 - GitAnimation.ApplyEasing(transitionTween.Percent)) * animDir), rect.y,rect.width,rect.height);
 				if (lastElement != null && lastElement.IsParent)
 				{
 					DrawElementList(lastElementRect,lastElement.children,true);
@@ -304,7 +302,7 @@ namespace UniGit.Utils
 				{
 					DrawElementList(lastElementRect, elements,false);
 				}
-				Rect currentElementRect = new Rect(rect.x + (rect.width * animationTime) * animDir, rect.y, rect.width, rect.height);
+				Rect currentElementRect = new Rect(rect.x + (rect.width * GitAnimation.ApplyEasing(transitionTween.Percent)) * animDir, rect.y, rect.width, rect.height);
 				if (currentElement != null && currentElement.IsParent)
 				{
 					DrawElementList(currentElementRect, currentElement.children, true);
@@ -312,11 +310,6 @@ namespace UniGit.Utils
 				else
 				{
 					DrawElementList(currentElementRect, elements, false);
-				}
-
-				if (animationTime <= 0)
-				{
-					animatingToCurrentElement = false;
 				}
 			}
 			else
@@ -342,11 +335,6 @@ namespace UniGit.Utils
 				GUI.DrawTextureWithTexCoords(new Rect(Event.current.mousePosition - new Vector2(12,5),new Vector2(34,34)), tex,new Rect((index % 4 / 4f), 0.5f - Mathf.FloorToInt(index / 4f) * 0.5f, 1/4f,0.5f));
 				GUI.color = Color.white;
 			}
-		}
-
-		private float ApplyEasing(float t)
-		{
-			return t < .5f ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
 		}
 	}
 }

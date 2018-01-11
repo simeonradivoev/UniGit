@@ -200,7 +200,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 		}
 
@@ -667,7 +667,7 @@ namespace UniGit
 			x += 38;
 			EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(commit.Committer.Name), EditorStyles.boldLabel);
 			y += 16;
-			EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(FormatRemainningTime(commit.Committer.When.UtcDateTime)));
+			EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(GitGUI.FormatRemainningTime(commit.Committer.When.DateTime)));
 			y += EditorGUIUtility.singleLineHeight + 3;
 			int firstNewLineIndex = commit.Message.IndexOf(Environment.NewLine);
 			EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x - 10, EditorGUIUtility.singleLineHeight + 4), GitGUI.GetTempContent(firstNewLineIndex > 0 ? commit.Message.Substring(0, firstNewLineIndex) : commit.Message), styles.commitMessage);
@@ -750,7 +750,7 @@ namespace UniGit
 				var rect2 = buttonRect;
 				menu.AddItem(new GUIContent("Branch Out"), false, () =>
 				{
-					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect2, new GitCreateBranchWindow(gitManager.Repository.Lookup<Commit>(commit.Id),null, gitManager)));
+					popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect2, injectionHelper.CreateInstance<GitCreateBranchWindow>(gitManager.Repository.Lookup<Commit>(commit.Id))));
 				});
 				menu.DropDown(buttonRect);
 			}
@@ -884,51 +884,6 @@ namespace UniGit
 
 			return sBuilder.ToString(); // Return the hexadecimal string. 
 		}
-
-		private string FormatRemainningTime(DateTime timeOffset)
-		{
-			const int SECOND = 1;
-			const int MINUTE = 60 * SECOND;
-			const int HOUR = 60 * MINUTE;
-			const int DAY = 24 * HOUR;
-			const int MONTH = 30 * DAY;
-
-			var ts = new TimeSpan(DateTime.UtcNow.Ticks - timeOffset.Ticks);
-			double delta = Math.Abs(ts.TotalSeconds);
-
-			if (delta < 1 * MINUTE)
-				return ts.Seconds == 1 ? "one second ago" : ts.Seconds + " seconds ago";
-
-			if (delta < 2 * MINUTE)
-				return "a minute ago";
-
-			if (delta < 45 * MINUTE)
-				return ts.Minutes + " minutes ago";
-
-			if (delta < 90 * MINUTE)
-				return "an hour ago";
-
-			if (delta < 24 * HOUR)
-				return ts.Hours + " hours ago";
-
-			if (delta < 48 * HOUR)
-				return "yesterday";
-
-			if (delta < 30 * DAY)
-				return ts.Days + " days ago";
-
-			if (delta < 12 * MONTH)
-			{
-				int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
-				return months <= 1 ? "one month ago" : months + " months ago";
-			}
-			else
-			{
-				int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
-				return years <= 1 ? "one year ago" : years + " years ago";
-			}
-
-		}
 		#endregion
 
 		#region Invalid Repo GUI
@@ -964,7 +919,7 @@ namespace UniGit
 				{
 					if (gitManager != null && !gitManager.IsValidRepo)
 					{
-						gitManager.InitilizeRepositoryAndRecompile();
+						gitManager.InitializeRepositoryAndRecompile();
 					}
 					GUIUtility.ExitGUI();
 					return;

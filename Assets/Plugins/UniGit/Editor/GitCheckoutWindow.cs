@@ -37,7 +37,7 @@ namespace UniGit
 			}
 			else
 			{
-				Debug.LogError("Could not find branch with name: " + branchNames[selectedBranch]);
+				logger.LogFormat(LogType.Error,"Could not find branch with name: {0}",branchNames[selectedBranch]);
 			}
 		}
 	}

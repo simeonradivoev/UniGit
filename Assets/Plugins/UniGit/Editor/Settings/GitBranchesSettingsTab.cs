@@ -12,6 +12,7 @@ namespace UniGit.Settings
 	{
 		private readonly GitExternalManager externalManager;
 		private readonly InjectionHelper injectionHelper;
+		private readonly ILogger logger;
 
 		private string[] remoteNames;
 		private GitRemotesSettingsTab.RemoteEntry[] remoteCacheList = new GitRemotesSettingsTab.RemoteEntry[0];
@@ -22,11 +23,13 @@ namespace UniGit.Settings
 			GitSettingsWindow settingsWindow, 
 			GitExternalManager externalManager,
 			InjectionHelper injectionHelper,
-			UniGitData data) 
+			UniGitData data,
+			ILogger logger) 
 			: base(new GUIContent("Branches"), gitManager,settingsWindow,data)
 		{
 			this.injectionHelper = injectionHelper;
 			this.externalManager = externalManager;
+			this.logger = logger;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
@@ -55,10 +58,10 @@ namespace UniGit.Settings
 			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), GitGUI.Styles.AddComponentBtn);
 			if (GUI.Button(createBranchRect, GitGUI.IconContent("ol plus", "Create Branch"), GitGUI.Styles.AddComponentBtn))
 			{
-				PopupWindow.Show(createBranchRect, new GitCreateBranchWindow(gitManager.Repository.Commits.FirstOrDefault(), () =>
+				PopupWindow.Show(createBranchRect, injectionHelper.CreateInstance<GitCreateBranchWindow>(gitManager.Repository.Commits.FirstOrDefault(),(Action)(() =>
 				{
 					branches = null;
-				}, gitManager));
+				})));
 			}
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
@@ -135,8 +138,8 @@ namespace UniGit.Settings
 					}
 					catch (Exception e)
 					{
-						Debug.Log("Could not delete branch: " + branch.CanonicalName);
-						Debug.LogException(e);
+						logger.LogFormat(LogType.Error,"Could not delete branch: {0}",branch.CanonicalName);
+						logger.LogException(e);
 					}
 				}
 			}

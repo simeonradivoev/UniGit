@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using LibGit2Sharp;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
+using FilterMode = LibGit2Sharp.FilterMode;
 
 namespace UniGit.Filters
 {
@@ -14,11 +16,13 @@ namespace UniGit.Filters
 		private readonly Dictionary<string, FilterMode> modes = new Dictionary<string, FilterMode>();
 		private readonly GitManager gitManager;
 		private readonly GitLfsManager lfsManager;
+		private readonly ILogger logger;
 
-		public GitLfsFilter(string name, IEnumerable<FilterAttributeEntry> attributes, GitLfsManager lfsManager, GitManager gitManager) : base(name, attributes)
+		public GitLfsFilter(string name, IEnumerable<FilterAttributeEntry> attributes, GitLfsManager lfsManager, GitManager gitManager,ILogger logger) : base(name, attributes)
 		{
 			this.gitManager = gitManager;
 			this.lfsManager = lfsManager;
+			this.logger = logger;
 		}
 
 		protected override void Clean(string path, string root, Stream input, Stream output)
@@ -30,19 +34,19 @@ namespace UniGit.Filters
 				FilterMode mode;
 				if (!processes.TryGetValue(path,out process))
 				{
-					Debug.Log("Could not find lfs process for path: " + path + " when cleaning");
+					logger.LogFormat(LogType.Log,"Could not find lfs process for path: {0} when cleaning",path);
 					return;
 				}
 
 				if (!modes.TryGetValue(path, out mode))
 				{
-					Debug.Log("Could not find lfs filter mode for path: " + path + " when cleaning");
+					logger.LogFormat(LogType.Log,"Could not find lfs filter mode for path: {0} when cleaning",path);
 					return;
 				}
 
 				if (mode != FilterMode.Clean)
 				{
-					Debug.LogError("Filter mode mismatch when cleaning for path: " + path);
+					logger.LogFormat(LogType.Error,"Filter mode mismatch when cleaning for path: {0}",path);
 				}
 
 				// write file data to stdin
@@ -51,8 +55,8 @@ namespace UniGit.Filters
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("LFS Clean Error!");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"LFS Clean Error!");
+				logger.LogException(e);
 			}
 		}
 
@@ -114,8 +118,8 @@ namespace UniGit.Filters
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("LFS Complete Error!");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"LFS Complete Error!");
+				logger.LogException(e);
 			}
 			finally
 			{
@@ -157,13 +161,13 @@ namespace UniGit.Filters
 				process.StartInfo = startInfo;
 				if (!process.Start())
 				{
-					Debug.LogError("Cound not start lfs process of type: " + mode + " for path: " + path);
+					logger.LogFormat(LogType.Error,"Cound not start lfs process of type: {0} for path: {1}",mode,path);
 				}
 				else
 				{
 					if (processes.ContainsKey(path))
 					{
-						Debug.LogError("There is already lfs process for path: " + path);
+						logger.LogFormat(LogType.Error,"There is already lfs process for path: {0}",path);
 						return;
 					}
 					processes.Add(path,process);
@@ -172,8 +176,8 @@ namespace UniGit.Filters
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("LFS Create Error!");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"LFS Create Error!");
+				logger.LogException(e);
 			}
 		}
 
@@ -186,19 +190,19 @@ namespace UniGit.Filters
 				FilterMode mode;
 				if (!processes.TryGetValue(path, out process))
 				{
-					Debug.Log("Could not find lfs process for path: " + path + " when smudging");
+					logger.LogFormat(LogType.Log,"Could not find lfs process for path: {0} when smudging",path);
 					return;
 				}
 
 				if (!modes.TryGetValue(path, out mode))
 				{
-					Debug.Log("Could not find lfs filter mode for path: " + path + " when smudging");
+					logger.LogFormat(LogType.Log,"Could not find lfs filter mode for path: {0} when smudging",path);
 					return;
 				}
 
 				if (mode != FilterMode.Smudge)
 				{
-					Debug.LogError("Filter mode mismatch when smudging for path: " + path);
+					logger.LogFormat(LogType.Log,"Filter mode mismatch when smudging for path: {0}",path);
 				}
 
 				// write git-lfs pointer to stdin
@@ -207,8 +211,8 @@ namespace UniGit.Filters
 			}
 			catch (Exception e)
 			{
-				Debug.LogError("LFS Smudge Error!");
-				Debug.LogException(e);
+				logger.Log(LogType.Error,"LFS Smudge Error!");
+				logger.LogException(e);
 			}
 		}
 	}

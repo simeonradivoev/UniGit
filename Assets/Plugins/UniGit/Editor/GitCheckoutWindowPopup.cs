@@ -11,12 +11,14 @@ namespace UniGit
 		[SerializeField] private bool force;
 		private readonly Branch branch;
 		private readonly GitManager gitManager;
+		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch)
+		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch,ILogger logger)
 		{
 			this.gitManager = gitManager;
 			this.branch = branch;
+			this.logger = logger;
 		}
 
 		public override Vector2 GetWindowSize()
@@ -44,12 +46,11 @@ namespace UniGit
 					try
 					{
 						gitManager.Repository.Checkout(branch, checkoutOptions);
-						Debug.Log("Switched to branch: " + branch.FriendlyName);
 					}
 					catch (Exception e)
 					{
-						Debug.LogError("There was a problem while switching to branch: " + branch.CanonicalName);
-						Debug.LogException(e);
+						logger.LogFormat(LogType.Error,"There was a problem while switching to branch: {0}",branch.CanonicalName);
+						logger.LogException(e);
 					}
 					finally
 					{
@@ -59,14 +60,14 @@ namespace UniGit
 				}
 				else
 				{
-					Debug.LogError("Trying to switch to null branch");
+					logger.Log(LogType.Error,"Trying to switch to null branch");
 				}
 			}
 		}
 
 		protected bool OnCheckoutNotify(string path, CheckoutNotifyFlags notifyFlags)
 		{
-			Debug.Log(path + " (" + notifyFlags + ")");
+			logger.LogFormat(LogType.Log,"{0} ({1})",path,notifyFlags);
 			return true;
 		}
 

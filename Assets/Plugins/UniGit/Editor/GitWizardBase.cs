@@ -23,10 +23,12 @@ namespace UniGit
 		protected GitManager gitManager;
 		protected GitCredentialsManager credentialsManager;
 		protected GitExternalManager externalManager;
+		protected ILogger logger;
 
         [UniGitInject]
-		private void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager)
-		{
+		private void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager,ILogger logger)
+        {
+	        this.logger = logger;
 			this.gitManager = gitManager;
 			this.credentialsManager = credentialsManager;
 			this.externalManager = externalManager;
@@ -141,20 +143,20 @@ namespace UniGit
 
 		protected bool FetchProgress(string serverProgressOutput)
 		{
-			Debug.Log(string.Format("Fetching: {0}", serverProgressOutput));
+			logger.LogFormat(LogType.Log,"Fetching: {0}", serverProgressOutput);
 			return true;
 		}
 
 		protected bool FetchOperationStarting(RepositoryOperationContext context)
 		{
-			Debug.Log("Fetch Operation Started");
+			logger.Log(LogType.Log,"Fetch Operation Started");
 			//true to continue
 			return true;
 		}
 
 		protected void FetchOperationCompleted(RepositoryOperationContext context)
 		{
-			Debug.Log("Operation Complete");
+			logger.Log(LogType.Log,"Operation Complete");
 		}
 		#endregion
 
@@ -183,7 +185,7 @@ namespace UniGit
 				    {
 				        GitDiffWindow.SetCommitMessage(gitManager, gitManager.Repository.Info.Message);
 				    }
-					Debug.Log(mergeType + " Complete without Fast Forwarding.");
+					logger.LogFormat(LogType.Log,"{0} Complete without Fast Forwarding.",mergeType);
 					break;
 				case MergeStatus.Conflicts:
 					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
@@ -199,12 +201,12 @@ namespace UniGit
 					break;
 			}
 			gitManager.MarkDirty();
-			Debug.LogFormat("{0} Status: {1}", mergeType, result.Status);
+			logger.LogFormat(LogType.Log,"{0} Status: {1}", mergeType, result.Status);
 		}
 
 		protected bool OnCheckoutNotify(string path, CheckoutNotifyFlags notifyFlags)
 		{
-			Debug.Log(path + " (" + notifyFlags + ")");
+			logger.LogFormat(LogType.Log,"{0} ({1})",path,notifyFlags);
 			return true;
 		}
 

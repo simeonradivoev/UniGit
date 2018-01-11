@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Utils;
@@ -43,7 +42,7 @@ namespace UniGit
 			{
 			    GitCommands.Fetch(gitManager.Repository,remotes[selectedRemote].Name, fetchOptions);
 #if UNITY_EDITOR
-				Debug.Log("Fetch Complete");
+				logger.Log(LogType.Log,"Fetch Complete");
 #endif
 				var window = UniGitLoader.FindWindow<GitHistoryWindow>();
                 if(window != null)
@@ -52,7 +51,7 @@ namespace UniGit
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				logger.LogException(e);
 			}
 			finally
 			{

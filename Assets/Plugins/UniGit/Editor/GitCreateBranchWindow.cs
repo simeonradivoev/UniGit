@@ -12,12 +12,18 @@ namespace UniGit
 		private readonly Commit commit;
 		private readonly Action onCreated;
 		private readonly GitManager gitManager;
+		private readonly ILogger logger;
 
-		public GitCreateBranchWindow(Commit commit, Action onCreated,GitManager gitManager)
+		[UniGitInject]
+		public GitCreateBranchWindow(Commit commit, 
+			[UniGitInjectOptional] Action onCreated,
+			GitManager gitManager,
+			ILogger logger)
 		{
 			this.gitManager = gitManager;
 			this.commit = commit;
 			this.onCreated = onCreated;
+			this.logger = logger;
 		}
 
 		public override Vector2 GetWindowSize()
@@ -49,7 +55,7 @@ namespace UniGit
 					var branch = gitManager.Repository.CreateBranch(name, commit);
 					if (branch != null)
 					{
-						Debug.Log("Branch " + name + " created");
+						logger.LogFormat(LogType.Log,"Branch {0} created",name);
 						editorWindow.Close();
 						if (onCreated != null)
 						{
@@ -58,14 +64,14 @@ namespace UniGit
 					}
 					else
 					{
-						Debug.LogError("Could not create branch: " + name);
+						logger.LogFormat(LogType.Error,"Could not create branch: {0}",name);
 					}
 					
 				}
 				catch (Exception e)
 				{
-					Debug.LogError("Could not create branch!");
-					Debug.LogException(e);
+					logger.Log(LogType.Error,"Could not create branch!");
+					logger.LogException(e);
 				}
 				finally
 				{
