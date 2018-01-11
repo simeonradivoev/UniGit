@@ -15,7 +15,6 @@ namespace UniGit
 	public static class UniGitLoader
 	{
 		public static GitManager GitManager;
-		public static GitExternalManager ExternalManager;
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
 		private static GitReflectionHelper ReflectionHelper;
@@ -120,7 +119,7 @@ namespace UniGit
 
 			injectionHelper.CreateNonLazy();
 
-			GitProjectContextMenus.Init(GitManager, ExternalManager);
+			GitProjectContextMenus.Init(GitManager, injectionHelper.GetInstance<GitExternalManager>());
 			GitUnityMenu.Init(GitManager);
 		}
 
