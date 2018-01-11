@@ -28,6 +28,7 @@ namespace UniGit
 		private readonly GitReflectionHelper reflectionHelper;
 		private readonly GitOverlay gitOverlay;
 		private readonly IGitPrefs prefs;
+		private readonly UniGitData data;
 
 		private StatusTreeClass statusTree;
 		private bool isDirty = true;
@@ -41,7 +42,8 @@ namespace UniGit
 			GitAsyncManager asyncManager,
 			GitReflectionHelper reflectionHelper,
 			GitOverlay gitOverlay,
-			IGitPrefs prefs)
+			IGitPrefs prefs,
+			UniGitData data)
 		{
 			if (iconStyle == null)
 			{
@@ -53,6 +55,7 @@ namespace UniGit
 				};
 			}
 
+			this.data = data;
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
 			this.asyncManager = asyncManager;
@@ -83,8 +86,7 @@ namespace UniGit
 		{
 			if (isDirty && !isUpdating && ((projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke)) | prefs.GetBool(ForceUpdateKey,false)))
 			{
-				var cachedStatus = gitManager.GetCachedStatus();
-				if (cachedStatus.Initilzied)
+				if (data.Initialized)
 				{
 					isUpdating = true;
 					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
@@ -93,7 +95,7 @@ namespace UniGit
 						{
 							try
 							{
-								UpdateStatusTreeThreaded(cachedStatus);
+								UpdateStatusTreeThreaded(data.RepositoryStatus);
 							}
 							finally
 							{
@@ -104,13 +106,13 @@ namespace UniGit
 					}
 					else
 					{
-						if(!cachedStatus.TryEnterLock()) return;
+						if(!data.RepositoryStatus.TryEnterLock()) return;
 						try
 						{
 							GitProfilerProxy.BeginSample("Git Project Window status tree building");
 							try
 							{
-								UpdateStatusTree(cachedStatus);
+								UpdateStatusTree(data.RepositoryStatus);
 							}
 							finally
 							{
@@ -120,7 +122,7 @@ namespace UniGit
 						}
 						finally
 						{
-							cachedStatus.Unlock();
+							data.RepositoryStatus.Unlock();
 						}
 						isDirty = false;
 					}

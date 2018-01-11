@@ -21,8 +21,9 @@ namespace UniGit.Settings
 		public GitBranchesSettingsTab(GitManager gitManager,
 			GitSettingsWindow settingsWindow, 
 			GitExternalManager externalManager,
-			InjectionHelper injectionHelper) 
-			: base(new GUIContent("Branches"), gitManager,settingsWindow)
+			InjectionHelper injectionHelper,
+			UniGitData data) 
+			: base(new GUIContent("Branches"), gitManager,settingsWindow,data)
 		{
 			this.injectionHelper = injectionHelper;
 			this.externalManager = externalManager;

@@ -11,8 +11,8 @@ namespace UniGit.Settings
 		private readonly GitCredentialsManager credentialsManager;
 
 		[UniGitInject]
-		public GitSecuritySettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitCredentialsManager credentialsManager) 
-			: base(new GUIContent("Security"), gitManager, settingsWindow)
+		public GitSecuritySettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitCredentialsManager credentialsManager,UniGitData data) 
+			: base(new GUIContent("Security"), gitManager, settingsWindow,data)
 		{
 			this.credentialsManager = credentialsManager;
 		}

@@ -12,13 +12,15 @@ namespace UniGit.Settings
 		private bool initilized;
 		protected readonly GitManager gitManager;
 		protected readonly GUIContent name;
+		protected readonly UniGitData data;
 
 		[UniGitInject]
-		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow)
+		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow,UniGitData data)
 		{
 			this.name = name;
 			this.gitManager = gitManager;
 			this.settingsWindow = settingsWindow;
+			this.data = data;
 			var callbacks = gitManager.Callbacks;
 			callbacks.EditorUpdate += OnEditorUpdateInternal;
 			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
@@ -60,13 +62,12 @@ namespace UniGit.Settings
 			//Only initialize if the editor Window is focused
 			if (hasFocused && !initilized && gitManager.Repository != null)
 			{
-				var cachedStatus = gitManager.GetCachedStatus();
-				if (cachedStatus.Initilzied)
+				if (data.Initialized)
 				{
 					initilized = true;
 					if (!gitManager.IsValidRepo) return;
 					OnInitialize();
-					OnGitManagerUpdateInternal(cachedStatus, null);
+					OnGitManagerUpdateInternal(data.RepositoryStatus, null);
 				}
 			}
 		}

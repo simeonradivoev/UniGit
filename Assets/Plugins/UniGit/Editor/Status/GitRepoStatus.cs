@@ -11,7 +11,6 @@ namespace UniGit.Status
 	public class GitRepoStatus : IEnumerable<GitStatusEntry>
 	{
 		[SerializeField] private List<GitStatusEntry> entries = new List<GitStatusEntry>();
-		[SerializeField] private bool initilzied;
 		private object lockObj;
 
 		public GitRepoStatus()
@@ -85,12 +84,6 @@ namespace UniGit.Status
 		public IEnumerator<GitStatusEntry> GetEnumerator()
 		{
 			return entries.GetEnumerator();
-		}
-
-		public bool Initilzied
-		{
-			get { return initilzied; }
-			set { initilzied = value; }
 		}
 	}
 }

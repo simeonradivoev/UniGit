@@ -411,7 +411,7 @@ namespace UniGit
 					selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), selectedBranchName == cachedBranch.CanonicalName, (b) =>
 					{
 						SetSelectedBranch((string)b);
-						StartUpdateChaches(gitManager.GetCachedStatus());
+						StartUpdateChaches(data.RepositoryStatus);
 					}, cachedBranch.CanonicalName);
 				}
 				selectBranchMenu.ShowAsContext();
@@ -563,7 +563,7 @@ namespace UniGit
 				if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More","Show more commits."), styles.loadMoreCommitsBtn))
 				{
 					maxCommitsCount += CommitsPerExpand;
-					StartUpdateChaches(gitManager.GetCachedStatus());
+					StartUpdateChaches(data.RepositoryStatus);
 				}
 				GitGUI.StartEnable(maxCommitsCount != MaxFirstCommitCount);
 				if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset","Reset the number of commits show."), styles.resetCommitsBtn))
@@ -576,7 +576,7 @@ namespace UniGit
 					else
 					{
 						maxCommitsCount = MaxFirstCommitCount;
-						StartUpdateChaches(gitManager.GetCachedStatus());
+						StartUpdateChaches(data.RepositoryStatus);
 					}
 				}
 				GitGUI.EndEnable();
@@ -774,7 +774,7 @@ namespace UniGit
 		private void ViewBranchCallback(BranchInfo branch)
 		{
 			SetSelectedBranch(branch.CanonicalName);
-			StartUpdateChaches(gitManager.GetCachedStatus());
+			StartUpdateChaches(data.RepositoryStatus);
 		}
 
 		private void SwitchToBranchCallback(BranchInfo branch,Rect rect)

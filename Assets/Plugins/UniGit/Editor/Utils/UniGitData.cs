@@ -11,6 +11,7 @@ namespace UniGit.Utils
 	{
 		[SerializeField] private GitRepoStatus repositoryStatus;
 		[SerializeField] private List<string> dirtyFilesQueue;
+		private bool initialized;
 		private Action onBeforeReloadAction;
 
 		private void OnEnable()
@@ -22,7 +23,8 @@ namespace UniGit.Utils
 		[UsedImplicitly]
 		private void OnDisable()
 		{
-			if(onBeforeReloadAction != null) onBeforeReloadAction.Invoke();
+			//the data needs to be initialized first, because starting the editor for the first time calls OnDisable
+			if(initialized && onBeforeReloadAction != null)  onBeforeReloadAction.Invoke();
 		}
 
 		public List<string> DirtyFilesQueue
@@ -39,6 +41,12 @@ namespace UniGit.Utils
 		public GitRepoStatus RepositoryStatus
 		{
 			get { return repositoryStatus; }
+		}
+
+		public bool Initialized
+		{
+			get { return initialized; }
+			set { initialized = value; }
 		}
 	}
 }

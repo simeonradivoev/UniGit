@@ -164,13 +164,12 @@ namespace UniGit
 		private void UpdateStatusList()
 		{
 			if(gitManager.Repository == null || !IsInitialized) return;
-			var gitStatus = gitManager.GetCachedStatus();
-			if (gitStatus.Initilzied)
+			if (data.Initialized)
 			{
 				if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
-					CreateStatusListThreaded(gitStatus, null);
+					CreateStatusListThreaded(data.RepositoryStatus, null);
 				else
-					CreateStatusList(gitStatus);
+					CreateStatusList(data.RepositoryStatus);
 			}
 		}
 
@@ -189,11 +188,10 @@ namespace UniGit
 		{
 			if (IsInitialized && needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
 			{
-				var cachedStatus = gitManager.GetCachedStatus();
-				if (cachedStatus.Initilzied)
+				if (data.Initialized)
 				{
 					needsAsyncStatusListUpdate = false;
-					CreateStatusListThreaded(cachedStatus, null);
+					CreateStatusListThreaded(data.RepositoryStatus, null);
 				}
 			}
 		}

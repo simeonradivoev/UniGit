@@ -9,8 +9,8 @@ namespace UniGit.Settings
 		private readonly GitExternalManager externalManager;
 
 		[UniGitInject]
-		public GitExternalsSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow,GitExternalManager externalManager) 
-			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow)
+		public GitExternalsSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow,GitExternalManager externalManager,UniGitData data) 
+			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow,data)
 		{
 			this.externalManager = externalManager;
 		}

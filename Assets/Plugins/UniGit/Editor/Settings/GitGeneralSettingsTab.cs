@@ -13,8 +13,8 @@ namespace UniGit.Settings
 		private Vector2 scroll;
 
 		[UniGitInject]
-		public GitGeneralSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitLfsManager lfsManager) 
-			: base(new GUIContent("General"), gitManager, settingsWindow)
+		public GitGeneralSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitLfsManager lfsManager,UniGitData data) 
+			: base(new GUIContent("General"), gitManager, settingsWindow,data)
 		{
 			this.lfsManager = lfsManager;
 		}

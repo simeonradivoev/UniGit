@@ -14,6 +14,7 @@ namespace UniGit
 		[NonSerialized] private object isRepositoryDirty;
 		[NonSerialized] protected GitManager gitManager;
 		[NonSerialized] protected GitReflectionHelper reflectionHelper;
+		[NonSerialized] protected UniGitData data;
 
 		protected virtual void OnEnable()
 		{
@@ -23,7 +24,7 @@ namespace UniGit
 		}
 
         [UniGitInject]
-		private void Construct(GitManager gitManager,GitReflectionHelper reflectionHelper)
+		private void Construct(GitManager gitManager,GitReflectionHelper reflectionHelper,UniGitData data)
 		{
 			if (gitManager == null)
 			{
@@ -34,6 +35,8 @@ namespace UniGit
 			{
 				Unsubscribe(this.gitManager.Callbacks);
 			}
+
+			this.data = data;
 			this.gitManager = gitManager;
 			this.gitManager.AddWatcher(this);
 			this.reflectionHelper = reflectionHelper;
@@ -109,13 +112,12 @@ namespace UniGit
 			//Only initialize if the editor Window is focused
 			if (HasFocus && initialized == null && gitManager.Repository != null)
 			{
-				var gitManagerStatus = gitManager.GetCachedStatus();
-				if (gitManagerStatus.Initilzied)
+				if (data.Initialized)
 				{
 					initialized = true;
 					if (!gitManager.IsValidRepo) return;
 					OnInitialize();
-					OnGitManagerUpdateRepositoryInternal(gitManagerStatus, null);
+					OnGitManagerUpdateRepositoryInternal(data.RepositoryStatus, null);
 					//simulate repository loading for first initialization
 					OnRepositoryLoad(gitManager.Repository);
 					Repaint();

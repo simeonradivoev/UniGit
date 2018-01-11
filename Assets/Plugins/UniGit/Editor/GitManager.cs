@@ -146,12 +146,12 @@ namespace UniGit
 				CheckNullRepository();
 				if (CanUpdate())
 				{
-					if (repositoryDirty)
+					if (repositoryDirty || !gitData.Initialized)
 					{
 						Update(reloadDirty);
 						reloadDirty = false;
 						repositoryDirty = false;
-						gitData.RepositoryStatus.Initilzied = true;
+						gitData.Initialized = true;
 						gitData.DirtyFilesQueue.Clear();
 
 					}
@@ -872,15 +872,6 @@ namespace UniGit
 		public string SettingsFilePath
 		{
 			get { return UniGitPath.Combine(gitPath,"UniGit", "Settings.json"); }
-		}
-
-		public GitRepoStatus GetCachedStatus()
-		{
-			if (!gitData.RepositoryStatus.Initilzied)
-			{
-				MarkDirty();
-			}
-			return gitData.RepositoryStatus;
 		}
 
 		public Queue<Action> ActionQueue

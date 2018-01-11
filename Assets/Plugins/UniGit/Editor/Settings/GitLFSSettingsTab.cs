@@ -15,8 +15,9 @@ namespace UniGit.Settings
 		public GitLFSSettingsTab(GitManager gitManager, 
 			GitSettingsWindow settingsWindow,
 			GitLfsManager lfsManager,
-			InjectionHelper injectionHelper) 
-			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow)
+			InjectionHelper injectionHelper,
+			UniGitData data) 
+			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow,data)
 		{
 			this.injectionHelper = injectionHelper;
 			this.lfsManager = lfsManager;
