@@ -498,7 +498,7 @@ namespace UniGit
 		{
 			if (loadingCommits != null && !loadingCommits.IsDone)
 			{
-				Repaint();
+				if(gitSettings.AnimationType.HasFlag(GitSettingsJson.AnimationTypeEnum.Loading)) Repaint();
 				GitGUI.DrawLoading(rect, GitGUI.GetTempContent("Loading Commit History"));
 				return;
 			}

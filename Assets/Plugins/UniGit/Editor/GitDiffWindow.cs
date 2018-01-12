@@ -708,7 +708,7 @@ namespace UniGit
 			if (statusContent != null)
 			{
 				GUILayout.Label(statusContent, EditorStyles.toolbarButton);
-				Repaint();
+				if(gitSettings.AnimationType.HasFlag(GitSettingsJson.AnimationTypeEnum.Loading)) Repaint();
 			}
 
 			GUILayout.FlexibleSpace();
@@ -913,7 +913,7 @@ namespace UniGit
 				{
 					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempSpinAnimatedTexture(),GUIStyle.none);
 					//spinning animation needs constant repaint
-					Repaint();
+					if(gitSettings.AnimationType.HasFlag(GitSettingsJson.AnimationTypeEnum.Loading)) Repaint();
 				}
 			}
 
