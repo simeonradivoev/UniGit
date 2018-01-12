@@ -11,8 +11,13 @@ namespace UniGit.Settings
 		private readonly GitCredentialsManager credentialsManager;
 
 		[UniGitInject]
-		public GitSecuritySettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitCredentialsManager credentialsManager,UniGitData data) 
-			: base(new GUIContent("Security"), gitManager, settingsWindow,data)
+		public GitSecuritySettingsTab(GitManager gitManager, 
+			GitSettingsWindow settingsWindow,
+			GitCredentialsManager credentialsManager,
+			UniGitData data,
+			GitSettingsJson gitSettings,
+			GitCallbacks gitCallbacks) 
+			: base(new GUIContent("Security"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
 		{
 			this.credentialsManager = credentialsManager;
 		}
@@ -20,17 +25,16 @@ namespace UniGit.Settings
 		internal override void OnGUI(Rect rect, Event current)
 		{
 			EditorGUILayout.BeginHorizontal();
-			GitSettingsJson settings = gitManager.Settings;
-			if (settings != null)
+			if (gitSettings != null)
 			{
 				EditorGUI.BeginChangeCheck();
 				int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("Credentials Manager", "The name of the External program to use"), credentialsManager.SelectedAdapterIndex, credentialsManager.AdapterNames);
-				settings.CredentialsManager = newSelectedIndex >= 0 && newSelectedIndex < credentialsManager.AdapterIds.Length ? credentialsManager.AdapterIds[newSelectedIndex] : "";
+				gitSettings.CredentialsManager = newSelectedIndex >= 0 && newSelectedIndex < credentialsManager.AdapterIds.Length ? credentialsManager.AdapterIds[newSelectedIndex] : "";
 				if (EditorGUI.EndChangeCheck())
 				{
 					credentialsManager.SetSelectedAdapter(newSelectedIndex);
 
-					settings.MarkDirty();
+					gitSettings.MarkDirty();
 				}
 				GUI.enabled = newSelectedIndex >= 0;
 			}

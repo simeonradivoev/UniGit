@@ -17,19 +17,16 @@ namespace UniGit
 		private int selectedAdapterIndex = -1;
 		private IExternalAdapter selectedAdapter;
 		private bool initiazlitedSelected;
-		private readonly GitManager gitManager;
 		private readonly ILogger logger;
+		private readonly GitSettingsJson gitSettings;
 
 		[UniGitInject]
-		public GitExternalManager(GitManager gitManager,ICollection<IExternalAdapter> adapters,ILogger logger)
+		public GitExternalManager(ICollection<IExternalAdapter> adapters,ILogger logger,GitSettingsJson gitSettings)
 		{
-			var injectionHelper = new InjectionHelper();
-			injectionHelper.Bind<GitManager>().FromInstance(gitManager);
-			injectionHelper.Bind<GitExternalManager>().FromInstance(this);
-			this.gitManager = gitManager;
 			this.adapters = adapters.OrderBy(GetAdapterPriority).ToArray();
 			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 			this.logger = logger;
+			this.gitSettings = gitSettings;
 		}
 
 		#region Selection
@@ -60,7 +57,7 @@ namespace UniGit
 
 		private void InitializeSelectedAdapter()
 		{
-			selectedAdapter = adapters.FirstOrDefault(a => Exists(a) && GetAdapterName(a) == gitManager.Settings.ExternalProgram) ?? adapters.FirstOrDefault(a => Exists(a));
+			selectedAdapter = adapters.FirstOrDefault(a => Exists(a) && GetAdapterName(a) == gitSettings.ExternalProgram) ?? adapters.FirstOrDefault(a => Exists(a));
 			if (selectedAdapter != null) selectedAdapterIndex = Array.IndexOf(adapters, selectedAdapter);
 			initiazlitedSelected = true;
 		}
@@ -102,43 +99,43 @@ namespace UniGit
 
 		public bool TakeCommit(string message)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Commit(message);
 		}
 
 		public bool TakePush()
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Push) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Push) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Push();
 		}
 
 		public bool TakePull()
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Pull) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Pull) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Pull();
 		}
 
 		public bool TakeMerge()
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Merge) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Merge) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Merge();
 		}
 
 		public bool TakeFetch(string remote)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Fetch(remote);
 		}
 
 		public bool TakeReset(Commit commit)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Fetch) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Reset(commit);
 		}
 
 		public bool TakeBlame(string path)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Blame) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Blame) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Blame(path);
 		}
 
@@ -155,38 +152,38 @@ namespace UniGit
 
 		public bool TakeDiff(string path)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path);
 		}
 
 		public bool TakeDiff(string path,string path2)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path, path2);
 		}
 
 		public bool TakeDiff(string path, Commit end)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path, end);
 		}
 
 
 		public bool TakeDiff(string path, Commit start,Commit end)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Diff) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Diff(path, start, end);
 		}
 
 		public bool TakeRevert(IEnumerable<string> paths)
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Revert) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Revert) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Revert(paths);
 		}
 
 		public bool TakeSwitch()
 		{
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || SelectedAdatapter == null) return false;
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || SelectedAdatapter == null) return false;
 			return SelectedAdatapter.Switch();
 		}
 

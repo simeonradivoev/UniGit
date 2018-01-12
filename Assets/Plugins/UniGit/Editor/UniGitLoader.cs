@@ -18,6 +18,7 @@ namespace UniGit
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
 		private static GitReflectionHelper ReflectionHelper;
+		private static GitSettingsJson GitSettings;
 
 		static UniGitLoader()
 		{
@@ -111,6 +112,7 @@ namespace UniGit
 			GitManager = injectionHelper.GetInstance<GitManager>();
 			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
 			ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
+			GitSettings = injectionHelper.GetInstance<GitSettingsJson>();
 
 			GitCallbacks.RepositoryCreate += OnRepositoryCreate;
 			GitCallbacks.OnLogEntry += OnLogEntry;
@@ -119,7 +121,7 @@ namespace UniGit
 
 			injectionHelper.CreateNonLazy();
 
-			GitProjectContextMenus.Init(GitManager, injectionHelper.GetInstance<GitExternalManager>());
+			GitProjectContextMenus.Init(GitManager, injectionHelper.GetInstance<GitExternalManager>(),GitCallbacks);
 			GitUnityMenu.Init(GitManager);
 		}
 
@@ -153,7 +155,7 @@ namespace UniGit
 
 		private static void OnLogEntry(GitLog.LogEntry logEntry)
 		{
-			if (!GitManager.Settings.UseUnityConsole)
+			if (!GitSettings.UseUnityConsole)
 				GetWindow<GitLogWindow>();
 		}
 

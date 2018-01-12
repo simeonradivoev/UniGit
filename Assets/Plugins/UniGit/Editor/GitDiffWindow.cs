@@ -44,8 +44,8 @@ namespace UniGit
 		private char commitMessageLastChar;
 		private GitConflictsHandler conflictsHandler;
 		private GitAsyncOperation statusListUpdateOperation;
-		private HashSet<string> updatingPaths = new HashSet<string>();
-		private HashSet<string> pathsToBeUpdated = new HashSet<string>();
+		private readonly HashSet<string> updatingPaths = new HashSet<string>();
+		private readonly HashSet<string> pathsToBeUpdated = new HashSet<string>();
 		private bool needsAsyncStatusListUpdate;
 		private GitExternalManager externalManager;
 		private GitLfsHelper lfsHelper;
@@ -259,7 +259,7 @@ namespace UniGit
 			try
 			{
 				if(statusList == null)statusList = new StatusList();
-				statusList.Setup(settings.sortType, settings.sortDir, gitManager.Settings, gitManager.RepoPath);
+				statusList.Setup(settings.sortType, settings.sortDir, gitSettings, gitManager.RepoPath);
 
 				if (paths == null || paths.Length <= 0)
 				{
@@ -318,7 +318,7 @@ namespace UniGit
 			base.OnFocus();
 			GUI.FocusControl(null);
 
-			if (gitManager != null && gitManager.Settings != null && gitManager.Settings.ReadFromFile)
+			if (gitManager != null && gitSettings != null && gitSettings.ReadFromFile)
 			{
 				if (File.Exists(gitManager.GitCommitMessageFilePath))
 				{
@@ -354,7 +354,7 @@ namespace UniGit
 
 			if (statusList == null)
 			{
-				Repaint();
+				if(gitSettings.AnimationType.HasFlag(GitSettingsJson.AnimationTypeEnum.Loading)) Repaint();
 				GitGUI.DrawLoading(new Rect(0, 0, position.width, position.height), GitGUI.GetTempContent(GetStatusBuildingState()));
 			}
 			else
@@ -378,10 +378,10 @@ namespace UniGit
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
 				GUILayout.Label(GitGUI.GetTempContent("Merge"), styles.mergeIndicator);
-			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(gitManager.Settings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), styles.commitMessageFoldoud, GUILayout.Width(gitManager.Settings.ReadFromFile ? 210 : 116));
+			commitMaximized = GUILayout.Toggle(commitMaximized, GitGUI.GetTempContent(gitSettings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), styles.commitMessageFoldoud, GUILayout.Width(gitSettings.ReadFromFile ? 210 : 116));
 			if (!commitMaximized)
 			{
-				if (!gitManager.Settings.ReadFromFile)
+				if (!gitSettings.ReadFromFile)
 				{
 					EditorGUI.BeginChangeCheck();
 					GUI.SetNextControlName("Commit Message Field");
@@ -400,7 +400,7 @@ namespace UniGit
 			if (commitMaximized)
 			{
 				commitScroll = EditorGUILayout.BeginScrollView(commitScroll, GUILayout.Height(CalculateCommitTextHeight()));
-				if (!gitManager.Settings.ReadFromFile)
+				if (!gitSettings.ReadFromFile)
 				{
 					EditorGUI.BeginChangeCheck();
 					GUI.SetNextControlName("Commit Message Field");
@@ -435,7 +435,7 @@ namespace UniGit
 				BuildCommitMenu(commitMenu);
 				commitMenu.ShowAsContext();
 			}
-			GitGUI.StartEnable(!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit));
+			GitGUI.StartEnable(!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit));
 			settings.emptyCommit = GUILayout.Toggle(settings.emptyCommit, GitGUI.GetTempContent("Empty Commit", "Commit the message only without changes"));
 			EditorGUI.BeginChangeCheck();
 			settings.amendCommit = GUILayout.Toggle(settings.amendCommit, GitGUI.GetTempContent("Amend Commit", "Amend previous commit."));
@@ -465,7 +465,7 @@ namespace UniGit
 		{
 			if(gitManager == null) return;
 			commitMenu.AddItem(new GUIContent("Commit"), false, CommitCallback);
-			if (!gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit))
+			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit))
 			{
 				commitMenu.AddItem(new GUIContent("Commit And Push"), false, CommitAndPushCallback);
 			}
@@ -475,7 +475,7 @@ namespace UniGit
 			}
 			commitMenu.AddSeparator("");
 			commitMenu.AddItem(new GUIContent("Commit Message/Clear"), false, ClearCommitMessage);
-			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), gitManager.Settings.ReadFromFile, ToggleReadFromFile);
+			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), gitSettings.ReadFromFile, ToggleReadFromFile);
 			if (File.Exists(gitManager.GitCommitMessageFilePath))
 			{
 				commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
@@ -490,7 +490,7 @@ namespace UniGit
 		private float CalculateCommitTextHeight()
 		{
 			string commitMessage = GetActiveCommitMessage(false);
-			return Mathf.Clamp(GUI.skin.textArea.CalcHeight(GitGUI.GetTempContent(commitMessage), position.width) + EditorGUIUtility.singleLineHeight, 50, gitManager.Settings.MaxCommitTextAreaSize);
+			return Mathf.Clamp(GUI.skin.textArea.CalcHeight(GitGUI.GetTempContent(commitMessage), position.width) + EditorGUIUtility.singleLineHeight, 50, gitSettings.MaxCommitTextAreaSize);
 		}
 
 		public bool Commit()
@@ -530,7 +530,7 @@ namespace UniGit
 
 		public string GetActiveCommitMessage(bool forceUpdate)
 		{
-			if (gitManager.Settings.ReadFromFile)
+			if (gitSettings.ReadFromFile)
 			{
 				if (forceUpdate)
 				{
@@ -551,18 +551,18 @@ namespace UniGit
 
 		private void ToggleReadFromFile()
 		{
-			if (gitManager.Settings.ReadFromFile)
+			if (gitSettings.ReadFromFile)
 			{
-			    gitManager.Settings.ReadFromFile = false;
+				gitSettings.ReadFromFile = false;
 				ReadCommitMessage();
 			}
 			else
 			{
-			    gitManager.Settings.ReadFromFile = true;
+				gitSettings.ReadFromFile = true;
 				ReadCommitMessageFromFile();
 			}
 
-		    gitManager.Settings.MarkDirty();
+			gitSettings.MarkDirty();
 		}
 
 		private void OpenCommitMessageFile()
@@ -591,7 +591,7 @@ namespace UniGit
 
 		private void CommitAndPushCallback()
 		{
-			if (gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
+			if (gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
 			{
 				if (Commit())
 				{
@@ -685,28 +685,31 @@ namespace UniGit
 			bool isStaging = gitManager.IsAsyncStaging;
 			bool isDirty = gitManager.IsDirty;
 			bool statusListUpdate = statusListUpdateOperation != null && !statusListUpdateOperation.IsDone;
-			GUIContent statusContent = GUIContent.none;
+			GUIContent statusContent = null;
 
 			if (isUpdating)
 			{
-				statusContent = GitGUI.IconContent("CollabProgress", "Updating...");
+				statusContent = GitGUI.GetTempContent("Updating...",GitGUI.GetTempSpinAnimatedTexture());
 			}
 			else if (isStaging)
 			{
-				statusContent = GitGUI.IconContent("CollabProgress", "Staging...");
+				statusContent = GitGUI.GetTempContent("Staging...",GitGUI.GetTempSpinAnimatedTexture());
 			}
 			else if (isDirty)
 			{
 				string updateStatus = GetUpdateStatusMessage(gitManager.GetUpdateStatus());
-				statusContent =  GitGUI.IconContent("CollabProgress", updateStatus + "... ");
+				statusContent =  GitGUI.GetTempContent(updateStatus + "... ",GitGUI.GetTempSpinAnimatedTexture());
 			}
 			else if (statusListUpdate)
 			{
-				statusContent = GitGUI.IconContent("CollabProgress", GetStatusBuildingState());
+				statusContent = GitGUI.GetTempContent(GetStatusBuildingState(),GitGUI.GetTempSpinAnimatedTexture());
 			}
 
-			if(statusContent != GUIContent.none)
-				GUILayout.Label(statusContent,EditorStyles.toolbarButton);
+			if (statusContent != null)
+			{
+				GUILayout.Label(statusContent, EditorStyles.toolbarButton);
+				Repaint();
+			}
 
 			GUILayout.FlexibleSpace();
 			filter = searchField.OnToolbarGUI(filter);
@@ -908,7 +911,9 @@ namespace UniGit
 
 				if (!enabled)
 				{
-					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(GitGUI.Textures.SpinTexture),GUIStyle.none);
+					GUI.Box(new Rect(x, rect.y + elementTopBottomMargin + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempSpinAnimatedTexture(),GUIStyle.none);
+					//spinning animation needs constant repaint
+					Repaint();
 				}
 			}
 
@@ -968,7 +973,7 @@ namespace UniGit
 			{
 				if (current.type == EventType.ContextClick)
 				{
-					if (gitManager.Settings.UseSimpleContextMenus)
+					if (gitSettings.UseSimpleContextMenus)
 					{
 						GenericMenuWrapper genericMenuWrapper = new GenericMenuWrapper(new GenericMenu());
 						DoDiffElementContex(genericMenuWrapper);
@@ -1145,7 +1150,7 @@ namespace UniGit
 
 		public void SetCommitMessage(string commitMessage)
 		{
-			if (gitManager.Settings.ReadFromFile)
+			if (gitSettings.ReadFromFile)
 			{
 				settings.commitMessageFromFile = commitMessage;
 				SaveCommitMessageToFile();
@@ -1154,9 +1159,9 @@ namespace UniGit
 			SaveCommitMessage();
 		}
 
-	    internal static void SetCommitMessage(GitManager gitManager,string commitMessage)
+	    internal static void SetCommitMessage(GitManager gitManager,GitSettingsJson gitSettings,string commitMessage)
 	    {
-	        if (gitManager.Settings.ReadFromFile)
+	        if (gitSettings.ReadFromFile)
 	        {
 	            SaveCommitMessageToFile(gitManager, commitMessage);
 	        }
@@ -1167,7 +1172,7 @@ namespace UniGit
 		protected new void OnDisable()
 		{
 			base.OnDisable();
-			if (gitManager != null && gitManager.Settings != null && !gitManager.Settings.ReadFromFile)
+			if (gitManager != null && gitSettings != null && !gitSettings.ReadFromFile)
 			{
 				SaveCommitMessage();
 			}
@@ -1496,7 +1501,7 @@ namespace UniGit
 
 			if (externalManager.TakeRevert(paths))
 			{
-				gitManager.Callbacks.IssueAssetDatabaseRefresh();
+				gitCallbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
 				return;
 			}

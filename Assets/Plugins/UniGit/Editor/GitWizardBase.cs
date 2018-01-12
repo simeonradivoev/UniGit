@@ -24,14 +24,20 @@ namespace UniGit
 		protected GitCredentialsManager credentialsManager;
 		protected GitExternalManager externalManager;
 		protected ILogger logger;
+		protected GitSettingsJson gitSettings;
 
         [UniGitInject]
-		private void Construct(GitManager gitManager, GitCredentialsManager credentialsManager, GitExternalManager externalManager,ILogger logger)
+		private void Construct(GitManager gitManager, 
+	        GitCredentialsManager credentialsManager, 
+	        GitExternalManager externalManager,
+	        ILogger logger,
+	        GitSettingsJson gitSettings)
         {
 	        this.logger = logger;
 			this.gitManager = gitManager;
 			this.credentialsManager = credentialsManager;
 			this.externalManager = externalManager;
+	        this.gitSettings = gitSettings;
 
 			remotes = gitManager.Repository.Network != null && gitManager.Repository.Network.Remotes != null ? gitManager.Repository.Network.Remotes.ToArray() : new Remote[0];
 			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
@@ -183,7 +189,7 @@ namespace UniGit
                     }
 				    else
 				    {
-				        GitDiffWindow.SetCommitMessage(gitManager, gitManager.Repository.Info.Message);
+				        GitDiffWindow.SetCommitMessage(gitManager, gitSettings,gitManager.Repository.Info.Message);
 				    }
 					logger.LogFormat(LogType.Log,"{0} Complete without Fast Forwarding.",mergeType);
 					break;
@@ -196,7 +202,7 @@ namespace UniGit
                     }
 				    else
 				    {
-				        GitDiffWindow.SetCommitMessage(gitManager, gitManager.Repository.Info.Message);
+				        GitDiffWindow.SetCommitMessage(gitManager, gitSettings,gitManager.Repository.Info.Message);
 				    }
 					break;
 			}

@@ -9,31 +9,35 @@ namespace UniGit.Settings
 		private readonly GitExternalManager externalManager;
 
 		[UniGitInject]
-		public GitExternalsSettingsTab(GitManager gitManager,GitSettingsWindow settingsWindow,GitExternalManager externalManager,UniGitData data) 
-			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow,data)
+		public GitExternalsSettingsTab(GitManager gitManager,
+			GitSettingsWindow settingsWindow,
+			GitExternalManager externalManager,
+			UniGitData data,
+			GitSettingsJson gitSettings,
+			GitCallbacks gitCallbacks) 
+			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
 		{
 			this.externalManager = externalManager;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
-			GitSettingsJson settings = gitManager.Settings;
-			if (settings == null) return;
+			if (gitSettings == null) return;
 
 			EditorGUI.BeginChangeCheck();
-			settings.ExternalsType = (GitSettingsJson.ExternalsTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), settings.ExternalsType);
+			gitSettings.ExternalsType = (GitSettingsJson.ExternalsTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("External Program Uses", "Use an external program for more advanced features like pushing, pulling, merging and so on"), gitSettings.ExternalsType);
 			if (EditorGUI.EndChangeCheck())
 			{
-				settings.MarkDirty();
+				gitSettings.MarkDirty();
 			}
 
 			EditorGUI.BeginChangeCheck();
 			int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), externalManager.SelectedAdapterIndex, externalManager.AdapterNames);
-			settings.ExternalProgram = externalManager.AdapterNames[newSelectedIndex].text;
+			gitSettings.ExternalProgram = externalManager.AdapterNames[newSelectedIndex].text;
 			if (EditorGUI.EndChangeCheck())
 			{
 				externalManager.SetSelectedAdapter(newSelectedIndex);
-				settings.MarkDirty();
+				gitSettings.MarkDirty();
 			}
 
 			EditorGUILayout.HelpBox("Using external programs is always recommended as UniGit is still in development.", MessageType.Info);

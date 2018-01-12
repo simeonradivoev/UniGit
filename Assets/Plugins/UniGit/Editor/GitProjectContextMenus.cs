@@ -12,11 +12,13 @@ namespace UniGit
 	{
 		private static GitManager gitManager;
 		private static GitExternalManager externalManager;
+		private static GitCallbacks gitCallbacks;
 
-		internal static void Init(GitManager gitManager,GitExternalManager externalManager)
+		internal static void Init(GitManager gitManager,GitExternalManager externalManager,GitCallbacks gitCallbacks)
 		{
 			GitProjectContextMenus.gitManager = gitManager;
 			GitProjectContextMenus.externalManager = externalManager;
+			GitProjectContextMenus.gitCallbacks = gitCallbacks;
 		}
 
 		[MenuItem("Assets/Git/Add", priority = 50), UsedImplicitly]
@@ -88,7 +90,7 @@ namespace UniGit
 			var paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(GitManager.GetPathWithMeta).ToArray();
 			if (externalManager.TakeRevert(paths))
 			{
-				gitManager.Callbacks.IssueAssetDatabaseRefresh();
+				gitCallbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty(paths);
 				return;
 			}
@@ -102,7 +104,7 @@ namespace UniGit
 				EditorUtility.ClearProgressBar();
 			}
 			
-			gitManager.Callbacks.IssueAssetDatabaseRefresh();
+			gitCallbacks.IssueAssetDatabaseRefresh();
 			gitManager.MarkDirty(paths);
 		}
 

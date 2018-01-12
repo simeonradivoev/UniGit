@@ -12,16 +12,22 @@ namespace UniGit
 		private readonly GitCredentialsManager credentialsManager;
 		private readonly GitManager gitManager;
 		private readonly GitCallbacks gitCallbacks;
+		private readonly GitSettingsJson gitSettings;
 		private readonly ILogger logger;
 		private bool needsFetch;
 
 		[UniGitInject]
-		public GitAutoFetcher(GitManager gitManager,GitCredentialsManager credentialsManager,GitCallbacks gitCallbacks,ILogger logger)
+		public GitAutoFetcher(GitManager gitManager,
+			GitCredentialsManager credentialsManager,
+			GitCallbacks gitCallbacks,
+			GitSettingsJson gitSettings,
+			ILogger logger)
 		{
 			this.gitManager = gitManager;
 			this.credentialsManager = credentialsManager;
 			this.gitCallbacks = gitCallbacks;
 			this.logger = logger;
+			this.gitSettings = gitSettings;
 			gitCallbacks.EditorUpdate += OnEditorUpdate;
 			needsFetch = !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isCompiling && !EditorApplication.isUpdating;
 		}
@@ -44,7 +50,7 @@ namespace UniGit
 
 		private bool AutoFetchChanges()
 		{
-			if (gitManager.Repository == null || !gitManager.IsValidRepo || !gitManager.Settings.AutoFetch) return false;
+			if (gitManager.Repository == null || !gitManager.IsValidRepo || !gitSettings.AutoFetch) return false;
 			Remote remote = gitManager.Repository.Network.Remotes.FirstOrDefault();
 			if (remote == null) return false;
 			GitProfilerProxy.BeginSample("Git automatic fetching");

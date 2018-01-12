@@ -13,45 +13,47 @@ namespace UniGit.Settings
 		private Vector2 scroll;
 
 		[UniGitInject]
-		public GitGeneralSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,GitLfsManager lfsManager,UniGitData data) 
-			: base(new GUIContent("General"), gitManager, settingsWindow,data)
+		public GitGeneralSettingsTab(GitManager gitManager, 
+			GitSettingsWindow settingsWindow,
+			GitLfsManager lfsManager,
+			UniGitData data,
+			GitSettingsJson gitSettings,
+			GitCallbacks gitCallbacks) 
+			: base(new GUIContent("General"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
 		{
 			this.lfsManager = lfsManager;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
 		{
-
-			GitSettingsJson settings = gitManager.Settings;
-
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			//todo cache general settings to reduce lookup
 			GUILayout.Box(GitGUI.IconContent("SceneAsset Icon", "Unity Settings"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
 
-			if (settings != null)
+			if (gitSettings != null)
 			{
 				bool save = false;
 				bool updateGit = false;
 
 				EditorGUI.BeginChangeCheck();
-				settings.AutoStage = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Stage", "Auto stage changes for committing when an asset is modified"), settings.AutoStage);
-				settings.AutoFetch = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Fetch", "Auto fetch repository changes when possible. This will tell you about changes to the remote repository without having to pull. This only works with the Credentials Manager."), settings.AutoFetch);
+				gitSettings.AutoStage = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Stage", "Auto stage changes for committing when an asset is modified"), gitSettings.AutoStage);
+				gitSettings.AutoFetch = EditorGUILayout.Toggle(GitGUI.GetTempContent("Auto Fetch", "Auto fetch repository changes when possible. This will tell you about changes to the remote repository without having to pull. This only works with the Credentials Manager."), gitSettings.AutoFetch);
 				save |= EditorGUI.EndChangeCheck();
 
 				EditorGUI.BeginChangeCheck();
-				settings.ProjectStatusOverlayDepth = EditorGUILayout.DelayedIntField(GitGUI.GetTempContent("Project Status Overlay Depth", "The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit"), settings.ProjectStatusOverlayDepth);
-				settings.ShowEmptyFolders = EditorGUILayout.Toggle(GitGUI.GetTempContent("Show Empty Folders", "Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled."), settings.ShowEmptyFolders);
+				gitSettings.ProjectStatusOverlayDepth = EditorGUILayout.DelayedIntField(GitGUI.GetTempContent("Project Status Overlay Depth", "The maximum depth at which overlays will be shown in the Project Window. This means that folders at levels higher than this will not be marked as changed. -1 indicates no limit"), gitSettings.ProjectStatusOverlayDepth);
+				gitSettings.ShowEmptyFolders = EditorGUILayout.Toggle(GitGUI.GetTempContent("Show Empty Folders", "Show status for empty folder meta files and auto stage them, if 'Auto stage' option is enabled."), gitSettings.ShowEmptyFolders);
 				GUIContent threadingContent = GitGUI.GetTempContent("Use Threading", "When Should Threading be used. In staging, unstaging or status retrival.");
-				if ((settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || settings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage)) && lfsManager.Installed && lfsManager.CheckInitialized())
+				if ((gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage) || gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage)) && lfsManager.Installed && lfsManager.CheckInitialized())
 				{
 					threadingContent.image = GitGUI.Textures.WarrningIconSmall;
 					threadingContent.tooltip = "Threaded 'Stage' and 'Unstage' are disabled when Git LFS is enabled.";
 				}
-				settings.Threading = (GitSettingsJson.ThreadingType)EditorGUILayout.EnumFlagsField(threadingContent, settings.Threading);
+				gitSettings.Threading = (GitSettingsJson.ThreadingType)EditorGUILayout.EnumFlagsField(threadingContent, gitSettings.Threading);
 				
-				settings.UseGavatar = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Gavatar", "Load Gavatars based on the committer's email address."), settings.UseGavatar);
-				settings.MaxCommitTextAreaSize = EditorGUILayout.DelayedFloatField(GitGUI.GetTempContent("Max Commit Text Area Size", "The maximum height the commit text area can expand to."), settings.MaxCommitTextAreaSize);
-				settings.DetectRenames = EditorGUILayout.Toggle(GitGUI.GetTempContent("Detect Renames", "Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works."), settings.DetectRenames);
+				gitSettings.UseGavatar = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Gavatar", "Load Gavatars based on the committer's email address."), gitSettings.UseGavatar);
+				gitSettings.MaxCommitTextAreaSize = EditorGUILayout.DelayedFloatField(GitGUI.GetTempContent("Max Commit Text Area Size", "The maximum height the commit text area can expand to."), gitSettings.MaxCommitTextAreaSize);
+				gitSettings.DetectRenames = EditorGUILayout.Toggle(GitGUI.GetTempContent("Detect Renames", "Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works."), gitSettings.DetectRenames);
 				if (EditorGUI.EndChangeCheck())
 				{
 					save = true;
@@ -59,15 +61,15 @@ namespace UniGit.Settings
 				}
 
 				EditorGUI.BeginChangeCheck();
-				settings.UseSimpleContextMenus = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Simple Context Menus", "Use Unity's default context menu on Diff window, instead of the UniGit one (with icons)"), settings.UseSimpleContextMenus);
-				settings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload."), settings.LazyMode);
-				settings.TrackSystemFiles = EditorGUILayout.Toggle(GitGUI.GetTempContent("Track System Files", "Should files and folders be tracked that are outside the 'Assets' folder? This should definitely be used if lazy mode is on."), settings.TrackSystemFiles);
-				settings.UseUnityConsole = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Unity's Console", "Show Info, Warning and Error messages in Unity's builtin console instead of the Git Log"), settings.UseUnityConsole);
-				settings.AnimationType = (GitSettingsJson.AnimationTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("Animation Types", "Which animation are allowed"), settings.AnimationType);
+				gitSettings.UseSimpleContextMenus = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Simple Context Menus", "Use Unity's default context menu on Diff window, instead of the UniGit one (with icons)"), gitSettings.UseSimpleContextMenus);
+				gitSettings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload."), gitSettings.LazyMode);
+				gitSettings.TrackSystemFiles = EditorGUILayout.Toggle(GitGUI.GetTempContent("Track System Files", "Should files and folders be tracked that are outside the 'Assets' folder? This should definitely be used if lazy mode is on."), gitSettings.TrackSystemFiles);
+				gitSettings.UseUnityConsole = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Unity's Console", "Show Info, Warning and Error messages in Unity's builtin console instead of the Git Log"), gitSettings.UseUnityConsole);
+				gitSettings.AnimationType = (GitSettingsJson.AnimationTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("Animation Types", "Which animation are allowed"), gitSettings.AnimationType);
 
 				save |= EditorGUI.EndChangeCheck();
 
-				if (save) settings.MarkDirty();
+				if (save) gitSettings.MarkDirty();
 				if(updateGit) gitManager.MarkDirty();
 			}
 

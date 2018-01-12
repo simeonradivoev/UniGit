@@ -24,8 +24,10 @@ namespace UniGit.Settings
 			GitExternalManager externalManager,
 			InjectionHelper injectionHelper,
 			UniGitData data,
-			ILogger logger) 
-			: base(new GUIContent("Branches"), gitManager,settingsWindow,data)
+			ILogger logger,
+			GitSettingsJson gitSettings,
+			GitCallbacks gitCallbacks) 
+			: base(new GUIContent("Branches"), gitManager,settingsWindow,data,gitSettings,gitCallbacks)
 		{
 			this.injectionHelper = injectionHelper;
 			this.externalManager = externalManager;
@@ -118,7 +120,7 @@ namespace UniGit.Settings
 			{
 				if (externalManager.TakeSwitch())
 				{
-					gitManager.Callbacks.IssueAssetDatabaseRefresh();
+					gitCallbacks.IssueAssetDatabaseRefresh();
 					gitManager.MarkDirty();
 				}
 				else

@@ -391,7 +391,7 @@ namespace UniGit
 			btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
 			if (GUI.Button(btRect, GitGUI.GetTempContent("Stash", gitOverlay.icons.stashIcon.image), EditorStyles.toolbarButton))
 			{
-				PopupWindow.Show(btRect,new GitStashWindow(gitManager,gitOverlay));
+				PopupWindow.Show(btRect,injectionHelper.CreateInstance<GitStashWindow>());
 			}
 			GUI.enabled = true;
 
@@ -418,12 +418,12 @@ namespace UniGit
 			}
 			GitGUI.EndEnable();
 			btRect = new Rect(btRect.x - 64, btRect.y, 64, btRect.height);
-			GitGUI.StartEnable(gitManager.Settings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
+			GitGUI.StartEnable(gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Switch) || (!selectedBranch.IsRemote && !selectedBranch.IsCurrentRepositoryHead));
 			if (GUI.Button(btRect, GitGUI.GetTempContent("Switch", gitOverlay.icons.checkout.image, selectedBranch.IsRemote ? "Cannot switch to remote branches." : selectedBranch.IsCurrentRepositoryHead ? "This branch is the active one" : "Switch to another branch"), EditorStyles.toolbarButton))
 			{
 				if (externalManager.TakeSwitch())
 				{
-					gitManager.Callbacks.IssueAssetDatabaseRefresh();
+					gitCallbacks.IssueAssetDatabaseRefresh();
 					gitManager.MarkDirty();
 				}
 				else
@@ -471,7 +471,7 @@ namespace UniGit
 		{
 			if (externalManager.TakePull())
 			{
-				gitManager.Callbacks.IssueAssetDatabaseRefresh();
+				gitCallbacks.IssueAssetDatabaseRefresh();
 				gitManager.MarkDirty();
 			}
 			else
@@ -650,7 +650,7 @@ namespace UniGit
 				y += 4;
 			}
 
-			if (gitManager.Settings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
+			if (gitSettings.UseGavatar && Application.internetReachability != NetworkReachability.NotReachable)
 			{
 				Texture2D avatar = GetProfilePixture(commit.Committer.Email);
 				GUI.Box(new Rect(rect.x + x, rect.y + y, 32, 32), avatar != null ? GitGUI.GetTempContent(avatar) : gitOverlay.icons.loadingIconSmall, styles.avatar);
@@ -734,12 +734,12 @@ namespace UniGit
 					{
 						if (externalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
 						{
-							gitManager.Callbacks.IssueAssetDatabaseRefresh();
+							gitCallbacks.IssueAssetDatabaseRefresh();
 							gitManager.MarkDirty();
 						}
 						else
 						{
-							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect1, new ResetPopupWindow(gitManager,gitManager.Repository.Lookup<Commit>(commit.Id))));
+							popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect1, injectionHelper.CreateInstance<ResetPopupWindow>(gitManager.Repository.Lookup<Commit>(commit.Id))));
 						}
 					});
 				}
@@ -939,6 +939,7 @@ namespace UniGit
 			protected Commit commit;
 			protected GitManager gitManager;
 
+			[UniGitInject]
 			protected CommitPopupWindow(GitManager gitManager,Commit commit)
 			{
 				this.gitManager = gitManager;
@@ -950,15 +951,17 @@ namespace UniGit
 		{
 			private ResetMode resetMode = ResetMode.Mixed;
 			private CheckoutOptions checkoutOptions = new CheckoutOptions();
+			private readonly GitCallbacks gitCallbacks;
 
 			public override Vector2 GetWindowSize()
 			{
 				return new Vector2(256,128);
 			}
 
-			public ResetPopupWindow(GitManager gitManager,Commit commit) : base(gitManager,commit)
+			[UniGitInject]
+			public ResetPopupWindow(GitManager gitManager,GitCallbacks gitCallbacks,Commit commit) : base(gitManager,commit)
 			{
-				
+				this.gitCallbacks = gitCallbacks;
 			}
 
 			public override void OnGUI(Rect rect)
@@ -987,7 +990,7 @@ namespace UniGit
 						gitManager.MarkDirty(true);
 						editorWindow.Close();
 						GitProfilerProxy.EndSample();
-						gitManager.Callbacks.IssueAssetDatabaseRefresh();
+						gitCallbacks.IssueAssetDatabaseRefresh();
 					}
 				}
 				EditorGUILayout.Space();

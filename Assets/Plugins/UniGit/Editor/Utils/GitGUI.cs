@@ -77,7 +77,7 @@ namespace UniGit.Utils
 			public Texture2D RotateTool;
 			public Texture2D AnimationWindow;
 			public Texture2D ZoomTool;
-			public Texture2D SpinTexture;
+			public Texture2D[] SpinTextures;
 			public Texture2D Collab;
 			public Texture2D CollabNew;
 			public Texture2D CollabConflict;
@@ -114,7 +114,11 @@ namespace UniGit.Utils
 			textures.RotateTool = EditorGUIUtility.FindTexture("RotateTool");
 			textures.AnimationWindow = EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow");
 			textures.ZoomTool = EditorGUIUtility.FindTexture("ViewToolZoom");
-			textures.SpinTexture = EditorGUIUtility.FindTexture("WaitSpin00");
+			textures.SpinTextures = new Texture2D[12];
+			for (int i = 0; i < 12; i++)
+			{
+				textures.SpinTextures[i] = EditorGUIUtility.FindTexture("WaitSpin" + i.ToString("00"));
+			}
 			textures.Collab = EditorGUIUtility.FindTexture("Collab");
 			textures.CollabNew = EditorGUIUtility.FindTexture("CollabNew");
 			textures.CollabConflict = EditorGUIUtility.FindTexture("CollabConflict");
@@ -124,6 +128,12 @@ namespace UniGit.Utils
 		private static void InitContents(ContentsClass content)
 		{
 			content.Help = IconContent("_Help","","Help");
+		}
+
+		public static Texture2D GetTempSpinAnimatedTexture()
+		{
+			int index = Mathf.FloorToInt((float) ((EditorApplication.timeSinceStartup * 0.5) % 1) * 12);
+			return Textures.SpinTextures[index];
 		}
 
 		public static GUIContent GetTempContent(Texture tex)

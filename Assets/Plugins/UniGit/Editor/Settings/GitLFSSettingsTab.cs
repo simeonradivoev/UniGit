@@ -16,8 +16,10 @@ namespace UniGit.Settings
 			GitSettingsWindow settingsWindow,
 			GitLfsManager lfsManager,
 			InjectionHelper injectionHelper,
-			UniGitData data) 
-			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow,data)
+			UniGitData data,
+			GitSettingsJson gitSettings,
+			GitCallbacks gitCallbacks) 
+			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow,data,gitSettings,gitCallbacks)
 		{
 			this.injectionHelper = injectionHelper;
 			this.lfsManager = lfsManager;
@@ -37,10 +39,10 @@ namespace UniGit.Settings
 			else
 			{
 				EditorGUI.BeginChangeCheck();
-				gitManager.Settings.DisableGitLFS = EditorGUILayout.Toggle(GitGUI.GetTempContent("Disable Git LFS"), gitManager.Settings.DisableGitLFS);
+				gitSettings.DisableGitLFS = EditorGUILayout.Toggle(GitGUI.GetTempContent("Disable Git LFS"), gitSettings.DisableGitLFS);
 				if (EditorGUI.EndChangeCheck())
 				{
-					gitManager.Settings.MarkDirty();
+					gitSettings.MarkDirty();
 				}
 
 				if (!lfsManager.CheckInitialized())

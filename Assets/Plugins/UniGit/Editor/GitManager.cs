@@ -356,8 +356,8 @@ namespace UniGit
 		{
 			return new StatusOptions()
 			{
-				DetectRenamesInIndex = Settings.DetectRenames,
-				DetectRenamesInWorkDir = Settings.DetectRenames,
+				DetectRenamesInIndex = gitSettings.DetectRenames,
+				DetectRenamesInWorkDir = gitSettings.DetectRenames,
 				//this might help with locked ignored files hanging the search
 				RecurseIgnoredDirs = false
 			};
@@ -469,7 +469,7 @@ namespace UniGit
 		{
 			if (!IsValidRepo) return GitGUI.Textures.CollabNew;
 			if (Repository == null) return GitGUI.Textures.Collab;
-			if (isUpdating) return GitGUI.Textures.SpinTexture;
+			if (isUpdating) return GitGUI.GetTempSpinAnimatedTexture();
 			if (Repository.Index.Conflicts.Any()) return GitGUI.Textures.CollabConflict;
 			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
 			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
@@ -821,11 +821,6 @@ namespace UniGit
 			get { return UniGitPath.Combine(repoPath, ".gitignore"); }
 		}
 
-		public GitCallbacks Callbacks
-		{
-			get { return callbacks; }
-		}
-
 		public bool IsUpdating
 		{
 			get { return isUpdating; }
@@ -867,11 +862,6 @@ namespace UniGit
 				}
 				return newThreading;
 			}
-		}
-
-		public GitSettingsJson Settings
-		{
-			get { return gitSettings; }
 		}
 
 		public string GitFolderPath

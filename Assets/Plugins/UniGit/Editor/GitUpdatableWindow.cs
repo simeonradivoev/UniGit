@@ -13,8 +13,10 @@ namespace UniGit
 		[NonSerialized] private object initialized;
 		[NonSerialized] private object isRepositoryDirty;
 		[NonSerialized] protected GitManager gitManager;
+		[NonSerialized] protected GitSettingsJson gitSettings;
 		[NonSerialized] protected GitReflectionHelper reflectionHelper;
 		[NonSerialized] protected UniGitData data;
+		[NonSerialized] protected GitCallbacks gitCallbacks;
 		[NonSerialized] protected ILogger logger;
 
 		protected virtual void OnEnable()
@@ -25,25 +27,31 @@ namespace UniGit
 		}
 
         [UniGitInject]
-		private void Construct(GitManager gitManager,GitReflectionHelper reflectionHelper,UniGitData data,ILogger logger)
+		private void Construct(GitManager gitManager,
+	        GitReflectionHelper reflectionHelper,
+	        UniGitData data,
+	        ILogger logger,
+	        GitSettingsJson gitSettings,
+	        GitCallbacks gitCallbacks)
 		{
 			this.logger = logger;
+			this.gitSettings = gitSettings;
 
 			if (gitManager == null)
 			{
 				logger.Log(LogType.Error,"Git manager cannot be null.");
 				return;
 			}
-			if (this.gitManager != null && this.gitManager.Callbacks != null)
+			if (this.gitCallbacks != null)
 			{
-				Unsubscribe(this.gitManager.Callbacks);
+				Unsubscribe(this.gitCallbacks);
 			}
 			
 			this.data = data;
 			this.gitManager = gitManager;
 			this.gitManager.AddWatcher(this);
 			this.reflectionHelper = reflectionHelper;
-			Subscribe(gitManager.Callbacks);
+			Subscribe(gitCallbacks);
 		}
 
 		#region Editor Specific Updates
@@ -142,7 +150,7 @@ namespace UniGit
 		{
 			if (gitManager != null)
 			{
-				if(gitManager.Callbacks != null) Unsubscribe(gitManager.Callbacks);
+				if(gitCallbacks != null) Unsubscribe(gitCallbacks);
 				gitManager.RemoveWatcher(this);
 			}
 		}

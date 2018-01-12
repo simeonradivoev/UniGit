@@ -112,6 +112,7 @@ namespace UniGit
 			DiffInspector = 1 << 0,
 			ContextMenu = 1 << 1,
 			Settings = 1 << 2,
+			Loading = 1 << 3,
 			All = -1
 		}
 

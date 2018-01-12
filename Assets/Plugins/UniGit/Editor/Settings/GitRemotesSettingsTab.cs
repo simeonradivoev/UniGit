@@ -15,8 +15,8 @@ namespace UniGit.Settings
 		private Vector2 scroll;
 
 		[UniGitInject]
-		public GitRemotesSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,UniGitData data) 
-			: base(new GUIContent("Remotes", "Remote Repositories"), gitManager, settingsWindow,data)
+		public GitRemotesSettingsTab(GitManager gitManager, GitSettingsWindow settingsWindow,UniGitData data,GitSettingsJson gitSettings,GitCallbacks gitCallbacks) 
+			: base(new GUIContent("Remotes", "Remote Repositories"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
 		{
 		}
 

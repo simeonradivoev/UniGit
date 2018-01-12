@@ -11,19 +11,22 @@ namespace UniGit.Settings
 		private bool hasFocused;
 		private bool initilized;
 		protected readonly GitManager gitManager;
+		protected readonly GitSettingsJson gitSettings;
 		protected readonly GUIContent name;
 		protected readonly UniGitData data;
+		protected readonly GitCallbacks gitCallbacks;
 
 		[UniGitInject]
-		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow,UniGitData data)
+		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow,UniGitData data,GitSettingsJson gitSettings,GitCallbacks gitCallbacks)
 		{
 			this.name = name;
 			this.gitManager = gitManager;
 			this.settingsWindow = settingsWindow;
 			this.data = data;
-			var callbacks = gitManager.Callbacks;
-			callbacks.EditorUpdate += OnEditorUpdateInternal;
-			callbacks.UpdateRepository += OnGitManagerUpdateInternal;
+			this.gitSettings = gitSettings;
+			this.gitCallbacks = gitCallbacks;
+			gitCallbacks.EditorUpdate += OnEditorUpdateInternal;
+			gitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
 		}
 
 		internal abstract void OnGUI(Rect rect, Event current);
@@ -74,10 +77,9 @@ namespace UniGit.Settings
 
 		public void Dispose()
 		{
-			if(gitManager == null || gitManager.Callbacks == null) return;
-			var callbacks = gitManager.Callbacks;
-			callbacks.EditorUpdate -= OnEditorUpdateInternal;
-			callbacks.UpdateRepository -= OnGitManagerUpdateInternal;
+			if(gitCallbacks == null) return;
+			gitCallbacks.EditorUpdate -= OnEditorUpdateInternal;
+			gitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 		}
 
 		public GUIContent Name

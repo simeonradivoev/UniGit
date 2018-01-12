@@ -11,14 +11,16 @@ namespace UniGit
 		[SerializeField] private bool force;
 		private readonly Branch branch;
 		private readonly GitManager gitManager;
+		private readonly GitCallbacks gitCallbacks;
 		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch,ILogger logger)
+		public GitCheckoutWindowPopup(GitManager gitManager,Branch branch,ILogger logger,GitCallbacks gitCallbacks)
 		{
 			this.gitManager = gitManager;
 			this.branch = branch;
 			this.logger = logger;
+			this.gitCallbacks = gitCallbacks;
 		}
 
 		public override Vector2 GetWindowSize()
@@ -54,7 +56,7 @@ namespace UniGit
 					}
 					finally
 					{
-						gitManager.Callbacks.IssueAssetDatabaseRefresh();
+						gitCallbacks.IssueAssetDatabaseRefresh();
 						gitManager.MarkDirty(true);
 					}
 				}

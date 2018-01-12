@@ -16,15 +16,15 @@ public class CallbackTests : TestRepoFixture
 	{
 		updateRepositoryCalled = 0;
 		onRepositoryLoadedCalled = 0;
-		gitManager.Callbacks.OnRepositoryLoad += OnRepositoryLoad;
-		gitManager.Callbacks.UpdateRepository += RepositoryUpdate;
+		gitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
+		gitCallbacks.UpdateRepository += RepositoryUpdate;
 	}
 
 	[TearDown]
 	public void TeardownCallbacks()
 	{
-		gitManager.Callbacks.OnRepositoryLoad -= OnRepositoryLoad;
-		gitManager.Callbacks.UpdateRepository -= RepositoryUpdate;
+		gitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
+		gitCallbacks.UpdateRepository -= RepositoryUpdate;
 	}
 
 	private void OnRepositoryLoad(Repository repository)
@@ -39,7 +39,7 @@ public class CallbackTests : TestRepoFixture
 
 	private void ForceGitUpdate()
 	{
-		gitManager.Callbacks.IssueEditorUpdate();
+		gitCallbacks.IssueEditorUpdate();
 	}
 
 	[Test]

@@ -10,16 +10,19 @@ namespace UniGit
 	{
 		private readonly GitManager gitManager;
 		private readonly GitOverlay gitOverlay;
+		private readonly GitCallbacks gitCallbacks;
 
 		private StashCollection stashCollection;
 		private Vector2 stashScroll;
 		private int selectedStash;
 		private GUIStyle stashStyle;
 
-		public GitStashWindow(GitManager gitManager,GitOverlay gitOverlay)
+		[UniGitInject]
+		public GitStashWindow(GitManager gitManager,GitOverlay gitOverlay,GitCallbacks gitCallbacks)
 		{
 			this.gitManager = gitManager;
 			this.gitOverlay = gitOverlay;
+			this.gitCallbacks = gitCallbacks;
 		}
 
 		public override void OnOpen()
@@ -70,7 +73,7 @@ namespace UniGit
 				{
 					stashCollection.Apply(selectedStash);
 					gitManager.MarkDirty(true);
-					gitManager.Callbacks.IssueAssetDatabaseRefresh();
+					gitCallbacks.IssueAssetDatabaseRefresh();
 				}
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Pop","Remove and apply stash to working directory."), EditorStyles.miniButtonMid))
@@ -79,7 +82,7 @@ namespace UniGit
 				{
 					stashCollection.Pop(selectedStash);
 					gitManager.MarkDirty(true);
-					gitManager.Callbacks.IssueAssetDatabaseRefresh();
+					gitCallbacks.IssueAssetDatabaseRefresh();
 				}
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Remove","Remove stash from list"), EditorStyles.miniButtonRight))

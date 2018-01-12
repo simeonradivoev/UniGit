@@ -16,6 +16,13 @@ namespace UniGit
 		[SerializeField]
 		private FastForwardStrategy fastForwardStrategy;
 		[SerializeField] private ConflictMergeType mergeFileFavor;
+		private GitCallbacks gitCallbacks;
+
+		[UniGitInject]
+		private void Construct(GitCallbacks gitCallbacks)
+		{
+			this.gitCallbacks = gitCallbacks;
+		}
 
 		protected override void OnEnable()
 		{
@@ -41,7 +48,7 @@ namespace UniGit
 				MergeResult result = gitManager.Repository.MergeFetchedRefs(gitManager.Signature, mergeOptions);
 				OnMergeComplete(result,"Merge");
 				gitManager.MarkDirty();
-				gitManager.Callbacks.IssueAssetDatabaseRefresh();
+				gitCallbacks.IssueAssetDatabaseRefresh();
 			}
 			catch (CheckoutConflictException e)
 			{

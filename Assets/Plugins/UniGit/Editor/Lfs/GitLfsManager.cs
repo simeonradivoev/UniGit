@@ -21,13 +21,15 @@ namespace UniGit
 		private readonly GitManager gitManager;
 		private readonly GitCallbacks gitCallbacks;
 		private readonly ILogger logger;
+		private readonly GitSettingsJson gitSettings;
 
 		[UniGitInject]
-		public GitLfsManager(GitManager gitManager,GitCallbacks gitCallbacks,ILogger logger)
+		public GitLfsManager(GitManager gitManager,GitCallbacks gitCallbacks,ILogger logger,GitSettingsJson gitSettings)
 		{
 			this.gitManager = gitManager;
 			this.gitCallbacks = gitCallbacks;
 			this.logger = logger;
+			this.gitSettings = gitSettings;
 			gitCallbacks.UpdateRepository += OnUpdateRepository;
 			gitManager.AddSettingsAffector(this);
 
@@ -184,7 +186,7 @@ namespace UniGit
 		{
 			get
 			{
-				return !gitManager.Settings.DisableGitLFS;
+				return !gitSettings.DisableGitLFS;
 			}
 		}
 

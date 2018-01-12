@@ -10,6 +10,7 @@ public class TestRepoFixture
 {
 	protected Signature signature;
 	protected GitManager gitManager;
+	protected GitCallbacks gitCallbacks;
     protected InjectionHelper injectionHelper;
 	protected UniGitData data;
 
@@ -34,6 +35,7 @@ public class TestRepoFixture
 
 		gitManager = injectionHelper.GetInstance<GitManager>();
 		gitManager.InitializeRepository();
+		gitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
         signature = new Signature("Test", "Test@Test.com", DateTime.Now);
 
 		injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();
