@@ -31,12 +31,10 @@ namespace UniGit
 		private GitLog gitLog;
 		private Styles styles;
 		private int selected;
-		private ILogger logger;
 
 		[UniGitInject]
-		private void Construct(ILogger logger,GitLog gitLog)
+		private void Construct(GitLog gitLog)
 		{
-			this.logger = logger;
 			this.gitLog = gitLog;
 		}
 

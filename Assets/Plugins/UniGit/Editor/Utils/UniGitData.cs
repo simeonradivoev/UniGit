@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UniGit.Status;
+using UnityEditor;
 using UnityEngine;
 
 namespace UniGit.Utils
@@ -27,7 +28,11 @@ namespace UniGit.Utils
 		private void OnDisable()
 		{
 			//the data needs to be initialized first, because starting the editor for the first time calls OnDisable
-			if(initialized && onBeforeReloadAction != null)  onBeforeReloadAction.Invoke();
+			//when entering play mode and leaving it OnDisable is called
+			if (initialized && !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying  && onBeforeReloadAction != null)
+			{
+				onBeforeReloadAction.Invoke();
+			}
 		}
 
 		public List<GitLog.LogEntry> LogEntries
