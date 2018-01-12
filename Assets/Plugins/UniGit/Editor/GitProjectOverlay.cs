@@ -110,9 +110,10 @@ namespace UniGit
 					else
 					{
 						if(!data.RepositoryStatus.TryEnterLock()) return;
+						GitProfilerProxy.BeginSample("Git Project Window status tree building");
 						try
 						{
-							GitProfilerProxy.BeginSample("Git Project Window status tree building");
+							
 							try
 							{
 								UpdateStatusTree(data.RepositoryStatus);
@@ -121,11 +122,11 @@ namespace UniGit
 							{
 								isUpdating = false;
 							}
-							GitProfilerProxy.EndSample();
 						}
 						finally
 						{
 							data.RepositoryStatus.Unlock();
+							GitProfilerProxy.EndSample();
 						}
 						isDirty = false;
 					}

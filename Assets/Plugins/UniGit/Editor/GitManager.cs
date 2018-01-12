@@ -372,19 +372,24 @@ namespace UniGit
 		{
 			//reset force single thread as we are going to update on main thread
 			forceSingleThread = false;
-			Profiler.BeginSample("UniGit Status Retrieval");
-			RetreiveStatus(paths, false);
-			Profiler.EndSample();
+			GitProfilerProxy.BeginSample("UniGit Status Retrieval");
+			try
+			{
+				RetreiveStatus(paths, false);
+			}
+			finally
+			{
+				GitProfilerProxy.EndSample();
+			}
 		}
 
 		private void RetreiveStatus(string[] paths,bool threaded)
 		{
+			if (!threaded) GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 			try
 			{
-				if (!threaded) GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 				RebuildStatus(paths);
 				FinishUpdating(threaded, paths);
-				if(!threaded) GitProfilerProxy.EndSample();
 			}
 			catch (ThreadAbortException)
 			{
@@ -405,6 +410,10 @@ namespace UniGit
 
 				logger.Log(LogType.Error,"Could not retrive Git Status");
 				logger.LogException(e);
+			}
+			finally
+			{
+				if(!threaded) GitProfilerProxy.EndSample();
 			}
 		}
 

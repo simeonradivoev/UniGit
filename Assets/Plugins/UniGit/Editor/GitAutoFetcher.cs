@@ -76,8 +76,8 @@ namespace UniGit
 			finally
 			{
 				EditorUtility.ClearProgressBar();
+				GitProfilerProxy.EndSample();
 			}
-			GitProfilerProxy.EndSample();
 			return false;
 		}
 

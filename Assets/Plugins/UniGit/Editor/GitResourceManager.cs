@@ -6,7 +6,6 @@ using System.IO;
 using System.Reflection;
 using UniGit.Utils;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace UniGit
 {
@@ -20,14 +19,14 @@ namespace UniGit
 		{
 			this.logger = logger;
 			textures = new Dictionary<string, Texture2D>();
-			Profiler.BeginSample("UniGit Resource Loading");
+			GitProfilerProxy.BeginSample("UniGit Resource Loading");
 			try
 			{
 				LoadDLLResources();
 			}
 			finally
 			{
-				Profiler.EndSample();
+				GitProfilerProxy.EndSample();
 			}
 		}
 

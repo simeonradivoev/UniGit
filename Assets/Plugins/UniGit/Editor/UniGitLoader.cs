@@ -22,7 +22,7 @@ namespace UniGit
 
 		static UniGitLoader()
 		{
-			Profiler.BeginSample("UniGit Initialization");
+			GitProfilerProxy.BeginSample("UniGit Initialization");
 			try
 			{
 				GitWindows.OnWindowAddedEvent += OnWindowAdded;
@@ -94,7 +94,7 @@ namespace UniGit
 			}
 			finally
 			{
-				Profiler.EndSample();
+				GitProfilerProxy.EndSample();
 			}
 		}
 
