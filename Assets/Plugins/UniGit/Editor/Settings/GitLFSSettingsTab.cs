@@ -7,6 +7,7 @@ namespace UniGit.Settings
 {
 	public class GitLFSSettingsTab : GitSettingsTab
 	{
+		private Vector2 scroll;
 		private Rect trackFileRect;
 		private readonly GitLfsManager lfsManager;
 		private readonly InjectionHelper injectionHelper;
@@ -70,6 +71,7 @@ namespace UniGit.Settings
 
 					EditorGUILayout.Space();
 
+					scroll = EditorGUILayout.BeginScrollView(scroll);
 					foreach (var info in lfsManager.TrackedInfo)
 					{
 						GUILayout.Label(GitGUI.GetTempContent(info.Extension), GitGUI.Styles.ShurikenModuleTitle);
@@ -84,6 +86,8 @@ namespace UniGit.Settings
 							break;
 						}
 					}
+
+					EditorGUILayout.EndScrollView();
 
 					if (GUILayout.Button("Track File"))
 					{

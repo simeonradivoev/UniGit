@@ -8,7 +8,8 @@ using UnityEngine;
 namespace UniGit.Utils
 {
 	[Serializable]
-	public class UniGitData : ScriptableObject
+	//must derive from EditorWindow even if not an Editor, in order to save data when entering and leaving play mode
+	public class UniGitData : EditorWindow
 	{
 		[SerializeField] private GitRepoStatus repositoryStatus;
 		[SerializeField] private List<string> dirtyFilesQueue;
@@ -28,8 +29,7 @@ namespace UniGit.Utils
 		private void OnDisable()
 		{
 			//the data needs to be initialized first, because starting the editor for the first time calls OnDisable
-			//when entering play mode and leaving it OnDisable is called
-			if (initialized && !EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying  && onBeforeReloadAction != null)
+			if (initialized && onBeforeReloadAction != null)
 			{
 				onBeforeReloadAction.Invoke();
 			}
