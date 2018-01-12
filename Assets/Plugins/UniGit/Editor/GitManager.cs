@@ -9,13 +9,12 @@ using UniGit.Settings;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.2.4";
+		public const string Version = "1.3";
 
 		private readonly string repoPath;
 		private readonly string gitPath;

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UniGit.Utils;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace UniGit
 			try
 			{
 				LoadDLLResources();
+				//CheckForLeaks();
 			}
 			finally
 			{
@@ -43,6 +45,15 @@ namespace UniGit
 				logger.LogFormat(LogType.Error,"Could not find texture with key: {0}",name);
 			}
 			return null;
+		}
+
+		private void CheckForLeaks()
+		{
+			var texturesCount = Resources.FindObjectsOfTypeAll<Texture2D>().Count(t => t.name.StartsWith("UniGitEditorResource"));
+			if (texturesCount > 0)
+			{
+				Debug.LogWarningFormat("Found {0} leaked UniGit textures.",texturesCount);
+			}
 		}
 
 		private void LoadDLLResources()
