@@ -74,7 +74,7 @@ namespace UniGit
 		public bool LazyMode;
 		public bool TrackSystemFiles = true;
 		public bool UseUnityConsole;
-		public bool DisableAnimations;
+		public AnimationTypeEnum AnimationType = AnimationTypeEnum.All;
 		private bool isDirty;
 
 		[Flags]
@@ -97,11 +97,22 @@ namespace UniGit
 		[Serializable]
 		public enum ThreadingType
 		{
-			Stage = 1,
-			Unstage = 2,
-			StatusList = 4,
-			StatusListGui = 8,
-			CommitListGui = 16
+			Stage = 1 << 0,
+			Unstage = 1 << 1,
+			StatusList = 1 << 2,
+			StatusListGui = 1 << 3,
+			CommitListGui = 1 << 4
+		}
+
+		[Flags]
+		[Serializable]
+		public enum AnimationTypeEnum
+		{
+			None = 0,
+			DiffInspector = 1 << 0,
+			ContextMenu = 1 << 1,
+			Settings = 1 << 2,
+			All = -1
 		}
 
 		public void Copy(GitSettings settings)

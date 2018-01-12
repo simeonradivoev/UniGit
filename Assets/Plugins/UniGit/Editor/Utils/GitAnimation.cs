@@ -7,7 +7,7 @@ namespace UniGit.Utils
 {
 	public class GitAnimation : IDisposable
 	{
-		public static GitTween Empty = new GitTween(0,0,null);
+		public static GitTween Empty = new GitTween(0,0,null,GitSettingsJson.AnimationTypeEnum.None);
 		private readonly GitCallbacks gitCallbacks;
 		private readonly GitSettingsJson gitSettings;
 		private List<GitTween> tweens;
@@ -23,22 +23,27 @@ namespace UniGit.Utils
 			lastTime = EditorApplication.timeSinceStartup;
 		}
 
-		public GitTween StartAnimation(float time)
+		public GitTween StartAnimation(float time,GitSettingsJson.AnimationTypeEnum animationType)
 		{
-			return StartAnimation(time,null);
+			return StartAnimation(time,null,animationType);
 		}
 
-		public GitTween StartAnimation(float time,EditorWindow window)
+		public GitTween StartAnimation(float time,EditorWindow window,GitSettingsJson.AnimationTypeEnum animationType)
 		{
-			var tween = new GitTween(gitSettings.DisableAnimations ? 0 : time,time,window);
+			var tween = new GitTween(IsAnimationAllowed(animationType) ? time : 0,time,window,animationType);
 			tweens.Add(tween);
 			return tween;
 		}
 
-		public GitTween StartManualAnimation(float time,EditorWindow window,ref double animationTimer)
+		public GitTween StartManualAnimation(float time,EditorWindow window,out double animationTimer,GitSettingsJson.AnimationTypeEnum animationType)
 		{
 			animationTimer = EditorApplication.timeSinceStartup;
-			return new GitTween(time,time,window);
+			return new GitTween(IsAnimationAllowed(animationType) ? time : 0,time,window,animationType);
+		}
+
+		private bool IsAnimationAllowed(GitSettingsJson.AnimationTypeEnum animationType)
+		{
+			return gitSettings.AnimationType.HasFlag(animationType);
 		}
 
 		public static float ApplyEasing(float t)
@@ -80,9 +85,11 @@ namespace UniGit.Utils
 			private float time;
 			private float maxTime;
 			private EditorWindow editorWindow;
+			private GitSettingsJson.AnimationTypeEnum animationType;
 
-			public GitTween(float time, float maxTime,EditorWindow editorWindow)
+			public GitTween(float time, float maxTime,EditorWindow editorWindow,GitSettingsJson.AnimationTypeEnum animationType)
 			{
+				this.animationType = animationType;
 				this.time = time;
 				this.maxTime = maxTime;
 				this.editorWindow = editorWindow;
@@ -111,6 +118,11 @@ namespace UniGit.Utils
 			public float MaxTime
 			{
 				get { return maxTime; }
+			}
+
+			public GitSettingsJson.AnimationTypeEnum AnimationType
+			{
+				get { return animationType; }
 			}
 
 			public bool Valid

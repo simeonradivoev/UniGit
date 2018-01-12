@@ -482,7 +482,7 @@ namespace UniGit
 
 			if (animationTween == null)
 			{
-				animationTween = gitAnimation.StartManualAnimation(AnimationDuration,this,ref animationTime);
+				animationTween = gitAnimation.StartManualAnimation(AnimationDuration,this,out animationTime,GitSettingsJson.AnimationTypeEnum.DiffInspector);
 			}
 
 			float toolbarHeight = EditorStyles.toolbar.fixedHeight;
@@ -496,10 +496,7 @@ namespace UniGit
 
 			gitAnimation.Update(animationTween,ref animationTime);
 			float animTime = GitAnimation.ApplyEasing(animationTween.Percent);
-			Matrix4x4 lastMatrix = GUI.matrix;
-			float scale = Mathf.Lerp(1, 0.5f, animTime);
 
-			GUI.matrix = lastMatrix * Matrix4x4.Translate(new Vector3(-32 * (1-scale),0));
 			if (Event.current.type == EventType.MouseDown && otherFileScrollRect.Contains(Event.current.mousePosition))
 			{
 				selectedFile = FileType.OtherFile;
@@ -539,8 +536,6 @@ namespace UniGit
 				GUI.Box(indexFileRect,GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
 			else
 				GUI.Box(otherFileScrollRect, GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
-
-			GUI.matrix = lastMatrix;
 
 			GUI.color = new Color(1,1,1,Mathf.Lerp(0,1,animTime));
 			GUI.Box(new Rect(0,0,position.width,position.height - toolbarHeight), GUIContent.none);

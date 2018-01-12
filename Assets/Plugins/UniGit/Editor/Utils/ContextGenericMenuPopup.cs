@@ -196,7 +196,7 @@ namespace UniGit.Utils
 				{
 					lastElement = currentElement;
 					currentElement = currentElement.parent;
-					transitionTween = gitAnimation.StartAnimation(AnimationTime, editorWindow);
+					transitionTween = gitAnimation.StartAnimation(AnimationTime, editorWindow,GitSettingsJson.AnimationTypeEnum.ContextMenu);
 					lastHoverStartTime = EditorApplication.timeSinceStartup;
 					animDir = -1;
 				}
@@ -259,7 +259,7 @@ namespace UniGit.Utils
 					{
 						lastElement = currentElement;
 						currentElement = element;
-						transitionTween = gitAnimation.StartAnimation(AnimationTime);
+						transitionTween = gitAnimation.StartAnimation(AnimationTime,GitSettingsJson.AnimationTypeEnum.ContextMenu);
 						lastHoverStartTime = EditorApplication.timeSinceStartup;
 						animDir = 1;
 						editorWindow.Repaint();

@@ -716,90 +716,98 @@ namespace UniGit
 
 		private void DoDiffScroll(Event current)
 		{
-			if(!statusList.TryLock()) return;
-
 			try
 			{
-				float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-				float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount)  * elementHeight;
-
-				diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16,420), elementsTotalHeight);
-				diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
-
-				int index = 0;
-				FileStatus? lastFileStatus = null;
-				float infoX = 0;
-
-				foreach (var info in statusList)
+				if (statusList.TryLock())
 				{
-					FileStatus mergedStatus = GetMergedStatus(info.State);
-					bool isExpanded = IsVisible(info);
-					Rect elementRect;
-
-					if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
-					{
-						elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-						lastFileStatus = mergedStatus;
-						FileStatus newState = lastFileStatus.Value;
-						if (current.type == EventType.Repaint)
-						{
-							styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false,false,false,false);
-							GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(gitOverlay.GetDiffTypeIcon(info.State, false).image),false,false,false,false);
-						}
-
-						if (elementRect.Contains(current.mousePosition))
-						{
-							if (current.type == EventType.ContextClick)
-							{
-								GenericMenu selectAllMenu = new GenericMenu();
-								DoDiffStatusContex(newState, selectAllMenu);
-								selectAllMenu.ShowAsContext();
-								current.Use();
-							}
-							else if(current.type == EventType.MouseDown && current.button == 0)
-							{
-								settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isExpanded);
-								if (!isExpanded)
-								{
-									ClearSelected(e => e.State == newState);
-								}
-								Repaint();
-								current.Use();
-							}
-						
-						}
-						infoX += elementRect.height;
-					}
-
-					if (!isExpanded) continue;
-					elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-					//check visibility
-					if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
-					{
-						bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || updatingPaths.Contains(info.Path) || pathsToBeUpdated.Contains(info.Path);
-						bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
-						bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
-
-						bool selected = IsSelected(info);
-						bool enabled = !isUpdating && !isDirty && !isStaging;
-						DoFileDiff(elementRect, info, enabled, selected);
-						DoFileDiffSelection(elementRect, info, index, enabled, selected);
-					}
-					infoX += elementRect.height;
-					index++;
-				}
-				GUI.EndScrollView();
-
-				if (current.type == EventType.MouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
-				{
-					diffScroll.y -= current.delta.y;
-					Repaint();
+					float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
+					float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount) * elementHeight;
+					diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), elementsTotalHeight);
 				}
 			}
 			finally
 			{
 				statusList.Unlock();
 			}
+
+			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
+
+			int index = 0;
+			FileStatus? lastFileStatus = null;
+			float infoX = 0;
+
+			for (int i = 0; i < statusList.Count; i++)
+			{
+				var info = statusList[i];
+
+				FileStatus mergedStatus = GetMergedStatus(info.State);
+				bool isExpanded = IsVisible(info);
+				Rect elementRect;
+
+				if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
+				{
+					elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
+					lastFileStatus = mergedStatus;
+					FileStatus newState = lastFileStatus.Value;
+					if (current.type == EventType.Repaint)
+					{
+						styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false, false, false, false);
+						GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(gitOverlay.GetDiffTypeIcon(info.State, false).image), false, false, false, false);
+					}
+
+					if (elementRect.Contains(current.mousePosition))
+					{
+						if (current.type == EventType.ContextClick)
+						{
+							GenericMenu selectAllMenu = new GenericMenu();
+							DoDiffStatusContex(newState, selectAllMenu);
+							selectAllMenu.ShowAsContext();
+							current.Use();
+						}
+						else if (current.type == EventType.MouseDown && current.button == 0)
+						{
+							settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isExpanded);
+							if (!isExpanded)
+							{
+								ClearSelected(e => e.State == newState);
+							}
+
+							Repaint();
+							current.Use();
+						}
+
+					}
+
+					infoX += elementRect.height;
+				}
+
+				if (!isExpanded) continue;
+				elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
+				//check visibility
+				if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
+				{
+					bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.Path))) || updatingPaths.Contains(info.Path) || pathsToBeUpdated.Contains(info.Path);
+					bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.Path)));
+					bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.Path)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.Path)));
+
+					bool selected = IsSelected(info);
+					bool enabled = !isUpdating && !isDirty && !isStaging;
+					DoFileDiff(elementRect, info, enabled, selected);
+					DoFileDiffSelection(elementRect, info, index, enabled, selected);
+				}
+
+				infoX += elementRect.height;
+				index++;
+			}
+
+			GUI.EndScrollView();
+
+			if (current.type == EventType.MouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
+			{
+				diffScroll.y -= current.delta.y;
+				Repaint();
+			}
+
 		}
 
 		private void DoFileDiff(Rect rect,StatusListEntry info,bool enabled,bool selected)
@@ -1636,7 +1644,7 @@ namespace UniGit
 			private SortDir sortDir;
 			private GitSettingsJson gitSettings;
 			private string gitPath;
-			private object lockObj;
+			private readonly object lockObj;
 
 			public StatusList()
 			{
@@ -1798,6 +1806,11 @@ namespace UniGit
 				}
 			}
 
+			public StatusListEntry this[int index]
+			{
+				get { return entires[index]; }
+			}
+
 			public void Clear()
 			{
 				entires.Clear();
@@ -1831,6 +1844,11 @@ namespace UniGit
 			public IEnumerator<StatusListEntry> GetEnumerator()
 			{
 				return entires.GetEnumerator();
+			}
+
+			public int Count
+			{
+				get { return entires.Count; }
 			}
 		}
 

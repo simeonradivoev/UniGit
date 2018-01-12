@@ -117,7 +117,7 @@ namespace UniGit
 					{
 						lastTabIndex = tab;
 						tab = i;
-						animationTween = gitAnimation.StartAnimation(AnimationDuration,this);
+						animationTween = gitAnimation.StartAnimation(AnimationDuration,this,GitSettingsJson.AnimationTypeEnum.Settings);
 					}
 				}
 			}

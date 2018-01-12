@@ -63,7 +63,7 @@ namespace UniGit.Settings
 				settings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload."), settings.LazyMode);
 				settings.TrackSystemFiles = EditorGUILayout.Toggle(GitGUI.GetTempContent("Track System Files", "Should files and folders be tracked that are outside the 'Assets' folder? This should definitely be used if lazy mode is on."), settings.TrackSystemFiles);
 				settings.UseUnityConsole = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Unity's Console", "Show Info, Warning and Error messages in Unity's builtin console instead of the Git Log"), settings.UseUnityConsole);
-				settings.DisableAnimations = EditorGUILayout.Toggle(GitGUI.GetTempContent("Disable Animations", "Disable animation for windows and menus"), settings.DisableAnimations);
+				settings.AnimationType = (GitSettingsJson.AnimationTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("Animation Types", "Which animation are allowed"), settings.AnimationType);
 
 				save |= EditorGUI.EndChangeCheck();
 
