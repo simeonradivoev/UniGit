@@ -29,13 +29,16 @@ namespace UniGit
 		[SerializeField] private bool showLog = true;
 		[SerializeField] private bool showError = true;
 		private GitLog gitLog;
+		private GitCallbacks gitCallbacks;
 		private Styles styles;
 		private int selected;
 
 		[UniGitInject]
-		private void Construct(GitLog gitLog)
+		private void Construct(GitLog gitLog,GitCallbacks gitCallbacks)
 		{
 			this.gitLog = gitLog;
+			this.gitCallbacks = gitCallbacks;
+			gitCallbacks.OnLogEntry += OnLogEntry;
 		}
 
 		private void OnEnable()
@@ -47,6 +50,11 @@ namespace UniGit
 		private void OnDisable()
 		{
 			GitWindows.RemoveWindow(this);
+		}
+
+		private void OnLogEntry(GitLog.LogEntry entry)
+		{
+			Repaint();
 		}
 
 		private void InitStyles()
@@ -254,6 +262,11 @@ namespace UniGit
 				default:
 					throw new ArgumentOutOfRangeException("type", type, null);
 			}
+		}
+
+		private void OnDestroy()
+		{
+			gitCallbacks.OnLogEntry -= OnLogEntry;
 		}
 	}
 }

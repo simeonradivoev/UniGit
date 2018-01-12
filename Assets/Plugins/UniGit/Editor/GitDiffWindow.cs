@@ -508,9 +508,22 @@ namespace UniGit
 				if (!externalManager.TakeCommit(commitMessage))
 				{
 					GitProfilerProxy.BeginSample("Git Commit");
-					gitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() { AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify });
-					GitProfilerProxy.EndSample();
-					FocusWindowIfItsOpen<GitHistoryWindow>();
+					try
+					{
+						var commit = gitManager.Repository.Commit(commitMessage, signature, signature, new CommitOptions() {AllowEmptyCommit = settings.emptyCommit, AmendPreviousCommit = settings.amendCommit, PrettifyMessage = settings.prettify});
+						FocusWindowIfItsOpen<GitHistoryWindow>();
+						logger.LogFormat(LogType.Log,"Commit {0} Successful.",commit.Sha);
+					}
+					catch (Exception e)
+					{
+						logger.Log(LogType.Error,"There was a problem while trying to commit");
+						logger.LogException(e);
+						return false;
+					}
+					finally
+					{
+						GitProfilerProxy.EndSample();
+					}
 				}
 				gitManager.MarkDirty();
 				return true;
