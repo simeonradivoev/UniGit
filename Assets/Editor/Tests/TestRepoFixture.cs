@@ -17,9 +17,6 @@ public class TestRepoFixture
 	[SetUp]
 	public void Setup()
 	{
-		data = ScriptableObject.CreateInstance<UniGitData>();
-		data.hideFlags = HideFlags.HideAndDontSave;
-
 	    injectionHelper = new InjectionHelper();
 		injectionHelper.Bind<string>().WithId("repoPath").FromInstance(@"D:\Test_Repo");
 		injectionHelper.Bind<GitSettingsJson>().FromInstance(new GitSettingsJson {Threading = 0});
@@ -27,16 +24,17 @@ public class TestRepoFixture
 		injectionHelper.Bind<IGitPrefs>().To<GitPrefs>();
 		injectionHelper.Bind<GitAsyncManager>();
 		injectionHelper.Bind<GitManager>();
-		injectionHelper.Bind<UniGitData>().FromInstance(data);
 		injectionHelper.Bind<GitReflectionHelper>();
 		injectionHelper.Bind<GitOverlay>();
 		injectionHelper.Bind<IGitResourceManager>().To<GitResourceManagerMock>();
 		injectionHelper.Bind<ILogger>().FromInstance(Debug.unityLogger);
+		injectionHelper.Bind<UniGitData>();
 
 		gitManager = injectionHelper.GetInstance<GitManager>();
 		gitManager.InitializeRepository();
 		gitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
         signature = new Signature("Test", "Test@Test.com", DateTime.Now);
+		data = injectionHelper.GetInstance<UniGitData>();
 
 		injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();
 	}
@@ -44,7 +42,7 @@ public class TestRepoFixture
 	[TearDown]
 	public void Teardown()
 	{
-		UnityEngine.Object.DestroyImmediate(data);
+		if(data != null) UnityEngine.Object.DestroyImmediate(data);
 		injectionHelper.Dispose();
 		try
 		{

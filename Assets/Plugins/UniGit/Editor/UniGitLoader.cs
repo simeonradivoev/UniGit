@@ -7,7 +7,6 @@ using UniGit.Settings;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace UniGit
 {
@@ -116,8 +115,7 @@ namespace UniGit
 
 			GitCallbacks.RepositoryCreate += OnRepositoryCreate;
 			GitCallbacks.OnLogEntry += OnLogEntry;
-			var uniGitData = injectionHelper.GetInstance<UniGitData>();
-			uniGitData.OnBeforeReloadAction = OnBeforeAssemblyReload;
+			GitCallbacks.OnBeforeAssemblyReload += OnBeforeAssemblyReload;
 
 			injectionHelper.CreateNonLazy();
 
@@ -166,7 +164,15 @@ namespace UniGit
 			{
 				if (data.Initialized) return data;
 			}
-			return existentData.Length > 0 ? existentData[0] : ScriptableObject.CreateInstance<UniGitData>();
+			return existentData.Length > 0 ? existentData[0] : CreateData(injectionHelper);
+		}
+
+		private static UniGitData CreateData(InjectionHelper injectionHelper)
+		{
+			var data = injectionHelper.CreateInstance<UniGitData>();
+			data.hideFlags = HideFlags.HideAndDontSave;
+			data.name = "UniGitData";
+			return data;
 		}
 
 	    public static T FindWindow<T>() where T : EditorWindow

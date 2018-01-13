@@ -57,7 +57,7 @@ namespace UniGit.Utils
 
 				if (lastParent == null)
 				{
-					lastParent = new Element() {children = new List<Element>(),Content = new GUIContent(elementStrings[0])};
+					lastParent = new Element() {children = new List<Element>(),Content = new GUIContent(elementStrings[0],content.image)};
 					elements.Add(lastParent);
 				}
 				else if(lastParent.children == null)
@@ -70,7 +70,7 @@ namespace UniGit.Utils
 					var newLastParent = lastParent.children.FirstOrDefault(e => e.Content.text == elementStrings[i]);
 					if (newLastParent == null)
 					{
-						newLastParent = new Element() {children = new List<Element>(), Content = new GUIContent(elementStrings[i])};
+						newLastParent = new Element() {children = new List<Element>(), Content = new GUIContent(elementStrings[i],content.image)};
 						lastParent.children.Add(newLastParent);
 						newLastParent.parent = lastParent;
 					}

@@ -824,12 +824,32 @@ namespace UniGit
 
 			GUI.EndScrollView();
 
-			if (current.type == EventType.MouseDrag && current.button == 2 && DiffRect.Contains(current.mousePosition))
+			if (DiffRect.Contains(current.mousePosition))
 			{
-				diffScroll.y -= current.delta.y;
-				Repaint();
-			}
+				if (current.type == EventType.ContextClick)
+				{
+					if (gitSettings.UseSimpleContextMenus)
+					{
+						GenericMenuWrapper genericMenuWrapper = new GenericMenuWrapper(new GenericMenu());
+						DoDiffElementContex(genericMenuWrapper);
+						genericMenuWrapper.GenericMenu.ShowAsContext();
+					}
+					else
+					{
+						ContextGenericMenuPopup popup = injectionHelper.CreateInstance<ContextGenericMenuPopup>();
+						DoDiffElementContex(popup);
+						PopupWindow.Show(new Rect(Event.current.mousePosition, Vector2.zero), popup);
+					}
 
+					current.Use();
+				}
+
+				if (current.type == EventType.MouseDrag && current.button == 2)
+				{
+					diffScroll.y -= current.delta.y;
+					Repaint();
+				}
+			}
 		}
 
 		private void DoFileDiff(Rect rect,StatusListEntry info,bool enabled,bool selected)
@@ -990,23 +1010,7 @@ namespace UniGit
 
 			if (elementRect.Contains(current.mousePosition) && enabled)
 			{
-				if (current.type == EventType.ContextClick)
-				{
-					if (gitSettings.UseSimpleContextMenus)
-					{
-						GenericMenuWrapper genericMenuWrapper = new GenericMenuWrapper(new GenericMenu());
-						DoDiffElementContex(genericMenuWrapper);
-						genericMenuWrapper.GenericMenu.ShowAsContext();
-					}
-					else
-					{
-						ContextGenericMenuPopup popup = injectionHelper.CreateInstance<ContextGenericMenuPopup>();
-						DoDiffElementContex(popup);
-						PopupWindow.Show(new Rect(Event.current.mousePosition, Vector2.zero), popup);
-					}
-					current.Use();
-				}
-				else if (current.type == EventType.MouseDown)
+				if (current.type == EventType.MouseDown)
 				{
 					if (current.button == 0)
 					{
@@ -1396,8 +1400,18 @@ namespace UniGit
 
 			if(selectedFlags.IsFlagSet(FileStatus.Ignored))
 				editMenu.AddDisabledItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow));
-			else
-				editMenu.AddItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow), false, RevertSelectedCallback);
+			else if(entries.Length > 0)
+			{
+				if(entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
+				{
+					editMenu.AddItem(new GUIContent("Revert/Asset", GitGUI.Textures.AnimationWindow), false, RevertSelectedObjects);
+					editMenu.AddItem(new GUIContent("Revert/Meta", GitGUI.Textures.AnimationWindow), false, RevertSelectedMeta);
+				}
+				else
+				{
+					editMenu.AddItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow), false, RevertSelectedCallback);
+				}
+			}	
 
 			if (entries.Length == 1)
 			{
@@ -1414,7 +1428,7 @@ namespace UniGit
 						editMenu.AddDisabledItem(new GUIContent("Blame", GitGUI.Textures.GameView));
 					}
 				}
-				else
+				else if(entries.Length > 0)
 				{
 					if (gitManager.CanBlame(entries[0].State))
 					{
@@ -1517,7 +1531,23 @@ namespace UniGit
 		private void RevertSelectedCallback()
 		{
 			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			Revert(paths);
+		}
 
+		private void RevertSelectedMeta()
+		{
+			string[] metaPaths = statusList.Where(IsSelected).Select(e => GitManager.MetaPathFromAsset(e.Path)).ToArray();
+			Revert(metaPaths);
+		}
+
+		private void RevertSelectedObjects()
+		{
+			string[] metaPaths = statusList.Where(IsSelected).Select(e => e.Path).ToArray();
+			Revert(metaPaths);
+		}
+
+		private void Revert(string[] paths)
+		{
 			if (externalManager.TakeRevert(paths))
 			{
 				gitCallbacks.IssueAssetDatabaseRefresh();

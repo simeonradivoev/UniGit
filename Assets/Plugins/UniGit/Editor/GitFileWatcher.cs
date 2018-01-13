@@ -23,6 +23,16 @@ namespace UniGit
 			this.gitCallbacks = gitCallbacks;
 			fileWatchers = new List<FileSystemWatcher>();
 
+			var mainFileWatcher = new FileSystemWatcher(repoPath)
+			{
+				InternalBufferSize = 4,
+				EnableRaisingEvents = gitSettings.TrackSystemFiles,
+				IncludeSubdirectories = false,
+				NotifyFilter = NotifyFilters.FileName
+			};
+			fileWatchers.Add(mainFileWatcher);
+			Subscribe(mainFileWatcher);
+
 			var repoDirectoryInfo = new DirectoryInfo(repoPath);
 			foreach (var directory in repoDirectoryInfo.GetDirectories())
 			{

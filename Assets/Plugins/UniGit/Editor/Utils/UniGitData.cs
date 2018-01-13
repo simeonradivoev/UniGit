@@ -2,21 +2,26 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UniGit.Status;
-using UnityEditor;
 using UnityEngine;
 
 namespace UniGit.Utils
 {
 	[Serializable]
 	//must derive from EditorWindow even if not an Editor, in order to save data when entering and leaving play mode
-	public class UniGitData : EditorWindow
+	public class UniGitData : ScriptableObject
 	{
 		[SerializeField] private GitRepoStatus repositoryStatus;
 		[SerializeField] private List<string> dirtyFilesQueue;
 		[SerializeField] private List<GitLog.LogEntry> logEntries;
 		[SerializeField] private bool logInitialized;
 		[SerializeField] private bool initialized;
-		private Action onBeforeReloadAction;
+		private GitCallbacks gitCallbacks;
+
+		[UniGitInject]
+		private void Construct(GitCallbacks gitCallbacks)
+		{
+			this.gitCallbacks = gitCallbacks;
+		}
 
 		private void OnEnable()
 		{
@@ -29,9 +34,9 @@ namespace UniGit.Utils
 		private void OnDisable()
 		{
 			//the data needs to be initialized first, because starting the editor for the first time calls OnDisable
-			if (initialized && onBeforeReloadAction != null)
+			if (initialized && gitCallbacks != null)
 			{
-				onBeforeReloadAction.Invoke();
+				gitCallbacks.IssueBeforeAssemblyReload();
 			}
 		}
 
@@ -43,12 +48,6 @@ namespace UniGit.Utils
 		public List<string> DirtyFilesQueue
 		{
 			get { return dirtyFilesQueue; }
-		}
-
-		public Action OnBeforeReloadAction
-		{
-			get { return onBeforeReloadAction; }
-			set { onBeforeReloadAction = value; }
 		}
 
 		public GitRepoStatus RepositoryStatus

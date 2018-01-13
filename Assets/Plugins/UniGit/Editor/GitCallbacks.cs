@@ -88,6 +88,12 @@ namespace UniGit
 				OnLogEntry.Invoke(entry);
 		}
 
+		public event Action OnBeforeAssemblyReload;
+		public void IssueBeforeAssemblyReload()
+		{
+			if(OnBeforeAssemblyReload != null) OnBeforeAssemblyReload.Invoke();
+		}
+
 		#region Asset Postprocessing Events
 
 		public event GitAssetPostprocessors.OnWillSaveAssetsDelegate OnWillSaveAssets;

@@ -61,7 +61,7 @@ namespace UniGit.Utils
 
 		public object CreateInstance(Type type,object[] additionalArguments)
 		{
-			if (type == typeof(ScriptableObject) || typeof(ScriptableObject).IsSubclassOf(type))
+			if (type == typeof(ScriptableObject) || type.IsSubclassOf(typeof(ScriptableObject)))
 			{
 				var instance = ScriptableObject.CreateInstance(type);
 				Inject(instance);
@@ -286,6 +286,18 @@ namespace UniGit.Utils
 			return default(T);
 		}
 
+		public T GetInstance<T>(string id)
+		{
+			foreach (var resolve in resolves)
+			{
+				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && resolve.id == id)
+				{
+					return (T) resolve.GetInstance();
+				}
+			}
+			return default(T);
+		}
+
 		public List<T> GetInstances<T>()
 		{
 			HashSet<Resolve> resolveCallList = new HashSet<Resolve>();
@@ -323,7 +335,6 @@ namespace UniGit.Utils
 			{
 				resolve.Dispose();
 			}
-
 		}
 
 		public class Resolve<T> : Resolve
