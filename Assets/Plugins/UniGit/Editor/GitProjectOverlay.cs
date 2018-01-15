@@ -278,6 +278,7 @@ namespace UniGit
 					currentPath = entry.Path;
 					currentPathArray = entry.Path.Split('\\');
 					currentStatus = !gitSettings.ShowEmptyFolders && GitManager.IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.Status;
+					if(!GitManager.IsPathInAssetFolder(entry.Path)) continue;
 					AddRecursive(0, entries);
 				}
 			}
