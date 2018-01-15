@@ -24,10 +24,16 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
-			base.OnEnable();
-			fetchOptions = new FetchOptions() { CredentialsProvider = CredentialsHandler, OnProgress = FetchProgress, OnTransferProgress = GitManager.FetchTransferProgressHandler, Prune = prune, RepositoryOperationCompleted = FetchOperationCompleted, RepositoryOperationStarting = FetchOperationStarting };
-			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutNotify = OnCheckoutNotify, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy, FileConflictStrategy = (CheckoutFileConflictStrategy)mergeFileFavor,CheckoutNotifyFlags = CheckoutNotifyFlags.Dirty};
+			fetchOptions = new FetchOptions() { CredentialsProvider = CredentialsHandler, OnProgress = FetchProgress, Prune = prune, RepositoryOperationCompleted = FetchOperationCompleted, RepositoryOperationStarting = FetchOperationStarting };
+			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutNotify = OnCheckoutNotify, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy, FileConflictStrategy = (CheckoutFileConflictStrategy)mergeFileFavor,CheckoutNotifyFlags = CheckoutNotifyFlags.Updated};
 			pullOptions = new PullOptions() {MergeOptions = mergeOptions, FetchOptions = fetchOptions};
+			base.OnEnable();
+		}
+
+		[UniGitInject]
+		private void Construct()
+		{
+			fetchOptions.OnTransferProgress = gitManager.FetchTransferProgressHandler;
 		}
 
 		[UsedImplicitly]

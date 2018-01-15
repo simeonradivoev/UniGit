@@ -46,6 +46,7 @@ namespace UniGit
 					EditorApplication.update += c.IssueEditorUpdate;
 					c.RefreshAssetDatabase += AssetDatabase.Refresh;
 					c.SaveAssetDatabase += AssetDatabase.SaveAssets;
+					EditorApplication.playModeStateChanged += c.IssueOnPlayModeStateChange;
 					EditorApplication.projectWindowItemOnGUI += c.IssueProjectWindowItemOnGUI;
 					//asset postprocessing
 					GitAssetPostprocessors.OnWillSaveAssetsEvent += c.IssueOnWillSaveAssets;

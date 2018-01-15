@@ -391,10 +391,35 @@ namespace UniGit
 				}
 				GUI.enabled = true;
 				btRect = new Rect(btRect.x + 64, btRect.y, 64, btRect.height);
-				if (GUI.Button(btRect, GitGUI.GetTempContent("Merge", gitOverlay.icons.merge.image, hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), EditorStyles.toolbarButton))
+				if (info.CurrentOperation == CurrentOperation.Merge)
 				{
-					GoToMerge();
+					if (GUI.Button(btRect, GitGUI.GetTempContent("Merge", gitOverlay.icons.merge.image, hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), EditorStyles.toolbarDropDown))
+					{
+						GenericMenu menu = new GenericMenu();
+						menu.AddDisabledItem(new GUIContent("Merge"));
+						menu.AddItem(new GUIContent("Cancel Merge (Reset Head)"),false, () =>
+						{
+							if (externalManager.TakeReset(gitManager.Repository.Head.Tip))
+							{
+								gitCallbacks.IssueAssetDatabaseRefresh();
+								gitManager.MarkDirty();
+							}
+							else
+							{
+								popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(btRect, injectionHelper.CreateInstance<ResetPopupWindow>(gitManager.Repository.Head.Tip)));
+							}
+						});
+						menu.DropDown(btRect);
+					}
 				}
+				else
+				{
+					if (GUI.Button(btRect, GitGUI.GetTempContent("Merge", gitOverlay.icons.merge.image, hasConflicts ? "Must Resolve conflict before merging" : "Merge fetched changes from remote repository. Changes from the latest fetch will be merged."), EditorStyles.toolbarButton))
+					{
+						GoToMerge();
+					}
+				}
+				
 				GUI.enabled = gitManager.IsValidRepo;
 				btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
 				if (GUI.Button(btRect, GitGUI.GetTempContent("Stash", gitOverlay.icons.stashIcon.image), EditorStyles.toolbarButton))
@@ -745,10 +770,18 @@ namespace UniGit
 				GUI.Box(new Rect(rect.x + x, rect.y + y, rect.width - x - x, EditorGUIUtility.singleLineHeight), GUIContent.none, styles.commitHashSeparator);
 				y += EditorGUIUtility.singleLineHeight / 3;
 				EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(commit.Id.Sha));
-				x += GUI.skin.label.CalcSize(GitGUI.GetTempContent(commit.Id.Sha)).x + 8;
-				Rect buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
-				x += 64;
-				if (GUI.Button(buttonRect, GitGUI.GetTempContent("Options"), EditorStyles.miniButtonLeft))
+				x = rect.width + 24;
+				GUI.enabled = true;
+				Rect buttonRect = new Rect(x - 21, rect.y + y, 21, 21);
+				x -= buttonRect.width;
+				if (GUI.Button(buttonRect, GitGUI.IconContent("UnityEditor.InspectorWindow",string.Empty,"Details"), GitGUI.Styles.IconButton))
+				{
+					PopupWindow.Show(buttonRect, injectionHelper.CreateInstance<GitCommitDetailsWindow>(gitManager.Repository.Lookup<Commit>(commit.Id)));
+				}
+				EditorGUIUtility.AddCursorRect(buttonRect,MouseCursor.Link);
+				buttonRect = new Rect(x - 21, rect.y + y, 21, 21);
+				x -= buttonRect.width;
+				if (GUI.Button(buttonRect, GitGUI.IconContent("UnityEditor.SceneHierarchyWindow",string.Empty,"Options"), GitGUI.Styles.IconButton))
 				{
 					GenericMenu menu = new GenericMenu();
 
@@ -779,13 +812,7 @@ namespace UniGit
 					});
 					menu.DropDown(buttonRect);
 				}
-				GUI.enabled = true;
-				buttonRect = new Rect(rect.x + x, rect.y + y, 64, EditorGUIUtility.singleLineHeight);
-				if (GUI.Button(buttonRect, GitGUI.GetTempContent("Details"), EditorStyles.miniButtonRight))
-				{
-					PopupWindow.Show(buttonRect, injectionHelper.CreateInstance<GitCommitDetailsWindow>(gitManager.Repository.Lookup<Commit>(commit.Id)));
-				}
-
+				EditorGUIUtility.AddCursorRect(buttonRect,MouseCursor.Link);
 				if (rect.Contains(current.mousePosition))
 				{
 					if (current.type == EventType.ContextClick)

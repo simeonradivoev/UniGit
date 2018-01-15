@@ -9,6 +9,7 @@ namespace UniGit.Utils
 	{
 		private GitOverlay gitOverlay;
 		private string gitVersion;
+		private Vector2 scroll;
 
 		[UsedImplicitly]
 		private void OnEnable()
@@ -82,6 +83,27 @@ namespace UniGit.Utils
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
+			EditorGUILayout.Space();
+
+			scroll = GUILayout.BeginScrollView(scroll);
+
+			foreach (var credit in GitLinks.Credits)
+			{
+				if (!string.IsNullOrEmpty(credit.Item2))
+				{
+					if (GUILayout.Button(GitGUI.GetTempContent(credit.Item1),EditorStyles.centeredGreyMiniLabel))
+					{
+						GitLinks.GoTo(credit.Item2);
+					}
+					EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
+				}
+				else
+				{
+					GUILayout.Label(GitGUI.GetTempContent(credit.Item1));
+				}
+			}
+
+			GUILayout.EndScrollView();
 		}
 	}
 }

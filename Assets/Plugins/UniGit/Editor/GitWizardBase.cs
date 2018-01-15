@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
@@ -212,7 +213,18 @@ namespace UniGit
 
 		protected bool OnCheckoutNotify(string path, CheckoutNotifyFlags notifyFlags)
 		{
-			logger.LogFormat(LogType.Log,"{0} ({1})",path,notifyFlags);
+			if (gitSettings.CreateFoldersForDriftingMeta)
+			{
+				if (GitManager.IsMetaPath(path))
+				{
+					string assetPath = GitManager.AssetPathFromMeta(path);
+					if (!Path.HasExtension(assetPath) && !File.Exists(assetPath) && !Directory.Exists(assetPath))
+					{
+						Directory.CreateDirectory(assetPath);
+						logger.LogFormat(LogType.Log,"Folder {0} created for drifting {1} file.",assetPath,path);
+					}
+				}
+			}
 			return true;
 		}
 

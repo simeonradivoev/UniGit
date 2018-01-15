@@ -27,7 +27,7 @@ namespace UniGit
 		protected override void OnEnable()
 		{
 			base.OnEnable();
-			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutNotify = OnCheckoutNotify, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy ,FileConflictStrategy = (CheckoutFileConflictStrategy)((int)mergeFileFavor)};
+			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutNotify = OnCheckoutNotify, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy ,FileConflictStrategy = (CheckoutFileConflictStrategy)((int)mergeFileFavor), CheckoutNotifyFlags = CheckoutNotifyFlags.Updated};
 		}
 
 		protected override bool DrawWizardGUI()

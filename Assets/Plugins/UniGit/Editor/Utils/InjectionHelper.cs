@@ -115,13 +115,13 @@ namespace UniGit.Utils
 			Type lastType = type;
 			while (lastType != null)
 			{
-				var methods = lastType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+				var methods = lastType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
 				foreach (var method in methods)
 				{
 					if (HasInjectAttribute(method))
 					{
-                        if(method.IsAbstract) continue;
-                        //don't put overriden methods, only methods that are virtual
+						if(method.IsAbstract) continue;
+						//don't put overridden methods, only methods that are declared by the type, aka Virtual
 						if (method.IsVirtual && method.GetBaseDefinition().DeclaringType != lastType) continue;
 						infos.Add(method);
 					}

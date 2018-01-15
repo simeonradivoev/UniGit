@@ -28,7 +28,17 @@ namespace UniGit.Settings
 		{
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			//todo cache general settings to reduce lookup
-			GUILayout.Box(GitGUI.IconContent("SceneAsset Icon", "Unity Settings"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
+			GUILayout.BeginHorizontal(GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true));
+			GUILayout.FlexibleSpace();
+			GUILayout.Label(GitGUI.IconContent("SceneAsset Icon", "Unity Settings"), GUILayout.Height(18));
+			GUILayout.FlexibleSpace();
+			if (GUILayout.Button(GitGUI.Contents.Help,GitGUI.Styles.IconButton))
+			{
+				GitLinks.GoTo(GitLinks.SettingsUniGitSettings);
+			}
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
+			GUILayout.EndHorizontal();
+			
 
 			if (gitSettings != null)
 			{
@@ -61,11 +71,12 @@ namespace UniGit.Settings
 				}
 
 				EditorGUI.BeginChangeCheck();
-				gitSettings.UseSimpleContextMenus = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Simple Context Menus", "Use Unity's default context menu on Diff window, instead of the UniGit one (with icons)"), gitSettings.UseSimpleContextMenus);
-				gitSettings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload."), gitSettings.LazyMode);
+				gitSettings.UseSimpleContextMenus = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Simple Context Menus", "Use Unity's default context menu on Diff window, instead of the UniGit one (with icons and animations)."), gitSettings.UseSimpleContextMenus);
+				gitSettings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload, as well as leaving and entering play mode."), gitSettings.LazyMode);
 				gitSettings.TrackSystemFiles = EditorGUILayout.Toggle(GitGUI.GetTempContent("Track System Files", "Should files and folders be tracked that are outside the 'Assets' folder? This should definitely be used if lazy mode is on."), gitSettings.TrackSystemFiles);
-				gitSettings.UseUnityConsole = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Unity's Console", "Show Info, Warning and Error messages in Unity's builtin console instead of the Git Log"), gitSettings.UseUnityConsole);
-				gitSettings.AnimationType = (GitSettingsJson.AnimationTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("Animation Types", "Which animation are allowed"), gitSettings.AnimationType);
+				gitSettings.UseUnityConsole = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Unity's Console", "Show Info, Warning and Error messages in Unity's builtin console instead of the Git Log."), gitSettings.UseUnityConsole);
+				gitSettings.AnimationType = (GitSettingsJson.AnimationTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("Animation Types", "Which animation are allowed?"), gitSettings.AnimationType);
+				gitSettings.CreateFoldersForDriftingMeta = EditorGUILayout.Toggle(GitGUI.GetTempContent("Create Missing Meta Folders","Create Missing Folders for .meta files. If a .meta folder is merged but the folder is not present, create it."), gitSettings.CreateFoldersForDriftingMeta);
 
 				save |= EditorGUI.EndChangeCheck();
 
@@ -73,7 +84,17 @@ namespace UniGit.Settings
 				if(updateGit) gitManager.MarkDirty();
 			}
 
-			GUILayout.Box(GitGUI.IconContent("ListIcon", "Git Settings"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
+			GUILayout.BeginHorizontal(GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true));
+			GUILayout.FlexibleSpace();
+			GUILayout.Label(GitGUI.IconContent("UnityEditor.SceneHierarchyWindow", "Git Settings"),GUILayout.Height(18));
+			GUILayout.FlexibleSpace();
+			if (GUILayout.Button(GitGUI.Contents.Help,GitGUI.Styles.IconButton))
+			{
+				GitLinks.GoTo(GitLinks.SettingsGitSettings);
+			}
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
+			GUILayout.EndHorizontal();
+			
 
 			using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
 			{
@@ -125,7 +146,16 @@ namespace UniGit.Settings
 				EditorGUI.indentLevel = 0;
 			}
 
-			GUILayout.Box(GitGUI.IconContent("IN LockButton on", "Git Ignore"), GitGUI.Styles.BigTitle, GUILayout.ExpandWidth(true), GUILayout.Height(EditorGUIUtility.singleLineHeight * 1.6f));
+			GUILayout.BeginHorizontal(GitGUI.Styles.BigTitle,GUILayout.ExpandWidth(true));
+			GUILayout.FlexibleSpace();
+			GUILayout.Label(GitGUI.IconContent("IN LockButton on", "Git Ignore"), GUILayout.Height(18));
+			GUILayout.FlexibleSpace();
+			if (GUILayout.Button(GitGUI.Contents.Help, GitGUI.Styles.IconButton))
+			{
+				GitLinks.GoTo(GitLinks.SettingsGitIgnoreHelp);
+			}
+			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
+			GUILayout.EndHorizontal();
 
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();

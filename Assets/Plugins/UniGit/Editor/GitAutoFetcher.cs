@@ -59,7 +59,7 @@ namespace UniGit
 				gitManager.Repository.Network.Fetch(remote, new FetchOptions()
 				{
 					CredentialsProvider = credentialsManager.FetchChangesAutoCredentialHandler,
-					OnTransferProgress = GitManager.FetchTransferProgressHandler,
+					OnTransferProgress = gitManager.FetchTransferProgressHandler,
 					RepositoryOperationStarting = (context) =>
 					{
 						logger.Log(LogType.Log,"Repository Operation Starting");

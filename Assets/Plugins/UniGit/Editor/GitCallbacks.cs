@@ -2,6 +2,7 @@
 using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
+using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
@@ -118,6 +119,12 @@ namespace UniGit
 		public void IssueOnPostprocessMovedAssets(string[] paths,string[] movedFrom)
 		{
 			if (OnPostprocessMovedAssets != null) OnPostprocessMovedAssets.Invoke(paths, movedFrom);
+		}
+
+		public event Action<PlayModeStateChange> OnPlayModeStateChange;
+		public void IssueOnPlayModeStateChange(PlayModeStateChange stateChange)
+		{
+			if(OnPlayModeStateChange != null) OnPlayModeStateChange.Invoke(stateChange);
 		}
 
 		#endregion

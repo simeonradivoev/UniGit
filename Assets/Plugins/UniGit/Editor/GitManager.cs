@@ -72,14 +72,24 @@ namespace UniGit
 			callbacks.OnPostprocessImportedAssets += OnPostprocessImportedAssets;
 			callbacks.OnPostprocessDeletedAssets += OnPostprocessDeletedAssets;
 			callbacks.OnPostprocessMovedAssets += OnPostprocessMovedAssets;
+			callbacks.OnPlayModeStateChange += OnPlayModeStateChange;
 
 			CheckNullRepository();
 		}
 
+		private void OnPlayModeStateChange(PlayModeStateChange stateChange)
+		{
+			if(gitSettings.LazyMode) return;
+			if (stateChange == PlayModeStateChange.EnteredPlayMode || stateChange == PlayModeStateChange.EnteredEditMode)
+			{
+				MarkDirty();
+			}
+		}
+
 		private void OnDelayedCall()
 		{
-			if(!gitSettings.LazyMode)
-				MarkDirty();
+			if(gitSettings.LazyMode) return;
+			MarkDirty();
 		}
 
 		public void InitializeRepository()
@@ -211,7 +221,7 @@ namespace UniGit
 
 			if (repository != null)
 			{
-				if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList)) RetreiveStatusThreaded(paths);
+				if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status)) RetreiveStatusThreaded(paths);
 				else RetreiveStatus(paths);
 			}
 		}
@@ -451,6 +461,10 @@ namespace UniGit
 			isUpdating = false;
 			updatingFiles.Clear();
 			callbacks.IssueUpdateRepository(gitData.RepositoryStatus, paths);
+			foreach (var watcher in watchers)
+			{
+				if(!watcher.IsWatching) watcher.MarkDirty();
+			}
 		}
 
 		internal bool IsFileDirty(string path)
@@ -503,12 +517,12 @@ namespace UniGit
 			if (callbacks != null)
 			{
 				callbacks.EditorUpdate -= OnEditorUpdate;
-				//callbacks.DelayCall -= OnDelayedCall;
 				//asset postprocessing
 				callbacks.OnWillSaveAssets -= OnWillSaveAssets;
 				callbacks.OnPostprocessImportedAssets -= OnPostprocessImportedAssets;
 				callbacks.OnPostprocessDeletedAssets -= OnPostprocessDeletedAssets;
 				callbacks.OnPostprocessMovedAssets -= OnPostprocessMovedAssets;
+				callbacks.OnPlayModeStateChange -= OnPlayModeStateChange;
 			}
 		}
 
@@ -781,7 +795,7 @@ namespace UniGit
 		#endregion
 
 		#region Progress Handlers
-		public static bool FetchTransferProgressHandler(TransferProgress progress)
+		public bool FetchTransferProgressHandler(TransferProgress progress)
 		{
 			float percent = (float)progress.ReceivedObjects / progress.TotalObjects;
 			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Received total of: {0} bytes. {1}%", progress.ReceivedBytes, (percent * 100).ToString("###")), percent);

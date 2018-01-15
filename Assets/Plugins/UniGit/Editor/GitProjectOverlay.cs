@@ -92,7 +92,7 @@ namespace UniGit
 				if (data.Initialized)
 				{
 					isUpdating = true;
-					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusList))
+					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status))
 					{
 						gitManager.ActionQueue.Enqueue(() =>
 						{
@@ -234,6 +234,11 @@ namespace UniGit
 		#endregion
 
 		#region GitWatcher
+
+		public void MarkDirty()
+		{
+			isDirty = true;
+		}
 
 		public bool IsWatching
 		{

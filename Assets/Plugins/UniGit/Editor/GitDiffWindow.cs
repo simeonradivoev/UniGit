@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
-using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;

@@ -56,7 +56,7 @@ namespace UniGit
 	[Serializable]
 	public class GitSettingsJson
 	{
-		public const ThreadingType DefalutThreadingType = ThreadingType.StatusList | ThreadingType.StatusListGui | ThreadingType.CommitListGui;
+		public const ThreadingType DefalutThreadingType = ThreadingType.Status | ThreadingType.StatusListGui | ThreadingType.CommitListGui;
 		public bool AutoStage;
 		public bool AutoFetch;
 		public ExternalsTypeEnum ExternalsType;
@@ -75,6 +75,7 @@ namespace UniGit
 		public bool TrackSystemFiles = true;
 		public bool UseUnityConsole;
 		public AnimationTypeEnum AnimationType = AnimationTypeEnum.All;
+		public bool CreateFoldersForDriftingMeta;
 		private bool isDirty;
 
 		[Flags]
@@ -99,7 +100,7 @@ namespace UniGit
 		{
 			Stage = 1 << 0,
 			Unstage = 1 << 1,
-			StatusList = 1 << 2,
+			Status = 1 << 2,
 			StatusListGui = 1 << 3,
 			CommitListGui = 1 << 4
 		}

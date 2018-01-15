@@ -4,5 +4,6 @@
 	{
 		bool IsWatching { get; }
 		bool IsValid { get; }
+		void MarkDirty();
 	}
 }
