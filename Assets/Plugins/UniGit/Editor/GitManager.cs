@@ -719,7 +719,7 @@ namespace UniGit
 
 		public string GetRelativePath(string rootPath)
 		{
-			return rootPath.Replace(repoPath, "");
+			return rootPath.Replace(repoPath, "").TrimStart(UniGitPath.UnityDeirectorySeparatorChar,Path.DirectorySeparatorChar);
 		}
 		#endregion
 
