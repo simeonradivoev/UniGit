@@ -38,23 +38,8 @@ namespace UniGit
 				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
 				injectionHelper.Bind<string>().FromInstance(logPath).WithId("logPath");
-
 				injectionHelper.Bind<UniGitData>().FromMethod(GetUniGitData).NonLazy();
-				injectionHelper.Bind<GitCallbacks>().FromMethod(h =>
-				{
-					var c = new GitCallbacks();
-					EditorApplication.update += c.IssueEditorUpdate;
-					c.RefreshAssetDatabase += AssetDatabase.Refresh;
-					c.SaveAssetDatabase += AssetDatabase.SaveAssets;
-					EditorApplication.playModeStateChanged += c.IssueOnPlayModeStateChange;
-					EditorApplication.projectWindowItemOnGUI += c.IssueProjectWindowItemOnGUI;
-					//asset postprocessing
-					GitAssetPostprocessors.OnWillSaveAssetsEvent += c.IssueOnWillSaveAssets;
-					GitAssetPostprocessors.OnPostprocessImportedAssetsEvent += c.IssueOnPostprocessImportedAssets;
-					GitAssetPostprocessors.OnPostprocessDeletedAssetsEvent += c.IssueOnPostprocessDeletedAssets;
-					GitAssetPostprocessors.OnPostprocessMovedAssetsEvent += c.IssueOnPostprocessMovedAssets;
-					return c;
-				});
+				injectionHelper.Bind<GitCallbacks>().FromMethod(GetGitCallbacks);
 				injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
 				injectionHelper.Bind<GitManager>().NonLazy();
 				injectionHelper.Bind<GitSettingsJson>();
@@ -66,25 +51,18 @@ namespace UniGit
 				injectionHelper.Bind<GitOverlay>();
 				injectionHelper.Bind<GitAutoFetcher>().NonLazy();
 				injectionHelper.Bind<GitLog>();
-				injectionHelper.Bind<ILogger>().FromMethod(h => new Logger(h.GetInstance<GitLog>()));
+				injectionHelper.Bind<ILogger>().FromMethod(c => new Logger(c.injectionHelper.GetInstance<GitLog>()));
 				injectionHelper.Bind<GitAnimation>();
-
-				//credentials
 				injectionHelper.Bind<ICredentialsAdapter>().To<WincredCredentialsAdapter>();
 				injectionHelper.Bind<GitCredentialsManager>().NonLazy();
-				//externals
 				injectionHelper.Bind<IExternalAdapter>().To<GitExtensionsAdapter>();
 				injectionHelper.Bind<IExternalAdapter>().To<TortoiseGitAdapter>();
 				injectionHelper.Bind<GitExternalManager>();
-				//must be non lazy as it add itself as a filter
-				injectionHelper.Bind<GitLfsManager>().NonLazy();
-				//hooks
+				injectionHelper.Bind<GitLfsManager>().NonLazy(); //must be non lazy as it add itself as a filter
 				injectionHelper.Bind<GitPushHookBase>().To<GitLfsPrePushHook>();
 				injectionHelper.Bind<GitHookManager>().NonLazy();
-				//helpers
 				injectionHelper.Bind<GitLfsHelper>();
 				injectionHelper.Bind<FileLinesReader>();
-				//project window overlays
 				injectionHelper.Bind<GitProjectOverlay>().NonLazy();
 
 				if (Repository.IsValid(repoPath))
@@ -120,7 +98,7 @@ namespace UniGit
 
 			injectionHelper.CreateNonLazy();
 
-			GitProjectContextMenus.Init(GitManager, injectionHelper.GetInstance<GitExternalManager>(),GitCallbacks);
+			GitProjectContextMenus.Init(GitManager, injectionHelper.GetInstance<GitExternalManager>(),GitCallbacks,injectionHelper.GetInstance<ILogger>());
 			GitUnityMenu.Init(GitManager);
 		}
 
@@ -158,19 +136,35 @@ namespace UniGit
 				GetWindow<GitLogWindow>();
 		}
 
-		private static UniGitData GetUniGitData(InjectionHelper injectionHelper)
+		private static GitCallbacks GetGitCallbacks(InjectionHelper.ResolveCreateContext context)
+		{
+			var c = new GitCallbacks();
+			EditorApplication.update += c.IssueEditorUpdate;
+			c.RefreshAssetDatabase += AssetDatabase.Refresh;
+			c.SaveAssetDatabase += AssetDatabase.SaveAssets;
+			EditorApplication.playModeStateChanged += c.IssueOnPlayModeStateChange;
+			EditorApplication.projectWindowItemOnGUI += c.IssueProjectWindowItemOnGUI;
+			//asset postprocessing
+			GitAssetPostprocessors.OnWillSaveAssetsEvent += c.IssueOnWillSaveAssets;
+			GitAssetPostprocessors.OnPostprocessImportedAssetsEvent += c.IssueOnPostprocessImportedAssets;
+			GitAssetPostprocessors.OnPostprocessDeletedAssetsEvent += c.IssueOnPostprocessDeletedAssets;
+			GitAssetPostprocessors.OnPostprocessMovedAssetsEvent += c.IssueOnPostprocessMovedAssets;
+			return c;
+		}
+
+		private static UniGitData GetUniGitData(InjectionHelper.ResolveCreateContext context)
 		{
 			var existentData = Resources.FindObjectsOfTypeAll<UniGitData>();
 			foreach (var data in existentData)
 			{
 				if (data.Initialized) return data;
 			}
-			return existentData.Length > 0 ? existentData[0] : CreateData(injectionHelper);
+			return existentData.Length > 0 ? existentData[0] : CreateData(context);
 		}
 
-		private static UniGitData CreateData(InjectionHelper injectionHelper)
+		private static UniGitData CreateData(InjectionHelper.ResolveCreateContext context)
 		{
-			var data = injectionHelper.CreateInstance<UniGitData>();
+			var data = context.injectionHelper.CreateInstance<UniGitData>(context.arg);
 			data.hideFlags = HideFlags.HideAndDontSave;
 			data.name = "UniGitData";
 			return data;

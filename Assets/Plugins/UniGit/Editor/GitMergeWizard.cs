@@ -22,12 +22,13 @@ namespace UniGit
 		private void Construct(GitCallbacks gitCallbacks)
 		{
 			this.gitCallbacks = gitCallbacks;
+			mergeOptions.OnCheckoutNotify = gitManager.CheckoutNotifyHandler;
 		}
 
 		protected override void OnEnable()
 		{
+			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy ,FileConflictStrategy = (CheckoutFileConflictStrategy)((int)mergeFileFavor), CheckoutNotifyFlags = CheckoutNotifyFlags.Updated};
 			base.OnEnable();
-			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutNotify = OnCheckoutNotify, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy ,FileConflictStrategy = (CheckoutFileConflictStrategy)((int)mergeFileFavor), CheckoutNotifyFlags = CheckoutNotifyFlags.Updated};
 		}
 
 		protected override bool DrawWizardGUI()

@@ -30,6 +30,7 @@ namespace UniGit
 		private readonly IGitPrefs prefs;
 		private readonly UniGitData data;
 		private readonly ILogger logger;
+		private readonly bool cullNonAssetPaths;
 
 		private StatusTreeClass statusTree;
 		private bool isDirty = true;
@@ -45,7 +46,8 @@ namespace UniGit
 			GitOverlay gitOverlay,
 			IGitPrefs prefs,
 			UniGitData data,
-			ILogger logger)
+			ILogger logger,
+			[UniGitInjectOptional] bool cullNonAssetPaths = true)
 		{
 			if (iconStyle == null)
 			{
@@ -66,6 +68,7 @@ namespace UniGit
 			this.reflectionHelper = reflectionHelper;
 			this.gitOverlay = gitOverlay;
 			this.prefs = prefs;
+			this.cullNonAssetPaths = cullNonAssetPaths;
 
 			gitManager.AddWatcher(this);
 
@@ -197,7 +200,7 @@ namespace UniGit
 		{
 			try
 			{
-				var newStatusTree = new StatusTreeClass(gitSettings, status);
+				var newStatusTree = new StatusTreeClass(gitSettings, status,cullNonAssetPaths);
 				statusTree = newStatusTree;
 				gitManager.ExecuteAction(RepaintProjectWidnow, threaded);
 			}
@@ -260,13 +263,15 @@ namespace UniGit
 			private string[] currentPathArray;
 			private FileStatus currentStatus;
 			private readonly GitSettingsJson gitSettings;
+			private readonly bool cullNonAssetPaths;
 
-			public StatusTreeClass(GitSettingsJson gitSettings)
+			public StatusTreeClass(GitSettingsJson gitSettings,bool cullNonAssetPaths)
 			{
+				this.cullNonAssetPaths = cullNonAssetPaths;
 				this.gitSettings = gitSettings;
 			}
 
-			public StatusTreeClass(GitSettingsJson gitSettings, IEnumerable<GitStatusEntry> status) : this(gitSettings)
+			public StatusTreeClass(GitSettingsJson gitSettings, IEnumerable<GitStatusEntry> status,bool cullNonAssetPaths) : this(gitSettings,cullNonAssetPaths)
 			{
 				Build(status);
 			}
@@ -278,7 +283,7 @@ namespace UniGit
 					currentPath = entry.Path;
 					currentPathArray = entry.Path.Split('\\');
 					currentStatus = !gitSettings.ShowEmptyFolders && GitManager.IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.Status;
-					if(!GitManager.IsPathInAssetFolder(entry.Path)) continue;
+					if(cullNonAssetPaths && !GitManager.IsPathInAssetFolder(entry.Path)) continue;
 					AddRecursive(0, entries);
 				}
 			}

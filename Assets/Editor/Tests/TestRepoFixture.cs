@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UniGit;
 using UniGit.Settings;
 using UniGit.Utils;
+using UnityEditor;
 using UnityEngine;
 
 public class TestRepoFixture
@@ -13,6 +14,7 @@ public class TestRepoFixture
 	protected GitCallbacks gitCallbacks;
     protected InjectionHelper injectionHelper;
 	protected UniGitData data;
+	protected GitSettingsJson gitSettings;
 
 	[SetUp]
 	public void Setup()
@@ -36,12 +38,17 @@ public class TestRepoFixture
         signature = new Signature("Test", "Test@Test.com", DateTime.Now);
 		data = injectionHelper.GetInstance<UniGitData>();
 
-		injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();
+		EditorApplication.update += gitCallbacks.IssueEditorUpdate;
+
+		gitCallbacks.IssueEditorUpdate();
+
+		injectionHelper.CreateNonLazy();
 	}
 
 	[TearDown]
 	public void Teardown()
 	{
+		EditorApplication.update -= gitCallbacks.IssueEditorUpdate;
 		if(data != null) UnityEngine.Object.DestroyImmediate(data);
 		injectionHelper.Dispose();
 		try

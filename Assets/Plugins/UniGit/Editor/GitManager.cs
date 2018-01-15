@@ -634,7 +634,7 @@ namespace UniGit
 			return operation;
 		}
 
-		public void AutoUnstage(string[] paths)
+		public void AutoUnstage(params string[] paths)
 		{
 			if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 			{
@@ -794,7 +794,25 @@ namespace UniGit
 		}
 		#endregion
 
-		#region Progress Handlers
+		#region Repository Handlers Handlers
+		public bool CheckoutNotifyHandler(string path, CheckoutNotifyFlags notifyFlags)
+		{
+			if (gitSettings.CreateFoldersForDriftingMeta)
+			{
+				if (IsMetaPath(path))
+				{
+					string assetPath = AssetPathFromMeta(path);
+					string rootedAssetPath = Path.Combine(repoPath, assetPath);
+					if (!Path.HasExtension(assetPath) && !File.Exists(rootedAssetPath) && !Directory.Exists(rootedAssetPath))
+					{
+						Directory.CreateDirectory(rootedAssetPath);
+						logger.LogFormat(LogType.Log,"Folder '{0}' created for drifting '{1}' file.",assetPath,path);
+					}
+				}
+			}
+			return true;
+		}
+
 		public bool FetchTransferProgressHandler(TransferProgress progress)
 		{
 			float percent = (float)progress.ReceivedObjects / progress.TotalObjects;

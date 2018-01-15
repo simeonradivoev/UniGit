@@ -211,23 +211,6 @@ namespace UniGit
 			logger.LogFormat(LogType.Log,"{0} Status: {1}", mergeType, result.Status);
 		}
 
-		protected bool OnCheckoutNotify(string path, CheckoutNotifyFlags notifyFlags)
-		{
-			if (gitSettings.CreateFoldersForDriftingMeta)
-			{
-				if (GitManager.IsMetaPath(path))
-				{
-					string assetPath = GitManager.AssetPathFromMeta(path);
-					if (!Path.HasExtension(assetPath) && !File.Exists(assetPath) && !Directory.Exists(assetPath))
-					{
-						Directory.CreateDirectory(assetPath);
-						logger.LogFormat(LogType.Log,"Folder {0} created for drifting {1} file.",assetPath,path);
-					}
-				}
-			}
-			return true;
-		}
-
 		protected void OnCheckoutProgress(string path, int completedSteps, int totalSteps)
 		{
 			float percent = (float)completedSteps / totalSteps;

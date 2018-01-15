@@ -9,6 +9,7 @@ namespace UniGit
 	public class GitCheckoutWindow : GitWizardBase
 	{
 		[SerializeField] private bool force;
+		private CheckoutOptions checkoutOptions;
 
 		protected override bool DrawWizardGUI()
 		{
@@ -18,15 +19,24 @@ namespace UniGit
 			return EditorGUI.EndChangeCheck();
 		}
 
+		protected override void OnEnable()
+		{
+			checkoutOptions = new CheckoutOptions()
+			{
+				OnCheckoutProgress = OnCheckoutProgress
+			};
+			base.OnEnable();
+		}
+
+		[UniGitInject]
+		private void Construct()
+		{
+			checkoutOptions.OnCheckoutNotify = gitManager.CheckoutNotifyHandler;
+		}
+
 		[UsedImplicitly]
 		private void OnWizardCreate()
 		{
-			CheckoutOptions checkoutOptions = new CheckoutOptions()
-			{
-				OnCheckoutNotify = OnCheckoutNotify,
-				OnCheckoutProgress = OnCheckoutProgress
-			};
-
 			if(force)
 				checkoutOptions.CheckoutModifiers = CheckoutModifiers.Force;
 

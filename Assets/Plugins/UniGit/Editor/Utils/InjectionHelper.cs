@@ -211,7 +211,15 @@ namespace UniGit.Utils
 			{
 				foreach (var additionalArgument in additionalArguments)
 				{
-					if (parameter.ParameterType.IsInstanceOfType(additionalArgument))
+					var injectionArgument = additionalArgument as InjectionArgument;
+					if (injectionArgument != null)
+					{
+						if (injectionArgument.Id == parameter.Name && parameter.ParameterType.IsInstanceOfType(injectionArgument.Obj))
+						{
+							return injectionArgument.Obj;
+						}
+					}
+					else if (parameter.ParameterType.IsInstanceOfType(additionalArgument))
 					{
 						return additionalArgument;
 					}
@@ -224,7 +232,18 @@ namespace UniGit.Utils
 		    }
 
 			var customAttributes = parameter.GetCustomAttributes(typeof(UniGitInjectOptional),true);
-			if (customAttributes.Length > 0) return parameter.DefaultValue;
+			if (customAttributes.Length > 0)
+			{
+				var value = parameter.DefaultValue;
+				if (value != DBNull.Value)
+				{
+					return value;
+				}
+
+				if(parameter.ParameterType.IsValueType)
+					return Activator.CreateInstance(parameter.ParameterType);
+				return null;
+			}
 
 			throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameter.Name, parameter.ParameterType));
 		}
@@ -337,6 +356,18 @@ namespace UniGit.Utils
 			}
 		}
 
+		public struct ResolveCreateContext
+		{
+			public readonly InjectionHelper injectionHelper;
+			public readonly object[] arg;
+
+			public ResolveCreateContext(InjectionHelper injectionHelper, object[] arg)
+			{
+				this.injectionHelper = injectionHelper;
+				this.arg = arg;
+			}
+		}
+
 		public class Resolve<T> : Resolve
 		{
 			public Resolve(InjectionHelper injectionHelper) : base(injectionHelper,typeof(T))
@@ -349,9 +380,9 @@ namespace UniGit.Utils
 				return (T)base.GetInstance();
 			}
 
-			public Resolve<T> FromMethod(Func<InjectionHelper,T> method)
+			public Resolve<T> FromMethod(Func<ResolveCreateContext,T> method)
 			{
-				base.FromMethod((h)=> method.Invoke(h));
+				base.FromMethod(c => method.Invoke(c));
 				return this;
 			}
 
@@ -385,10 +416,11 @@ namespace UniGit.Utils
 			private Type type;
 			private Type instanceType;
 			private Type whenInjectedInto;
-			private Func<InjectionHelper,object> method;
+			private Func<ResolveCreateContext,object> method;
 			internal KeyValuePair<string, Type>[] injectedParamsCached;
 			internal string id;
 			private object instance;
+			private object[] arg;
 			private readonly InjectionHelper injectionHelper;
 			private bool nonLazy;
 
@@ -435,7 +467,7 @@ namespace UniGit.Utils
 				return WhenInjectedInto(typeof(T));
 			}
 
-			public Resolve FromMethod(Func<InjectionHelper,object> method)
+			public Resolve FromMethod(Func<ResolveCreateContext,object> method)
 			{
 				this.method = method;
 				return this;
@@ -467,6 +499,12 @@ namespace UniGit.Utils
 				return this;
 			}
 
+			public Resolve WithArguments(params object[] arg)
+			{
+				this.arg = arg;
+				return this;
+			}
+
 			public object GetInstance()
 			{
 				EnsureInstance();
@@ -477,7 +515,7 @@ namespace UniGit.Utils
 			{
 				if (instance == null)
 				{
-					instance = method != null ? method.Invoke(injectionHelper) : injectionHelper.CreateInstance(instanceType,null);
+					instance = method != null ? method.Invoke(new ResolveCreateContext(injectionHelper,arg)) : injectionHelper.CreateInstance(instanceType,arg);
 				}
 			}
 
@@ -485,6 +523,7 @@ namespace UniGit.Utils
 			{
 				IDisposable disposableInstance = instance as IDisposable;
 				if(disposableInstance != null) disposableInstance.Dispose();
+				arg = null;
 			}
 
 			public bool HasInstance { get { return instance != null; } }
@@ -513,6 +552,28 @@ namespace UniGit.Utils
 			{
 				get { return nonLazy; }
 			}
+		}
+	}
+
+	public class InjectionArgument
+	{
+		private object obj;
+		private string id;
+
+		public InjectionArgument(string id,object obj)
+		{
+			this.obj = obj;
+			this.id = id;
+		}
+
+		public object Obj
+		{
+			get { return obj; }
+		}
+
+		public string Id
+		{
+			get { return id; }
 		}
 	}
 }

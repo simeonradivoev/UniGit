@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using Boo.Lang;
 using UniGit.Utils;
 
 namespace UniGit
@@ -15,13 +15,20 @@ namespace UniGit
 		private Regex ignoreFoldersRegex;
 
 		[UniGitInject]
-		public GitFileWatcher(string repoPath,GitManager gitManager,GitCallbacks gitCallbacks,GitSettingsJson gitSettings)
+		public GitFileWatcher(string repoPath,
+			GitManager gitManager,
+			GitCallbacks gitCallbacks,
+			GitSettingsJson gitSettings,
+			[UniGitInjectOptional] bool trackAssetsPath)
 		{
-			ignoreFoldersRegex = new Regex(".*Assets$|.*.git$");
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
 			fileWatchers = new List<FileSystemWatcher>();
+
+			string regexPattern = @".*.git$";
+			if (!trackAssetsPath) regexPattern += "|.*Assets$";
+			ignoreFoldersRegex = new Regex(regexPattern);
 
 			var mainFileWatcher = new FileSystemWatcher(repoPath)
 			{
@@ -101,6 +108,22 @@ namespace UniGit
 					}
 				}
 			}
+		}
+
+		public bool WaitForChange(out WaitForChangedResult result,WatcherChangeTypes types,int timeout)
+		{
+			foreach (var fileWatcher in fileWatchers)
+			{
+				var newResult = fileWatcher.WaitForChanged(types, timeout);
+				if (newResult.ChangeType != 0 || newResult.TimedOut)
+				{
+					result = newResult;
+					return false;
+				}
+			}
+
+			result = new WaitForChangedResult();
+			return true;
 		}
 
 		public void Dispose()

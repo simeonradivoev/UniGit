@@ -1,11 +1,14 @@
-﻿using System.IO;
+﻿using System.Collections;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using LibGit2Sharp;
 using NUnit.Framework;
 using UniGit;
 using UniGit.Settings;
+using UniGit.Status;
 using UniGit.Utils;
-using UnityEngine;
+using UnityEngine.TestTools;
 
 public class GitManagerTests : TestRepoFixture
 {
@@ -33,8 +36,8 @@ public class GitManagerTests : TestRepoFixture
 		}
 	}*/
 
-    [Test]
-    public void RepositoryHandlesLockedFileWhenWithIgnoreStatus()
+    [UnityTest]
+    public IEnumerator RepositoryHandlesLockedFileWhenWithIgnoreStatus()
     {
         File.AppendAllText(gitManager.GitIgnoreFilePath, "testFile.txt");
         string lockedFilePathName = "testFile.txt";
@@ -43,7 +46,7 @@ public class GitManagerTests : TestRepoFixture
         {
             lockFileStream.WriteLine("This is a locked test file");
         }
-	    injectionHelper.Bind<GitProjectOverlay>();
+	    injectionHelper.Bind<GitProjectOverlay>().WithArguments(new InjectionArgument("cullNonAssetPaths",false));
 	    var projectOverlays = injectionHelper.GetInstance<GitProjectOverlay>();
 	    var prefs = injectionHelper.GetInstance<IGitPrefs>();
 		prefs.SetBool(GitProjectOverlay.ForceUpdateKey,true);
@@ -54,7 +57,7 @@ public class GitManagerTests : TestRepoFixture
         try
         {
             gitManager.MarkDirty();
-            injectionHelper.GetInstance<GitCallbacks>().IssueEditorUpdate();
+	        yield return null;
             Assert.AreEqual(FileStatus.Ignored, projectOverlays.StatusTree.GetStatus(lockedFilePathName).State);
         }
         finally
@@ -86,5 +89,37 @@ public class GitManagerTests : TestRepoFixture
 
 		gitManager.MarkDirty(folderPath);
 		gitCallbacks.IssueEditorUpdate();
+	}
+
+	[UnityTest]
+	public IEnumerator MissingFolderForDriftingMetaCreated()
+	{
+		injectionHelper.GetInstance<GitSettingsJson>().CreateFoldersForDriftingMeta = true;
+
+		string metaFileName = "Test Folder.meta";
+		string metaFilePath = Path.Combine(gitManager.RepoPath, metaFileName);
+		File.WriteAllText(metaFilePath,"Test Meta");
+		Assert.IsTrue(File.Exists(metaFilePath));
+		gitManager.AutoStage(metaFileName);
+		yield return null;
+		GitStatusEntry metaStatusEntry;
+		Assert.IsTrue(data.RepositoryStatus.Get(metaFileName, out metaStatusEntry));
+		Assert.AreEqual(FileStatus.NewInIndex,metaStatusEntry.Status);
+		var addedMetaCommit = gitManager.Repository.Commit("Drifting Meta Commit", signature, signature);
+		yield return null;
+		File.Delete(metaFilePath);
+		gitManager.AutoStage(metaFileName);
+		yield return null;
+		Assert.IsTrue(data.RepositoryStatus.Get(metaFileName, out metaStatusEntry));
+		Assert.AreEqual(FileStatus.DeletedFromIndex,metaStatusEntry.Status);
+		Assert.IsFalse(File.Exists(metaFilePath));
+		gitManager.Repository.Commit("Removed meta", signature, signature);
+		gitManager.Repository.Checkout(addedMetaCommit,new CheckoutOptions()
+		{
+			CheckoutNotifyFlags = CheckoutNotifyFlags.Updated,
+			OnCheckoutNotify = gitManager.CheckoutNotifyHandler
+		});
+		Assert.IsTrue(File.Exists(metaFilePath));
+		Assert.IsTrue(Directory.Exists(GitManager.AssetPathFromMeta(metaFilePath)));
 	}
 }

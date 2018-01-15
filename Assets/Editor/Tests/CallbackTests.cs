@@ -1,9 +1,11 @@
-﻿using System.IO;
+﻿using System.Collections;
+using System.IO;
 using LibGit2Sharp;
 using UnityEngine;
 using NUnit.Framework;
 using UniGit;
 using UniGit.Status;
+using UnityEngine.TestTools;
 using Assert = UnityEngine.Assertions.Assert;
 
 public class CallbackTests : TestRepoFixture
@@ -37,38 +39,33 @@ public class CallbackTests : TestRepoFixture
 		updateRepositoryCalled++;
 	}
 
-	private void ForceGitUpdate()
-	{
-		gitCallbacks.IssueEditorUpdate();
-	}
-
-	[Test]
-	public void UpdateRepositorySingleThreaded_OnAssetAddedShouldCallUpdateRepository_UpdateRepositoryCalled()
+	[UnityTest]
+	public IEnumerator UpdateRepositorySingleThreaded_OnAssetAddedShouldCallUpdateRepository_UpdateRepositoryCalled()
 	{
 		File.WriteAllText(Path.Combine(gitManager.RepoPath, "test.txt"), "Text Asset");
 		string[] outputs = { Path.Combine(gitManager.RepoPath, "test.txt") };
 		injectionHelper.GetInstance<GitCallbacks>().IssueOnWillSaveAssets(outputs, ref outputs);
-		ForceGitUpdate();
+		yield return null;
 		File.Delete(Application.dataPath + "/test.txt");
 		Assert.AreEqual(updateRepositoryCalled, 1);
 	}
 
-	[Test]
-	public void UpdateRepositorySingleThreaded_OnAssetRemovedShouldCallUpdateRepository_UpdateRepositoryCalled()
+	[UnityTest]
+	public IEnumerator UpdateRepositorySingleThreaded_OnAssetRemovedShouldCallUpdateRepository_UpdateRepositoryCalled()
 	{
 		File.WriteAllText(Path.Combine(gitManager.RepoPath, "test.txt"), "Text Asset");
 		string[] outputs = { Path.Combine(gitManager.RepoPath, "test.txt") };
 		File.Delete(Application.dataPath + "/test.txt");
-		injectionHelper.GetInstance<GitCallbacks>().IssueOnPostprocessDeletedAssets(outputs);
-		ForceGitUpdate();
+		gitCallbacks.IssueOnPostprocessDeletedAssets(outputs);
+		yield return null;
 		Assert.AreEqual(updateRepositoryCalled, 1);
 	}
 
-	[Test]
-	public void OnRepositoryLoad_OnRepositoryDirtyShouldCallRepositoryLoad_OnRepositoryLoadCalled()
+	[UnityTest]
+	public IEnumerator OnRepositoryLoad_OnRepositoryDirtyShouldCallRepositoryLoad_OnRepositoryLoadCalled()
 	{
 		gitManager.MarkDirty(true);
-		ForceGitUpdate();
+		yield return null;
 		Assert.AreEqual(onRepositoryLoadedCalled,1);
 	}
 }
