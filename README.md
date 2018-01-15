@@ -53,6 +53,9 @@ All you need is to change the Path to Unity's DLLs. You can check [Unity's Manag
 
 Once you change the path of unity's DLLs, you can build the project. Visual studio will copy all necessary files into `UniGitVs/bin/Debug` or `UniGitVs/bin/Release` folders. These files include the UniGit icons and resources, as well as the LibGit2Sharp library and it's dependencies, so that you can quickly copy all the files and put it in your project neatly wrapped in a DLL library.
 
+## Notes
+* UniGit is developed on a windows machine and has only been tested on a windows machine.
+
 ## Limitations:
 * Inbuilt Credentials Manager works on Windows only, for now.
 * Pushing only works with HTTP (libgit2sharp limitation)
