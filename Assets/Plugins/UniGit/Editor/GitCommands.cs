@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LibGit2Sharp;
 
 namespace UniGit
@@ -7,10 +8,15 @@ namespace UniGit
     {
         public static void Stage(Repository repository, params string[] paths)
         {
-            repository.Stage(paths);
+           Stage(repository,(IEnumerable<string>)paths);
         }
 
-        public static void Unstage(Repository repository, string[] paths)
+	    public static void Stage(Repository repository, IEnumerable<string> paths)
+	    {
+		    repository.Stage(paths);
+	    }
+
+        public static void Unstage(Repository repository, IEnumerable<string> paths)
         {
             repository.Unstage(paths);
         }

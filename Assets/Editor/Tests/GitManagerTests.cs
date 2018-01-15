@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using LibGit2Sharp;
 using NUnit.Framework;
 using UniGit;
@@ -61,4 +62,29 @@ public class GitManagerTests : TestRepoFixture
             lockedFileStream.Dispose();
         }
     }
+
+	[Test]
+	public void RepositoryIgnoresFolderPaths()
+	{
+		string folderPath = Path.Combine(gitManager.RepoPath, "Test Folder");
+		Directory.CreateDirectory(folderPath);
+		string folderMetaPath = Path.Combine(gitManager.RepoPath, "Test Folder.meta");
+		File.WriteAllText(folderMetaPath,string.Empty);
+		string imagePath = Path.Combine(gitManager.RepoPath, "Test Folder.png");
+		File.WriteAllText(imagePath,string.Empty);
+		string imageMetaPath = Path.Combine(gitManager.RepoPath, "Test Folder.png.meta");
+		File.WriteAllText(imageMetaPath,string.Empty);
+
+		string[] paths = gitManager.GetPathWithMeta(folderPath).ToArray();
+		Assert.AreEqual(1,paths.Length);
+		Assert.Contains(folderMetaPath,paths);
+
+		paths = gitManager.GetPathWithMeta(imagePath).ToArray();
+		Assert.AreEqual(2,paths.Length);
+		Assert.Contains(imagePath,paths);
+		Assert.Contains(imageMetaPath,paths);
+
+		gitManager.MarkDirty(folderPath);
+		gitCallbacks.IssueEditorUpdate();
+	}
 }

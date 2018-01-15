@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 
 namespace UniGit
 {
-	public class GitDiffWindow : GitUpdatableWindow, IHasCustomMenu
+	public class GitDiffWindow : GitUpdatableWindow, IHasCustomMenu, IComparer<GitDiffWindow.StatusListEntry>
 	{
 		private const string WindowName = "Git Diff";
 
@@ -265,7 +265,7 @@ namespace UniGit
 			try
 			{
 				if(statusList == null)statusList = new StatusList();
-				statusList.Setup(settings.sortType, settings.sortDir, gitSettings, gitManager.RepoPath);
+				statusList.Setup(gitSettings);
 
 				if (paths == null || paths.Length <= 0)
 				{
@@ -277,9 +277,9 @@ namespace UniGit
 						status.Lock();
 						foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
 						{
-							statusList.Add(entry,false);
+							statusList.Add(entry,null);
 						}
-						statusList.Sort();
+						statusList.Sort(this);
 						status.Unlock();
 					}
 					finally
@@ -300,7 +300,7 @@ namespace UniGit
 							GitStatusEntry entry;
 							if (status.Get(path,out entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
 							{
-								statusList.Add(entry,true);
+								statusList.Add(entry,this);
 							}
 						}
 					}
@@ -876,7 +876,7 @@ namespace UniGit
 				EditorGUIUtility.AddCursorRect(stageWarnningRect, MouseCursor.Link);
 				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Upstaged changed pending. Stage to update index."), GUIStyle.none))
 				{
-					string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+					string[] paths = gitManager.GetPathWithMeta(info.Path).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 					{
 						gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
@@ -894,7 +894,7 @@ namespace UniGit
 			{
 				Object asset = null;
 				if(GitManager.IsPathInAssetFolder(filePath))
-					asset = AssetDatabase.LoadAssetAtPath(filePath.EndsWith(".meta") ? AssetDatabase.GetAssetPathFromTextMetaFilePath(filePath) : filePath, typeof(Object));
+					asset = AssetDatabase.LoadAssetAtPath(GitManager.IsMetaPath(filePath) ? GitManager.AssetPathFromMeta(filePath) : filePath, typeof(Object));
 
 				string extension = Path.GetExtension(filePath);
 				GUIContent tmpContent = GUIContent.none;
@@ -966,7 +966,7 @@ namespace UniGit
 					bool updateFlag = false;
 					if (GitManager.CanStage(info.State))
 					{
-						string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+						string[] paths = gitManager.GetPathWithMeta(info.Path).ToArray();
 						if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 						{
 							gitManager.AsyncStage(paths).onComplete += (o)=>{ Repaint(); };
@@ -980,7 +980,7 @@ namespace UniGit
 					}
 					else if (GitManager.CanUnstage(info.State))
 					{
-						string[] paths = GitManager.GetPathWithMeta(info.Path).ToArray();
+						string[] paths = gitManager.GetPathWithMeta(info.Path).ToArray();
 						if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 						{
 							gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
@@ -1285,7 +1285,7 @@ namespace UniGit
 			{
 				menu.AddItem(new GUIContent("Add All"), false, () =>
 				{
-					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
+					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => gitManager.GetPathWithMeta(s.Path)).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 					{
 						gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
@@ -1307,7 +1307,7 @@ namespace UniGit
 			{
 				menu.AddItem(new GUIContent("Remove All"), false, () =>
 				{
-					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => GitManager.GetPathWithMeta(s.Path)).ToArray();
+					string[] paths = statusList.Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => gitManager.GetPathWithMeta(s.Path)).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 					{
 						gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
@@ -1530,7 +1530,7 @@ namespace UniGit
 
 		private void RevertSelectedCallback()
 		{
-			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			string[] paths = statusList.Where(IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.Path)).ToArray();
 			Revert(paths);
 		}
 
@@ -1542,8 +1542,8 @@ namespace UniGit
 
 		private void RevertSelectedObjects()
 		{
-			string[] metaPaths = statusList.Where(IsSelected).Select(e => e.Path).ToArray();
-			Revert(metaPaths);
+			string[] paths = statusList.Where(IsSelected).Select(e => e.Path).SkipWhile(gitManager.IsDirectory).ToArray();
+			Revert(paths);
 		}
 
 		private void Revert(string[] paths)
@@ -1601,7 +1601,7 @@ namespace UniGit
 
 		private void RemoveSelectedCallback()
 		{
-			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			string[] paths = statusList.Where(IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.Path)).ToArray();
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 			{
 				gitManager.AsyncUnstage(paths).onComplete += (o) => { Repaint(); };
@@ -1616,7 +1616,7 @@ namespace UniGit
 
 		private void AddSelectedCallback()
 		{
-			string[] paths = statusList.Where(IsSelected).SelectMany(e => GitManager.GetPathWithMeta(e.Path)).ToArray();
+			string[] paths = statusList.Where(IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.Path)).ToArray();
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
 				gitManager.AsyncStage(paths).onComplete += (o) => { Repaint(); };
@@ -1631,6 +1631,63 @@ namespace UniGit
 		#endregion
 
 		#region Sorting
+
+		public int Compare(StatusListEntry x, StatusListEntry y)
+		{
+			int stateCompare = GetPriority(x.State).CompareTo(GetPriority(y.State));
+			if (stateCompare == 0)
+			{
+				if (settings.sortDir == SortDir.Descending)
+				{
+					var oldLeft = x;
+					x = y;
+					y = oldLeft;
+				}
+
+				switch (settings.sortType)
+				{
+					case SortType.Name:
+						stateCompare = string.Compare(x.Name, y.Name, StringComparison.InvariantCultureIgnoreCase);
+						break;
+					case SortType.Path:
+						stateCompare = string.Compare(x.Path, y.Path, StringComparison.InvariantCultureIgnoreCase);
+						break;
+					case SortType.ModificationDate:
+						DateTime modifedTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.Path).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitManager.RepoPath, p))));
+						DateTime modifedRightTime = GetClosest(gitManager.GetPathWithMeta(x.Path).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitManager.RepoPath,p))));
+						stateCompare = DateTime.Compare(modifedRightTime,modifedTimeLeft);
+						break;
+					case SortType.CreationDate:
+						DateTime createdTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.Path).Select(p => File.GetCreationTime(UniGitPath.Combine(gitManager.RepoPath,p))));
+						DateTime createdRightTime = GetClosest(gitManager.GetPathWithMeta(y.Path).Select(p => File.GetCreationTime(UniGitPath.Combine(gitManager.RepoPath,p))));
+						stateCompare = DateTime.Compare(createdRightTime,createdTimeLeft);
+						break;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			}
+			if (stateCompare == 0)
+			{
+				stateCompare = String.Compare(x.Path, y.Path, StringComparison.Ordinal);
+			}
+			return stateCompare;
+		}
+
+		private DateTime GetClosest(IEnumerable<DateTime> dates)
+		{
+			DateTime now = DateTime.MaxValue;
+			DateTime closest = DateTime.Now;
+			long min = long.MaxValue;
+
+			foreach (DateTime date in dates)
+				if (Math.Abs(date.Ticks - now.Ticks) < min)
+				{
+					min = date.Ticks - now.Ticks;
+					closest = date;
+				}
+
+			return closest;
+		}
 
 		private static int GetPriority(FileStatus status)
 		{
@@ -1694,10 +1751,7 @@ namespace UniGit
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
 			[SerializeField] private List<StatusListEntry> entires;
-			private SortType sortType;
-			private SortDir sortDir;
 			private GitSettingsJson gitSettings;
-			private string gitPath;
 			private readonly object lockObj;
 
 			public StatusList()
@@ -1706,19 +1760,16 @@ namespace UniGit
 				lockObj = new object();
 			}
 
-			internal void Setup(SortType sortType, SortDir sortDir, GitSettingsJson gitSettings,string gitPath)
+			internal void Setup(GitSettingsJson gitSettings)
 			{
-				this.gitPath = gitPath;
 				this.gitSettings = gitSettings;
-				this.sortType = sortType;
-				this.sortDir = sortDir;
 			}
 
-			internal void Add(GitStatusEntry entry,bool sorted)
+			internal void Add(GitStatusEntry entry,IComparer<StatusListEntry> sorter)
 			{
 				StatusListEntry statusEntry;
 
-				if (entry.Path.EndsWith(".meta"))
+				if (GitManager.IsMetaPath(entry.Path))
 				{
 					string mainAssetPath = GitManager.AssetPathFromMeta(entry.Path);
 					if (!gitSettings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) return;
@@ -1744,15 +1795,15 @@ namespace UniGit
 					statusEntry = new StatusListEntry(entry.Path, entry.Status, MetaChangeEnum.Object);
 				}
 
-				if(sorted) AddSorted(statusEntry);
+				if(sorter != null) AddSorted(statusEntry,sorter);
 				else entires.Add(statusEntry);
 			}
 
-			private void AddSorted(StatusListEntry entry)
+			private void AddSorted(StatusListEntry entry,IComparer<StatusListEntry> sorter)
 			{
 				for (int i = 0; i < entires.Count; i++)
 				{
-					int compare = SortHandler(entires[i], entry);
+					int compare = sorter.Compare(entires[i], entry);
 					if (compare > 0)
 					{
 						entires.Insert(i,entry);
@@ -1763,72 +1814,16 @@ namespace UniGit
 				entires.Add(entry);
 			}
 
-			public void Sort()
+			public void Sort(IComparer<StatusListEntry> sorter)
 			{
-				entires.Sort(SortHandler);
-			}
-
-			private int SortHandler(StatusListEntry left, StatusListEntry right)
-			{
-				int stateCompare = GetPriority(left.State).CompareTo(GetPriority(right.State));
-				if (stateCompare == 0)
-				{
-					if (sortDir == SortDir.Descending)
-					{
-						var oldLeft = left;
-						left = right;
-						right = oldLeft;
-					}
-
-					switch (sortType)
-					{
-						case SortType.Name:
-							stateCompare = string.Compare(left.Name, right.Name, StringComparison.InvariantCultureIgnoreCase);
-							break;
-						case SortType.Path:
-							stateCompare = string.Compare(left.Path, right.Path, StringComparison.InvariantCultureIgnoreCase);
-							break;
-						case SortType.ModificationDate:
-							DateTime modifedTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitPath, p))));
-							DateTime modifedRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitPath,p))));
-							stateCompare = DateTime.Compare(modifedRightTime,modifedTimeLeft);
-							break;
-						case SortType.CreationDate:
-							DateTime createdTimeLeft = GetClosest(GitManager.GetPathWithMeta(left.Path).Select(p => File.GetCreationTime(UniGitPath.Combine(gitPath,p))));
-							DateTime createdRightTime = GetClosest(GitManager.GetPathWithMeta(right.Path).Select(p => File.GetCreationTime(UniGitPath.Combine(gitPath,p))));
-							stateCompare = DateTime.Compare(createdRightTime,createdTimeLeft);
-							break;
-						default:
-							throw new ArgumentOutOfRangeException();
-					}
-				}
-				if (stateCompare == 0)
-				{
-					stateCompare = String.Compare(left.Path, right.Path, StringComparison.Ordinal);
-				}
-				return stateCompare;
-			}
-
-			private DateTime GetClosest(IEnumerable<DateTime> dates)
-			{
-				DateTime now = DateTime.MaxValue;
-				DateTime closest = DateTime.Now;
-				long min = long.MaxValue;
-
-				foreach (DateTime date in dates)
-				if (Math.Abs(date.Ticks - now.Ticks) < min)
-				{
-					min = date.Ticks - now.Ticks;
-					closest = date;
-				}
-				return closest;
+				entires.Sort(sorter);
 			}
 
 			public void RemoveRange(string[] paths)
 			{
 				foreach (var path in paths)
 				{
-					if (path.EndsWith(".meta"))
+					if (GitManager.IsMetaPath(path))
 					{
 						var assetPath = GitManager.AssetPathFromMeta(path);
 						for (int i = entires.Count-1; i >= 0; i--)

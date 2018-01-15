@@ -319,6 +319,7 @@ namespace UniGit
 			foreach (var path in paths)
 			{
 				string fixedPath = path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
+				if(IsDirectory(fixedPath)) continue;
 				if(!gitData.DirtyFilesQueue.Contains(fixedPath))
 					gitData.DirtyFilesQueue.Add(fixedPath);
 			}
@@ -587,10 +588,11 @@ namespace UniGit
 
 		public bool CanBlame(string path)
 		{
+			if (IsDirectory(path)) return false;
 			return repository.Head[path] != null;
 		}
 
-		public void AutoStage(string[] paths)
+		public void AutoStage(params string[] paths)
 		{
 			if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
@@ -668,13 +670,66 @@ namespace UniGit
 		{
 			return watchers.Remove(watcher);
 		}
+
+		public bool IsDirectory(string path)
+		{
+			if (Path.IsPathRooted(path))
+			{
+				return Directory.Exists(UniGitPath.Combine(repoPath,path));
+			}
+			return Directory.Exists(path);
+		}
+
+		#region Enumeration helpers
+
+		public IEnumerable<string> GetPathWithMeta(string path)
+		{
+			if (IsMetaPath(path))
+			{
+				string assetPath = AssetPathFromMeta(path);
+				yield return path;
+				//if the asset belonging to the meta file is a folder just return the meta
+				if (IsDirectory(assetPath)) yield break;
+				if (!string.IsNullOrEmpty(assetPath))
+				{
+					yield return assetPath;
+				}
+			}
+			else
+			{
+				string metaPath = MetaPathFromAsset(path);
+				//if the path is a directory then return only it's meta path
+				if (IsDirectory(path))
+				{
+					yield return metaPath;
+					yield break;
+				}
+				if (!string.IsNullOrEmpty(metaPath))
+				{
+					yield return path;
+					yield return metaPath;
+				}
+			}
+		}
+
+		public IEnumerable<string> GetPathsWithMeta(IEnumerable<string> paths)
+		{
+			return paths.SelectMany(GetPathWithMeta);
+		}
+
+		public string GetRelativePath(string rootPath)
+		{
+			return rootPath.Replace(repoPath, "");
+		}
+		#endregion
+
 		#endregion
 
 		#region Static Helpers
 
 		public static bool IsEmptyFolderMeta(string path)
 		{
-			if (path.EndsWith(".meta"))
+			if (IsMetaPath(path))
 			{
 				return IsEmptyFolder(path.Substring(0, path.Length - 5));
 			}
@@ -690,14 +745,9 @@ namespace UniGit
 			return false;
 		}
 
-		public static bool IsDirectory(string path)
-		{
-			return Directory.Exists(path);
-		}
-
 		public static string AssetPathFromMeta(string metaPath)
 		{
-			if (metaPath.EndsWith(".meta"))
+			if (IsMetaPath(metaPath))
 			{
 				return metaPath.Substring(0, metaPath.Length - 5);
 			}
@@ -722,37 +772,11 @@ namespace UniGit
 		public static bool IsPathInAssetFolder(string path)
 		{
 			return path.StartsWith("Assets");
-
-		}
-		#endregion
-
-		#region Enumeration helpers
-
-		public static IEnumerable<string> GetPathWithMeta(string path)
-		{
-			if (path.EndsWith(".meta"))
-			{
-				if (Path.HasExtension(path)) yield return path;
-				string assetPath = AssetPathFromMeta(path);
-				if (!string.IsNullOrEmpty(assetPath))
-				{
-					yield return assetPath;
-				}
-			}
-			else
-			{
-				if (Path.HasExtension(path)) yield return path;
-				string metaPath = MetaPathFromAsset(path);
-				if (!string.IsNullOrEmpty(metaPath))
-				{
-					yield return metaPath;
-				}
-			}
 		}
 
-		public static IEnumerable<string> GetPathsWithMeta(IEnumerable<string> paths)
+		public static bool IsMetaPath(string path)
 		{
-			return paths.SelectMany(GetPathWithMeta);
+			return path.EndsWith(".meta");
 		}
 		#endregion
 

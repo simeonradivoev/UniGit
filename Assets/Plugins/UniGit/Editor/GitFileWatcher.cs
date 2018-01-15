@@ -85,16 +85,20 @@ namespace UniGit
 
 		private void WatcherActivity(object sender, FileSystemEventArgs e)
 		{
-			if (gitManager != null && !gitManager.Repository.Ignore.IsPathIgnored(e.FullPath) && !GitManager.IsDirectory(e.FullPath))
+			if (gitManager != null)
 			{
-				if (e.ChangeType == WatcherChangeTypes.Renamed)
+				string relativePath = gitManager.GetRelativePath(e.FullPath);
+				if (!gitManager.Repository.Ignore.IsPathIgnored(relativePath) && !gitManager.IsDirectory(relativePath))
 				{
-					gitManager.MarkDirty(e.FullPath);
-					gitManager.MarkDirty(((RenamedEventArgs)e).OldFullPath);
-				}
-				else
-				{
-					gitManager.MarkDirty(e.FullPath);
+					if (e.ChangeType == WatcherChangeTypes.Renamed)
+					{
+						gitManager.MarkDirty(relativePath);
+						gitManager.MarkDirty(relativePath);
+					}
+					else
+					{
+						gitManager.MarkDirty(relativePath);
+					}
 				}
 			}
 		}

@@ -64,9 +64,9 @@ namespace UniGit
 						if (GUILayout.Button(GitGUI.GetTempContent(chunk), GitGUI.Styles.BreadcrumMid))
 						{
 							string assetPath = string.Join("/", pathChunks,0,i+1);
-							if (assetPath.EndsWith(".meta"))
+							if (GitManager.IsMetaPath(assetPath))
 							{
-								assetPath = AssetDatabase.GetAssetPathFromTextMetaFilePath(assetPath);
+								assetPath = GitManager.AssetPathFromMeta(assetPath);
 							}
 							ShowContextMenuForElement(change.Path, assetPath);
 						}
@@ -124,7 +124,7 @@ namespace UniGit
 					EditorGUILayout.LabelField(Path.GetFileName(file.Path));
 					DrawTreeEntry(file.Target as Tree, depth + 1);
 				}
-				else if (!file.Path.EndsWith(".meta"))
+				else if (!GitManager.IsMetaPath(file.Path))
 				{
 					EditorGUI.indentLevel = depth;
 					EditorGUILayout.LabelField(file.Path);
