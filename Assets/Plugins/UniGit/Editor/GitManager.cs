@@ -369,7 +369,9 @@ namespace UniGit
 				DetectRenamesInIndex = gitSettings.DetectRenames,
 				DetectRenamesInWorkDir = gitSettings.DetectRenames,
 				//this might help with locked ignored files hanging the search
-				RecurseIgnoredDirs = false
+				RecurseIgnoredDirs = false,
+				ExcludeSubmodules = true,
+				DisablePathSpecMatch = true
 			};
 		}
 
