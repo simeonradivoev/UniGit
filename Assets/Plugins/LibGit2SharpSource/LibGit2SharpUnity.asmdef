@@ -1,0 +1,8 @@
+{
+    "name": "LibGit2SharpUnity",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

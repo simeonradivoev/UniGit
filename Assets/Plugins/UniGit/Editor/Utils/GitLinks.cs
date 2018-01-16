@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using LibGit2Sharp.Utils;
+using UnityEngine;
 
 namespace UniGit.Utils
 {

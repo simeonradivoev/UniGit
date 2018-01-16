@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 using FilterMode = LibGit2Sharp.FilterMode;
 
 namespace UniGit.Filters

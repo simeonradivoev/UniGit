@@ -1,6 +1,8 @@
 {
     "name": "UniGit",
-    "references": [],
+    "references": [
+        "LibGit2SharpUnity"
+    ],
     "includePlatforms": [
         "Editor"
     ],
