@@ -94,9 +94,9 @@ namespace UniGit
 			{
 				if (data.Initialized)
 				{
-					isUpdating = true;
 					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status))
 					{
+						isUpdating = true;
 						gitManager.ActionQueue.Enqueue(() =>
 						{
 							try
@@ -113,6 +113,7 @@ namespace UniGit
 					else
 					{
 						if(!data.RepositoryStatus.TryEnterLock()) return;
+						isUpdating = true;
 						GitProfilerProxy.BeginSample("Git Project Window status tree building");
 						try
 						{
