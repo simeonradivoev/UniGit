@@ -99,12 +99,13 @@ namespace UniGit
 				{
 					if (e.ChangeType == WatcherChangeTypes.Renamed)
 					{
-						gitManager.MarkDirty(relativePath);
-						gitManager.MarkDirty(relativePath);
+						var relativeOldPath = ((RenamedEventArgs) e).OldFullPath;
+						gitManager.MarkDirtyAuto(relativePath);
+						gitManager.MarkDirtyAuto(relativeOldPath);
 					}
 					else
 					{
-						gitManager.MarkDirty(relativePath);
+						gitManager.MarkDirtyAuto(relativePath);
 					}
 				}
 			}

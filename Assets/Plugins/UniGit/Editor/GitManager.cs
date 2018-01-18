@@ -267,13 +267,13 @@ namespace UniGit
 					}
 					else
 					{
-						MarkDirty(pathsFinal);
+						MarkDirtyAuto(pathsFinal);
 					}
 				}
 				else
 				{
 					if (autoStage) GitCommands.Stage(repository, pathsFinal);
-					MarkDirty(pathsFinal);
+					MarkDirtyAuto(pathsFinal);
 				}
 			}
 		}
@@ -292,7 +292,7 @@ namespace UniGit
 				else
 				{
 					GitCommands.Unstage(repository, pathsFinal);
-					MarkDirty(pathsFinal);
+					MarkDirtyAuto(pathsFinal);
 				}
 			}
 		}
@@ -308,9 +308,10 @@ namespace UniGit
 			}
 		}
 
-		public void MarkDirty()
+		public void MarkDirtyAuto(params string[] paths)
 		{
-			repositoryDirty = true;
+			if(gitSettings.LazyMode) MarkDirty(paths);
+			else MarkDirty();
 		}
 
 		public void MarkDirty(bool reloadRepo)
@@ -321,7 +322,14 @@ namespace UniGit
 
 		public void MarkDirty(params string[] paths)
 		{
-			MarkDirty((IEnumerable<string>)paths);
+			if (paths.Length <= 0)
+			{
+				repositoryDirty = true;
+			}
+			else
+			{
+				MarkDirty((IEnumerable<string>)paths);
+			}
 		}
 
 		public void MarkDirty(IEnumerable<string> paths)
@@ -366,8 +374,8 @@ namespace UniGit
 		{
 			return new StatusOptions()
 			{
-				DetectRenamesInIndex = gitSettings.DetectRenames,
-				DetectRenamesInWorkDir = gitSettings.DetectRenames,
+				DetectRenamesInIndex = gitSettings.DetectRenames.HasFlag(GitSettingsJson.RenameTypeEnum.RenameInIndex),
+				DetectRenamesInWorkDir = gitSettings.DetectRenames.HasFlag(GitSettingsJson.RenameTypeEnum.RenameInWorkDir),
 				//this might help with locked ignored files hanging the search
 				RecurseIgnoredDirs = false,
 				ExcludeSubmodules = true,
@@ -617,7 +625,7 @@ namespace UniGit
 			else
 			{
 				GitCommands.Stage(repository,paths);
-				MarkDirty(paths);
+				MarkDirtyAuto(paths);
 			}
 		}
 
@@ -628,7 +636,7 @@ namespace UniGit
 			    GitCommands.Stage(repository,paths);
 			}, (o) =>
 			{
-				MarkDirty(paths);
+				MarkDirtyAuto(paths);
 				asyncStages.RemoveAll(s => s.Equals(o));
 				callbacks.IssueAsyncStageOperationDone(o);
 			});
@@ -645,7 +653,7 @@ namespace UniGit
 			else
 			{
 			    GitCommands.Unstage(repository, paths);
-				MarkDirty(paths);
+				MarkDirtyAuto(paths);
 			}
 		}
 
@@ -656,7 +664,7 @@ namespace UniGit
 			    GitCommands.Unstage(repository,paths);
 			}, (o) =>
 			{
-				MarkDirty(paths);
+				MarkDirtyAuto(paths);
 				asyncStages.RemoveAll(s => s.Equals(o));
 				callbacks.IssueAsyncStageOperationDone(o);
 			});

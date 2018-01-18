@@ -93,7 +93,7 @@ namespace UniGit
 			if (externalManager.TakeRevert(paths))
 			{
 				gitCallbacks.IssueAssetDatabaseRefresh();
-				gitManager.MarkDirty(paths);
+				gitManager.MarkDirtyAuto(paths);
 				return;
 			}
 
@@ -113,7 +113,7 @@ namespace UniGit
 			}
 			
 			gitCallbacks.IssueAssetDatabaseRefresh();
-			gitManager.MarkDirty(paths);
+			gitManager.MarkDirtyAuto(paths);
 		}
 
 		[MenuItem("Assets/Git/Revert",true, priority = 80), UsedImplicitly]

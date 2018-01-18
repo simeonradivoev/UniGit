@@ -246,6 +246,7 @@ namespace UniGit
 
 					if (currentSection == null)
 					{
+						//the first normal section before any changes
 						var prevNormalSection = new ChangeSection(false);
 						prevNormalSection.addedStartLine = 1;
 						prevNormalSection.removedStartLine = 1;
@@ -261,14 +262,14 @@ namespace UniGit
 					}
 					else
 					{
-						var prevNormalSection = new ChangeSection(false);
+						var nextNormalSection = new ChangeSection(false);
 						var b = new NormalBlob();
 
 						int start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
 						int count = (newSection.addedStartLine - (currentSection.addedStartLine + currentSection.addedLineCount));
 
-						prevNormalSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
-						prevNormalSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
+						nextNormalSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
+						nextNormalSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
 
 						while (lastIndexFileLine < start)
 						{
@@ -282,11 +283,8 @@ namespace UniGit
 							lastIndexFileLine++;
 						}
 
-						prevNormalSection.addedLineCount = prevNormalSection.changeBlobs.Count;
-						prevNormalSection.removedLineCount = prevNormalSection.changeBlobs.Count;
-
-						prevNormalSection.changeBlobs.Add(b);
-						changeSections.Add(prevNormalSection);
+						nextNormalSection.changeBlobs.Add(b);
+						changeSections.Add(nextNormalSection);
 					}
 
 					changeSections.Add(newSection);
@@ -327,8 +325,15 @@ namespace UniGit
 
 			if (currentSection != null)
 			{
+				var lastSection = new ChangeSection(false);
 				var lastNormalBlob = new NormalBlob();
-				while (lastIndexFileLine < currentSection.addedStartLine + currentSection.addedLineCount - 1)
+
+				lastSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
+				lastSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
+
+				int start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
+
+				while (lastIndexFileLine < start)
 				{
 					indexFileReader.ReadLine();
 					lastIndexFileLine++;
@@ -339,7 +344,9 @@ namespace UniGit
 					lastNormalBlob.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
 					lastIndexFileLine++;
 				}
-				currentSection.changeBlobs.Add(lastNormalBlob);
+				lastSection.changeBlobs.Add(lastNormalBlob);
+
+				changeSections.Add(lastSection);
 
 				maxLines = changeSections.Sum(s => s.changeBlobs.Sum(b => b.Lines));
 				totalLinesHeight = maxLines * EditorGUIUtility.singleLineHeight;
@@ -391,6 +398,11 @@ namespace UniGit
 				{
 					newSection.addedLineCount = 1;
 				}
+
+				if (newSection.addedLineCount == 0)
+				{
+					newSection.addedStartLine++;
+				}
 			}
 			if (removedMatch.Success)
 			{
@@ -399,7 +411,11 @@ namespace UniGit
 				{
 					newSection.removedLineCount = 1;
 				}
-				newSection.removedLineCount = Mathf.Max(newSection.removedLineCount, 0);
+
+				if (newSection.removedLineCount == 0)
+				{
+					newSection.removedStartLine++;
+				}
 			}
 			return newSection;
 		}
@@ -681,76 +697,86 @@ namespace UniGit
 
 			GUI.Box(new Rect(0,0,maxLineNumWidth,totalLinesHeight),GUIContent.none, GitGUI.Styles.GroupBox);
 
+			int currentScrollLine = Mathf.FloorToInt(scrollVertical / EditorGUIUtility.singleLineHeight);
+			int linesVisible = Mathf.FloorToInt(rect.height / EditorGUIUtility.singleLineHeight)+1;
+			int visibleLineCount = 0;
+
 			foreach (var changeSection in changeSections)
 			{
 				int line = showAdd ? changeSection.addedStartLine : changeSection.removedStartLine;
 				for (int b = 0; b < changeSection.changeBlobs.Count; b++)
 				{
+					int visibleLineOffset = Mathf.Max(currentScrollLine - visibleLineCount,0);
 					var blob = changeSection.changeBlobs[b];
+
 					if (blob is NormalBlob)
 					{
 						var normalBlob = ((NormalBlob) blob);
-						for (int i = 0; i < normalBlob.lines.Count; i++)
+						for (int i = visibleLineOffset; i < Mathf.Min(normalBlob.lines.Count,visibleLineOffset + linesVisible); i++)
 						{
-							Rect lineRect = new Rect(maxLineNumWidth, height, maxLineWidth, EditorGUIUtility.singleLineHeight);
+							float currentHeight = height + i * EditorGUIUtility.singleLineHeight;
+							int currentLine = line + i;
+							Rect lineRect = new Rect(maxLineNumWidth, currentHeight, maxLineWidth, EditorGUIUtility.singleLineHeight);
 							if (IsRectVisible(lineRect, screenRect))
 							{
-								Rect lineNumRect = new Rect(0, height, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
+								Rect lineNumRect = new Rect(0, currentHeight, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
 								GUI.backgroundColor = new Color(0, 0, 0, 0);
-								GUI.Label(lineNumRect, line.ToString(), styles.LineNum);
+								GUI.Label(lineNumRect, currentLine.ToString(), styles.LineNum);
 								GUI.Label(lineRect, normalBlob.lines[i], styles.NormalLine);
 								GUI.backgroundColor = Color.white;
 
-								DoLineEvents(lineRect, showAdd, line);
+								DoLineEvents(lineRect, showAdd, currentLine);
 								
-								if (showAdd ? line == selectedIndexFileLine : line == selectedOtherFileLine)
+								if (showAdd ? currentLine == selectedIndexFileLine : currentLine == selectedOtherFileLine)
 								{
-									GUI.Box(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, GitGUI.Styles.LightmapEditorSelectedHighlight);
+									GUI.Box(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, GitGUI.Styles.LightmapEditorSelectedHighlight);
 								}
 							}
-							line++;
-							height += EditorGUIUtility.singleLineHeight;
 						}
+
+						visibleLineCount += normalBlob.Lines;
+						height += EditorGUIUtility.singleLineHeight * normalBlob.lines.Count;
 					}
 					else if (blob is AddRemoveBlob)
 					{
 						var addRemoveBlob = (AddRemoveBlob)blob;
-						for (int i = 0; i < addRemoveBlob.maxCount; i++)
+						List<string> lines = showAdd ? addRemoveBlob.addedLines : addRemoveBlob.removedLines;
+						for (int i = visibleLineOffset; i < Mathf.Min(addRemoveBlob.maxCount,visibleLineOffset + linesVisible); i++)
 						{
-							List<string> lines = showAdd ? addRemoveBlob.addedLines : addRemoveBlob.removedLines;
-							Rect lineRect = new Rect(maxLineNumWidth, height, Mathf.Max(maxLineWidth,rect.width - maxLineNumWidth), EditorGUIUtility.singleLineHeight);
+							float currentHeight = height + i * EditorGUIUtility.singleLineHeight;
+							int currentLine = line + i;
+							Rect lineRect = new Rect(maxLineNumWidth, currentHeight, Mathf.Max(maxLineWidth,rect.width - maxLineNumWidth), EditorGUIUtility.singleLineHeight);
 							if (IsRectVisible(lineRect, screenRect))
 							{
 								if (i < lines.Count)
 								{
 									if (isRapaint)
 									{
-										Rect lineNumRect = new Rect(0, height, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
+										Rect lineNumRect = new Rect(0, currentHeight, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
 										GUI.backgroundColor = showAdd ? new Color(0, 0.8f, 0, 0.2f) : new Color(1, 0, 0, 0.15f);
-										styles.LineNum.Draw(lineNumRect,GitGUI.GetTempContent(line.ToString()),-1);
+										styles.LineNum.Draw(lineNumRect,GitGUI.GetTempContent(currentLine.ToString()),-1);
 										GUI.backgroundColor = showAdd ? new Color(0, 1, 0, 0.1f) : new Color(1, 0, 0, 0.1f);
 										styles.NormalLine.Draw(lineRect,GitGUI.GetTempContent(lines[i]),-1);
 										GUI.backgroundColor = Color.white;
 									}
 
-									DoLineEvents(lineRect, showAdd, line);
+									DoLineEvents(lineRect, showAdd, currentLine);
 
-									if (showAdd ? line == selectedIndexFileLine : line == selectedOtherFileLine)
+									if (showAdd ? currentLine == selectedIndexFileLine : currentLine == selectedOtherFileLine)
 									{
-										if(isRapaint) (GitGUI.Styles.LightmapEditorSelectedHighlight).Draw(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
+										if(isRapaint) (GitGUI.Styles.LightmapEditorSelectedHighlight).Draw(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
 									}
 								}
 								else if(isRapaint)
 								{
 									GUI.backgroundColor = new Color(0, 0, 0, 0.05f);
-									styles.NormalLine.Draw(new Rect(0, height, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
+									styles.NormalLine.Draw(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
 									GUI.backgroundColor = Color.white;
 								}
 							}
-							if(i < lines.Count)
-								line++;
-							height += EditorGUIUtility.singleLineHeight;
 						}
+						visibleLineCount += addRemoveBlob.maxCount;
+						height += EditorGUIUtility.singleLineHeight * addRemoveBlob.maxCount;
 					}
 				}
 			}

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using UniGit.Settings;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 #pragma warning disable 618
 
@@ -67,7 +64,7 @@ namespace UniGit
 		public ThreadingType Threading = DefalutThreadingType;
 		public bool UseGavatar = true;
 		public float MaxCommitTextAreaSize = 120;
-		public bool DetectRenames = true;
+		public RenameTypeEnum DetectRenames = RenameTypeEnum.All;
 		public bool UseSimpleContextMenus;
 		public bool ReadFromFile;
 		public bool DisableGitLFS;
@@ -117,6 +114,16 @@ namespace UniGit
 			All = -1
 		}
 
+		[Flags]
+		[Serializable]
+		public enum RenameTypeEnum
+		{
+			None = 0,
+			RenameInIndex = 1 << 0,
+			RenameInWorkDir = 1 << 1,
+			All = -1
+		}
+
 		public void Copy(GitSettings settings)
 		{
 			AutoStage = settings.AutoStage;
@@ -129,7 +136,7 @@ namespace UniGit
 			Threading = (settings.GitStatusMultithreaded ? DefalutThreadingType : 0);
 			UseGavatar = settings.UseGavatar;
 			MaxCommitTextAreaSize = settings.MaxCommitTextAreaSize;
-			DetectRenames = settings.DetectRenames;
+			DetectRenames = settings.DetectRenames ? RenameTypeEnum.All : RenameTypeEnum.None;
 		}
 
 		internal void MarkDirty()

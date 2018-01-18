@@ -63,7 +63,13 @@ namespace UniGit.Settings
 				
 				gitSettings.UseGavatar = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Gavatar", "Load Gavatars based on the committer's email address."), gitSettings.UseGavatar);
 				gitSettings.MaxCommitTextAreaSize = EditorGUILayout.DelayedFloatField(GitGUI.GetTempContent("Max Commit Text Area Size", "The maximum height the commit text area can expand to."), gitSettings.MaxCommitTextAreaSize);
-				gitSettings.DetectRenames = EditorGUILayout.Toggle(GitGUI.GetTempContent("Detect Renames", "Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works."), gitSettings.DetectRenames);
+				GUIContent detectRenamesContent = GitGUI.GetTempContent("Detect Renames", "Detect Renames. This will make UniGit detect rename changes of files. Note that this feature is not always working as expected do the the modular updating and how Git itself works.");
+				if (gitSettings.LazyMode)
+				{
+					detectRenamesContent.image = GitGUI.Textures.WarrningIconSmall;
+					detectRenamesContent.tooltip = "Rename Detection will not work properly in preview with lazy update, altho they WILL still be detected by Git internally.";
+				}
+				gitSettings.DetectRenames = (GitSettingsJson.RenameTypeEnum)EditorGUILayout.EnumFlagsField(detectRenamesContent,gitSettings.DetectRenames);
 				if (EditorGUI.EndChangeCheck())
 				{
 					save = true;
@@ -72,7 +78,7 @@ namespace UniGit.Settings
 
 				EditorGUI.BeginChangeCheck();
 				gitSettings.UseSimpleContextMenus = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Simple Context Menus", "Use Unity's default context menu on Diff window, instead of the UniGit one (with icons and animations)."), gitSettings.UseSimpleContextMenus);
-				gitSettings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload, as well as leaving and entering play mode."), gitSettings.LazyMode);
+				gitSettings.LazyMode = EditorGUILayout.Toggle(GitGUI.GetTempContent("Lazy Update Mode", "Without lazy mode, git status is updated on each assembly reload, leaving and entering play mode, staging, unstaging and any asset change."), gitSettings.LazyMode);
 				gitSettings.TrackSystemFiles = EditorGUILayout.Toggle(GitGUI.GetTempContent("Track System Files", "Should files and folders be tracked that are outside the 'Assets' folder? This should definitely be used if lazy mode is on."), gitSettings.TrackSystemFiles);
 				gitSettings.UseUnityConsole = EditorGUILayout.Toggle(GitGUI.GetTempContent("Use Unity's Console", "Show Info, Warning and Error messages in Unity's builtin console instead of the Git Log."), gitSettings.UseUnityConsole);
 				gitSettings.AnimationType = (GitSettingsJson.AnimationTypeEnum)EditorGUILayout.EnumFlagsField(GitGUI.GetTempContent("Animation Types", "Which animation are allowed?"), gitSettings.AnimationType);
