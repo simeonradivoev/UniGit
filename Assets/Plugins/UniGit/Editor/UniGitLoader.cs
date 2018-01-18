@@ -18,6 +18,7 @@ namespace UniGit
 		public static GitCallbacks GitCallbacks;
 		private static GitReflectionHelper ReflectionHelper;
 		private static GitSettingsJson GitSettings;
+		private static UniGitData uniGitData;
 
 		static UniGitLoader()
 		{
@@ -34,11 +35,12 @@ namespace UniGit
 				string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
 				string settingsPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "Settings.json");
 				string logPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "log.txt");
+				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
 
 				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
 				injectionHelper.Bind<string>().FromInstance(logPath).WithId("logPath");
-				injectionHelper.Bind<UniGitData>().FromMethod(GetUniGitData).NonLazy();
+				injectionHelper.Bind<UniGitData>().FromMethod(c => uniGitData); //must have a getter so that it can be injected 
 				injectionHelper.Bind<GitCallbacks>().FromMethod(GetGitCallbacks);
 				injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
 				injectionHelper.Bind<GitManager>().NonLazy();
@@ -152,19 +154,20 @@ namespace UniGit
 			return c;
 		}
 
-		private static UniGitData GetUniGitData(InjectionHelper.ResolveCreateContext context)
+		private static UniGitData CreateUniGitData()
 		{
 			var existentData = Resources.FindObjectsOfTypeAll<UniGitData>();
 			foreach (var data in existentData)
 			{
 				if (data.Initialized) return data;
 			}
-			return existentData.Length > 0 ? existentData[0] : CreateData(context);
+
+			return existentData.Length > 0 ? existentData[0] : CreateNewGitData();
 		}
 
-		private static UniGitData CreateData(InjectionHelper.ResolveCreateContext context)
+		private static UniGitData CreateNewGitData()
 		{
-			var data = context.injectionHelper.CreateInstance<UniGitData>(context.arg);
+			var data = ScriptableObject.CreateInstance<UniGitData>();
 			data.hideFlags = HideFlags.HideAndDontSave;
 			data.name = "UniGitData";
 			return data;
