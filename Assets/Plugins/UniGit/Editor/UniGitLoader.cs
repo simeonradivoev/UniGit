@@ -100,8 +100,8 @@ namespace UniGit
 
 			injectionHelper.CreateNonLazy();
 
-			GitProjectContextMenus.Init(GitManager, injectionHelper.GetInstance<GitExternalManager>(),GitCallbacks,injectionHelper.GetInstance<ILogger>());
-			GitUnityMenu.Init(GitManager);
+			injectionHelper.InjectStatic(typeof(GitProjectContextMenus));
+			injectionHelper.InjectStatic(typeof(GitUnityMenu));
 		}
 
 		private static void OnWindowAdded(EditorWindow editorWindow)

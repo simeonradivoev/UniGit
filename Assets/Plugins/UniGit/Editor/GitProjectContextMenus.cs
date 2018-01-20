@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,14 +13,24 @@ namespace UniGit
 		private static GitManager gitManager;
 		private static GitExternalManager externalManager;
 		private static GitCallbacks gitCallbacks;
+		private static GitProjectOverlay gitProjectOverlay;
+		private static GitReflectionHelper reflectionHelper;
 		private static ILogger logger;
 
-		internal static void Init(GitManager gitManager,GitExternalManager externalManager,GitCallbacks gitCallbacks,ILogger logger)
+		[UniGitInject]
+		internal static void Init(GitManager gitManager,
+			GitExternalManager externalManager,
+			GitCallbacks gitCallbacks,
+			ILogger logger,
+			GitProjectOverlay gitProjectOverlay,
+			GitReflectionHelper reflectionHelper)
 		{
 			GitProjectContextMenus.gitManager = gitManager;
 			GitProjectContextMenus.externalManager = externalManager;
 			GitProjectContextMenus.gitCallbacks = gitCallbacks;
 			GitProjectContextMenus.logger = logger;
+			GitProjectContextMenus.reflectionHelper = reflectionHelper;
+			GitProjectContextMenus.gitProjectOverlay = gitProjectOverlay;
 		}
 
 		[MenuItem("Assets/Git/Add", priority = 50), UsedImplicitly]
@@ -114,6 +123,11 @@ namespace UniGit
 			
 			gitCallbacks.IssueAssetDatabaseRefresh();
 			gitManager.MarkDirtyAuto(paths);
+			var projectWindow = gitProjectOverlay.ProjectWindows.FirstOrDefault(reflectionHelper.HasFocusFucntion);
+			if (projectWindow != null)
+			{
+				projectWindow.ShowNotification(new GUIContent("Revert Complete!"));
+			}
 		}
 
 		[MenuItem("Assets/Git/Revert",true, priority = 80), UsedImplicitly]
@@ -129,9 +143,6 @@ namespace UniGit
 			EditorUtility.DisplayProgressBar("Reverting File", string.Format("Reverting file {0} {1}%", path, (percent * 100).ToString("####")), percent);
 			if (currentSteps >= totalSteps)
 			{
-				gitManager.MarkDirty();
-				Type type = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
-				EditorWindow.GetWindow(type).ShowNotification(new GUIContent("Revert Complete!"));
 				logger.LogFormat(LogType.Log,"Revert of {0} successful.",path);
 			}
 		}

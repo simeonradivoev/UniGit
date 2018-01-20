@@ -223,6 +223,11 @@ namespace UniGit
 			get { return statusTree; }
 		}
 
+		public List<EditorWindow> ProjectWindows
+		{
+			get { return projectWindows; }
+		}
+
 		#region Static Helpers
 
 		public static void RepaintProjectWidnow()

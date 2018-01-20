@@ -1581,6 +1581,9 @@ namespace UniGit
 			try
 			{
 				gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions() { CheckoutModifiers = CheckoutModifiers.Force, OnCheckoutProgress = OnRevertProgress });
+				gitManager.MarkDirtyAuto(paths);
+				gitCallbacks.IssueAssetDatabaseRefresh();
+				GitGUI.ShowNotificationOnWindow<GitDiffWindow>(new GUIContent("Revert Complete!"),false);
 			}
 			finally
 			{
@@ -1617,8 +1620,6 @@ namespace UniGit
 			if (currentSteps >= totalSteps)
 			{
 				EditorUtility.ClearProgressBar();
-				gitManager.MarkDirtyAuto(path);
-				GitGUI.ShowNotificationOnWindow<GitDiffWindow>(new GUIContent("Revert Complete!"),false);
 			}
 		}
 

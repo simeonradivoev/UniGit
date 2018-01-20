@@ -1,7 +1,6 @@
 ﻿using JetBrains.Annotations;
 using UniGit.Utils;
 using UnityEditor;
-using UnityEngine;
 
 namespace UniGit
 {
@@ -9,6 +8,7 @@ namespace UniGit
 	{
 		private static GitManager gitManager;
 
+		[UniGitInject]
 		internal static void Init(GitManager gitManager)
 		{
 			GitUnityMenu.gitManager = gitManager;

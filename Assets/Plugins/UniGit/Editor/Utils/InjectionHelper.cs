@@ -9,6 +9,9 @@ namespace UniGit.Utils
 {
 	public class InjectionHelper : IDisposable
 	{
+		private const BindingFlags InjectMethodStaticFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+		private const BindingFlags InjectMethodInstanceFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
+
 		private readonly List<Resolve> resolves;
 	    private InjectionHelper parent;
 		private Resolve injectorResolve;
@@ -27,14 +30,14 @@ namespace UniGit.Utils
 
 		public Resolve Bind(Type type)
 		{
-			var resolve = new Resolve(this,type);
+			var resolve = new Resolve(type);
 			resolves.Add(resolve);
 			return resolve;
 		}
 
 		public Resolve<T> Bind<T>()
 		{
-			var resolve = new Resolve<T>(this);
+			var resolve = new Resolve<T>();
 			resolves.Add(resolve);
 			return resolve;
 		}
@@ -86,8 +89,17 @@ namespace UniGit.Utils
 
 		public void Inject(object obj)
 		{
-			Type type = obj.GetType();
-			List<MethodInfo> infos = GetInjectMethods(type);
+			Inject(obj.GetType(),obj,InjectMethodInstanceFlags);
+		}
+
+		public void InjectStatic(Type type)
+		{
+			Inject(type,null,InjectMethodStaticFlags);
+		}
+
+		private void Inject(Type type,object obj,BindingFlags flags)
+		{
+			List<MethodInfo> infos = GetInjectMethods(type,flags);
 			foreach (var methodInfo in infos)
 			{
 				var parameterInfos = methodInfo.GetParameters();
@@ -109,13 +121,13 @@ namespace UniGit.Utils
 			}
 		}
 
-		private List<MethodInfo> GetInjectMethods(Type type)
+		private List<MethodInfo> GetInjectMethods(Type type,BindingFlags bindingFlags)
 		{
 			List<MethodInfo> infos = new List<MethodInfo>();
 			Type lastType = type;
 			while (lastType != null)
 			{
-				var methods = lastType.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+				var methods = lastType.GetMethods(bindingFlags);
 				foreach (var method in methods)
 				{
 					if (HasInjectAttribute(method))
@@ -193,7 +205,7 @@ namespace UniGit.Utils
 						foreach (var r in parameterResolves)
 						{
 							CheckCrossDependency(r, injecteeType, parameter);
-							instanceCollection.Add(r.GetInstance());
+							instanceCollection.Add(r.GetInstance(this));
 						}
 					}
 					return instanceCollection;
@@ -204,7 +216,7 @@ namespace UniGit.Utils
 			if (FindResolve(parameter, injecteeType, out resolve))
 			{
 				CheckCrossDependency(resolve, injecteeType, parameter);
-				return resolve.GetInstance();
+				return resolve.GetInstance(this);
 			}
 
 			if (additionalArguments != null)
@@ -299,7 +311,7 @@ namespace UniGit.Utils
 			{
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && string.IsNullOrEmpty(resolve.id))
 				{
-					return (T) resolve.GetInstance();
+					return (T) resolve.GetInstance(this);
 				}
 			}
 			return default(T);
@@ -311,7 +323,7 @@ namespace UniGit.Utils
 			{
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && resolve.id == id)
 				{
-					return (T) resolve.GetInstance();
+					return (T) resolve.GetInstance(this);
 				}
 			}
 			return default(T);
@@ -326,7 +338,7 @@ namespace UniGit.Utils
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && string.IsNullOrEmpty(resolve.id))
 				{
 					resolveCallList.Add(resolve);
-					instances.Add((T)resolve.GetInstance());
+					instances.Add((T)resolve.GetInstance(this));
 				}
 			}
 			return instances;
@@ -338,7 +350,7 @@ namespace UniGit.Utils
 			{
 				if (resolve.IsNonLazy)
 				{
-					resolve.EnsureInstance();
+					resolve.EnsureInstance(this);
 				}
 			}
 		}
@@ -370,14 +382,14 @@ namespace UniGit.Utils
 
 		public class Resolve<T> : Resolve
 		{
-			public Resolve(InjectionHelper injectionHelper) : base(injectionHelper,typeof(T))
+			public Resolve() : base(typeof(T))
 			{
 				
 			}
 
-			public new T GetInstance()
+			public new T GetInstance(InjectionHelper injectionHelper)
 			{
-				return (T)base.GetInstance();
+				return (T)base.GetInstance(injectionHelper);
 			}
 
 			public Resolve<T> FromMethod(Func<ResolveCreateContext,T> method)
@@ -421,12 +433,10 @@ namespace UniGit.Utils
 			internal string id;
 			private object instance;
 			private object[] arg;
-			private readonly InjectionHelper injectionHelper;
 			private bool nonLazy;
 
-			public Resolve(InjectionHelper injectionHelper,Type type)
+			public Resolve(Type type)
 			{
-				this.injectionHelper = injectionHelper;
 				this.type = type;
 				instanceType = type;
 			}
@@ -505,13 +515,13 @@ namespace UniGit.Utils
 				return this;
 			}
 
-			public object GetInstance()
+			public object GetInstance(InjectionHelper injectionHelper)
 			{
-				EnsureInstance();
+				EnsureInstance(injectionHelper);
 				return instance;
 			}
 
-			internal void EnsureInstance()
+			internal void EnsureInstance(InjectionHelper injectionHelper)
 			{
 				if (instance == null)
 				{
