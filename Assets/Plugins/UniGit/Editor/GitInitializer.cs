@@ -15,7 +15,9 @@ namespace UniGit
 		private readonly GitCallbacks callbacks;
 
 		[UniGitInject]
-		public GitInitializer(string repoPath,ILogger logger,GitCallbacks callbacks)
+		public GitInitializer(string repoPath,
+			ILogger logger,
+			GitCallbacks callbacks)
 		{
 			this.repoPath = repoPath;
 			this.logger = logger;

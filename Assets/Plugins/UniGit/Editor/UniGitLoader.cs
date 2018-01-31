@@ -78,32 +78,29 @@ namespace UniGit
 
 		private static void Rebuild(InjectionHelper injectionHelper)
 		{
-			injectionHelper.InjectStatic(typeof(GitUnityMenu));
+			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
 
-			if (Repository.IsValid(injectionHelper.GetInstance<string>("repoPath")))
+			var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();
+			settingsManager.LoadGitSettings();
+
+			//delayed called must be used for serialized properties to be loaded
+			EditorApplication.delayCall += () =>
 			{
-				var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();
-				settingsManager.LoadGitSettings();
+				settingsManager.LoadOldSettingsFile();
+			};
 
-				//delayed called must be used for serialized properties to be loaded
-				EditorApplication.delayCall += () =>
-				{
-					settingsManager.LoadOldSettingsFile();
-				};
+			GitManager = injectionHelper.GetInstance<GitManager>();
+				
+			ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
+			GitSettings = injectionHelper.GetInstance<GitSettingsJson>();
+				
+			GitCallbacks.OnLogEntry += OnLogEntry;
+			GitCallbacks.OnBeforeAssemblyReload += OnBeforeAssemblyReload;
 
-				GitManager = injectionHelper.GetInstance<GitManager>();
-				GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
-				ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
-				GitSettings = injectionHelper.GetInstance<GitSettingsJson>();
+			injectionHelper.CreateNonLazy();
 
-				GitCallbacks.RepositoryCreate += OnRepositoryCreate;
-				GitCallbacks.OnLogEntry += OnLogEntry;
-				GitCallbacks.OnBeforeAssemblyReload += OnBeforeAssemblyReload;
-
-				injectionHelper.CreateNonLazy();
-
-				injectionHelper.InjectStatic(typeof(GitProjectContextMenus));
-			}
+			injectionHelper.InjectStatic(typeof(GitProjectContextMenus));
+			injectionHelper.InjectStatic(typeof(GitUnityMenu));
 		}
 
 		private static void OnWindowAdded(EditorWindow editorWindow)
@@ -116,16 +113,6 @@ namespace UniGit
 		private static void OnEditorUpdate()
 		{
 			if(GitCallbacks != null) GitCallbacks.IssueDelayCall(true);
-		}
-
-		private static void OnRepositoryCreate()
-		{
-			Rebuild(injectionHelper);
-			foreach (var window in GitWindows.Windows)
-			{
-				injectionHelper.Inject(window);
-				window.Repaint();
-			}
 		}
 
 		private static void OnBeforeAssemblyReload()

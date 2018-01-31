@@ -12,6 +12,7 @@ namespace UniGit
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitCallbacks gitCallbacks;
+		private readonly string repoPath;
 		private Regex ignoreFoldersRegex;
 
 		[UniGitInject]
@@ -19,17 +20,41 @@ namespace UniGit
 			GitManager gitManager,
 			GitCallbacks gitCallbacks,
 			GitSettingsJson gitSettings,
+			GitInitializer initializer,
 			[UniGitInjectOptional] bool trackAssetsPath)
 		{
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
+			this.repoPath = repoPath;
 			fileWatchers = new List<FileSystemWatcher>();
 
 			string regexPattern = @".*.git$";
 			if (!trackAssetsPath) regexPattern += "|.*Assets$";
 			ignoreFoldersRegex = new Regex(regexPattern);
 
+			gitCallbacks.OnSettingsChange += OnSettingsChange;
+			gitCallbacks.RepositoryCreate += OnRepositoryCreate;
+
+			if (initializer.IsValidRepo)
+			{
+				CreateWatchers();
+			}
+		}
+
+		private void ClearWatchers()
+		{
+			foreach (var fileWatcher in fileWatchers)
+			{
+				Unsubscribe(fileWatcher);
+				fileWatcher.Dispose();
+			}
+
+			fileWatchers.Clear();
+		}
+
+		private void CreateWatchers()
+		{
 			var mainFileWatcher = new FileSystemWatcher(repoPath)
 			{
 				InternalBufferSize = 4,
@@ -57,8 +82,6 @@ namespace UniGit
 					Subscribe(fileWatcher);
 				}
 			}
-
-			gitCallbacks.OnSettingsChange += OnSettingsChange;
 		}
 
 		private void OnSettingsChange()
@@ -67,6 +90,12 @@ namespace UniGit
 			{
 				fileWatcher.EnableRaisingEvents = gitSettings.TrackSystemFiles;
 			}
+		}
+
+		private void OnRepositoryCreate()
+		{
+			ClearWatchers();
+			CreateWatchers();
 		}
 
 		private bool ShouldTrackDirectory(DirectoryInfo directory)
@@ -130,6 +159,7 @@ namespace UniGit
 		public void Dispose()
 		{
 			gitCallbacks.OnSettingsChange -= OnSettingsChange;
+			gitCallbacks.RepositoryCreate -= OnRepositoryCreate;
 
 			foreach (var fileWatcher in fileWatchers)
 			{

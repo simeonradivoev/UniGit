@@ -13,14 +13,16 @@ namespace UniGit
 		private readonly GitCallbacks gitCallbacks;
 		private readonly string settingsPath;
 		private readonly ILogger logger;
+		private readonly GitInitializer initializer;
 
 		[UniGitInject]
-		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks gitCallbacks,ILogger logger)
+		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks gitCallbacks,ILogger logger,GitInitializer initializer)
 		{
 			this.settings = settings;
 			this.settingsPath = settingsPath;
 			this.gitCallbacks = gitCallbacks;
 			this.logger = logger;
+			this.initializer = initializer;
 
 			gitCallbacks.EditorUpdate += OnEditorUpdate;
 		}
@@ -77,6 +79,8 @@ namespace UniGit
 
 		public void SaveSettingsToFile()
 		{
+			if(!initializer.IsValidRepo) return;
+
 			ValidateSettingsPath();
 			string settingsFilePath = settingsPath;
 

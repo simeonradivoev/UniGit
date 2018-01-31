@@ -55,7 +55,6 @@ namespace UniGit.Utils
 			GUILayout.Label(GitGUI.GetTempContent("Created by: Simeon Radivoev"));
 			GUILayout.Label(GitGUI.GetTempContent("UniGit Version: " + GitManager.Version));
 			GUILayout.Label(GitGUI.GetTempContent("Git Version: " + gitVersion));
-			GUILayout.Label(GitGUI.GetTempContent("LibGit2Sharp Version: " + version.InformationalVersion));
 			GUILayout.Label(GitGUI.GetTempContent("LibGit2Sharp Features: " + version.Features));
 			GUILayout.Label(GitGUI.GetTempContent("License:  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"),EditorStyles.wordWrappedLabel);
 			GUILayout.EndVertical();

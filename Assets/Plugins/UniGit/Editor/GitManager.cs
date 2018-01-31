@@ -64,10 +64,6 @@ namespace UniGit
 
 		private void Initialize()
 		{
-			if (!initializer.IsValidRepo)
-			{
-				return;
-			}
 			callbacks.EditorUpdate += OnEditorUpdate;
 			callbacks.DelayCall += OnDelayedCall;
 			//asset postprocessing
@@ -76,8 +72,7 @@ namespace UniGit
 			callbacks.OnPostprocessDeletedAssets += OnPostprocessDeletedAssets;
 			callbacks.OnPostprocessMovedAssets += OnPostprocessMovedAssets;
 			callbacks.OnPlayModeStateChange += OnPlayModeStateChange;
-
-			CheckNullRepository();
+			callbacks.RepositoryCreate += OnRepositoryCreate;
 		}
 
 		private void OnPlayModeStateChange(PlayModeStateChange stateChange)
@@ -93,6 +88,11 @@ namespace UniGit
 		{
 			if(gitSettings.LazyMode) return;
 			MarkDirty();
+		}
+
+		private void OnRepositoryCreate()
+		{
+			Update(true);
 		}
 
 		public void DeleteRepository()
@@ -125,7 +125,6 @@ namespace UniGit
 			var updateStatus = GetUpdateStatus();
 			if (updateStatus == UpdateStatusEnum.Ready)
 			{
-				CheckNullRepository();
 				if (CanUpdate())
 				{
 					if (repositoryDirty || !gitData.Initialized)
@@ -265,7 +264,7 @@ namespace UniGit
 
 		private void CheckNullRepository()
 		{
-			if (initializer.IsValidRepo && repository == null)
+			if (repository == null && initializer.IsValidRepo)
 			{
 				repository = new Repository(RepoPath);
 				callbacks.IssueOnRepositoryLoad(repository);
@@ -497,6 +496,7 @@ namespace UniGit
 				callbacks.OnPostprocessDeletedAssets -= OnPostprocessDeletedAssets;
 				callbacks.OnPostprocessMovedAssets -= OnPostprocessMovedAssets;
 				callbacks.OnPlayModeStateChange -= OnPlayModeStateChange;
+				callbacks.RepositoryCreate -= OnRepositoryCreate;
 			}
 		}
 
@@ -866,7 +866,11 @@ namespace UniGit
 
 		public Repository Repository
 		{
-			get { return repository; }
+			get
+			{
+				CheckNullRepository();
+				return repository; 
+			}
 		}
 
 		public GitSettingsJson.ThreadingType Threading
