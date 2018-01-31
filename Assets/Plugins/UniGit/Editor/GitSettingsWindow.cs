@@ -46,7 +46,7 @@ namespace UniGit
 
 		private void InitTabs()
 		{
-			if(gitManager == null || !gitManager.IsValidRepo) return;
+			if(gitManager == null || !initializer.IsValidRepo) return;
 			if (tabs != null)
 			{
 				foreach (var settingsTab in tabs)
@@ -69,7 +69,7 @@ namespace UniGit
 
 		protected override void OnInitialize()
 		{
-			if (!gitManager.IsValidRepo) return;
+			if (!initializer.IsValidRepo) return;
 			if (tabs == null)
 			{
 				InitTabs();
@@ -98,9 +98,9 @@ namespace UniGit
 		[UsedImplicitly]
 		private void OnGUI()
 		{
-			if (gitManager == null || !gitManager.IsValidRepo)
+			if (gitManager == null || !initializer.IsValidRepo)
 			{
-				GitHistoryWindow.InvalidRepoGUI(gitManager);
+				GitHistoryWindow.InvalidRepoGUI(initializer);
 				return;
 			}
 

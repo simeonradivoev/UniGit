@@ -39,7 +39,7 @@ public class GitManagerTests : TestRepoFixture
     [UnityTest]
     public IEnumerator RepositoryHandlesLockedFileWhenWithIgnoreStatus()
     {
-        File.AppendAllText(gitManager.GitIgnoreFilePath, "testFile.txt");
+        File.AppendAllText(injectionHelper.GetInstance<GitInitializer>().GitIgnoreFilePath, "testFile.txt");
         string lockedFilePathName = "testFile.txt";
         string lockedFilePath = UniGitPath.Combine(gitManager.RepoPath, lockedFilePathName);
         using (var lockFileStream = File.CreateText(lockedFilePath))

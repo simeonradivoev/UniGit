@@ -2,6 +2,7 @@
 using System.IO;
 using LibGit2Sharp;
 using NUnit.Framework;
+using UniGit;
 using UniGit.Utils;
 using UnityEditor;
 
@@ -17,14 +18,14 @@ public class InitializationTests : TestRepoFixture
 	[Test]
 	public void InitilizeUniGitSettingsFolder_SettingsFolderCreated()
 	{
-		Assert.IsTrue(Directory.Exists(gitManager.GitSettingsFolderPath));
+		Assert.IsTrue(Directory.Exists(injectionHelper.GetInstance<GitInitializer>().GitSettingsFolderPath));
 	}
 
 	[Test]
 	public void InitilizeGitIgnore_GitIgnoreInitilized()
 	{
-		Assert.IsTrue(File.Exists(gitManager.GitIgnoreFilePath));
-		Assert.AreEqual(File.ReadAllText(gitManager.GitIgnoreFilePath),GitIgnoreTemplate.Template);
+		Assert.IsTrue(File.Exists(injectionHelper.GetInstance<GitInitializer>().GitIgnoreFilePath));
+		Assert.AreEqual(File.ReadAllText(injectionHelper.GetInstance<GitInitializer>().GitIgnoreFilePath),GitIgnoreTemplate.Template);
 	}
 
 	/*[Test]

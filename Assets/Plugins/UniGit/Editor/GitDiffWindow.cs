@@ -125,7 +125,7 @@ namespace UniGit
 			this.asyncManager = asyncManager;
 			this.gitOverlay = gitOverlay;
 			this.injectionHelper = injectionHelper;
-			conflictsHandler = new GitConflictsHandler(gitManager, externalManager);
+			conflictsHandler = new GitConflictsHandler(gitManager, externalManager,initializer);
 		}
 
 		protected override void Subscribe(GitCallbacks callbacks)
@@ -326,9 +326,9 @@ namespace UniGit
 
 			if (gitManager != null && gitSettings != null && gitSettings.ReadFromFile)
 			{
-				if (File.Exists(gitManager.GitCommitMessageFilePath))
+				if (File.Exists(initializer.GitCommitMessageFilePath))
 				{
-					var lastWriteTime = File.GetLastWriteTime(gitManager.GitCommitMessageFilePath);
+					var lastWriteTime = File.GetLastWriteTime(initializer.GitCommitMessageFilePath);
 					if (lastWriteTime.CompareTo(settings.lastMessageUpdate) != 0)
 					{
 						settings.lastMessageUpdate = lastWriteTime;
@@ -344,9 +344,9 @@ namespace UniGit
 		{
 			CreateStyles();
 
-			if (gitManager == null || !gitManager.IsValidRepo)
+			if (gitManager == null || !initializer.IsValidRepo)
 			{
-				GitHistoryWindow.InvalidRepoGUI(gitManager);
+				GitHistoryWindow.InvalidRepoGUI(initializer);
 				return;
 			}
 
@@ -482,7 +482,7 @@ namespace UniGit
 			commitMenu.AddSeparator("");
 			commitMenu.AddItem(new GUIContent("Commit Message/Clear"), false, ClearCommitMessage);
 			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), gitSettings.ReadFromFile, ToggleReadFromFile);
-			if (File.Exists(gitManager.GitCommitMessageFilePath))
+			if (File.Exists(initializer.GitCommitMessageFilePath))
 			{
 				commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
 			}
@@ -586,9 +586,9 @@ namespace UniGit
 
 		private void OpenCommitMessageFile()
 		{
-			if (File.Exists(gitManager.GitCommitMessageFilePath))
+			if (File.Exists(initializer.GitCommitMessageFilePath))
 			{
-				Application.OpenURL(gitManager.GitCommitMessageFilePath);
+				Application.OpenURL(initializer.GitCommitMessageFilePath);
 			}
 		}
 
@@ -1127,9 +1127,9 @@ namespace UniGit
 
 		private void ReadCommitMessageFromFile()
 		{
-			if (File.Exists(gitManager.GitCommitMessageFilePath))
+			if (File.Exists(initializer.GitCommitMessageFilePath))
 			{
-				settings.commitMessageFromFile = File.ReadAllText(gitManager.GitCommitMessageFilePath);
+				settings.commitMessageFromFile = File.ReadAllText(initializer.GitCommitMessageFilePath);
 			}
 			else
 			{
@@ -1157,7 +1157,7 @@ namespace UniGit
 		{
 			try
 			{
-				SaveCommitMessageToFile(gitManager, settings.commitMessageFromFile);
+				SaveCommitMessageToFile(initializer, settings.commitMessageFromFile);
 			}
 			catch (Exception e)
 			{
@@ -1168,17 +1168,17 @@ namespace UniGit
 			}
 		}
 
-	    private static void SaveCommitMessageToFile(GitManager gitManager,string message)
+	    private static void SaveCommitMessageToFile(GitInitializer initializer,string message)
 	    {
 	        try
 	        {
-	            string settingsFolder = gitManager.GitSettingsFolderPath;
+	            string settingsFolder = initializer.GitSettingsFolderPath;
 	            if (!Directory.Exists(settingsFolder))
 	            {
 	                Directory.CreateDirectory(settingsFolder);
 	            }
 
-	            File.WriteAllText(gitManager.GitCommitMessageFilePath, message);
+	            File.WriteAllText(initializer.GitCommitMessageFilePath, message);
 	        }
 	        catch (Exception e)
 	        {
@@ -1205,11 +1205,11 @@ namespace UniGit
 			SaveCommitMessage();
 		}
 
-	    internal static void SetCommitMessage(GitManager gitManager,GitSettingsJson gitSettings,string commitMessage)
+	    internal static void SetCommitMessage(GitInitializer initializer,GitManager gitManager,GitSettingsJson gitSettings,string commitMessage)
 	    {
 	        if (gitSettings.ReadFromFile)
 	        {
-	            SaveCommitMessageToFile(gitManager, commitMessage);
+	            SaveCommitMessageToFile(initializer, commitMessage);
 	        }
             gitManager.Prefs.SetString(CommitMessageKey, commitMessage);
         }

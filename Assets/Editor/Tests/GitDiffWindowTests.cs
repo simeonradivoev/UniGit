@@ -49,7 +49,7 @@ public class GitDiffWindowTests : TestRepoFixture
 		injectionHelper.GetInstance<GitSettingsJson>().ReadFromFile = true;
 
 		const string commitText = "First Commit from File Commit Message";
-		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
+		File.WriteAllText(injectionHelper.GetInstance<GitInitializer>().GitCommitMessageFilePath, commitText);
 		diffWindow.Commit();
 		Assert.AreEqual(1,gitManager.Repository.Commits.Count());
 		Assert.AreEqual(commitText,gitManager.Repository.Commits.First().Message);
@@ -62,7 +62,7 @@ public class GitDiffWindowTests : TestRepoFixture
 
 		const string commitText = "Test Message";
 		diffWindow2.Focus();
-		File.WriteAllText(gitManager.GitCommitMessageFilePath, commitText);
+		File.WriteAllText(injectionHelper.GetInstance<GitInitializer>().GitCommitMessageFilePath, commitText);
 		diffWindow.Focus();
 		Assert.AreEqual(commitText, diffWindow.GitDiffSettings.commitMessageFromFile);
 	}

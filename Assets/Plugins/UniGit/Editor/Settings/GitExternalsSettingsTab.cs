@@ -14,8 +14,9 @@ namespace UniGit.Settings
 			GitExternalManager externalManager,
 			UniGitData data,
 			GitSettingsJson gitSettings,
-			GitCallbacks gitCallbacks) 
-			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
+			GitCallbacks gitCallbacks,
+			GitInitializer initializer) 
+			: base(new GUIContent("Externals", "External Programs Helpers"), gitManager, settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
 			this.externalManager = externalManager;
 		}

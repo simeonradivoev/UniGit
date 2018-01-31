@@ -317,9 +317,9 @@ namespace UniGit
 		{
 			CreateStyles();
 
-			if (gitManager == null || !gitManager.IsValidRepo)
+			if (gitManager == null || !initializer.IsValidRepo)
 			{
-				InvalidRepoGUI(gitManager);
+				InvalidRepoGUI(initializer);
 				return;
 			}
 
@@ -420,7 +420,7 @@ namespace UniGit
 					}
 				}
 				
-				GUI.enabled = gitManager.IsValidRepo;
+				GUI.enabled = initializer.IsValidRepo;
 				btRect = new Rect(btRect.x + 64,btRect.y,64,btRect.height);
 				if (GUI.Button(btRect, GitGUI.GetTempContent("Stash", gitOverlay.icons.stashIcon.image), EditorStyles.toolbarButton))
 				{
@@ -943,9 +943,9 @@ namespace UniGit
 		#endregion
 
 		#region Invalid Repo GUI
-		internal static void InvalidRepoGUI(GitManager gitManager)
+		internal static void InvalidRepoGUI(GitInitializer initializer)
 		{
-		    if (gitManager == null)
+		    if (initializer == null)
 		    {
 		        Rect initilizingRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
                 GitGUI.DrawLoading(new Rect(initilizingRect.x, initilizingRect.y, initilizingRect.width, initilizingRect.height), GitGUI.GetTempContent("Initializing..."));
@@ -968,20 +968,18 @@ namespace UniGit
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			GUI.enabled = gitManager != null;
 			if (GUILayout.Button(GitGUI.GetTempContent("Create"), GitGUI.Styles.LargeButton, GUILayout.Height(32), GUILayout.Width(128)))
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					if (gitManager != null && !gitManager.IsValidRepo)
+					if (!initializer.IsValidRepo)
 					{
-						gitManager.InitializeRepositoryAndRecompile();
+						initializer.InitializeRepositoryAndRecompile();
 					}
 					GUIUtility.ExitGUI();
 					return;
 				}
 			}
-			GUI.enabled = true;
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
 			EditorGUILayout.Space();

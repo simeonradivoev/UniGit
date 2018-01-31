@@ -19,6 +19,7 @@ namespace UniGit
 		[NonSerialized] protected ILogger logger;
 		[NonSerialized] private bool lastHadFocus;
 		[NonSerialized] private bool isDirty;
+		[NonSerialized] protected GitInitializer initializer;
 
 		protected virtual void OnEnable()
 		{
@@ -33,11 +34,12 @@ namespace UniGit
 	        UniGitData data,
 	        ILogger logger,
 	        GitSettingsJson gitSettings,
-	        GitCallbacks gitCallbacks)
+	        GitCallbacks gitCallbacks,
+	        GitInitializer initializer)
 		{
 			this.logger = logger;
 			this.gitSettings = gitSettings;
-
+			this.initializer = initializer;
 
 			if (gitManager == null)
 			{
@@ -106,7 +108,7 @@ namespace UniGit
 
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
-			if (!initialized || !gitManager.IsValidRepo || !HasFocus) return;
+			if (!initialized || !initializer.IsValidRepo || !HasFocus) return;
 			OnGitUpdate(status, paths);
 		}
 
@@ -124,7 +126,7 @@ namespace UniGit
 				if (!initialized)
 				{
 					initialized = true;
-					if (!gitManager.IsValidRepo) return;
+					if (!initializer.IsValidRepo) return;
 					isDirty = false;
 					OnInitialize();
 					OnGitManagerUpdateRepositoryInternal(data.RepositoryStatus, null);
@@ -134,7 +136,7 @@ namespace UniGit
 				}
 				else if (isDirty)
 				{
-					if (!gitManager.IsValidRepo) return;
+					if (!initializer.IsValidRepo) return;
 					isDirty = false;
 					OnGitManagerUpdateRepositoryInternal(data.RepositoryStatus, null);
 					//simulate repository loading for first initialization

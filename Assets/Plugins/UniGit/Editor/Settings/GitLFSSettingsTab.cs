@@ -19,8 +19,9 @@ namespace UniGit.Settings
 			InjectionHelper injectionHelper,
 			UniGitData data,
 			GitSettingsJson gitSettings,
-			GitCallbacks gitCallbacks) 
-			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow,data,gitSettings,gitCallbacks)
+			GitCallbacks gitCallbacks,
+			GitInitializer initializer) 
+			: base(new GUIContent("LFS", "Git Large File Storage (beta)"), gitManager,settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
 			this.injectionHelper = injectionHelper;
 			this.lfsManager = lfsManager;

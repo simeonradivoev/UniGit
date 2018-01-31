@@ -6,12 +6,12 @@ namespace UniGit
 {
 	public static class GitUnityMenu
 	{
-		private static GitManager gitManager;
+		private static GitInitializer initializer;
 
 		[UniGitInject]
-		internal static void Init(GitManager gitManager)
+		internal static void Init(GitInitializer initializer)
 		{
-			GitUnityMenu.gitManager = gitManager;
+			GitUnityMenu.initializer = initializer;
 		}
 
         #region Windows
@@ -52,16 +52,16 @@ namespace UniGit
 		[UsedImplicitly,MenuItem("UniGit/Initialize",false,0)]
 		private static void Initilize()
 		{
-			if (!gitManager.IsValidRepo && EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
+			if (!initializer.IsValidRepo && EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 			{
-				gitManager.InitializeRepositoryAndRecompile();
+				initializer.InitializeRepositoryAndRecompile();
 			}
 		}
 
 		[UsedImplicitly,MenuItem("UniGit/Initialize", true, 0)]
 		private static bool InitilizeValidate()
 		{
-			return !gitManager.IsValidRepo;
+			return !initializer.IsValidRepo;
 		}
 
 		[UsedImplicitly,MenuItem("UniGit/Report Issue", false, 0)]

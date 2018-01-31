@@ -26,8 +26,9 @@ namespace UniGit.Settings
 			UniGitData data,
 			ILogger logger,
 			GitSettingsJson gitSettings,
-			GitCallbacks gitCallbacks) 
-			: base(new GUIContent("Branches"), gitManager,settingsWindow,data,gitSettings,gitCallbacks)
+			GitCallbacks gitCallbacks,
+			GitInitializer initializer) 
+			: base(new GUIContent("Branches"), gitManager,settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
 			this.injectionHelper = injectionHelper;
 			this.externalManager = externalManager;

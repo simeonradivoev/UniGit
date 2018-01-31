@@ -16,8 +16,9 @@ namespace UniGit.Settings
 			GitCredentialsManager credentialsManager,
 			UniGitData data,
 			GitSettingsJson gitSettings,
-			GitCallbacks gitCallbacks) 
-			: base(new GUIContent("Security"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
+			GitCallbacks gitCallbacks,
+			GitInitializer initializer) 
+			: base(new GUIContent("Security"), gitManager, settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
 			this.credentialsManager = credentialsManager;
 		}

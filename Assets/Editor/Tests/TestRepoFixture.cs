@@ -31,9 +31,10 @@ public class TestRepoFixture
 		injectionHelper.Bind<IGitResourceManager>().To<GitResourceManagerMock>();
 		injectionHelper.Bind<ILogger>().FromInstance(Debug.unityLogger);
 		injectionHelper.Bind<UniGitData>();
+		injectionHelper.Bind<GitInitializer>();
 
 		gitManager = injectionHelper.GetInstance<GitManager>();
-		gitManager.InitializeRepository();
+		injectionHelper.GetInstance<GitInitializer>().InitializeRepository();
 		gitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
         signature = new Signature("Test", "Test@Test.com", DateTime.Now);
 		data = injectionHelper.GetInstance<UniGitData>();

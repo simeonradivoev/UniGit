@@ -37,6 +37,7 @@ namespace UniGit
 		private readonly GitAsyncManager asyncManager;
 		private readonly List<IGitWatcher> watchers = new List<IGitWatcher>();
 		private readonly ILogger logger;
+		private readonly GitInitializer initializer;
 
 		[UniGitInject]
 		public GitManager(string repoPath, 
@@ -45,7 +46,8 @@ namespace UniGit
 			IGitPrefs prefs, 
 			GitAsyncManager asyncManager,
 			UniGitData gitData,
-			ILogger logger)
+			ILogger logger,
+			GitInitializer initializer)
 		{
 			this.gitData = gitData;
 			this.repoPath = repoPath;
@@ -53,6 +55,7 @@ namespace UniGit
 			this.prefs = prefs;
 			this.asyncManager = asyncManager;
 			this.logger = logger;
+			this.initializer = initializer;
 			gitSettings = settings;
 			gitPath = UniGitPath.Combine(repoPath, ".git");
 
@@ -61,7 +64,7 @@ namespace UniGit
 
 		private void Initialize()
 		{
-			if (!IsValidRepo)
+			if (!initializer.IsValidRepo)
 			{
 				return;
 			}
@@ -90,45 +93,6 @@ namespace UniGit
 		{
 			if(gitSettings.LazyMode) return;
 			MarkDirty();
-		}
-
-		public void InitializeRepository()
-		{
-			Repository.Init(repoPath);
-			Directory.CreateDirectory(GitSettingsFolderPath);
-			string newGitIgnoreFile = GitIgnoreFilePath;
-			if (!File.Exists(newGitIgnoreFile))
-			{
-				File.WriteAllText(newGitIgnoreFile, GitIgnoreTemplate.Template);
-			}
-			else
-			{
-				logger.Log(LogType.Log,"Git Ignore file already present");
-			}
-
-			logger.Log(LogType.Log,"Repository Initialized");
-			Initialize();
-		}
-
-		internal void InitializeRepositoryAndRecompile()
-		{
-			InitializeRepository();
-			callbacks.IssueAssetDatabaseRefresh();
-			callbacks.IssueSaveDatabaseRefresh();
-			callbacks.IssueRepositoryCreate();
-			Update(true);
-		}
-
-		internal static void Recompile()
-		{
-			var importer = PluginImporter.GetAllImporters().FirstOrDefault(i => i.assetPath.EndsWith("UniGitResources.dll"));
-			if (importer == null)
-			{
-				Debug.LogError("Could not find LibGit2Sharp.dll. You will have to close and open Unity to recompile scripts.");
-				return;
-			}
-			importer.SetCompatibleWithEditor(true);
-			importer.SaveAndReimport();
 		}
 
 		public void DeleteRepository()
@@ -212,7 +176,7 @@ namespace UniGit
 		{
 			StartUpdating(paths);
 
-			if (reloadRepository && IsValidRepo)
+			if (reloadRepository && initializer.IsValidRepo)
 			{
 				if (repository != null) repository.Dispose();
 				repository = new Repository(RepoPath);
@@ -253,7 +217,7 @@ namespace UniGit
 
 		private void PostprocessStage(string[] paths)
 		{
-			if(repository == null || !IsValidRepo) return;
+			if(repository == null || !initializer.IsValidRepo) return;
 			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
 			string[] pathsFinal = paths.Where(a => !IsEmptyFolder(a)).SelectMany(GetPathWithMeta).ToArray();
 			if (pathsFinal.Length > 0)
@@ -280,7 +244,7 @@ namespace UniGit
 
 		private void PostprocessUnstage(string[] paths)
 		{
-			if (repository == null || !IsValidRepo) return;
+			if (repository == null || !initializer.IsValidRepo) return;
 			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
 			string[] pathsFinal = paths.SelectMany(GetPathWithMeta).ToArray();
 			if (pathsFinal.Length > 0)
@@ -301,7 +265,7 @@ namespace UniGit
 
 		private void CheckNullRepository()
 		{
-			if (IsValidRepo && repository == null)
+			if (initializer.IsValidRepo && repository == null)
 			{
 				repository = new Repository(RepoPath);
 				callbacks.IssueOnRepositoryLoad(repository);
@@ -500,7 +464,7 @@ namespace UniGit
 
 		public Texture2D GetGitStatusIcon()
 		{
-			if (!IsValidRepo) return GitGUI.Textures.CollabNew;
+			if (!initializer.IsValidRepo) return GitGUI.Textures.CollabNew;
 			if (Repository == null) return GitGUI.Textures.Collab;
 			if (isUpdating) return GitGUI.GetTempSpinAnimatedTexture();
 			if (Repository.Index.Conflicts.Any()) return GitGUI.Textures.CollabConflict;
@@ -852,7 +816,7 @@ namespace UniGit
 
 		public UpdateStatusEnum GetUpdateStatus()
 		{
-			if (!IsValidRepo)
+			if (!initializer.IsValidRepo)
 			{
 				return UpdateStatusEnum.InvalidRepo;
 			}
@@ -880,21 +844,6 @@ namespace UniGit
 			get { return prefs; }
 		}
 
-		public string GitSettingsFolderPath
-		{
-			get { return UniGitPath.Combine(gitPath, Path.Combine("UniGit", "Settings")); }
-		}
-
-		public string GitCommitMessageFilePath
-		{
-			get { return UniGitPath.Combine(gitPath, "UniGit","Settings", "CommitMessage.txt"); }
-		}
-
-		public string GitIgnoreFilePath
-		{
-			get { return UniGitPath.Combine(repoPath, ".gitignore"); }
-		}
-
 		public bool IsUpdating
 		{
 			get { return isUpdating; }
@@ -913,11 +862,6 @@ namespace UniGit
 		public Signature Signature
 		{
 			get { return new Signature(Repository.Config.GetValueOrDefault<string>("user.name"), Repository.Config.GetValueOrDefault<string>("user.email"),DateTimeOffset.Now);}
-		}
-
-		public  bool IsValidRepo
-		{
-			get { return Repository.IsValid(RepoPath); }
 		}
 
 		public Repository Repository

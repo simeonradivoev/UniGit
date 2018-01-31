@@ -15,9 +15,16 @@ namespace UniGit.Settings
 		protected readonly GUIContent name;
 		protected readonly UniGitData data;
 		protected readonly GitCallbacks gitCallbacks;
+		protected readonly GitInitializer initializer;
 
 		[UniGitInject]
-		internal GitSettingsTab(GUIContent name,GitManager gitManager, GitSettingsWindow settingsWindow,UniGitData data,GitSettingsJson gitSettings,GitCallbacks gitCallbacks)
+		internal GitSettingsTab(GUIContent name,
+			GitManager gitManager, 
+			GitSettingsWindow settingsWindow,
+			UniGitData data,
+			GitSettingsJson gitSettings,
+			GitCallbacks gitCallbacks,
+			GitInitializer initializer)
 		{
 			this.name = name;
 			this.gitManager = gitManager;
@@ -25,6 +32,7 @@ namespace UniGit.Settings
 			this.data = data;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
+			this.initializer = initializer;
 			gitCallbacks.EditorUpdate += OnEditorUpdateInternal;
 			gitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
 		}
@@ -56,7 +64,7 @@ namespace UniGit.Settings
 		{
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
-			if (!initilized || !gitManager.IsValidRepo) return;
+			if (!initilized || !initializer.IsValidRepo) return;
 			OnGitUpdate(status, paths);
 		}
 
@@ -68,7 +76,7 @@ namespace UniGit.Settings
 				if (data.Initialized)
 				{
 					initilized = true;
-					if (!gitManager.IsValidRepo) return;
+					if (!initializer.IsValidRepo) return;
 					OnInitialize();
 					OnGitManagerUpdateInternal(data.RepositoryStatus, null);
 				}

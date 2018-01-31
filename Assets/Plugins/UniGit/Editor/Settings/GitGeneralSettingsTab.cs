@@ -18,8 +18,9 @@ namespace UniGit.Settings
 			GitLfsManager lfsManager,
 			UniGitData data,
 			GitSettingsJson gitSettings,
-			GitCallbacks gitCallbacks) 
-			: base(new GUIContent("General"), gitManager, settingsWindow,data,gitSettings,gitCallbacks)
+			GitCallbacks gitCallbacks,
+			GitInitializer initializer) 
+			: base(new GUIContent("General"), gitManager, settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
 			this.lfsManager = lfsManager;
 		}

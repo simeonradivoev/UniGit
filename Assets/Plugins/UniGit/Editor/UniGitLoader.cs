@@ -37,6 +37,7 @@ namespace UniGit
 				string logPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "log.txt");
 				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
 
+				injectionHelper.Bind<GitInitializer>().NonLazy();
 				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
 				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
 				injectionHelper.Bind<string>().FromInstance(logPath).WithId("logPath");
@@ -67,10 +68,7 @@ namespace UniGit
 				injectionHelper.Bind<FileLinesReader>();
 				injectionHelper.Bind<GitProjectOverlay>().NonLazy();
 
-				if (Repository.IsValid(repoPath))
-				{
-					Rebuild(injectionHelper);
-				}
+				Rebuild(injectionHelper);
 			}
 			finally
 			{
@@ -80,28 +78,32 @@ namespace UniGit
 
 		private static void Rebuild(InjectionHelper injectionHelper)
 		{
-			var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();
-			settingsManager.LoadGitSettings();
-
-			//delayed called must be used for serialized properties to be loaded
-			EditorApplication.delayCall += () =>
-			{
-				settingsManager.LoadOldSettingsFile();
-			};
-
-			GitManager = injectionHelper.GetInstance<GitManager>();
-			GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
-			ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
-			GitSettings = injectionHelper.GetInstance<GitSettingsJson>();
-
-			GitCallbacks.RepositoryCreate += OnRepositoryCreate;
-			GitCallbacks.OnLogEntry += OnLogEntry;
-			GitCallbacks.OnBeforeAssemblyReload += OnBeforeAssemblyReload;
-
-			injectionHelper.CreateNonLazy();
-
-			injectionHelper.InjectStatic(typeof(GitProjectContextMenus));
 			injectionHelper.InjectStatic(typeof(GitUnityMenu));
+
+			if (Repository.IsValid(injectionHelper.GetInstance<string>("repoPath")))
+			{
+				var settingsManager = injectionHelper.GetInstance<GitSettingsManager>();
+				settingsManager.LoadGitSettings();
+
+				//delayed called must be used for serialized properties to be loaded
+				EditorApplication.delayCall += () =>
+				{
+					settingsManager.LoadOldSettingsFile();
+				};
+
+				GitManager = injectionHelper.GetInstance<GitManager>();
+				GitCallbacks = injectionHelper.GetInstance<GitCallbacks>();
+				ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
+				GitSettings = injectionHelper.GetInstance<GitSettingsJson>();
+
+				GitCallbacks.RepositoryCreate += OnRepositoryCreate;
+				GitCallbacks.OnLogEntry += OnLogEntry;
+				GitCallbacks.OnBeforeAssemblyReload += OnBeforeAssemblyReload;
+
+				injectionHelper.CreateNonLazy();
+
+				injectionHelper.InjectStatic(typeof(GitProjectContextMenus));
+			}
 		}
 
 		private static void OnWindowAdded(EditorWindow editorWindow)
@@ -113,7 +115,7 @@ namespace UniGit
 		//emulate Unity's delayed call
 		private static void OnEditorUpdate()
 		{
-			GitCallbacks.IssueDelayCall(true);
+			if(GitCallbacks != null) GitCallbacks.IssueDelayCall(true);
 		}
 
 		private static void OnRepositoryCreate()

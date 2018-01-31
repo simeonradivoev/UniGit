@@ -6,23 +6,25 @@ namespace UniGit
 	{
 		private readonly GitManager gitManager;
 		private readonly GitExternalManager externalManager;
+		private readonly GitInitializer initializer;
 
-		public GitConflictsHandler(GitManager gitManager,GitExternalManager externalManager)
+		public GitConflictsHandler(GitManager gitManager,GitExternalManager externalManager,GitInitializer initializer)
 		{
 			this.gitManager = gitManager;
 			this.externalManager = externalManager;
+			this.initializer = initializer;
 		}
 
 		public bool CanResolveConflictsWithTool(string path)
 		{
-			if (!gitManager.IsValidRepo) return false;
+			if (!initializer.IsValidRepo) return false;
 			var conflict = gitManager.Repository.Index.Conflicts[path];
 			return !gitManager.Repository.Lookup<Blob>(conflict.Ours.Id).IsBinary;
 		}
 
 		public void ResolveConflicts(string path, MergeFileFavor favor)
 		{
-			if(!gitManager.IsValidRepo) return;
+			if(!initializer.IsValidRepo) return;
 
 			if (favor == MergeFileFavor.Normal)
 			{
