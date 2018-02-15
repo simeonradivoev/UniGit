@@ -210,19 +210,18 @@ namespace UniGit
 
 		private static void HandlePaths()
 		{
+			AddPath(UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2"));
+			AddPath(UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86"));
+			AddPath(UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86_64"));
+		}
+
+		private static void AddPath(string path)
+		{
 			string currentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-			Debug.Log(currentPath);
-#if UNITY_EDITOR_32
-			string pluginsPath = UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86");
-#elif UNITY_EDITOR_64
-			string pluginsPath = UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86_64");
-#endif
-			Debug.Log(pluginsPath);
-			if(!currentPath.Contains(pluginsPath))
+			if(!currentPath.Contains(path))
 			{
-				
-				Environment.SetEnvironmentVariable("PATH", currentPath + pluginsPath + Path.PathSeparator, EnvironmentVariableTarget.Process);
-				Debug.Log(currentPath + pluginsPath + Path.PathSeparator);
+				Environment.SetEnvironmentVariable("PATH", currentPath + path + Path.PathSeparator, EnvironmentVariableTarget.Process);
+				Debug.Log(currentPath + path + Path.PathSeparator);
 			}
 		}
 	}
