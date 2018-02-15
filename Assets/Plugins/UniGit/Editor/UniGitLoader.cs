@@ -221,7 +221,6 @@ namespace UniGit
 			if(!currentPath.Contains(path))
 			{
 				Environment.SetEnvironmentVariable("PATH", currentPath + path + Path.PathSeparator, EnvironmentVariableTarget.Process);
-				Debug.Log(currentPath + path + Path.PathSeparator);
 			}
 		}
 	}
