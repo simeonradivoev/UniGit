@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using Assets.Plugins.UniGit.Editor.Hooks;
 using LibGit2Sharp;
@@ -22,6 +23,8 @@ namespace UniGit
 
 		static UniGitLoader()
 		{
+			HandlePaths();
+
 			GitProfilerProxy.BeginSample("UniGit Initialization");
 			try
 			{
@@ -204,5 +207,23 @@ namespace UniGit
 	        var instance = ScriptableWizard.DisplayWizard<T>(title, createButtonName, otherButtonName);
             return instance;
         }
+
+		private static void HandlePaths()
+		{
+			string currentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+			Debug.Log(currentPath);
+#if UNITY_EDITOR_32
+			string pluginsPath = UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86");
+#elif UNITY_EDITOR_64
+			string pluginsPath = UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86_64");
+#endif
+			Debug.Log(pluginsPath);
+			if(!currentPath.Contains(pluginsPath))
+			{
+				
+				Environment.SetEnvironmentVariable("PATH", currentPath + pluginsPath + Path.PathSeparator, EnvironmentVariableTarget.Process);
+				Debug.Log(currentPath + pluginsPath + Path.PathSeparator);
+			}
+		}
 	}
 }
