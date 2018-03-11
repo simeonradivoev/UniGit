@@ -64,6 +64,7 @@ namespace UniGit
 			public bool amendCommit;
 			public bool prettify;
 			public bool merge = true;
+			public bool unstagedChangesPriority = true;
 			[SerializeField] internal string commitMessage;
 			public string commitMessageFromFile;
 			public DateTime lastMessageUpdate;
@@ -264,8 +265,7 @@ namespace UniGit
 			}
 			try
 			{
-				if(statusList == null)statusList = new StatusList();
-				statusList.Setup(gitSettings);
+				var newStatusList = new StatusList(gitSettings);
 
 				if (paths == null || paths.Length <= 0)
 				{
@@ -273,13 +273,13 @@ namespace UniGit
 
 					try
 					{
-						statusList.Clear();
 						status.Lock();
 						foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
 						{
-							statusList.Add(entry,null);
+							newStatusList.Add(entry,null);
 						}
-						statusList.Sort(this);
+						newStatusList.Sort(this);
+						statusList = newStatusList;
 						status.Unlock();
 					}
 					finally
@@ -294,15 +294,17 @@ namespace UniGit
 
 					try
 					{
-						statusList.RemoveRange(paths);
+						newStatusList.Copy(statusList);
+						newStatusList.RemoveRange(paths);
 						foreach (var path in paths)
 						{
 							GitStatusEntry entry;
 							if (status.Get(path,out entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
 							{
-								statusList.Add(entry,this);
+								newStatusList.Add(entry,this);
 							}
 						}
+						statusList = newStatusList;
 					}
 					finally
 					{
@@ -703,6 +705,11 @@ namespace UniGit
 					settings.merge = !settings.merge;
 					UpdateStatusList();
 				});
+				genericMenu.AddItem(new GUIContent("Prioritize Unstaged Changes"),settings.unstagedChangesPriority, () =>
+				{
+					settings.unstagedChangesPriority = !settings.unstagedChangesPriority;
+					UpdateStatusList();
+				});
 				genericMenu.ShowAsContext();
 			}
 
@@ -748,7 +755,7 @@ namespace UniGit
 			{
 				if (statusList.TryLock())
 				{
-					if (settings.merge)
+					if (IsGrouping())
 					{
 						float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
 						float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount) * elementHeight;
@@ -777,7 +784,7 @@ namespace UniGit
 				bool isVisible = IsVisible(info);
 				Rect elementRect;
 
-				if (settings.merge)
+				if (IsGrouping())
 				{
 					FileStatus mergedStatus = GetMergedStatus(info.State);
 					if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
@@ -889,7 +896,7 @@ namespace UniGit
 				maxPathSize -= stageToggleRect.width - 4;
 				Rect stageWarnningRect = new Rect(stageToggleRect.x - stageToggleRect.width - 4, stageToggleRect.y, stageToggleRect.width, stageToggleRect.height);
 				EditorGUIUtility.AddCursorRect(stageWarnningRect, MouseCursor.Link);
-				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Upstaged changed pending. Stage to update index."), GUIStyle.none))
+				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Unstaged changed pending. Stage to update index."), GUIStyle.none))
 				{
 					string[] paths = gitManager.GetPathWithMeta(info.Path).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
@@ -1094,11 +1101,16 @@ namespace UniGit
 
 		private bool IsVisible(StatusListEntry entry)
 		{
-			if (settings.merge)
+			if (IsGrouping())
 			{
 				if (!settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State))) return false;
 			}
-			return entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.Contains(filter);
+			return entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.IndexOf(filter,StringComparison.InvariantCultureIgnoreCase) >= 0;
+		}
+
+		private bool IsGrouping()
+		{
+			return settings.merge && string.IsNullOrEmpty(filter);
 		}
 
 		private string GetUpdateStatusMessage(GitManager.UpdateStatusEnum status)
@@ -1423,7 +1435,7 @@ namespace UniGit
 
 			if(selectedFlags.IsFlagSet(FileStatus.Ignored))
 				editMenu.AddDisabledItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow));
-			else if(entries.Length >= 0)
+			else if(entries.Length >= 1)
 			{
 				if(entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
@@ -1658,7 +1670,7 @@ namespace UniGit
 
 		public int Compare(StatusListEntry x, StatusListEntry y)
 		{
-			int stateCompare = settings.merge ? GetPriority(x.State).CompareTo(GetPriority(y.State)) : 0;
+			int stateCompare = IsGrouping() ? GetPriority(x.State).CompareTo(GetPriority(y.State)) : 0;
 			if (stateCompare == 0)
 			{
 				if (settings.sortDir == SortDir.Descending)
@@ -1666,6 +1678,24 @@ namespace UniGit
 					var oldLeft = x;
 					x = y;
 					y = oldLeft;
+				}
+
+				if (settings.unstagedChangesPriority)
+				{
+					bool canStageX = GitManager.CanStage(x.State);
+					bool canUnstageX = GitManager.CanUnstage(x.State);
+					bool canStageY = GitManager.CanStage(y.State);
+					bool canUnstageY = GitManager.CanUnstage(y.State);
+
+					//prioritize upsaged changes that are pending
+					if ((canStageX && canUnstageX) && !(canStageY && canUnstageY))
+					{
+						return -1;
+					}
+					if (!(canStageX && canUnstageX) && (canStageY && canUnstageY))
+					{
+						return 1;
+					}
 				}
 
 				switch (settings.sortType)
@@ -1774,19 +1804,24 @@ namespace UniGit
 		[Serializable]
 		public class StatusList : IEnumerable<StatusListEntry>
 		{
-			[SerializeField] private List<StatusListEntry> entires;
+			[SerializeField] private List<StatusListEntry> entries;
 			private GitSettingsJson gitSettings;
 			private readonly object lockObj;
 
 			public StatusList()
 			{
-				entires = new List<StatusListEntry>();
+				entries = new List<StatusListEntry>();
 				lockObj = new object();
 			}
 
-			internal void Setup(GitSettingsJson gitSettings)
+			public StatusList(GitSettingsJson gitSettings) : this()
 			{
 				this.gitSettings = gitSettings;
+			}
+
+			internal void Copy(StatusList other)
+			{
+				entries.AddRange(other.entries);
 			}
 
 			internal void Add(GitStatusEntry entry,IComparer<StatusListEntry> sorter)
@@ -1798,11 +1833,13 @@ namespace UniGit
 					string mainAssetPath = GitManager.AssetPathFromMeta(entry.Path);
 					if (!gitSettings.ShowEmptyFolders && GitManager.IsEmptyFolder(mainAssetPath)) return;
 
-					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == mainAssetPath);
-					if (ent != null)
+					int index = entries.FindIndex(e => e.Path == mainAssetPath);
+					if (index >= 0)
 					{
+						StatusListEntry ent = entries[index];
 						ent.MetaChange |= MetaChangeEnum.Meta;
 						ent.State |= entry.Status;
+						entries[index] = ent;
 						return;
 					}
 
@@ -1810,10 +1847,12 @@ namespace UniGit
 				}
 				else
 				{
-					StatusListEntry ent = entires.FirstOrDefault(e => e.Path == entry.Path);
-					if (ent != null)
+					int index = entries.FindIndex(e => e.Path == entry.Path);
+					if (index >= 0)
 					{
+						StatusListEntry ent = entries[index];
 						ent.State |= entry.Status;
+						entries[index] = ent;
 						return;
 					}
 
@@ -1821,27 +1860,27 @@ namespace UniGit
 				}
 
 				if(sorter != null) AddSorted(statusEntry,sorter);
-				else entires.Add(statusEntry);
+				else entries.Add(statusEntry);
 			}
 
 			private void AddSorted(StatusListEntry entry,IComparer<StatusListEntry> sorter)
 			{
-				for (int i = 0; i < entires.Count; i++)
+				for (int i = 0; i < entries.Count; i++)
 				{
-					int compare = sorter.Compare(entires[i], entry);
+					int compare = sorter.Compare(entries[i], entry);
 					if (compare > 0)
 					{
-						entires.Insert(i,entry);
+						entries.Insert(i,entry);
 						return;
 					}
 				}
 
-				entires.Add(entry);
+				entries.Add(entry);
 			}
 
 			public void Sort(IComparer<StatusListEntry> sorter)
 			{
-				entires.Sort(sorter);
+				entries.Sort(sorter);
 			}
 
 			public void RemoveRange(string[] paths)
@@ -1851,29 +1890,35 @@ namespace UniGit
 					if (GitManager.IsMetaPath(path))
 					{
 						var assetPath = GitManager.AssetPathFromMeta(path);
-						for (int i = entires.Count-1; i >= 0; i--)
+						for (int i = entries.Count-1; i >= 0; i--)
 						{
-							var entry = entires[i];
+							var entry = entries[i];
 							if (entry.Path == assetPath)
 							{
 								if (entry.MetaChange.HasFlag(MetaChangeEnum.Object))
+								{
 									entry.MetaChange = entry.MetaChange.ClearFlags(MetaChangeEnum.Meta);
+									entries[i] = entry;
+								}
 								else
-									entires.RemoveAt(i);
+									entries.RemoveAt(i);
 							}
 						}
 					}
 					else
 					{
-						for (int i = entires.Count-1; i >= 0; i--)
+						for (int i = entries.Count-1; i >= 0; i--)
 						{
-							var entry = entires[i];
+							var entry = entries[i];
 							if (entry.Path == path)
 							{
 								if (entry.MetaChange.HasFlag(MetaChangeEnum.Meta))
+								{
 									entry.MetaChange = entry.MetaChange.ClearFlags(MetaChangeEnum.Object);
+									entries[i] = entry;
+								}
 								else
-									entires.RemoveAt(i);
+									entries.RemoveAt(i);
 							}
 						}
 					}
@@ -1882,12 +1927,12 @@ namespace UniGit
 
 			public StatusListEntry this[int index]
 			{
-				get { return entires[index]; }
+				get { return entries[index]; }
 			}
 
 			public void Clear()
 			{
-				entires.Clear();
+				entries.Clear();
 			}
 
 			public bool TryLock()
@@ -1917,17 +1962,17 @@ namespace UniGit
 
 			public IEnumerator<StatusListEntry> GetEnumerator()
 			{
-				return entires.GetEnumerator();
+				return entries.GetEnumerator();
 			}
 
 			public int Count
 			{
-				get { return entires.Count; }
+				get { return entries.Count; }
 			}
 		}
 
 		[Serializable]
-		public class StatusListEntry
+		public struct StatusListEntry
 		{
 			[SerializeField]
 			private string path;
@@ -1937,8 +1982,6 @@ namespace UniGit
 			private MetaChangeEnum metaChange;
 			[SerializeField]
 			private FileStatus state;
-			[SerializeField]
-			private string guid;
 
 			public StatusListEntry(string path, FileStatus state, MetaChangeEnum metaChange)
 			{
@@ -1950,7 +1993,7 @@ namespace UniGit
 
 			public string Guid
 			{
-				get { return guid ?? (guid = GitManager.IsPathInAssetFolder(path) ? AssetDatabase.AssetPathToGUID(path) : path); }
+				get { return GitManager.IsPathInAssetFolder(path) ? AssetDatabase.AssetPathToGUID(path) : path; }
 			}
 
 			public string Path

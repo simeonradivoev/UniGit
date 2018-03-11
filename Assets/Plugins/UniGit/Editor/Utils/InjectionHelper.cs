@@ -525,7 +525,15 @@ namespace UniGit.Utils
 			{
 				if (instance == null)
 				{
-					instance = method != null ? method.Invoke(new ResolveCreateContext(injectionHelper,arg)) : injectionHelper.CreateInstance(instanceType,arg);
+					if (method != null)
+					{
+						instance = method.Invoke(new ResolveCreateContext(injectionHelper, arg));
+						injectionHelper.Inject(instance);
+					}
+					else
+					{
+						instance = injectionHelper.CreateInstance(instanceType, arg);
+					}
 				}
 			}
 

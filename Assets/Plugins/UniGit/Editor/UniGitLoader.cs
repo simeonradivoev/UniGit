@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using Assets.Plugins.UniGit.Editor.Hooks;
-using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Settings;
 using UniGit.Utils;
@@ -127,7 +126,7 @@ namespace UniGit
 		private static void OnLogEntry(GitLog.LogEntry logEntry)
 		{
 			if (!GitSettings.UseUnityConsole)
-				GetWindow<GitLogWindow>();
+				GetGitWindow<GitLogWindow>();
 		}
 
 		private static GitCallbacks GetGitCallbacks(InjectionHelper.ResolveCreateContext context)
@@ -179,6 +178,28 @@ namespace UniGit
 	    {
 	        return GetWindow<T>(false);
 	    }
+
+		public static T GetGitWindow<T>() where T : EditorWindow
+		{
+			return GetGitWindow<T>(false);
+		}
+
+		public static T GetGitWindow<T>(bool utility) where T : EditorWindow
+		{
+			var editorWindow = GitWindows.GetWindow<T>();
+			if (editorWindow != null)
+			{
+				editorWindow.Show();
+				return editorWindow;
+			}
+			var newWindow = ScriptableObject.CreateInstance<T>();
+			if(utility)
+				newWindow.ShowUtility();
+			else
+				newWindow.Show();
+
+			return newWindow;
+		}
 
 	    public static T GetWindow<T>(bool utility) where T : EditorWindow
 	    {

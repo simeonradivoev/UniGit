@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -38,6 +39,11 @@ namespace UniGit
 			{
 				if(OnWindowRemovedEvent != null) OnWindowRemovedEvent.Invoke(window);
 			}
+		}
+
+		public static T GetWindow<T>() where T : EditorWindow
+		{
+			return windows.OfType<T>().FirstOrDefault();
 		}
 	}
 }
