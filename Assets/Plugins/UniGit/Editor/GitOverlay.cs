@@ -40,6 +40,7 @@ namespace UniGit
 			public GUIContent lfsObjectIconSmall;
 			public GUIContent donateSmall;
 			public GUIContent starSmall;
+			public GUIContent trashIconSmall;
 		}
 
 		private Icons m_icons;
@@ -80,6 +81,7 @@ namespace UniGit
 				lfsObjectIconSmall = new GUIContent(resourceManager.GetTexture("lfs_object_small")),
 				donateSmall = new GUIContent(resourceManager.GetTexture("donate"), "Donate"),
 				starSmall = new GUIContent(resourceManager.GetTexture("star")),
+				trashIconSmall = new GUIContent(resourceManager.GetTexture("trash")),
 			};
 		}
 

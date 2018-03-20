@@ -818,7 +818,6 @@ namespace UniGit
 								Repaint();
 								current.Use();
 							}
-
 						}
 
 						infoX += elementRect.height;
@@ -864,6 +863,17 @@ namespace UniGit
 					}
 
 					current.Use();
+				}else if (current.type == EventType.KeyUp && current.keyCode == KeyCode.Delete)
+				{
+					foreach (var id in selections)
+					{
+						var entry = statusList.FirstOrDefault(e => SelectionPredicate(id, e));
+						if (!string.IsNullOrEmpty(entry.Path))
+						{
+							AssetDatabase.DeleteAsset(entry.Path);
+							current.Use();
+						}
+					}
 				}
 
 				if (current.type == EventType.MouseDrag && current.button == 2)
@@ -1483,6 +1493,13 @@ namespace UniGit
 			editMenu.AddItem(new GUIContent("Open", GitGUI.Textures.OrbitTool), false, () =>
 			{
 				AssetDatabase.OpenAsset(entries.Select(e => AssetDatabase.LoadAssetAtPath<Object>(e.Path)).Where(a => a != null).ToArray());
+			});
+			editMenu.AddItem(new GUIContent("Delete",gitOverlay.icons.trashIconSmall.image), false, () =>
+			{
+				foreach (var entry in entries)
+				{
+					AssetDatabase.DeleteAsset(entry.Path);
+				}
 			});
 			editMenu.AddItem(new GUIContent("Reload", GitGUI.Textures.RotateTool), false, ReloadCallback);
 		}
