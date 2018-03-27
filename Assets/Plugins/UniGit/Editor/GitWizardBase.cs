@@ -1,6 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
+using System.Security;
+using CredentialManagement;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;
@@ -8,7 +9,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitWizardBase : ScriptableWizard
+	public class GitWizardBase : GitWizard
 	{
 		protected Remote[] remotes;
 		protected GUIContent[] remoteNames;
@@ -20,7 +21,6 @@ namespace UniGit
 		[SerializeField]
 		protected int selectedBranch;
 		[SerializeField] protected bool credentalsExpanded;
-		private SerializedObject serializedObject;
 		protected GitManager gitManager;
 		protected GitCredentialsManager credentialsManager;
 		protected GitExternalManager externalManager;
@@ -47,13 +47,6 @@ namespace UniGit
 			remoteNames = remotes.Select(r => new GUIContent(r.Name)).ToArray();
 			branchNames = gitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
 			branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
-		}
-
-		protected virtual void OnEnable()
-		{
-			GitWindows.AddWindow(this);
-			serializedObject = new SerializedObject(this);
-			Repaint();
 		}
 
 		public void Init(Branch branch)
@@ -86,20 +79,14 @@ namespace UniGit
 
 		protected void DrawCredentials()
 		{
-			credentalsExpanded = EditorGUILayout.PropertyField(serializedObject.FindProperty("credentials"));
-			if (credentalsExpanded)
+			credentials.Active = EditorGUILayout.Toggle(GitGUI.GetTempContent("Custom Credentials","Credentials to use instead of the ones from the credentials manager."), credentials.Active);
+			if (credentials.Active)
 			{
 				EditorGUI.indentLevel = 1;
 				credentials.IsToken = EditorGUILayout.Toggle(GitGUI.GetTempContent("Is Token"), credentials.IsToken);
-				if (credentials.IsToken)
-				{
-					credentials.Token = EditorGUILayout.TextField(GitGUI.GetTempContent("Token", "If left empty, stored credentials in settings will be used."), credentials.Token);
-				}
-				else
-				{
-					credentials.Username = EditorGUILayout.TextField(GitGUI.GetTempContent("Username", "If left empty, stored credentials in settings will be used."), credentials.Username);
-					credentials.Password = EditorGUILayout.PasswordField(GitGUI.GetTempContent("Password", "If left empty, stored credentials in settings will be used."), credentials.Password);
-				}
+				credentials.Username = EditorGUILayout.TextField(GitGUI.GetTempContent(credentials.IsToken ? "Token" : "Username", "If left empty, stored credentials in settings will be used."), credentials.Username);
+				if(!credentials.IsToken)
+					GitGUI.SecurePasswordFieldLayout(GitGUI.GetTempContent("Password", "If left empty, stored credentials in settings will be used."),credentials.Password);
 				EditorGUI.indentLevel = 0;
 			}
 		}
@@ -113,40 +100,13 @@ namespace UniGit
 			return EditorGUI.EndChangeCheck();
 		}
 
-		protected void OnDisable()
-		{
-			GitWindows.RemoveWindow(this);
-		}
-
 		#region Handlers
 		protected LibGit2Sharp.Credentials CredentialsHandler(string url, string user, SupportedCredentialTypes supported)
 		{
-			if (supported == SupportedCredentialTypes.UsernamePassword)
-			{
-				string username = credentials.Username;
-				string password = credentials.Password;
+			if(credentials.Active)
+				return credentialsManager.DefaultCredentialsHandler(url,credentials.Username, credentials.Password,supported,credentials.IsToken);
 
-				if (credentials.IsToken)
-				{
-					username = credentials.Token;
-					password = string.Empty;
-				}
-
-				if (credentialsManager.GitCredentials != null)
-				{
-					if (string.IsNullOrEmpty(username) && string.IsNullOrEmpty(password))
-					{
-						credentialsManager.LoadCredentials(url,ref username,ref password,true);
-					}
-				}
-
-				return new UsernamePasswordCredentials()
-				{
-					Username = username,
-					Password = password
-				};
-			}
-			return new DefaultCredentials();
+			return credentialsManager.DefaultCredentialsHandler(url,user, null,supported,credentials.IsToken);
 		}
 
 		#region Fetch
@@ -214,24 +174,30 @@ namespace UniGit
 			logger.LogFormat(LogType.Log,"{0} Status: {1}", mergeType, result.Status);
 		}
 
-		protected void OnCheckoutProgress(string path, int completedSteps, int totalSteps)
-		{
-			float percent = (float)completedSteps / totalSteps;
-			EditorUtility.DisplayProgressBar("Checkout", string.Format("Checking {0} steps out of {1}.", completedSteps, totalSteps), percent);
-		}
 		#endregion
 		#endregion
 
 		[Serializable]
-		protected struct Credentials
+		protected class Credentials
 		{
-			private string password;
+			private SecureString password;
+			[SerializeField]
+			private bool active;
 			[SerializeField]
 			private string username;
 			[SerializeField] private bool isToken;
-			[SerializeField] private string token;
 
-			public string Password
+			public Credentials()
+			{
+				password = new SecureString();
+			}
+
+			~Credentials()
+			{
+				password.Dispose();
+			}
+
+			public SecureString Password
 			{
 				get { return password; }
 				set { password = value; }
@@ -249,10 +215,10 @@ namespace UniGit
 				set { isToken = value; }
 			}
 
-			public string Token
+			public bool Active
 			{
-				get { return token; }
-				set { token = value; }
+				get { return active; }
+				set { active = value; }
 			}
 		}
 

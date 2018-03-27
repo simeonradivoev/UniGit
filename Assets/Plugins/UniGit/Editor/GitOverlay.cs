@@ -41,6 +41,8 @@ namespace UniGit
 			public GUIContent donateSmall;
 			public GUIContent starSmall;
 			public GUIContent trashIconSmall;
+			public GUIContent submoduleIcon;
+			public GUIContent submoduleIconSmall;
 		}
 
 		private Icons m_icons;
@@ -82,6 +84,8 @@ namespace UniGit
 				donateSmall = new GUIContent(resourceManager.GetTexture("donate"), "Donate"),
 				starSmall = new GUIContent(resourceManager.GetTexture("star")),
 				trashIconSmall = new GUIContent(resourceManager.GetTexture("trash")),
+				submoduleIcon = new GUIContent(resourceManager.GetTexture("file_submodule")),
+				submoduleIconSmall = new GUIContent(resourceManager.GetTexture("file_submodule_small")),
 			};
 		}
 

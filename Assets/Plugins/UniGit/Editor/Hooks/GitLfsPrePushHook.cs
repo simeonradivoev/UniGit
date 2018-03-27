@@ -28,7 +28,7 @@ namespace Assets.Plugins.UniGit.Editor.Hooks
 			{
 				process.StartInfo.FileName = "git-lfs";
 				process.StartInfo.Arguments = "pre-push origin";
-				process.StartInfo.WorkingDirectory = gitManager.RepoPath;
+				process.StartInfo.WorkingDirectory = gitManager.GetCurrentRepoPath();
 				process.StartInfo.CreateNoWindow = false;
 				process.StartInfo.UseShellExecute = false;
 				process.StartInfo.RedirectStandardInput = true;

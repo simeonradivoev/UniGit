@@ -12,14 +12,17 @@ public class CallbackTests : TestRepoFixture
 {
 	private int updateRepositoryCalled;
 	private int onRepositoryLoadedCalled;
+	private int editorUpdatesCalled;
 
 	[SetUp]
 	public void SetupCallbacks()
 	{
 		updateRepositoryCalled = 0;
 		onRepositoryLoadedCalled = 0;
+		editorUpdatesCalled = 0;
 		gitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
 		gitCallbacks.UpdateRepository += RepositoryUpdate;
+		gitCallbacks.EditorUpdate += OnEditorUpdate;
 	}
 
 	[TearDown]
@@ -27,6 +30,11 @@ public class CallbackTests : TestRepoFixture
 	{
 		gitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
 		gitCallbacks.UpdateRepository -= RepositoryUpdate;
+	}
+
+	private void OnEditorUpdate()
+	{
+		editorUpdatesCalled++;
 	}
 
 	private void OnRepositoryLoad(Repository repository)
@@ -42,8 +50,8 @@ public class CallbackTests : TestRepoFixture
 	[UnityTest]
 	public IEnumerator UpdateRepositorySingleThreaded_OnAssetAddedShouldCallUpdateRepository_UpdateRepositoryCalled()
 	{
-		File.WriteAllText(Path.Combine(gitManager.RepoPath, "test.txt"), "Text Asset");
-		string[] outputs = { Path.Combine(gitManager.RepoPath, "test.txt") };
+		File.WriteAllText(Path.Combine(gitManager.GetCurrentRepoPath(), "test.txt"), "Text Asset");
+		string[] outputs = { Path.Combine(gitManager.GetCurrentRepoPath(), "test.txt") };
 		injectionHelper.GetInstance<GitCallbacks>().IssueOnWillSaveAssets(outputs, ref outputs);
 		yield return null;
 		File.Delete(Application.dataPath + "/test.txt");
@@ -53,8 +61,8 @@ public class CallbackTests : TestRepoFixture
 	[UnityTest]
 	public IEnumerator UpdateRepositorySingleThreaded_OnAssetRemovedShouldCallUpdateRepository_UpdateRepositoryCalled()
 	{
-		File.WriteAllText(Path.Combine(gitManager.RepoPath, "test.txt"), "Text Asset");
-		string[] outputs = { Path.Combine(gitManager.RepoPath, "test.txt") };
+		File.WriteAllText(Path.Combine(gitManager.GetCurrentRepoPath(), "test.txt"), "Text Asset");
+		string[] outputs = { Path.Combine(gitManager.GetCurrentRepoPath(), "test.txt") };
 		File.Delete(Application.dataPath + "/test.txt");
 		gitCallbacks.IssueOnPostprocessDeletedAssets(outputs);
 		yield return null;
@@ -64,8 +72,9 @@ public class CallbackTests : TestRepoFixture
 	[UnityTest]
 	public IEnumerator OnRepositoryLoad_OnRepositoryDirtyShouldCallRepositoryLoad_OnRepositoryLoadCalled()
 	{
+		Assert.IsFalse(gitManager.IsUpdating);
 		gitManager.MarkDirty(true);
 		yield return null;
-		Assert.AreEqual(onRepositoryLoadedCalled,1);
+		Assert.AreEqual(1,onRepositoryLoadedCalled);
 	}
 }

@@ -22,7 +22,8 @@ namespace UniGit.Utils
 		public static Tuple<string, string>[] Credits = 
 		{
 			new Tuple<string, string>("Git Stash Icon : Christian Scheb","https://www.christianscheb.de"),
-			new Tuple<string, string>("Additional Icons : Freepik","https://www.flaticon.com/authors/freepik")
+			new Tuple<string, string>("Additional Icons : Freepik","https://www.flaticon.com/authors/freepik"),
+			new Tuple<string, string>("Octicons : GitHub","https://octicons.github.com/"),
 		};
 
 		public static void GoTo(string link)

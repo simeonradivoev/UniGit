@@ -59,7 +59,7 @@ namespace UniGit.Settings
 				{
 					GUILayout.Label(GitGUI.GetTempContent("Settings"), GitGUI.Styles.ProjectBrowserHeaderBgTop);
 
-					using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
+					using (Configuration c = Configuration.BuildFrom(gitManager.GetCurrentDotGitFolder()))
 					{
 						string url = c.GetValueOrDefault("lfs.url", "");
 						if (string.IsNullOrEmpty(url))

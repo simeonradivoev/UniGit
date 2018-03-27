@@ -1,4 +1,7 @@
-﻿using UniGit.Utils;
+﻿using System.Linq;
+using System.Security;
+using CredentialManagement;
+using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,6 +12,7 @@ namespace UniGit.Settings
 		private Rect addCredentialsRect;
 		private Vector2 scroll;
 		private readonly GitCredentialsManager credentialsManager;
+		private readonly GitOverlay gitOverlay;
 
 		[UniGitInject]
 		public GitSecuritySettingsTab(GitManager gitManager, 
@@ -17,10 +21,12 @@ namespace UniGit.Settings
 			UniGitData data,
 			GitSettingsJson gitSettings,
 			GitCallbacks gitCallbacks,
-			GitInitializer initializer) 
+			GitInitializer initializer,
+			GitOverlay gitOverlay) 
 			: base(new GUIContent("Security"), gitManager, settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
 			this.credentialsManager = credentialsManager;
+			this.gitOverlay = gitOverlay;
 		}
 
 		internal override void OnGUI(Rect rect, Event current)
@@ -33,7 +39,7 @@ namespace UniGit.Settings
 				gitSettings.CredentialsManager = newSelectedIndex >= 0 && newSelectedIndex < credentialsManager.AdapterIds.Length ? credentialsManager.AdapterIds[newSelectedIndex] : "";
 				if (EditorGUI.EndChangeCheck())
 				{
-					credentialsManager.SetSelectedAdapter(newSelectedIndex);
+					credentialsManager.SetSelectedAdapter(newSelectedIndex,false);
 
 					gitSettings.MarkDirty();
 				}
@@ -41,9 +47,14 @@ namespace UniGit.Settings
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButton, GUILayout.Width(64)))
 			{
-				if (EditorUtility.DisplayDialog("Remove Credentials Manager", "This will remove all stored passwords in the Manager. Usernames and URLs will be kept in Unity", "Remove", "Cancel"))
+				int choice = EditorUtility.DisplayDialogComplex("Remove Credentials Manager", "Disable the current external manager only or delete passwords win external manager.", "Disable Only", "Cancel", "Disable and Delete");
+				if (choice == 0)
 				{
-					credentialsManager.SetSelectedAdapter(-1);
+					credentialsManager.SetSelectedAdapter(-1,false);
+				}
+				else if (choice == 2)
+				{
+					credentialsManager.SetSelectedAdapter(-1,true);
 				}
 			}
 			GUI.enabled = true;
@@ -58,57 +69,98 @@ namespace UniGit.Settings
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var gitCredential in credentialsManager.GitCredentials)
 			{
-				GUILayout.Label(GitGUI.GetTempContent(gitCredential.Name), GitGUI.Styles.ShurikenModuleTitle);
+				bool hasPassword = credentialsManager.HasPassword(gitCredential);
+				string currentusername = credentialsManager.LoadUsername(gitCredential);
+
+				Texture nameIcon = null;
+				string nameTooltip = "";
+
+				if (data.RepositoryStatus.SubModuleEntries.Any(m => m.Url == gitCredential.URL))
+				{
+					nameIcon = gitOverlay.icons.submoduleIconSmall.image;
+					nameTooltip = "These credentials are automatically used by a sub module";
+				}
+				else if (data.RepositoryStatus.RemoteEntries.Any(r => r.Url == gitCredential.URL))
+				{
+					nameIcon = GitGUI.IconContentTex("ToolHandleGlobal");
+					nameTooltip = "These credentials are automatically used when dealing with a remote";
+
+				}
+
+				GUILayout.Label(GitGUI.GetTempContent(gitCredential.Name,nameIcon,nameTooltip), GitGUI.Styles.ShurikenModuleTitle);
 				EditorGUILayout.Space();
 				EditorGUILayout.BeginVertical(GitGUI.Styles.ShurikenModuleBg);
 				EditorGUI.BeginChangeCheck();
 				GUI.SetNextControlName(gitCredential.URL + " Credential Name");
-				gitCredential.Name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name"), gitCredential.Name);
-				GUI.enabled = false;
-				GUI.SetNextControlName(gitCredential.URL + " Credential URL");
-				EditorGUILayout.TextField(GitGUI.GetTempContent("URL"), gitCredential.URL);
-				GUI.enabled = true;
+				gitCredential.Name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name","Display name. Serves no purpose other then visual."), gitCredential.Name);
+				if (credentialsManager.IsAdapterSelected)
+				{
+					GUIContent managerUrlContent = GitGUI.GetTempContent("Manager URL");
+					if (!hasPassword)
+					{
+						managerUrlContent.image = GitGUI.Textures.WarrningIconSmall;
+						managerUrlContent.tooltip = "No credentials with specified url found in external manager.";
+					}
+					EditorGUILayout.BeginHorizontal();
+					gitCredential.ManagerUrl = EditorGUILayout.TextField(managerUrlContent, gitCredential.ManagerUrl);
+					if (GUILayout.Button(GitGUI.IconContent("UnityEditor.SceneHierarchyWindow", string.Empty, "Options"), GitGUI.Styles.IconButton,GUILayout.Width(20)))
+					{
+						var c = gitCredential;
+						GenericMenu genericMenu = new GenericMenu();
+						genericMenu.AddItem(new GUIContent("Automatic fill"), false, () =>
+						{
+							c.ManagerUrl = credentialsManager.GetFormatedUrl(c.URL); 
+							credentialsManager.GitCredentials.MarkDirty();
+						});
+						genericMenu.AddItem(new GUIContent("Clear"), false, () =>
+						{
+							c.ManagerUrl = ""; 
+							credentialsManager.GitCredentials.MarkDirty();
+						});
+						genericMenu.ShowAsContext();
+					}
+					EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
+					EditorGUILayout.EndHorizontal();
+				}
+				
 				EditorGUILayout.Space();
 				GUILayout.Label(GUIContent.none, "sv_iconselector_sep");
 				EditorGUILayout.Space();
 				bool newIsToken = gitCredential.IsToken;
+
+				if (credentialsManager.IsAdapterSelected)
+				{
+					GUI.enabled = false;
+					EditorGUILayout.TextField(GitGUI.GetTempContent(newIsToken ? "Manager Token" : "Manager Username"),currentusername);
+					GUI.enabled = true;
+				}
+				else
+				{
+					GUI.enabled = false;
+					EditorGUILayout.TextField(GitGUI.GetTempContent(newIsToken ? "Current Token" : "Current Username"),currentusername);
+					GUI.enabled = true;
+				}
+
 				newIsToken = EditorGUILayout.Toggle(GitGUI.GetTempContent("Is Token", "Are credentials used as a token, like in GitHub."), newIsToken);
 				if (newIsToken != gitCredential.IsToken)
 				{
 					gitCredential.IsToken = newIsToken;
 					if (gitCredential.IsToken)
 					{
-						credentialsManager.ClearCredentialPassword(gitCredential.URL);
+						credentialsManager.ClearCredentialPassword(gitCredential);
 					}
 				}
 
-				if (gitCredential.IsToken)
+				GUI.SetNextControlName(gitCredential.URL + " Credential username");
+				gitCredential.NewUsername = EditorGUILayout.DelayedTextField(newIsToken ? GitGUI.GetTempContent("New Token") : GitGUI.GetTempContent("New Username"), gitCredential.NewUsername);
+
+				if (!gitCredential.IsToken)
 				{
-					GUI.SetNextControlName(gitCredential.URL + " Credential Token");
-					string newUsername = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Token"), gitCredential.Username);
-					if (newUsername != gitCredential.Username)
-					{
-						credentialsManager.SetNewUsername(gitCredential.URL, newUsername);
-					}
-				}
-				else
-				{
-					GUI.SetNextControlName(gitCredential.URL + " Credential username");
-					string newUsername = EditorGUILayout.DelayedTextField(GitGUI.GetTempContent("Username"), gitCredential.Username);
-					if (newUsername != gitCredential.Username)
-					{
-						credentialsManager.SetNewUsername(gitCredential.URL, newUsername);
-					}
 					GUI.SetNextControlName(gitCredential.URL + " Credential New Password");
-					gitCredential.NewPassword = EditorGUILayout.PasswordField(GitGUI.GetTempContent("New Password"), gitCredential.NewPassword);
+					GitGUI.SecurePasswordFieldLayout(GitGUI.GetTempContent("New Password"),gitCredential.NewPassword);
 					if (credentialsManager.IsAdapterSelected && GUI.GetNameOfFocusedControl() == gitCredential.URL + " Credential New Password")
 					{
 						EditorGUILayout.HelpBox("Password will be set in the current credentials manager: " + credentialsManager.SelectedAdapterName, MessageType.Info);
-					}
-
-					if (!gitCredential.HasPassword && !credentialsManager.IsAdapterSelected)
-					{
-						EditorGUILayout.HelpBox("Credential has no set Password", MessageType.Warning);
 					}
 				}
 
@@ -117,30 +169,65 @@ namespace UniGit.Settings
 					credentialsManager.GitCredentials.MarkDirty();
 				}
 
-				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewPassword);
 				EditorGUILayout.BeginHorizontal();
 				GUILayout.FlexibleSpace();
-				if (GUILayout.Button(GitGUI.GetTempContent("Set Password"), EditorStyles.miniButtonLeft))
+				GUI.enabled = !string.IsNullOrEmpty(gitCredential.NewUsername) && (!credentialsManager.IsAdapterSelected || hasPassword);
+				if (GUILayout.Button(GitGUI.GetTempContent("Set Username"), EditorStyles.miniButtonLeft))
 				{
-					credentialsManager.SetNewPassword(gitCredential.URL, gitCredential.Username, gitCredential.NewPassword);
-					gitCredential.NewPassword = "";
-					credentialsManager.GitCredentials.MarkDirty();
+					credentialsManager.SetNewUsername(gitCredential,gitCredential.NewUsername);
+					gitCredential.NewUsername = "";
+					EditorUtility.DisplayDialog("Username Changed", "Username successfully changed", "Ok");
+				}
+
+				GUI.enabled = gitCredential.NewPassword != null && gitCredential.NewPassword.Length > 0 && (!credentialsManager.IsAdapterSelected || hasPassword);
+				if (GUILayout.Button(GitGUI.GetTempContent("Set Password"), EditorStyles.miniButtonMid))
+				{
+					credentialsManager.SetNewPassword(gitCredential, gitCredential.NewPassword);
+					gitCredential.NewPassword.Dispose();
+					gitCredential.NewPassword = new SecureString();
 					GUI.FocusControl("");
 					EditorUtility.DisplayDialog("Password Changed", "Password successfully changed", "Ok");
 				}
-				GUI.enabled = gitCredential.HasPassword;
-				if (GUILayout.Button(GitGUI.GetTempContent("Clear Password"), EditorStyles.miniButtonMid))
+
+				if (credentialsManager.IsAdapterSelected)
 				{
-					credentialsManager.ClearCredentialPassword(gitCredential.URL);
-					credentialsManager.GitCredentials.MarkDirty();
+					GUI.enabled = !hasPassword && !string.IsNullOrEmpty(gitCredential.ManagerUrl) && !string.IsNullOrEmpty(gitCredential.NewUsername) && gitCredential.NewPassword != null && gitCredential.NewPassword.Length > 0;
+
+					if (GUILayout.Button(GitGUI.GetTempContent("New External","Create new entry in external password manager with provided new password, username and url."), EditorStyles.miniButtonMid))
+					{
+						credentialsManager.CreateNewExternal(gitCredential.ManagerUrl,gitCredential.NewUsername,gitCredential.NewPassword);
+						gitCredential.NewUsername = "";
+						gitCredential.NewPassword.Dispose();
+						gitCredential.NewPassword = new SecureString();
+					}
+
+					GUI.enabled = true;
 				}
-				GUI.enabled = true;
-				if (GUILayout.Button(GitGUI.GetTempContent("Save"), EditorStyles.miniButtonMid))
+				else
 				{
-					credentialsManager.GitCredentials.MarkDirty();
+					GUI.enabled = hasPassword;
+					if (GUILayout.Button(GitGUI.GetTempContent("Clear Password"), EditorStyles.miniButtonMid))
+					{
+						if (EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to clear the stored password.", "Clear","Cancel"))
+						{
+							credentialsManager.ClearCredentialPassword(gitCredential);
+						}
+					}
+					GUI.enabled = true;
 				}
+
 				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButtonRight))
 				{
+					int choise = EditorUtility.DisplayDialogComplex("Remove Credential Entry", "Removing credential from UniGit only or from external manager as well?","Remove From UniGit","Cancel","Remove From Both");
+					if (choise == 0)
+					{
+						credentialsManager.RemoveCredentials(gitCredential,false);
+					}
+					else if(choise == 1)
+					{
+						credentialsManager.RemoveCredentials(gitCredential,true);
+					}
+
 					credentialsManager.GitCredentials.MarkDirty();
 					GUIUtility.ExitGUI();
 				}
@@ -149,7 +236,6 @@ namespace UniGit.Settings
 				EditorGUILayout.EndVertical();
 			}
 			EditorGUILayout.EndScrollView();
-
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
@@ -172,7 +258,7 @@ namespace UniGit.Settings
 			private string name;
 			private string url;
 			private string username;
-			private string password;
+			private SecureString password;
 			private GitCredentialsManager credentialsManager;
 
 			public AddCredentialPopup(GitCredentialsManager credentialsManager)
@@ -190,11 +276,10 @@ namespace UniGit.Settings
 				name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name"), name);
 				url = EditorGUILayout.TextField(GitGUI.GetTempContent("URL"), url);
 				username = EditorGUILayout.TextField(GitGUI.GetTempContent("Username"), username);
-				password = EditorGUILayout.PasswordField(GitGUI.GetTempContent("Password"), password);
 				GUI.enabled = !string.IsNullOrEmpty(url);
 				if (GUILayout.Button(GitGUI.GetTempContent("Add Credential")))
 				{
-					var entry = credentialsManager.CreatEntry(url, username, password);
+					var entry = credentialsManager.CreateEntry(url, username);
 					if (entry != null)
 					{
 						entry.Name = name;

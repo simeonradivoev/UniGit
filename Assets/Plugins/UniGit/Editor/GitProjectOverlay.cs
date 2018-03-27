@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Settings;
@@ -22,6 +23,7 @@ namespace UniGit
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GUIStyle iconStyle;
+		private readonly GUIStyle lineStyle;
 		private readonly object statusTreeLock = new object();
 		private readonly GitAsyncManager asyncManager;
 		private readonly GitCallbacks gitCallbacks;
@@ -56,6 +58,15 @@ namespace UniGit
 					imagePosition = ImagePosition.ImageOnly,
 					alignment = TextAnchor.LowerLeft,
 					padding = new RectOffset(2, 2, 2, 2)
+				};
+				lineStyle = new GUIStyle(EditorGUIUtility.GetBuiltinSkin(EditorSkin.Inspector).FindStyle("IN Title"))
+				{
+					padding = new RectOffset(),
+					margin = new RectOffset(),
+					contentOffset = Vector2.zero,
+					fixedHeight = 0,
+					fixedWidth = 0,
+					border = {left = 0,right = 0}
 				};
 			}
 
@@ -147,7 +158,7 @@ namespace UniGit
 			if (status != null)
 			{
 				Object assetObject = AssetDatabase.LoadMainAssetAtPath(path);
-				if (assetObject != null && ProjectWindowUtil.IsFolder(assetObject.GetInstanceID()))
+				if (assetObject != null && ProjectWindowUtil.IsFolder(assetObject.GetInstanceID()) && !status.IsSubModule)
 				{
 					//exclude the Assets folder
 					if (status.Depth == 0) return;
@@ -157,24 +168,25 @@ namespace UniGit
 				bool small = rect.height <= 16;
 				if (small)
 				{
-					DrawFileIcons(rect, gitOverlay.GetDiffTypeIcons(status.State,true));
+					DrawFileIcons(rect, gitOverlay.GetDiffTypeIcons(status.State,true),status.IsSubModule,path);
 				}
 				else
 				{
-					DrawFileIcon(rect, gitOverlay.GetDiffTypeIcon(status.State, false));
+					DrawFileIcon(rect, gitOverlay.GetDiffTypeIcon(status.State, false),status.IsSubModule);
 				}
 				
 			}
 		}
 
-		private void DrawFileIcon(Rect rect, GUIContent icon)
+		private void DrawFileIcon(Rect rect, GUIContent icon,bool subModule)
 		{
 			float width = Mathf.Min(rect.width, 32);
 			float height = Mathf.Min(rect.height, 32);
-			GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, iconStyle);
+			if(subModule) GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), gitOverlay.icons.submoduleIcon, iconStyle);
+			else GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, iconStyle);
 		}
 
-		private void DrawFileIcons(Rect rect, IEnumerable<GUIContent> contents)
+		private void DrawFileIcons(Rect rect, IEnumerable<GUIContent> contents,bool subModule,string path)
 		{
 			float width = Mathf.Min(rect.width, 16);
 			float height = Mathf.Min(rect.height, 16);
@@ -183,6 +195,19 @@ namespace UniGit
 			{
 				GUI.Label(new Rect(rect.x + rect.width - width - (width * index), rect.y, width, height), content, iconStyle);
 				index++;
+			}
+
+			if (subModule)
+			{
+				GUI.Label(new Rect(rect.x + rect.width - width - (width * index), rect.y, width, height), gitOverlay.icons.submoduleIconSmall, iconStyle);
+				index++;
+
+				float textWidthMin, textWidthMax;
+				string name = Path.GetFileName(path);
+				EditorStyles.label.CalcMinMaxWidth(GitGUI.GetTempContent(name), out textWidthMin, out textWidthMax);
+				float lineX = rect.x + textWidthMin + 18;
+				float lineWidth = Mathf.Max(rect.width - (width * index) - textWidthMin - 20,0);
+				GUI.Box(new Rect(lineX,rect.y + rect.height*0.5f,lineWidth,2),GUIContent.none,lineStyle);
 			}
 		}
 
@@ -201,7 +226,9 @@ namespace UniGit
 		{
 			try
 			{
-				var newStatusTree = new StatusTreeClass(gitSettings, status,cullNonAssetPaths);
+				var subModules = status.SubModuleEntries.Select(m => m.Path);
+				if (gitManager.InSubModule) subModules = subModules.Concat(new[] {gitSettings.ActiveSubModule});
+				var newStatusTree = new StatusTreeClass(gitSettings,gitManager, status,subModules,cullNonAssetPaths);
 				statusTree = newStatusTree;
 				gitManager.ExecuteAction(RepaintProjectWidnow, threaded);
 			}
@@ -265,32 +292,40 @@ namespace UniGit
 		public class StatusTreeClass
 		{
 			private Dictionary<string, StatusTreeEntry> entries = new Dictionary<string, StatusTreeEntry>();
-			private string currentPath;
+			private string currentProjectPath;
 			private string[] currentPathArray;
 			private FileStatus currentStatus;
 			private readonly GitSettingsJson gitSettings;
+			private readonly GitManager gitManager;
 			private readonly bool cullNonAssetPaths;
 
-			public StatusTreeClass(GitSettingsJson gitSettings,bool cullNonAssetPaths)
+			public StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager,bool cullNonAssetPaths)
 			{
+				this.gitManager = gitManager;
 				this.cullNonAssetPaths = cullNonAssetPaths;
 				this.gitSettings = gitSettings;
 			}
 
-			public StatusTreeClass(GitSettingsJson gitSettings, IEnumerable<GitStatusEntry> status,bool cullNonAssetPaths) : this(gitSettings,cullNonAssetPaths)
+			public StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager, IEnumerable<GitStatusEntry> status,IEnumerable<string> subModules,bool cullNonAssetPaths) : this(gitSettings,gitManager,cullNonAssetPaths)
 			{
-				Build(status);
+				Build(status,subModules);
 			}
 
-			private void Build(IEnumerable<GitStatusEntry> status)
+			private void Build(IEnumerable<GitStatusEntry> status,IEnumerable<string> subModules)
 			{
 				foreach (var entry in status)
 				{
-					currentPath = entry.Path;
-					currentPathArray = entry.Path.Split('\\');
-					currentStatus = !gitSettings.ShowEmptyFolders && GitManager.IsEmptyFolderMeta(currentPath) ? FileStatus.Ignored : entry.Status;
-					if(cullNonAssetPaths && !GitManager.IsPathInAssetFolder(entry.Path)) continue;
+					currentProjectPath = gitManager.ToProjectPath(entry.LocalPath);
+					currentPathArray = currentProjectPath.Split('\\');
+					currentStatus = !gitSettings.ShowEmptyFolders && gitManager.IsEmptyFolderMeta(currentProjectPath) ? FileStatus.Ignored : entry.Status;
+					if(cullNonAssetPaths && !GitManager.IsPathInAssetFolder(currentProjectPath)) continue;
 					AddRecursive(0, entries);
+				}
+
+				foreach (var module in subModules)
+				{
+					currentPathArray = module.Split('\\');
+					AddSubModuleRecursive(0, entries);
 				}
 			}
 
@@ -320,6 +355,27 @@ namespace UniGit
 				if (entryNameIndex < currentPathArray.Length - 1)
 				{
 					AddRecursive(entryNameIndex + 1, entry.SubEntiEntries);
+				}
+			}
+
+			private void AddSubModuleRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
+			{
+				StatusTreeEntry entry;
+				string pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
+				if (!entries.TryGetValue(pathChunk, out entry))
+				{
+					entry = new StatusTreeEntry(entryNameIndex);
+					entries.Add(pathChunk, entry);
+				}
+
+				if (entryNameIndex < currentPathArray.Length - 1)
+				{
+					AddSubModuleRecursive(entryNameIndex + 1, entry.SubEntiEntries);
+				}
+				else
+				{
+					entry.isSubModule = true;
+					entry.forceStatus = true;
 				}
 			}
 
@@ -359,6 +415,7 @@ namespace UniGit
 			internal bool forceStatus;
 			private readonly int depth;
 			public FileStatus State { get; set; }
+			internal bool isSubModule;
 
 			public StatusTreeEntry(int depth)
 			{
@@ -373,6 +430,11 @@ namespace UniGit
 			public bool ForceStatus
 			{
 				get { return forceStatus; }
+			}
+
+			public bool IsSubModule
+			{
+				get { return isSubModule; }
 			}
 
 			public Dictionary<string, StatusTreeEntry> SubEntiEntries

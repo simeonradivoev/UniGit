@@ -103,7 +103,7 @@ namespace UniGit.Settings
 			GUILayout.EndHorizontal();
 			
 
-			using (Configuration c = Configuration.BuildFrom(gitManager.RepoPath))
+			using (Configuration c = Configuration.BuildFrom(gitManager.GetCurrentDotGitFolder()))
 			{
 				EditorGUILayout.LabelField(GitGUI.GetTempContent("User"), EditorStyles.boldLabel);
 				EditorGUI.indentLevel = 1;
@@ -177,7 +177,7 @@ namespace UniGit.Settings
 
 		private void OpenGitIgnore()
 		{
-			Application.OpenURL(UniGitPath.Combine(gitManager.RepoPath, ".gitignore"));
+			Application.OpenURL(UniGitPath.Combine(gitManager.GetCurrentRepoPath(), ".gitignore"));
 		}
 
 		public void AddItemsToMenu(GenericMenu menu)

@@ -21,6 +21,7 @@ public class TestRepoFixture
 	{
 	    injectionHelper = new InjectionHelper();
 		injectionHelper.Bind<string>().WithId("repoPath").FromInstance(@"D:\Test_Repo");
+		injectionHelper.Bind<string>().WithId("settingsPath").FromInstance(@"D:\Test_Repo\.git\UniGit\Settings.json");
 		injectionHelper.Bind<GitSettingsJson>().FromInstance(new GitSettingsJson {Threading = 0});
 		injectionHelper.Bind<GitCallbacks>();
 		injectionHelper.Bind<IGitPrefs>().To<GitPrefs>();

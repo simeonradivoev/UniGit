@@ -10,38 +10,38 @@ namespace UniGit.Adapters
 	public class TortoiseGitAdapter : BaseExternalAdapter
 	{
 		[UniGitInject]
-		public TortoiseGitAdapter(GitManager gitManager) : base(gitManager)
+		public TortoiseGitAdapter(GitManager gitManager,GitSettingsJson gitSettings) : base(gitManager,gitSettings)
 		{
 			
 		}
 
 		public sealed override bool Push()
 		{
-			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "push", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "push", gitManager.GetCurrentRepoPath());
 			return true;
 		}
 
 		public sealed override bool Pull()
 		{
-			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "pull", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "pull", gitManager.GetCurrentRepoPath());
 			return true;
 		}
 
 		public sealed override bool Commit(string message)
 		{
-			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -logmsg:\"{2}\"", "commit", gitManager.RepoPath,message);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\" -logmsg:\"{2}\"", "commit", gitManager.GetCurrentRepoPath(),message);
 			return true;
 		}
 
 		public sealed override bool Reset(Commit commit)
 		{
-			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.GetCurrentRepoPath());
 			return true;
 		}
 
 		public sealed override bool Merge()
 		{
-			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "merge", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "merge", gitManager.GetCurrentRepoPath());
 			return true;
 		}
 
@@ -95,7 +95,7 @@ namespace UniGit.Adapters
 
 		public sealed override bool Switch()
 		{
-			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.RepoPath);
+			CallProccess("TortoiseGitProc.exe", "-command:\"{0}\" -path:\"{1}\"", "switch", gitManager.GetCurrentRepoPath());
 			return true;
 		}
 	}

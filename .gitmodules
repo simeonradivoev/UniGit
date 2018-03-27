@@ -1,0 +1,3 @@
+[submodule "Assets/SubModules/TestModule"]
+	path = Assets/SubModules/TestModule
+	url = https://github.com/simeonradivoev/UniGitTestSubmodule.git

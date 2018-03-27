@@ -11,8 +11,8 @@ public class InitializationTests : TestRepoFixture
 	[Test]
 	public void InitilizeValidRepository_RepositoryInitilized()
 	{
-		Assert.IsTrue(Directory.Exists(gitManager.RepoPath));
-		Assert.IsTrue(Repository.IsValid(gitManager.RepoPath));
+		Assert.IsTrue(Directory.Exists(gitManager.GetCurrentRepoPath()));
+		Assert.IsTrue(Repository.IsValid(gitManager.GetCurrentRepoPath()));
 	}
 
 	[Test]

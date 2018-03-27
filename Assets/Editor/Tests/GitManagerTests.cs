@@ -41,7 +41,7 @@ public class GitManagerTests : TestRepoFixture
     {
         File.AppendAllText(injectionHelper.GetInstance<GitInitializer>().GitIgnoreFilePath, "testFile.txt");
         string lockedFilePathName = "testFile.txt";
-        string lockedFilePath = UniGitPath.Combine(gitManager.RepoPath, lockedFilePathName);
+        string lockedFilePath = UniGitPath.Combine(gitManager.GetCurrentRepoPath(), lockedFilePathName);
         using (var lockFileStream = File.CreateText(lockedFilePath))
         {
             lockFileStream.WriteLine("This is a locked test file");
@@ -69,13 +69,13 @@ public class GitManagerTests : TestRepoFixture
 	[Test]
 	public void RepositoryIgnoresFolderPaths()
 	{
-		string folderPath = Path.Combine(gitManager.RepoPath, "Test Folder");
+		string folderPath = Path.Combine(gitManager.GetCurrentRepoPath(), "Test Folder");
 		Directory.CreateDirectory(folderPath);
-		string folderMetaPath = Path.Combine(gitManager.RepoPath, "Test Folder.meta");
+		string folderMetaPath = Path.Combine(gitManager.GetCurrentRepoPath(), "Test Folder.meta");
 		File.WriteAllText(folderMetaPath,string.Empty);
-		string imagePath = Path.Combine(gitManager.RepoPath, "Test Folder.png");
+		string imagePath = Path.Combine(gitManager.GetCurrentRepoPath(), "Test Folder.png");
 		File.WriteAllText(imagePath,string.Empty);
-		string imageMetaPath = Path.Combine(gitManager.RepoPath, "Test Folder.png.meta");
+		string imageMetaPath = Path.Combine(gitManager.GetCurrentRepoPath(), "Test Folder.png.meta");
 		File.WriteAllText(imageMetaPath,string.Empty);
 
 		string[] paths = gitManager.GetPathWithMeta(folderPath).ToArray();
@@ -97,7 +97,7 @@ public class GitManagerTests : TestRepoFixture
 		injectionHelper.GetInstance<GitSettingsJson>().CreateFoldersForDriftingMeta = true;
 
 		string metaFileName = "Test Folder.meta";
-		string metaFilePath = Path.Combine(gitManager.RepoPath, metaFileName);
+		string metaFilePath = Path.Combine(gitManager.GetCurrentRepoPath(), metaFileName);
 		File.WriteAllText(metaFilePath,"Test Meta");
 		Assert.IsTrue(File.Exists(metaFilePath));
 		gitManager.AutoStage(metaFileName);

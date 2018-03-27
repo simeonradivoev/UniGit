@@ -12,7 +12,7 @@ namespace UniGit
 	{
 		private const float CommitLineHeight = 21;
 
-		[SerializeField] private string blamePath;
+		[SerializeField] private string blameLocalPath;
 
 		private BlameHunkCollection blameHunk;
 		private string[] lines;
@@ -34,13 +34,13 @@ namespace UniGit
 		}
 		private Styles styles;
 
-		internal void SetBlamePath(string blamePath)
+		internal void SetBlamePath(string blameLocalPath)
 		{
-			this.blamePath = blamePath;
+			this.blameLocalPath = blameLocalPath;
 			CheckBlame();
 			LoadFileLines();
 
-			titleContent = new GUIContent("Git Blame: " + blamePath);
+			titleContent = new GUIContent("Git Blame: " + blameLocalPath);
 		}
 
         [UniGitInject]
@@ -63,7 +63,7 @@ namespace UniGit
 		{
 			try
 			{
-				blameHunk = manager.Repository.Blame(blamePath);
+				blameHunk = manager.Repository.Blame(blameLocalPath);
 				invalidMessage = null;
 			}
 			catch (Exception e)
@@ -74,17 +74,17 @@ namespace UniGit
 
 		private void LoadFileLines()
 		{
-			var asset = AssetDatabase.LoadAssetAtPath<MonoScript>(blamePath);
+			var asset = AssetDatabase.LoadAssetAtPath<MonoScript>(manager.ToProjectPath(blameLocalPath));
 			if (asset != null)
 			{
 				lines = asset.text.Split(new[] { UniGitPath.NewLineChar }, StringSplitOptions.None);
 			}
 			else
 			{
-				lines = File.ReadAllLines(blamePath);
+				lines = File.ReadAllLines(UniGitPath.Combine(manager.GetCurrentRepoPath(),blameLocalPath));
 			}
 			
-			commitLog = manager.Repository.Commits.QueryBy(blamePath).Where(e => blameHunk.Any(h => h.FinalCommit.Sha == e.Commit.Sha)).ToArray();
+			commitLog = manager.Repository.Commits.QueryBy(blameLocalPath).Where(e => blameHunk.Any(h => h.FinalCommit.Sha == e.Commit.Sha)).ToArray();
 		}
 
 		private void InitGUI()
@@ -100,11 +100,11 @@ namespace UniGit
 
 		private void Update()
 		{
-			if (!string.IsNullOrEmpty(blamePath) && blameHunk == null && manager.Repository != null)
+			if (!string.IsNullOrEmpty(blameLocalPath) && blameHunk == null && manager.Repository != null)
 			{
 				CheckBlame();
 				LoadFileLines();
-				titleContent = new GUIContent("Git Blame: " + blamePath);
+				titleContent = new GUIContent("Git Blame: " + blameLocalPath);
 			}
 		}
 

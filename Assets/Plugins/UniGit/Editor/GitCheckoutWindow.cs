@@ -23,7 +23,7 @@ namespace UniGit
 		{
 			checkoutOptions = new CheckoutOptions()
 			{
-				OnCheckoutProgress = OnCheckoutProgress
+				
 			};
 			base.OnEnable();
 		}
@@ -32,14 +32,13 @@ namespace UniGit
 		private void Construct()
 		{
 			checkoutOptions.OnCheckoutNotify = gitManager.CheckoutNotifyHandler;
+			checkoutOptions.OnCheckoutProgress = gitManager.CheckoutProgressHandler;
 		}
 
 		[UsedImplicitly]
 		private void OnWizardCreate()
 		{
-			if(force)
-				checkoutOptions.CheckoutModifiers = CheckoutModifiers.Force;
-
+			checkoutOptions.CheckoutModifiers = force ? CheckoutModifiers.Force : CheckoutModifiers.None;
 			var branch = gitManager.Repository.Branches[branchNames[selectedBranch]];
 			if (branch != null)
 			{

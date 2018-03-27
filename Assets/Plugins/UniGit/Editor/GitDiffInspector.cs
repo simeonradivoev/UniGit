@@ -17,7 +17,7 @@ namespace UniGit
 
 		[SerializeField] private float scrollVertical;
 		[SerializeField] private float scrollHorizontalNormal;
-		[SerializeField] private string path;
+		[SerializeField] private string localPath;
 		[SerializeField] private string commitSha;
 
 		private Styles styles;
@@ -100,44 +100,44 @@ namespace UniGit
 	        GitWindows.RemoveWindow(this);
 	    }
 
-		public void Init(string path)
+		public void Init(string localPath)
 		{
 			InitStyles();
-			this.path = path;
-			synataxHighlight = path.EndsWith(".cs");
+			this.localPath = localPath;
+			synataxHighlight = localPath.EndsWith(".cs");
 			BuildChangeSections(null);
-			LoadAsset(path);
+			LoadAsset(localPath);
 			ScrollToFirstChange();
 			animationTween = null;
 		}
 
-		public void Init(string path,Commit commit)
+		public void Init(string localPath,Commit commit)
 		{
 			InitStyles();
-			this.path = path;
-			synataxHighlight = path.EndsWith(".cs");
+			this.localPath = localPath;
+			synataxHighlight = localPath.EndsWith(".cs");
 			commitSha = commit.Sha;
 			BuildChangeSections(commit);
-			LoadAsset(path);
+			LoadAsset(localPath);
 			ScrollToFirstChange();
 			animationTween = null;
 		}
 
-		public void Init(string path, Commit oldCommit,Commit newCommit)
+		public void Init(string localPath, Commit oldCommit,Commit newCommit)
 		{
 			InitStyles();
-			this.path = path;
-			synataxHighlight = path.EndsWith(".cs");
+			this.localPath = localPath;
+			synataxHighlight = localPath.EndsWith(".cs");
 			commitSha = oldCommit.Sha;
 			BuildChangeSections(oldCommit, newCommit);
-			LoadAsset(path);
+			LoadAsset(localPath);
 			ScrollToFirstChange();
 			animationTween = null;
 		}
 
-		private void LoadAsset(string path)
+		private void LoadAsset(string localPath)
 		{
-			asset = AssetDatabase.LoadMainAssetAtPath(path);
+			asset = AssetDatabase.LoadMainAssetAtPath(gitManager.ToProjectPath(localPath));
 		}
 
 		private string[] GetLines(Commit commit)
@@ -146,13 +146,13 @@ namespace UniGit
 
 			if (commit != null)
 			{
-				var patch = gitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { path }, explicitPathsOptions, compareOptions);
-				changes = patch[path];
+				var patch = gitManager.Repository.Diff.Compare<Patch>(commit.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new [] { localPath }, explicitPathsOptions, compareOptions);
+				changes = patch[localPath];
 			}
 			else if(gitManager.Repository.Head != null && gitManager.Repository.Head.Tip != null)
 			{
-				var patch = gitManager.Repository.Diff.Compare<Patch>(gitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { path }, explicitPathsOptions, compareOptions);
-				changes = patch[path];
+				var patch = gitManager.Repository.Diff.Compare<Patch>(gitManager.Repository.Head.Tip.Tree, DiffTargets.WorkingDirectory | DiffTargets.Index, new[] { localPath }, explicitPathsOptions, compareOptions);
+				changes = patch[localPath];
 			}
 
 
@@ -167,8 +167,8 @@ namespace UniGit
 
 		private string[] GetLines(Commit oldTree, Commit newTree)
 		{
-			var patch = gitManager.Repository.Diff.Compare<Patch>(oldTree.Tree, newTree.Tree, new[] { path }, explicitPathsOptions,compareOptions);
-			var changes = patch[path];
+			var patch = gitManager.Repository.Diff.Compare<Patch>(oldTree.Tree, newTree.Tree, new[] { localPath }, explicitPathsOptions,compareOptions);
+			var changes = patch[localPath];
 			isBinary = changes.IsBinaryComparison;
 			return changes.Patch.Split(UniGitPath.NewLineChar);
 		}
@@ -177,7 +177,7 @@ namespace UniGit
 		{
 			int lastIndexFileLine = 0;
 			Stream indexFileContent;
-			string indexFilePath = UniGitPath.Combine(gitManager.RepoPath, path);
+			string indexFilePath = UniGitPath.Combine(gitManager.GetCurrentRepoPath(), localPath);
 			if (File.Exists(indexFilePath))
 			{
 				indexFileContent = File.OpenRead(indexFilePath);
@@ -209,7 +209,7 @@ namespace UniGit
 		private void BuildChangeSections(Commit oldCommit,Commit newCommit)
 		{
 			int lastIndexFileLine = 0;
-			Stream indexFileContent = ((Blob)newCommit.Tree[path].Target).GetContentStream();
+			Stream indexFileContent = ((Blob)newCommit.Tree[localPath].Target).GetContentStream();
 			StreamReader indexFileReader = new StreamReader(indexFileContent);
 
 			var lines = GetLines(oldCommit, newCommit);
@@ -575,7 +575,7 @@ namespace UniGit
 				GoToNextChange();
 			}
 			GUILayout.FlexibleSpace();
-			GUILayout.Label(GitGUI.GetTempContent(path));
+			GUILayout.Label(GitGUI.GetTempContent(localPath));
 			if (GitGUI.LinkButtonLayout(gitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
 			{
 				GitLinks.GoTo(GitLinks.Donate);

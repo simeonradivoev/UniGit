@@ -25,7 +25,7 @@ namespace UniGit
 		protected override void OnEnable()
 		{
 			fetchOptions = new FetchOptions() { CredentialsProvider = CredentialsHandler, OnProgress = FetchProgress, Prune = prune, RepositoryOperationCompleted = FetchOperationCompleted, RepositoryOperationStarting = FetchOperationStarting };
-			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, OnCheckoutProgress = OnCheckoutProgress, FastForwardStrategy = fastForwardStrategy, FileConflictStrategy = (CheckoutFileConflictStrategy)mergeFileFavor,CheckoutNotifyFlags = CheckoutNotifyFlags.Updated};
+			mergeOptions = new MergeOptions() { CommitOnSuccess = commitOnSuccess, FastForwardStrategy = fastForwardStrategy, FileConflictStrategy = (CheckoutFileConflictStrategy)mergeFileFavor,CheckoutNotifyFlags = CheckoutNotifyFlags.Updated};
 			pullOptions = new PullOptions() {MergeOptions = mergeOptions, FetchOptions = fetchOptions};
 			base.OnEnable();
 		}
@@ -35,6 +35,7 @@ namespace UniGit
 		{
 			fetchOptions.OnTransferProgress = gitManager.FetchTransferProgressHandler;
 			mergeOptions.OnCheckoutNotify = gitManager.CheckoutNotifyHandler;
+			mergeOptions.OnCheckoutProgress = gitManager.CheckoutProgressHandler;
 		}
 
 		[UsedImplicitly]

@@ -11,6 +11,8 @@ namespace UniGit.Status
 	public class GitRepoStatus : IEnumerable<GitStatusEntry>
 	{
 		[SerializeField] private List<GitStatusEntry> entries = new List<GitStatusEntry>();
+		[SerializeField] private List<GitStatusSubModuleEntry> subModuleEntries = new List<GitStatusSubModuleEntry>();
+		[SerializeField] private List<GitStatusRemoteEntry> remoteEntries = new List<GitStatusRemoteEntry>();
 		private object lockObj;
 
 		public GitRepoStatus()
@@ -21,6 +23,8 @@ namespace UniGit.Status
 		public void Clear()
 		{
 			entries.Clear();
+			subModuleEntries.Clear();
+			remoteEntries.Clear();
 		}
 
 		public void Combine(RepositoryStatus other)
@@ -33,24 +37,34 @@ namespace UniGit.Status
 
 		public void Update(GitStatusEntry status)
 		{
-			entries.RemoveAll(e => e.Path == status.Path);
+			entries.RemoveAll(e => e.LocalPath == status.LocalPath);
 			entries.Add(status);
 		}
 
-		public void Update(string filePath,FileStatus status)
+		public void Add(GitStatusSubModuleEntry status)
 		{
-			entries.RemoveAll(e => e.Path == filePath);
+			subModuleEntries.Add(status);
+		}
+
+		public void Add(GitStatusRemoteEntry remoteEntry)
+		{
+			remoteEntries.Add(remoteEntry);
+		}
+
+		public void Update(string localFilePath,FileStatus status)
+		{
+			entries.RemoveAll(e => e.LocalPath == localFilePath);
 			if (status != FileStatus.Nonexistent)
 			{
-				entries.Add(new GitStatusEntry(filePath, status));
+				entries.Add(new GitStatusEntry(localFilePath, status));
 			}
 		}
 
-		public bool Get(string path,out GitStatusEntry entry)
+		public bool Get(string localPath,out GitStatusEntry entry)
 		{
 			foreach (var e in entries)
 			{
-				if (e.Path == path)
+				if (e.LocalPath == localPath)
 				{
 					entry = e;
 					return true;
@@ -74,6 +88,16 @@ namespace UniGit.Status
 		public void Unlock()
 		{
 			Monitor.Exit(lockObj);
+		}
+
+		public IEnumerable<GitStatusSubModuleEntry> SubModuleEntries
+		{
+			get { return subModuleEntries; }
+		}
+
+		public IEnumerable<GitStatusRemoteEntry> RemoteEntries
+		{
+			get { return remoteEntries; }
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()

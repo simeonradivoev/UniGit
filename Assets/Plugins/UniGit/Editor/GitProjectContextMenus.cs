@@ -39,79 +39,104 @@ namespace UniGit
 		[MenuItem("Assets/Git/Add", priority = 50), UsedImplicitly]
 		private static void AddSelected()
 		{
-			string[] paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).ToArray();
-			gitManager.AutoStage(paths);
+			string[] localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p))
+				.SelectMany(gitManager.GetPathWithMeta).ToArray();
+			gitManager.AutoStage(localPaths);
 		}
 
 		[MenuItem("Assets/Git/Add", true, priority = 50), UsedImplicitly]
 		private static bool AddSelectedValidate()
 		{
 			if (initializer == null || !initializer.IsValidRepo) return false;
-			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).Any(g => GitManager.CanStage(gitManager.Repository.RetrieveStatus(g)));
+			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta)
+				.Any(g => GitManager.CanStage(gitManager.Repository.RetrieveStatus(g)));
 		}
 
 		[MenuItem("Assets/Git/Remove", priority = 50), UsedImplicitly]
 		private static void RemoveSelected()
 		{
-			string[] paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).ToArray();
-			gitManager.AutoUnstage(paths);
+			string[] localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta).ToArray();
+			gitManager.AutoUnstage(localPaths);
 		}
 
 		[MenuItem("Assets/Git/Remove", true, priority = 50), UsedImplicitly]
 		private static bool RemoveSelectedValidate()
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
-			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).Any(g => GitManager.CanUnstage(gitManager.Repository.RetrieveStatus(g)));
+			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta)
+				.Any(g => GitManager.CanUnstage(gitManager.Repository.RetrieveStatus(g)));
 		}
 
-		[MenuItem("Assets/Git/Difference", priority = 65), UsedImplicitly]
-		private static void SeeDifference()
+		[MenuItem("Assets/Git/Difference/Object", priority = 65), UsedImplicitly]
+		private static void SeeDifferenceObject()
 		{
-			gitManager.ShowDiff(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]), externalManager);
+			gitManager.ShowDiff(gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0])), externalManager);
 		}
 
-		[MenuItem("Assets/Git/Difference", true, priority = 65)]
-		private static bool SeeDifferenceValidate()
+		[MenuItem("Assets/Git/Difference/Object", true, priority = 65)]
+		private static bool SeeDifferenceObjectValidate()
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
 			if (Selection.assetGUIDs.Length != 1) return false;
-			if (gitManager.IsDirectory(Selection.assetGUIDs[0])) return false;
-			var entry = gitManager.Repository.Index[AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0])];
-			if (entry != null)
-			{
-				Blob blob = gitManager.Repository.Lookup(entry.Id) as Blob;
-				if (blob == null) return false;
-				return !blob.IsBinary;
-			}
-			return false;
+			string localPath = gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
+			if (gitManager.IsDirectory(localPath)) return false;
+			return true;
 		}
 
-		[MenuItem("Assets/Git/Difference with previous version", priority = 65), UsedImplicitly]
-		private static void SeeDifferencePrev()
+		[MenuItem("Assets/Git/Difference/Meta", priority = 65), UsedImplicitly]
+		private static void SeeDifferenceMeta()
 		{
-			gitManager.ShowDiffPrev(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]), externalManager);
+			gitManager.ShowDiff(gitManager.ToLocalPath(GitManager.MetaPathFromAsset(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]))), externalManager);
 		}
 
-		[MenuItem("Assets/Git/Difference with previous version", true, priority = 65), UsedImplicitly]
-		private static bool SeeDifferencePrevValidate()
+		[MenuItem("Assets/Git/Difference/Meta", true, priority = 65)]
+		private static bool SeeDifferenceMetaValidate()
 		{
-			return SeeDifferenceValidate();
+			if (gitManager == null || !initializer.IsValidRepo) return false;
+			if (Selection.assetGUIDs.Length != 1) return false;
+			string localPath = gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
+			if (gitManager.IsDirectory(localPath)) return false;
+			return true;
+		}
+
+		[MenuItem("Assets/Git/Difference with previous version/Object", priority = 65), UsedImplicitly]
+		private static void SeeDifferenceObjectPrev()
+		{
+			gitManager.ShowDiffPrev(gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0])), externalManager);
+		}
+
+		[MenuItem("Assets/Git/Difference with previous version/Object", true, priority = 65), UsedImplicitly]
+		private static bool SeeDifferenceObjectPrevValidate()
+		{
+			return SeeDifferenceObjectValidate();
+		}
+
+		[MenuItem("Assets/Git/Difference with previous version/Meta", priority = 65), UsedImplicitly]
+		private static void SeeDifferenceMetaPrev()
+		{
+			gitManager.ShowDiffPrev(gitManager.ToLocalPath(GitManager.MetaPathFromAsset(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]))), externalManager);
+		}
+
+		[MenuItem("Assets/Git/Difference with previous version/Meta", true, priority = 65), UsedImplicitly]
+		private static bool SeeDifferenceMetaPrevValidate()
+		{
+			return SeeDifferenceMetaValidate();
 		}
 
 		[MenuItem("Assets/Git/Revert", priority = 80), UsedImplicitly]
 		private static void Revet()
 		{
-			var paths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).ToArray();
-			if (externalManager.TakeRevert(paths))
+			var localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta).ToArray();
+			if (externalManager.TakeRevert(localPaths))
 			{
 				gitCallbacks.IssueAssetDatabaseRefresh();
-				gitManager.MarkDirtyAuto(paths);
+				gitManager.MarkDirtyAuto(localPaths);
 				return;
 			}
 
 			try
 			{
-				gitManager.Repository.CheckoutPaths("HEAD", paths, new CheckoutOptions()
+				gitManager.Repository.CheckoutPaths("HEAD", localPaths, new CheckoutOptions()
 				{
 					CheckoutModifiers = CheckoutModifiers.Force, 
 					OnCheckoutProgress = OnRevertProgress,
@@ -125,7 +150,7 @@ namespace UniGit
 			}
 			
 			gitCallbacks.IssueAssetDatabaseRefresh();
-			gitManager.MarkDirtyAuto(paths);
+			gitManager.MarkDirtyAuto(localPaths);
 			var projectWindow = gitProjectOverlay.ProjectWindows.FirstOrDefault(reflectionHelper.HasFocusFucntion);
 			if (projectWindow != null)
 			{
@@ -137,7 +162,8 @@ namespace UniGit
 		private static bool RevetValidate()
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
-			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).Where(File.Exists).Select(e => gitManager.Repository.RetrieveStatus(e)).Any(e => GitManager.CanStage(e) | GitManager.CanUnstage(e));
+			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).Where(File.Exists).Select(p => gitManager.ToLocalPath(p))
+				.Select(e => gitManager.Repository.RetrieveStatus(e)).Any(e => GitManager.CanStage(e) | GitManager.CanUnstage(e));
 		}
 
 		private static void OnRevertProgress(string path, int currentSteps, int totalSteps)
@@ -153,31 +179,46 @@ namespace UniGit
 		[MenuItem("Assets/Git/Blame/Object", priority = 100), UsedImplicitly]
 		private static void BlameObject()
 		{
-			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
-			gitManager.ShowBlameWizard(path, externalManager);
+			var localPath = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).FirstOrDefault();
+			gitManager.ShowBlameWizard(localPath, externalManager);
 		}
 
 		[MenuItem("Assets/Git/Blame/Object", priority = 100,validate = true), UsedImplicitly]
 		private static bool BlameObjectValidate()
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
-			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
-			return gitManager.CanBlame(path);
+			var projectPath = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
+			return gitManager.CanBlame(gitManager.ToLocalPath(projectPath));
 		}
 
 		[MenuItem("Assets/Git/Blame/Meta", priority = 100), UsedImplicitly]
 		private static void BlameMeta()
 		{
-			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.GetTextMetaFilePathFromAssetPath).FirstOrDefault();
-			gitManager.ShowBlameWizard(path, externalManager);
+			var projectPath = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(GitManager.MetaPathFromAsset).FirstOrDefault();
+			gitManager.ShowBlameWizard(gitManager.ToLocalPath(projectPath), externalManager);
 		}
 
 		[MenuItem("Assets/Git/Blame/Meta", priority = 100,validate = true), UsedImplicitly]
 		private static bool BlameMetaValidate()
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
-			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(AssetDatabase.GetTextMetaFilePathFromAssetPath).FirstOrDefault();
-			return gitManager.CanBlame(path);
+			var projectPath = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(GitManager.MetaPathFromAsset).FirstOrDefault();
+			return gitManager.CanBlame(gitManager.ToLocalPath(projectPath));
+		}
+
+		[MenuItem("Assets/Git/Update Module", priority = 120), UsedImplicitly]
+		public static void UpdateModule()
+		{
+			var path = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault();
+			var window = UniGitLoader.GetWindow<GitSubModuleOptionsWizard>();
+			window.Init(path);
+		}
+
+		[MenuItem("Assets/Git/Update Module", priority = 120,validate = true), UsedImplicitly]
+		public static bool UpdateModuleValidate()
+		{
+			if (gitManager == null || !initializer.IsValidRepo) return false;
+			return gitManager.IsSubModule(Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault());
 		}
 	}
 }

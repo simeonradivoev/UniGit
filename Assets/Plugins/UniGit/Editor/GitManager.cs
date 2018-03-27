@@ -6,6 +6,7 @@ using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Settings;
+using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
@@ -17,8 +18,7 @@ namespace UniGit
 		public const string Version = "1.3.2";
 
 		private readonly string repoPath;
-		private readonly string gitPath;
-		public string RepoPath { get { return repoPath; } }
+		private readonly string settingsPath;
 
 		private Repository repository;
 		private readonly GitSettingsJson gitSettings;
@@ -29,6 +29,8 @@ namespace UniGit
 		private bool forceSingleThread;	//force single threaded update
 		private bool reloadDirty;	//should the GitLib2Sharp repository be recreated with a new instance
 		private bool isUpdating;
+		private bool inSubModule;
+		private string dotGitDirCached;
 		private readonly List<AsyncStageOperation> asyncStages = new List<AsyncStageOperation>();
 		private readonly HashSet<string> updatingFiles = new HashSet<string>();		//currently updating files, mainly for multi threaded update
 		private readonly GitCallbacks callbacks;
@@ -40,7 +42,8 @@ namespace UniGit
 		private readonly GitInitializer initializer;
 
 		[UniGitInject]
-		public GitManager(string repoPath, 
+		public GitManager(string repoPath,
+			string settingsPath,
 			GitCallbacks callbacks, 
 			GitSettingsJson settings, 
 			IGitPrefs prefs, 
@@ -49,6 +52,7 @@ namespace UniGit
 			ILogger logger,
 			GitInitializer initializer)
 		{
+			this.settingsPath = settingsPath;
 			this.gitData = gitData;
 			this.repoPath = repoPath;
 			this.callbacks = callbacks;
@@ -57,7 +61,6 @@ namespace UniGit
 			this.logger = logger;
 			this.initializer = initializer;
 			gitSettings = settings;
-			gitPath = UniGitPath.Combine(repoPath, ".git");
 
 			Initialize();
 		}
@@ -173,17 +176,17 @@ namespace UniGit
 
 		private void Update(bool reloadRepository,string[] paths = null)
 		{
-			StartUpdating(paths);
-
-			if (reloadRepository && initializer.IsValidRepo)
+			if (initializer.IsValidRepo)
 			{
-				if (repository != null) repository.Dispose();
-				repository = new Repository(RepoPath);
-				callbacks.IssueOnRepositoryLoad(repository);
-			}
+				StartUpdating(paths);
 
-			if (repository != null)
-			{
+				if (reloadRepository || repository == null)
+				{
+					if (repository != null) repository.Dispose();
+					repository = CreateRepository(gitSettings.ActiveSubModule);
+					callbacks.IssueOnRepositoryLoad(repository);
+				}
+
 				if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status)) RetreiveStatusThreaded(paths);
 				else RetreiveStatus(paths);
 			}
@@ -266,9 +269,47 @@ namespace UniGit
 		{
 			if (repository == null && initializer.IsValidRepo)
 			{
-				repository = new Repository(RepoPath);
+				repository = CreateRepository(gitSettings.ActiveSubModule);
 				callbacks.IssueOnRepositoryLoad(repository);
 			}
+		}
+
+		private Repository CreateRepository(string activeModule)
+		{
+			var mainRepository = new Repository(repoPath);
+
+			if (!string.IsNullOrEmpty(activeModule))
+			{
+				var subModule = mainRepository.Submodules[activeModule];
+				if (subModule != null && Repository.IsValid(subModule.Path))
+				{
+					var subModuleRepo = new Repository(subModule.Path);
+					mainRepository.Dispose();
+					inSubModule = true;
+					dotGitDirCached = subModuleRepo.Info.Path;
+					return subModuleRepo;
+				}
+			}
+			inSubModule = false;
+			dotGitDirCached = mainRepository.Info.Path;
+			return mainRepository;
+		}
+
+		public void SwitchToSubModule(string path)
+		{
+			if (gitSettings.ActiveSubModule != path && Repository.IsValid(path))
+			{
+				gitSettings.ActiveSubModule = path;
+				gitSettings.MarkDirty();
+				MarkDirty(true);
+			}
+		}
+
+		public void SwitchToMainRepository()
+		{
+			gitSettings.ActiveSubModule = null;
+			gitSettings.MarkDirty();
+			MarkDirty(true);
 		}
 
 		public void MarkDirtyAuto(params string[] paths)
@@ -299,7 +340,7 @@ namespace UniGit
 		{
 			foreach (var path in paths)
 			{
-				string fixedPath = path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
+				string fixedPath = FixUnityPath(path);
 				if(IsDirectory(fixedPath)) continue;
 				if(!gitData.DirtyFilesQueue.Contains(fixedPath))
 					gitData.DirtyFilesQueue.Add(fixedPath);
@@ -325,6 +366,17 @@ namespace UniGit
 					var s = repository.RetrieveStatus(options);
 					gitData.RepositoryStatus.Clear();
 					gitData.RepositoryStatus.Combine(s);
+					foreach (var submodule in repository.Submodules)
+					{
+						var e = new GitStatusSubModuleEntry(submodule);
+						gitData.RepositoryStatus.Add(e);
+					}
+
+					foreach (var remote in repository.Network.Remotes)
+					{
+						var e = new GitStatusRemoteEntry(remote);
+						gitData.RepositoryStatus.Add(e);
+					}
 				}
 			}
 			finally
@@ -518,54 +570,54 @@ namespace UniGit
 		#endregion
 
 		#region Helpers
-		public void ShowDiff(string path, [NotNull] Commit oldCommit,[NotNull] Commit newCommit,GitExternalManager externalManager)
+		public void ShowDiff(string localPath, [NotNull] Commit oldCommit,[NotNull] Commit newCommit,GitExternalManager externalManager)
 		{
-			if (externalManager.TakeDiff(path, oldCommit, newCommit))
+			if (externalManager.TakeDiff(localPath, oldCommit, newCommit))
 			{
 				return;
 			}
 
 			var window = UniGitLoader.GetWindow<GitDiffInspector>();
-			window.Init(path, oldCommit, newCommit);
+			window.Init(localPath, oldCommit, newCommit);
 		}
 
-		public void ShowDiff(string path, GitExternalManager externalManager)
+		public void ShowDiff(string localPath, GitExternalManager externalManager)
 		{
-			if (string.IsNullOrEmpty(path) ||  Repository == null) return;
-			if (externalManager.TakeDiff(path))
+			if (string.IsNullOrEmpty(localPath) ||  Repository == null) return;
+			if (externalManager.TakeDiff(localPath))
 			{
 				return;
 			}
 
 			var window = UniGitLoader.GetWindow<GitDiffInspector>();
-			window.Init(path);
+			window.Init(localPath);
 		}
 
-		public void ShowDiffPrev(string path, GitExternalManager externalManager)
+		public void ShowDiffPrev(string localPath, GitExternalManager externalManager)
 		{
-			if (string.IsNullOrEmpty(path) || Repository == null) return;
-			var lastCommit = Repository.Commits.QueryBy(path).Skip(1).FirstOrDefault();
+			if (string.IsNullOrEmpty(localPath) || Repository == null) return;
+			var lastCommit = Repository.Commits.QueryBy(localPath).Skip(1).FirstOrDefault();
 			if(lastCommit == null) return;
-			if (externalManager.TakeDiff(path, lastCommit.Commit))
+			if (externalManager.TakeDiff(localPath, lastCommit.Commit))
 			{
 				return;
 			}
 
 			var window = UniGitLoader.GetWindow<GitDiffInspector>();
-			window.Init(path, lastCommit.Commit);
+			window.Init(localPath, lastCommit.Commit);
 		}
 
-		public void ShowBlameWizard(string path, GitExternalManager externalManager)
+		public void ShowBlameWizard(string localPath, GitExternalManager externalManager)
 		{
-			if (!string.IsNullOrEmpty(path))
+			if (!string.IsNullOrEmpty(localPath))
 			{
-				if (externalManager.TakeBlame(path))
+				if (externalManager.TakeBlame(localPath))
 				{
 					return;
 				}
 
 				var blameWizard = UniGitLoader.GetWindow<GitBlameWizard>(true);
-				blameWizard.SetBlamePath(path);
+				blameWizard.SetBlamePath(localPath);
 			}
 		}
 
@@ -574,22 +626,22 @@ namespace UniGit
 			return fileStatus.AreNotSet(FileStatus.NewInIndex, FileStatus.Ignored,FileStatus.NewInWorkdir);
 		}
 
-		public bool CanBlame(string path)
+		public bool CanBlame(string localPath)
 		{
-			if (IsDirectory(path)) return false;
-			return repository.Head[path] != null;
+			if (IsDirectory(localPath)) return false;
+			return repository.Head[localPath] != null;
 		}
 
-		public void AutoStage(params string[] paths)
+		public void AutoStage(params string[] localPaths)
 		{
 			if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
-				AsyncStage(paths);
+				AsyncStage(localPaths);
 			}
 			else
 			{
-				GitCommands.Stage(repository,paths);
-				MarkDirtyAuto(paths);
+				GitCommands.Stage(repository,localPaths);
+				MarkDirtyAuto(localPaths);
 			}
 		}
 
@@ -659,13 +711,65 @@ namespace UniGit
 			return watchers.Remove(watcher);
 		}
 
-		public bool IsDirectory(string path)
+		public bool IsDirectory(string localPath)
 		{
-			if (Path.IsPathRooted(path))
+			string projectPath = ToProjectPath(localPath);
+			if (Path.IsPathRooted(projectPath))
 			{
-				return Directory.Exists(UniGitPath.Combine(repoPath,path));
+				return Directory.Exists(UniGitPath.Combine(repoPath,projectPath));
 			}
-			return Directory.Exists(path);
+			return Directory.Exists(projectPath);
+		}
+
+		public bool IsEmptyFolderMeta(string path)
+		{
+			if (IsMetaPath(path))
+			{
+				return IsEmptyFolder(path.Substring(0, path.Length - 5));
+			}
+			return false;
+		}
+
+		public bool IsEmptyFolder(string path)
+		{
+			if (Directory.Exists(path))
+			{
+				return Directory.GetFileSystemEntries(path).Length <= 0;
+			}
+			return false;
+		}
+
+		public bool IsSubModule(string projectPath)
+		{
+			return gitData.RepositoryStatus != null && gitData.RepositoryStatus.SubModuleEntries.Any(m => UniGitPath.Compare(m.Path,projectPath));
+		}
+
+		public string ToProjectPath(string localPath)
+		{
+			if (inSubModule) return UniGitPath.Combine(gitSettings.ActiveSubModule, localPath);
+			return localPath;
+		}
+
+		public string ToLocalPath(string projectPath)
+		{
+			if (inSubModule) return projectPath.Replace(gitSettings.ActiveSubModule.Replace("\\","/") + "/","");
+			return projectPath;
+		}
+
+		/// <summary>
+		/// If in sub module returns it's repo path
+		/// </summary>
+		/// <returns></returns>
+		public string GetCurrentRepoPath()
+		{
+			if (inSubModule) return UniGitPath.Combine(repoPath, gitSettings.ActiveSubModule);
+			return repoPath;
+		}
+
+		public string GetCurrentDotGitFolder()
+		{
+			if (inSubModule) return dotGitDirCached;
+			return UniGitPath.Combine(repoPath,".git");
 		}
 
 		#region Enumeration helpers
@@ -715,24 +819,6 @@ namespace UniGit
 
 		#region Static Helpers
 
-		public static bool IsEmptyFolderMeta(string path)
-		{
-			if (IsMetaPath(path))
-			{
-				return IsEmptyFolder(path.Substring(0, path.Length - 5));
-			}
-			return false;
-		}
-
-		public static bool IsEmptyFolder(string path)
-		{
-			if (Directory.Exists(path))
-			{
-				return Directory.GetFileSystemEntries(path).Length <= 0;
-			}
-			return false;
-		}
-
 		public static string AssetPathFromMeta(string metaPath)
 		{
 			if (IsMetaPath(metaPath))
@@ -766,6 +852,11 @@ namespace UniGit
 		{
 			return path.EndsWith(".meta");
 		}
+
+		public static string FixUnityPath(string path)
+		{
+			return path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
+		}
 		#endregion
 
 		#region Repository Handlers Handlers
@@ -787,6 +878,19 @@ namespace UniGit
 			return true;
 		}
 
+		public void CheckoutProgressHandler(string path, int completedSteps, int totalSteps)
+		{
+			if (string.IsNullOrEmpty(path))
+			{
+				logger.Log(LogType.Log,"Nothing to checkout");
+			}
+			else
+			{
+				float percent = (float)completedSteps / totalSteps;
+				EditorUtility.DisplayProgressBar("Transferring", string.Format("Checking Out: {0}",path),percent);
+			}
+		}
+
 		public bool FetchTransferProgressHandler(TransferProgress progress)
 		{
 			float percent = (float)progress.ReceivedObjects / progress.TotalObjects;
@@ -794,7 +898,7 @@ namespace UniGit
 			if (progress.TotalObjects == progress.ReceivedObjects)
 			{
 #if UNITY_EDITOR
-				Debug.Log("Transfer Complete. Received a total of " + progress.IndexedObjects + " objects");
+				logger.Log("Transfer Complete. Received a total of " + progress.IndexedObjects + " objects");
 #endif
 			}
 			//true to continue
@@ -859,6 +963,11 @@ namespace UniGit
 			get { return gitData.DirtyFilesQueue.Count > 0 || repositoryDirty; }
 		}
 
+		public bool InSubModule
+		{
+			get { return inSubModule; }
+		}
+
 		public Signature Signature
 		{
 			get { return new Signature(Repository.Config.GetValueOrDefault<string>("user.name"), Repository.Config.GetValueOrDefault<string>("user.email"),DateTimeOffset.Now);}
@@ -886,14 +995,9 @@ namespace UniGit
 			}
 		}
 
-		public string GitFolderPath
+		public string SettingsDirectory
 		{
-			get { return gitPath; }
-		}
-
-		public string SettingsFilePath
-		{
-			get { return UniGitPath.Combine(gitPath,"UniGit", "Settings.json"); }
+			get { return Path.GetDirectoryName(settingsPath); }
 		}
 
 		public Queue<Action> ActionQueue

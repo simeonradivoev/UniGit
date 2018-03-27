@@ -15,8 +15,11 @@
 
 using System;
 using System.ComponentModel;
+using System.Net;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
+using CredentialManagement;
 
 /// <summary>
 /// Encrypts and decrypts data using DPAPI functions.
@@ -137,10 +140,9 @@ public class DPAPI
 	/// <returns>
 	/// Encrypted value in a base64-encoded format.
 	/// </returns>
-	public static string Encrypt(string plainText)
+	public static string Encrypt(SecureString plainText)
 	{
-		return Encrypt(defaultKeyType, plainText, String.Empty,
-						String.Empty);
+		return Encrypt(defaultKeyType, plainText, String.Empty,String.Empty);
 	}
 
 	/// <summary>
@@ -163,10 +165,9 @@ public class DPAPI
 	/// <returns>
 	/// Encrypted value in a base64-encoded format.
 	/// </returns>
-	public static string Encrypt(KeyType keyType, string plainText)
+	public static string Encrypt(KeyType keyType, SecureString plainText)
 	{
-		return Encrypt(keyType, plainText, String.Empty,
-						String.Empty);
+		return Encrypt(keyType, plainText, String.Empty,String.Empty);
 	}
 
 	/// <summary>
@@ -192,9 +193,7 @@ public class DPAPI
 	/// <returns>
 	/// Encrypted value in a base64-encoded format.
 	/// </returns>
-	public static string Encrypt(KeyType keyType,
-								 string plainText,
-								 string entropy)
+	public static string Encrypt(KeyType keyType,SecureString plainText,string entropy)
 	{
 		return Encrypt(keyType, plainText, entropy, String.Empty);
 	}
@@ -227,22 +226,34 @@ public class DPAPI
 	/// <returns>
 	/// Encrypted value in a base64-encoded format.
 	/// </returns>
-	public static string Encrypt(KeyType keyType,
-								 string plainText,
-								 string entropy,
-								 string description)
+	public static string Encrypt(KeyType keyType,SecureString plainText,string entropy,string description)
 	{
+		if (plainText == null) return null;
+
 		// Make sure that parameters are valid.
-		if (plainText == null) plainText = String.Empty;
 		if (entropy == null) entropy = String.Empty;
 
-		// Call encryption routine and convert returned bytes into
-		// a base64-encoded value.
-		return Convert.ToBase64String(
-				Encrypt(keyType,
-						Encoding.UTF8.GetBytes(plainText),
-						Encoding.UTF8.GetBytes(entropy),
-						description));
+		char[] charArray = new char[plainText.Length];
+		byte[] bytes = null;
+		IntPtr unicode = IntPtr.Zero;
+
+		try
+		{
+			unicode = Marshal.SecureStringToGlobalAllocUnicode(plainText);
+			Marshal.Copy(unicode, charArray, 0, charArray.Length);
+			bytes = Encoding.UTF8.GetBytes(charArray);
+
+			// Call encryption routine and convert returned bytes into
+			// a base64-encoded value.
+			return Convert.ToBase64String(Encrypt(keyType,bytes,Encoding.UTF8.GetBytes(entropy),description));
+		}
+		finally
+		{
+			Array.Clear(charArray, 0, charArray.Length);
+			if(bytes != null) Array.Clear(bytes, 0, bytes.Length);
+			if(unicode != IntPtr.Zero)
+				Marshal.ZeroFreeGlobalAllocUnicode(unicode);
+		}
 	}
 
 	/// <summary>
@@ -273,10 +284,7 @@ public class DPAPI
 	/// <returns>
 	/// Encrypted value.
 	/// </returns>
-	public static byte[] Encrypt(KeyType keyType,
-								 byte[] plainTextBytes,
-								 byte[] entropyBytes,
-								 string description)
+	public static byte[] Encrypt(KeyType keyType,byte[] plainTextBytes,byte[] entropyBytes,string description)
 	{
 		// Make sure that parameters are valid.
 		if (plainTextBytes == null) plainTextBytes = new byte[0];
@@ -293,6 +301,8 @@ public class DPAPI
 		CRYPTPROTECT_PROMPTSTRUCT prompt =
 								  new CRYPTPROTECT_PROMPTSTRUCT();
 		InitPrompt(ref prompt);
+
+		IntPtr charData = IntPtr.Zero;
 
 		try
 		{
@@ -372,6 +382,9 @@ public class DPAPI
 
 			if (entropyBlob.pbData != IntPtr.Zero)
 				Marshal.FreeHGlobal(entropyBlob.pbData);
+
+			if(charData != IntPtr.Zero)
+				Marshal.FreeHGlobal(charData);
 		}
 	}
 
@@ -392,7 +405,7 @@ public class DPAPI
 	/// machine-specific; DPAPI will figure it out by looking at
 	/// the signature of encrypted data.
 	/// </remarks>
-	public static string Decrypt(string cipherText)
+	public static SecureString Decrypt(string cipherText)
 	{
 		string description;
 
@@ -418,8 +431,7 @@ public class DPAPI
 	/// machine-specific; DPAPI will figure it out by looking at
 	/// the signature of encrypted data.
 	/// </remarks>
-	public static string Decrypt(string cipherText,
-								 out string description)
+	public static SecureString Decrypt(string cipherText,out string description)
 	{
 		return Decrypt(cipherText, String.Empty, out description);
 	}
@@ -446,17 +458,27 @@ public class DPAPI
 	/// machine-specific; DPAPI will figure it out by looking at
 	/// the signature of encrypted data.
 	/// </remarks>
-	public static string Decrypt(string cipherText,
-									 string entropy,
-								 out string description)
+	public static SecureString Decrypt(string cipherText,string entropy,out string description)
 	{
 		// Make sure that parameters are valid.
 		if (entropy == null) entropy = String.Empty;
 
-		return Encoding.UTF8.GetString(
-					Decrypt(Convert.FromBase64String(cipherText),
-								Encoding.UTF8.GetBytes(entropy),
-							out description));
+		var bytes = Decrypt(Convert.FromBase64String(cipherText),Encoding.UTF8.GetBytes(entropy),out description);
+		var chars = Encoding.UTF8.GetChars(bytes);
+		try
+		{
+			SecureString secureString = new SecureString();
+			for (int i = 0; i < chars.Length; i++)
+			{
+				secureString.AppendChar(chars[i]);
+			}
+			return secureString;
+		}
+		finally
+		{
+			Array.Clear(bytes,0,bytes.Length);
+			Array.Clear(chars,0,chars.Length);
+		}
 	}
 
 	/// <summary>
@@ -481,9 +503,7 @@ public class DPAPI
 	/// machine-specific; DPAPI will figure it out by looking at
 	/// the signature of encrypted data.
 	/// </remarks>
-	public static byte[] Decrypt(byte[] cipherTextBytes,
-									 byte[] entropyBytes,
-								 out string description)
+	public static byte[] Decrypt(byte[] cipherTextBytes,byte[] entropyBytes,out string description)
 	{
 		// Create BLOBs to hold data.
 		DATA_BLOB plainTextBlob = new DATA_BLOB();
@@ -578,51 +598,44 @@ public class DPAPI
 				Marshal.FreeHGlobal(entropyBlob.pbData);
 		}
 	}
-}
 
-/// <summary>
-/// Demonstrates the use of DPAPI functions to encrypt and decrypt data.
-/// </summary>
-public class DPAPITest
-{
-	/// <summary>
-	/// The main entry point for the application.
-	/// </summary>
-	[STAThread]
-	static void Main(string[] args)
+	internal static string CreateString(SecureString secureString)
 	{
+		string plainString;
+		IntPtr unicode = IntPtr.Zero;
+ 
+		if (secureString == null || secureString.Length == 0)
+			return String.Empty;
+ 
 		try
 		{
-			string text = "Hello, world!";
-			string entropy = null;
-			string description;
-
-			Console.WriteLine("Plaintext: {0}\r\n", text);
-
-			// Call DPAPI to encrypt data with user-specific key.
-			string encrypted = DPAPI.Encrypt(DPAPI.KeyType.UserKey,
-											  text,
-											  entropy,
-											  "My Data");
-			Console.WriteLine("Encrypted: {0}\r\n", encrypted);
-
-			// Call DPAPI to decrypt data.
-			string decrypted = DPAPI.Decrypt(encrypted,
-												entropy,
-											out description);
-			Console.WriteLine("Decrypted: {0} <<<{1}>>>\r\n",
-							   decrypted, description);
+			unicode = Marshal.SecureStringToGlobalAllocUnicode(secureString);
+			plainString = Marshal.PtrToStringUni(unicode);
 		}
-		catch (Exception ex)
+		finally
 		{
-			while (ex != null)
-			{
-				Console.WriteLine(ex.Message);
-				ex = ex.InnerException;
-			}
+			if (unicode != IntPtr.Zero)
+				Marshal.ZeroFreeGlobalAllocUnicode(unicode);
 		}
+		return plainString;
+	}
+ 
+	internal static unsafe SecureString CreateSecureString(string plainString)
+	{
+		SecureString secureString;
+ 
+		if (string.IsNullOrEmpty(plainString))
+			return new SecureString();
+ 
+		fixed (char* pch = plainString)
+		{
+			secureString = new SecureString(pch, plainString.Length);
+		}
+ 
+		return secureString;
 	}
 }
+
 //
 // END OF FILE
 ///////////////////////////////////////////////////////////////////////////////

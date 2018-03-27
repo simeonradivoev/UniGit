@@ -20,7 +20,7 @@ namespace UniGit
 				CredentialsProvider = CredentialsHandler,
 				OnProgress = FetchProgress,
 				Prune = prune, RepositoryOperationCompleted = FetchOperationCompleted,
-				RepositoryOperationStarting = FetchOperationStarting 
+				RepositoryOperationStarting = FetchOperationStarting
 			};
 			base.OnEnable();
 		}

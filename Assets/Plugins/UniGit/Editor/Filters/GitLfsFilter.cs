@@ -138,7 +138,7 @@ namespace UniGit.Filters
 				var startInfo = new ProcessStartInfo
 				{
 					FileName = "git-lfs",
-					WorkingDirectory = gitManager.RepoPath,
+					WorkingDirectory = gitManager.GetCurrentRepoPath(),
 					RedirectStandardInput = true,
 					RedirectStandardOutput = true,
 					RedirectStandardError = true,

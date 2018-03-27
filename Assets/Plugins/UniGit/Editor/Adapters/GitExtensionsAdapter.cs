@@ -10,7 +10,7 @@ namespace UniGit.Adapters
 	public class GitExtensionsAdapter : BaseExternalAdapter
 	{
 		[UniGitInject]
-		public GitExtensionsAdapter(GitManager gitManager) : base(gitManager)
+		public GitExtensionsAdapter(GitManager gitManager,GitSettingsJson gitSettings) : base(gitManager,gitSettings)
 		{
 			
 		}

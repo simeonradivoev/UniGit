@@ -2,11 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using JetBrains.Annotations;
 using UnityEngine;
 
 namespace UniGit
 {
+	[Obsolete("Use 'GitCredentialsJson' instead")]
 	public class GitCredentials : ScriptableObject, IEnumerable<GitCredentials.Entry>
 	{
 		[SerializeField] private List<Entry> entries;
@@ -113,7 +115,7 @@ namespace UniGit
 				this.username = username;
 			}
 
-			public void EncryptPassword(string password)
+			public void EncryptPassword(SecureString password)
 			{
 				this.password = DPAPI.Encrypt(DPAPI.KeyType.UserKey, password, Application.dataPath);
 			}
@@ -123,10 +125,10 @@ namespace UniGit
 				this.password = string.Empty;
 			}
 
-			public string DecryptPassword()
+			public SecureString DecryptPassword()
 			{
 				string decrypredPassword;
-				if (string.IsNullOrEmpty(password)) return "";
+				if (string.IsNullOrEmpty(password)) return new SecureString();
 				return DPAPI.Decrypt(password, Application.dataPath, out decrypredPassword);
 			}
 		}

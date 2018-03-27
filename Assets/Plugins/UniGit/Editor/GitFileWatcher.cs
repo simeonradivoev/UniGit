@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using LibGit2Sharp;
 using UniGit.Utils;
+using UnityEngine;
 
 namespace UniGit
 {
@@ -12,21 +14,17 @@ namespace UniGit
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitCallbacks gitCallbacks;
-		private readonly string repoPath;
 		private Regex ignoreFoldersRegex;
 
 		[UniGitInject]
-		public GitFileWatcher(string repoPath,
-			GitManager gitManager,
+		public GitFileWatcher(GitManager gitManager,
 			GitCallbacks gitCallbacks,
 			GitSettingsJson gitSettings,
-			GitInitializer initializer,
 			[UniGitInjectOptional] bool trackAssetsPath)
 		{
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
-			this.repoPath = repoPath;
 			fileWatchers = new List<FileSystemWatcher>();
 
 			string regexPattern = @".*.git$";
@@ -34,12 +32,7 @@ namespace UniGit
 			ignoreFoldersRegex = new Regex(regexPattern);
 
 			gitCallbacks.OnSettingsChange += OnSettingsChange;
-			gitCallbacks.RepositoryCreate += OnRepositoryCreate;
-
-			if (initializer.IsValidRepo)
-			{
-				CreateWatchers();
-			}
+			gitCallbacks.OnRepositoryLoad += OnRepositoryLoad;
 		}
 
 		private void ClearWatchers()
@@ -55,31 +48,36 @@ namespace UniGit
 
 		private void CreateWatchers()
 		{
-			var mainFileWatcher = new FileSystemWatcher(repoPath)
+			string rootedPath = gitManager.GetCurrentRepoPath();
+			string projectPath = rootedPath.Replace(GitManager.FixUnityPath(Application.dataPath).Replace("Assets",""), "");
+			if (!GitManager.IsPathInAssetFolder(projectPath))
 			{
-				InternalBufferSize = 4,
-				EnableRaisingEvents = gitSettings.TrackSystemFiles,
-				IncludeSubdirectories = false,
-				NotifyFilter = NotifyFilters.FileName
-			};
-			fileWatchers.Add(mainFileWatcher);
-			Subscribe(mainFileWatcher);
-
-			var repoDirectoryInfo = new DirectoryInfo(repoPath);
-			foreach (var directory in repoDirectoryInfo.GetDirectories())
-			{
-				if (!gitManager.Repository.Ignore.IsPathIgnored(directory.FullName) && ShouldTrackDirectory(directory))
+				var mainFileWatcher = new FileSystemWatcher(rootedPath)
 				{
-					var fileWatcher = new FileSystemWatcher(directory.FullName)
-					{
-						InternalBufferSize = 4,
-						EnableRaisingEvents = gitSettings.TrackSystemFiles,
-						IncludeSubdirectories = true,
-						NotifyFilter = NotifyFilters.FileName
-					};
+					InternalBufferSize = 4,
+					EnableRaisingEvents = gitSettings.TrackSystemFiles,
+					IncludeSubdirectories = false,
+					NotifyFilter = NotifyFilters.FileName
+				};
+				fileWatchers.Add(mainFileWatcher);
+				Subscribe(mainFileWatcher);
 
-					fileWatchers.Add(fileWatcher);
-					Subscribe(fileWatcher);
+				var repoDirectoryInfo = new DirectoryInfo(rootedPath);
+				foreach (var directory in repoDirectoryInfo.GetDirectories())
+				{
+					if (!gitManager.Repository.Ignore.IsPathIgnored(directory.FullName) && ShouldTrackDirectory(directory))
+					{
+						var fileWatcher = new FileSystemWatcher(directory.FullName)
+						{
+							InternalBufferSize = 4,
+							EnableRaisingEvents = gitSettings.TrackSystemFiles,
+							IncludeSubdirectories = true,
+							NotifyFilter = NotifyFilters.FileName
+						};
+
+						fileWatchers.Add(fileWatcher);
+						Subscribe(fileWatcher);
+					}
 				}
 			}
 		}
@@ -92,7 +90,7 @@ namespace UniGit
 			}
 		}
 
-		private void OnRepositoryCreate()
+		private void OnRepositoryLoad(Repository repository)
 		{
 			ClearWatchers();
 			CreateWatchers();
@@ -121,21 +119,18 @@ namespace UniGit
 
 		private void WatcherActivity(object sender, FileSystemEventArgs e)
 		{
-			if (gitManager != null)
+			string relativePath = gitManager.GetRelativePath(e.FullPath);
+			if (!gitManager.Repository.Ignore.IsPathIgnored(relativePath) && !gitManager.IsDirectory(relativePath))
 			{
-				string relativePath = gitManager.GetRelativePath(e.FullPath);
-				if (!gitManager.Repository.Ignore.IsPathIgnored(relativePath) && !gitManager.IsDirectory(relativePath))
+				if (e.ChangeType == WatcherChangeTypes.Renamed)
 				{
-					if (e.ChangeType == WatcherChangeTypes.Renamed)
-					{
-						var relativeOldPath = ((RenamedEventArgs) e).OldFullPath;
-						gitManager.MarkDirtyAuto(relativePath);
-						gitManager.MarkDirtyAuto(relativeOldPath);
-					}
-					else
-					{
-						gitManager.MarkDirtyAuto(relativePath);
-					}
+					var relativeOldPath = ((RenamedEventArgs) e).OldFullPath;
+					gitManager.MarkDirtyAuto(relativePath);
+					gitManager.MarkDirtyAuto(relativeOldPath);
+				}
+				else
+				{
+					gitManager.MarkDirtyAuto(relativePath);
 				}
 			}
 		}
@@ -159,7 +154,7 @@ namespace UniGit
 		public void Dispose()
 		{
 			gitCallbacks.OnSettingsChange -= OnSettingsChange;
-			gitCallbacks.RepositoryCreate -= OnRepositoryCreate;
+			gitCallbacks.OnRepositoryLoad -= OnRepositoryLoad;
 
 			foreach (var fileWatcher in fileWatchers)
 			{

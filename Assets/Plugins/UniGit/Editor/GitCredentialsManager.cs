@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
+using System.Security.Cryptography;
+using System.Text;
 using LibGit2Sharp;
 using UniGit.Adapters;
 using UniGit.Attributes;
@@ -9,16 +12,22 @@ using UniGit.Security;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
+#pragma warning disable 618 //GitCredentials obsolete
 
 namespace UniGit
 {
 	public class GitCredentialsManager : IDisposable
 	{
+		//codes for file encryption. 
+		//This is just a simple protection step to stop ordinary users from snooping around.
+		private const string KeyOne = "UniGitPl";
+		private const string KeyTwo = "Unity3DS";
+
 		private readonly ICredentialsAdapter[] adapters;
 		private readonly GUIContent[] adapterNames;
 		private readonly string[] adapterIds;
 		private ICredentialsAdapter selectedAdapter;
-		private int selectedAdapterIndex;
+		private int selectedAdapterIndex = -1;
 		private bool initiazlitedSelected;
 		private GitCredentialsJson gitCredentials;
 		private readonly GitManager gitManager;
@@ -59,12 +68,33 @@ namespace UniGit
 		private void LoadGitCredentials()
 		{
 			string credentialsFilePath = CredentialsFilePath;
+
 			GitCredentialsJson credentialsJson = null;
 			if (File.Exists(credentialsFilePath))
 			{
 				try
 				{
-					credentialsJson = JsonUtility.FromJson<GitCredentialsJson>(File.ReadAllText(credentialsFilePath));
+					try
+					{
+						using (var fileStream = new FileStream(credentialsFilePath,FileMode.Open,FileAccess.Read))
+						using (DESCryptoServiceProvider p = new DESCryptoServiceProvider())
+						using (var dec = p.CreateDecryptor(Encoding.ASCII.GetBytes(KeyOne),Encoding.ASCII.GetBytes(KeyTwo)))
+						using (CryptoStream cryptoStream = new CryptoStream(fileStream,dec,CryptoStreamMode.Read))
+						using(StreamReader streamReader = new StreamReader(cryptoStream))
+						{
+
+							string text = streamReader.ReadToEnd();
+							credentialsJson = JsonUtility.FromJson<GitCredentialsJson>(text);
+						}
+					}
+					catch
+					{
+						using (var fileStream = new FileStream(credentialsFilePath,FileMode.Open,FileAccess.Read))
+						using (StreamReader streamReader = new StreamReader(fileStream))
+						{
+							credentialsJson = JsonUtility.FromJson<GitCredentialsJson>(streamReader.ReadToEnd());
+						}
+					}
 				}
 				catch (Exception e)
 				{
@@ -81,6 +111,7 @@ namespace UniGit
 				{
 					//must be delayed call for unity to deserialize credentials file properly
 					EditorApplication.delayCall += ImportFromOldCredentials;
+
 				}
 				else
 				{
@@ -111,7 +142,15 @@ namespace UniGit
 			try
 			{
 				string json = JsonUtility.ToJson(credentials);
-				File.WriteAllText(credentialsFilePath, json);
+				
+				using (var fileStream = new FileStream(credentialsFilePath,FileMode.OpenOrCreate,FileAccess.Write))
+				using (DESCryptoServiceProvider p = new DESCryptoServiceProvider())
+				using (var dec = p.CreateEncryptor(Encoding.ASCII.GetBytes(KeyOne),Encoding.ASCII.GetBytes(KeyTwo)))
+				using (CryptoStream cryptoStream = new CryptoStream(fileStream,dec,CryptoStreamMode.Write))
+				using(StreamWriter streamWriter = new StreamWriter(cryptoStream))
+				{
+					streamWriter.Write(json);
+				}
 			}
 			catch (Exception e)
 			{
@@ -122,7 +161,7 @@ namespace UniGit
 
 		private void ValidateCredentialsPath()
 		{
-			string settingsFileDirectory = UniGitPath.Combine(gitManager.GitFolderPath, "UniGit");
+			string settingsFileDirectory = gitManager.SettingsDirectory;
 			if (!Directory.Exists(settingsFileDirectory))
 			{
 				Directory.CreateDirectory(settingsFileDirectory);
@@ -186,23 +225,27 @@ namespace UniGit
 
 		private void InitializeSelectedAdapter()
 		{
-			SetSelectedAdapter(Array.IndexOf(adapters, adapters.FirstOrDefault(IsValid)));
+			SetSelectedAdapter(Array.IndexOf(adapters, adapters.FirstOrDefault(IsValid)),false);
 			initiazlitedSelected = true;
 		}
 
-		internal void SetSelectedAdapter(int index)
+		internal void SetSelectedAdapter(int index,bool deletePasswords)
 		{
 			if (index >= adapters.Length || index < 0)
 			{
 				gitManager.Repository.Config.Set("credential.helper","");
-				ResetSelectedAdapter(selectedAdapter);
-				selectedAdapterIndex = 0;
+				if(deletePasswords) ResetSelectedAdapter(selectedAdapter);
+				gitSettings.CredentialsManager = "";
+				gitSettings.MarkDirty();
+				selectedAdapterIndex = -1;
 				selectedAdapter = null;
 				return;
 			}
 			selectedAdapterIndex = index;
 			selectedAdapter = adapters[index];
+			gitSettings.CredentialsManager = GetAdapterId(selectedAdapter);
 			gitManager.Repository.Config.Set("credential.helper",GetAdapterId(selectedAdapter));
+			gitSettings.MarkDirty();
 		}
 
 		private void ResetSelectedAdapter(ICredentialsAdapter lastAdapter)
@@ -211,7 +254,6 @@ namespace UniGit
 			foreach (var credential in gitCredentials)
 			{
 				lastAdapter.DeleteCredentials(credential.URL);
-				credential.SetHasPassword(false);
 			}
 		}
 		#endregion
@@ -240,116 +282,109 @@ namespace UniGit
 
 		internal Credentials FetchChangesAutoCredentialHandler(string url, string user, SupportedCredentialTypes supported)
 		{
+			return DefaultCredentialsHandler(url, user, null, supported, false);
+		}
+
+		internal Credentials DefaultCredentialsHandler(string url, string existingUsername, SecureString existingPassword, SupportedCredentialTypes supported,bool isToken)
+		{
 			if (supported == SupportedCredentialTypes.UsernamePassword)
 			{
+				string finalUsername = existingUsername;
+				SecureString finalPassword = existingPassword;
+
 				if (gitCredentials != null)
 				{
-					string username = user;
-					string password = string.Empty;
+					SecureString loadedPass;
+					string loadedUsername = "";
+					bool loadedIsToken;
+					LoadCredentials(url,ref loadedUsername,out loadedPass,out loadedIsToken,true);
 
-					LoadCredentials(url,ref username,ref password,true);
+					if (string.IsNullOrEmpty(finalUsername))
+						finalUsername = loadedUsername;
+					if (finalPassword == null || finalPassword.Length <= 0)
+						finalPassword = loadedPass;
 
-					return new UsernamePasswordCredentials()
-					{
-						Username = username,
-						Password = password
-					};
+					isToken |= loadedIsToken;
 				}
+
+				return new SecureUsernamePasswordCredentials()
+				{
+					Username = finalUsername,
+					Password = isToken ? new SecureString() : finalPassword
+				};
 			}
 			return new DefaultCredentials();
 		}
 
-		internal void LoadCredentials(string url,ref string username, ref string password, bool addEntryIfMissing)
+		internal void LoadCredentials(string url,ref string username, out SecureString password,out bool isToken, bool addEntryIfMissing)
 		{
 			var entry = gitCredentials.GetEntry(url);
 
 			if (addEntryIfMissing && entry == null)
 			{
-				entry = CreatEntry(url,username,"");
+				entry = CreateEntry(url,username);
 				entry.URL = url;
-				entry.SetUsername(username);
 				entry.Name = url;
 				gitCredentials.MarkDirty();
 			}
 			else if (entry != null)
 			{
-				username = entry.Username;
+				username = LoadUsername(entry);
 				password = LoadPassword(entry);
+				isToken = entry.IsToken;
+				return;
 			}
+			password = new SecureString();
+			isToken = false;
 		}
 
-		internal void DeleteCredentials(string url)
+		internal void RemoveCredentials(GitCredential credential,bool removeFromManager)
 		{
-			var entry = gitCredentials.GetEntry(url);
-
-			if (SeletedAdapter != null)
+			if (removeFromManager)
 			{
-				try
+				if (SeletedAdapter != null)
 				{
-					SeletedAdapter.DeleteCredentials(SeletedAdapter.FormatUrl(url));
-				}
-				catch (Exception e)
-				{
-					logger.LogFormat(LogType.Error,"There was an error while trying to remove credentials form {0}",GetAdapterName(SeletedAdapter));
-					logger.LogException(e);
+					try
+					{
+
+					}
+					catch (Exception e)
+					{
+						logger.LogFormat(LogType.Error,"There was an error while trying to remove credentials form {0}",GetAdapterName(SeletedAdapter));
+						logger.LogException(e);
+					}
 				}
 			}
-
-			if (entry != null)
-			{
-				gitCredentials.RemoveEntry(entry);
-			}
+			gitCredentials.RemoveEntry(credential);
+			gitCredentials.MarkDirty();
 		}
 
-		internal void ClearCredentialPassword(string url)
+		internal void ClearCredentialPassword(GitCredential entry)
 		{
-			var entry = gitCredentials.GetEntry(url);
-
-			if (SeletedAdapter != null)
-			{
-				try
-				{
-					SeletedAdapter.DeleteCredentials(SeletedAdapter.FormatUrl(url));
-				}
-				catch (Exception e)
-				{
-					logger.LogFormat(LogType.Error,"There was an error while trying to remove credentials form {0}",GetAdapterName(SeletedAdapter));
-					logger.LogException(e);
-				}
-			}
-
-			if (entry != null)
-			{
-				entry.ClearPassword();
-				entry.SetHasPassword(false);
-			}
+			entry.ClearPassword();
+			gitCredentials.MarkDirty();
 		}
 
-		internal GitCredential CreatEntry(string url,string username,string password)
+		internal GitCredential CreateEntry(string url,string username)
 		{
 			GitCredential entry = gitCredentials.GetEntry(url);
 			if (entry != null) return null;
 			entry = new GitCredential() {URL = url};
 			entry.SetUsername(username);
 			gitCredentials.AddEntry(entry);
-			if (!string.IsNullOrEmpty(password))
-			{
-				SetNewPassword(url, username, password);
-			}
 			return entry;
 		}
 
-		internal string LoadPassword(GitCredential entry)
+		internal string LoadUsername(GitCredential entry)
 		{
-			string pass = null;
-
 			if (SeletedAdapter != null)
 			{
 				try
 				{
-					if (!SeletedAdapter.LoadPassword(SeletedAdapter.FormatUrl(entry.URL), ref pass))
+					string username;
+					if (SeletedAdapter.LoadUsername(entry.ManagerUrl, out username))
 					{
-						logger.LogFormat(LogType.Log,"Could not load password with URL: {0} from {1}",entry.URL,GetAdapterName(SeletedAdapter));
+						return username;
 					}
 				}
 				catch (Exception e)
@@ -357,55 +392,74 @@ namespace UniGit
 					logger.Log(LogType.Error,"There was an error while trying to load credentials from Windows Credentials Manager");
 					logger.LogException(e);
 				}
+
+				return "";
 			}
 
-			return pass ?? entry.DecryptPassword();
+			return entry.Username;
 		}
 
-		internal void SetNewUsername(string url, string user)
+		internal SecureString LoadPassword(GitCredential entry)
 		{
 			if (SeletedAdapter != null)
 			{
 				try
 				{
-					if (!SeletedAdapter.SaveUsername(SeletedAdapter.FormatUrl(url), user))
+					SecureString pass;
+					if (SeletedAdapter.LoadPassword(entry.ManagerUrl, out pass))
 					{
-						logger.LogFormat(LogType.Error,"Could not save new Username to {0} with URL: {1}", GetAdapterName(SeletedAdapter), SeletedAdapter.FormatUrl(url));
+						return pass;
+					}
+				}
+				catch (Exception e)
+				{
+					logger.Log(LogType.Error,"There was an error while trying to load credentials from Windows Credentials Manager");
+					logger.LogException(e);
+				}
+
+				return new SecureString();
+			}
+
+			return entry.DecryptPassword();
+		}
+
+		internal void SetNewUsername(GitCredential entry,string username)
+		{
+			if (SeletedAdapter != null)
+			{
+				try
+				{
+					if (!SeletedAdapter.SaveUsername(entry.ManagerUrl, username))
+					{
+						logger.LogFormat(LogType.Error,"Could not set new Username to {0} with URL: {1}", GetAdapterName(SeletedAdapter), entry.ManagerUrl);
 						return;
 					}
 				}
 				catch (Exception e)
 				{
-					logger.LogFormat(LogType.Error,"There was a problem while trying to save credentials to {0}",GetAdapterName(SeletedAdapter));
+					logger.LogFormat(LogType.Error,"There was a problem while trying to set username to {0}",GetAdapterName(SeletedAdapter));
 					logger.LogException(e);
 				}
+				return;
 			}
 
-			var entry = gitCredentials.GetEntry(url);
 			if (entry != null)
 			{
-				entry.SetUsername(user);
+				entry.SetUsername(username);
 				gitCredentials.MarkDirty();
 			}
 		}
 
-		internal void SetNewPassword(string url,string user, string password)
+		internal void SetNewPassword(GitCredential entry, SecureString password)
 		{
-			var entry = gitCredentials.GetEntry(url);
-
 			if (SeletedAdapter != null)
 			{
 				try
 				{
-					if (!SeletedAdapter.SavePassword(SeletedAdapter.FormatUrl(url), user, password, true))
+					if (!SeletedAdapter.SavePassword(entry.ManagerUrl, null, password, false))
 					{
-						logger.LogFormat(LogType.Error,"Could not save new Password to {0} with URL: {1}", GetAdapterName(SeletedAdapter), SeletedAdapter.FormatUrl(url));
+						logger.LogFormat(LogType.Error,"Could not save new Password to {0} with URL: {1}", GetAdapterName(SeletedAdapter), entry.ManagerUrl);
 						return;
-					}
-
-					if (entry != null)
-					{
-						entry.SetHasPassword(true);
 					}
 				}
 				catch (Exception e)
@@ -423,6 +477,47 @@ namespace UniGit
 			}
 		}
 
+		internal void CreateNewExternal(string url, string username, SecureString password)
+		{
+			try
+			{
+				if (!SeletedAdapter.SavePassword(url, username, password, true))
+				{
+					logger.LogFormat(LogType.Error,"Could not create new Entry to with URL: {0} and Username: {1} in {2}",url,username, GetAdapterName(SeletedAdapter));
+					return;
+				}
+			}
+			catch (Exception e)
+			{
+				logger.LogFormat(LogType.Error,"There was a problem while trying to save credentials to {0}",GetAdapterName(SeletedAdapter));
+				logger.LogException(e);
+			}
+			return;
+		}
+
+		internal bool HasPassword(GitCredential entry)
+		{
+			if (SeletedAdapter != null)
+			{
+				if (string.IsNullOrEmpty(entry.Username))
+				{
+					return SeletedAdapter.Exists(entry.ManagerUrl);
+				}
+				return SeletedAdapter.Exists(entry.ManagerUrl,entry.Username);
+			}
+
+			return entry != null && entry.HasStoredPassword;
+		}
+
+		internal string GetFormatedUrl(string url)
+		{
+			if (SeletedAdapter != null)
+			{
+				return SeletedAdapter.FormatUrl(url);
+			}
+			return url;
+		}
+
 		public void Dispose()
 		{
 			if(gitCallbacks != null) gitCallbacks.EditorUpdate -= EditorUpdate;
@@ -438,7 +533,7 @@ namespace UniGit
 		{
 			get
 			{
-				return UniGitPath.Combine(gitManager.GitFolderPath, "UniGit", "Credentials.json");
+				return UniGitPath.Combine(gitManager.SettingsDirectory, "Credentials.json");
 			}
 		}
 

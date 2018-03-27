@@ -1,0 +1,36 @@
+﻿using System;
+using LibGit2Sharp;
+using UnityEngine;
+
+namespace UniGit.Status
+{
+	[Serializable]
+	public class GitStatusSubModuleEntry
+	{
+		[SerializeField] private string path;
+		[SerializeField] private string url;
+		[SerializeField] private SubmoduleStatus status;
+
+		public GitStatusSubModuleEntry(Submodule submodule)
+		{
+			path = GitManager.FixUnityPath(submodule.Path);
+			url = submodule.Url;
+			status = submodule.RetrieveStatus();
+		}
+
+		public string Path
+		{
+			get { return path; }
+		}
+
+		public string Url
+		{
+			get { return url; }
+		}
+
+		public SubmoduleStatus Status
+		{
+			get { return status; }
+		}
+	}
+}

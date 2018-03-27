@@ -143,6 +143,26 @@ namespace UniGitResources.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap file_submodule {
+            get {
+                object obj = ResourceManager.GetObject("file_submodule", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap file_submodule_small {
+            get {
+                object obj = ResourceManager.GetObject("file_submodule_small", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap GitCheckout {
             get {
                 object obj = ResourceManager.GetObject("GitCheckout", resourceCulture);

@@ -34,10 +34,11 @@ namespace UniGit
 
 				GitWindows.Init();
 
-				string repoPath = Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", "").Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
+				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
+
+				string repoPath = GitManager.FixUnityPath(Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", ""));
 				string settingsPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "Settings.json");
 				string logPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "log.txt");
-				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
 
 				injectionHelper.Bind<GitInitializer>().NonLazy();
 				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
@@ -69,6 +70,7 @@ namespace UniGit
 				injectionHelper.Bind<GitLfsHelper>();
 				injectionHelper.Bind<FileLinesReader>();
 				injectionHelper.Bind<GitProjectOverlay>().NonLazy();
+
 
 				Rebuild(injectionHelper);
 			}
@@ -192,7 +194,7 @@ namespace UniGit
 				editorWindow.Show();
 				return editorWindow;
 			}
-			var newWindow = ScriptableObject.CreateInstance<T>();
+			var newWindow = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault() ?? ScriptableObject.CreateInstance<T>();
 			if(utility)
 				newWindow.ShowUtility();
 			else

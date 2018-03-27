@@ -7,18 +7,18 @@ namespace UniGit.Status
 	[Serializable]
 	public struct GitStatusEntry
 	{
-		[SerializeField] private string path;
+		[SerializeField] private string localPath;
 		[SerializeField] private FileStatus status;
 
-		public GitStatusEntry(string path, FileStatus status)
+		public GitStatusEntry(string localPath, FileStatus status)
 		{
-			this.path = path;
+			this.localPath = localPath;
 			this.status = status;
 		}
 
-		public string Path
+		public string LocalPath
 		{
-			get { return path; }
+			get { return localPath; }
 		}
 
 		public FileStatus Status

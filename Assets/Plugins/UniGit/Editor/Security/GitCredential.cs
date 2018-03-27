@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Security;
 using UnityEngine;
+#pragma warning disable 618	//GitCredentials obsolete
 
 namespace UniGit.Security
 {
@@ -11,18 +13,27 @@ namespace UniGit.Security
 		[SerializeField]
 		private string url;
 		[SerializeField]
+		private string managerUrl;
+		[SerializeField]
 		private string username;
+		[SerializeField]
+		private bool specifyManagerUsername;
 		[SerializeField]
 		private string password;
 		[SerializeField]
 		private bool isToken;
-		[SerializeField]
-		private string newPassword;
-		[SerializeField]
-		private bool hasPassword;
+
+		private SecureString newPassword;
+		private string newUsername;
 
 		public GitCredential()
 		{
+			newPassword = new SecureString();
+		}
+
+		~GitCredential()
+		{
+			newPassword.Dispose();
 		}
 
 		public GitCredential(GitCredentials.Entry c)
@@ -32,8 +43,6 @@ namespace UniGit.Security
 			username = c.username;
 			password = c.password;
 			isToken = c.isToken;
-			newPassword = c.newPassword;
-			hasPassword = c.hasPassword;
 		}
 
 		public string Name
@@ -48,16 +57,34 @@ namespace UniGit.Security
 			set { url = value; }
 		}
 
+		public string ManagerUrl
+		{
+			get { return managerUrl; }
+			set { managerUrl = value; }
+		}
+
+		public bool SpecifyManagerUsername
+		{
+			get { return specifyManagerUsername; }
+			set { specifyManagerUsername = value; }
+		}
+
 		public bool IsToken
 		{
 			get { return isToken; }
 			set { isToken = value; }
 		}
 
-		public string NewPassword
+		public SecureString NewPassword
 		{
 			get { return newPassword; }
 			set { newPassword = value; }
+		}
+
+		public string NewUsername
+		{
+			get { return newUsername; }
+			set { newUsername = value; }
 		}
 
 		public string Username
@@ -65,21 +92,12 @@ namespace UniGit.Security
 			get { return username; }
 		}
 
-		public bool HasPassword
+		internal bool HasStoredPassword
 		{
 			get
 			{
-				if (!hasPassword)
-				{
-					return !string.IsNullOrEmpty(password);
-				}
-				return true;
+				return !string.IsNullOrEmpty(password);
 			}
-		}
-
-		internal void SetHasPassword(bool hasPassword)
-		{
-			this.hasPassword = hasPassword;
 		}
 
 		public void SetUsername(string username)
@@ -87,7 +105,7 @@ namespace UniGit.Security
 			this.username = username;
 		}
 
-		public void EncryptPassword(string password)
+		public void EncryptPassword(SecureString password)
 		{
 			this.password = DPAPI.Encrypt(DPAPI.KeyType.UserKey, password, Application.dataPath);
 		}
@@ -97,11 +115,11 @@ namespace UniGit.Security
 			this.password = string.Empty;
 		}
 
-		public string DecryptPassword()
+		public SecureString DecryptPassword()
 		{
-			string decrypredPassword;
-			if (string.IsNullOrEmpty(password)) return "";
-			return DPAPI.Decrypt(password, Application.dataPath, out decrypredPassword);
+			string description;	//optional
+			if (string.IsNullOrEmpty(password)) return new SecureString();
+			return DPAPI.Decrypt(password, Application.dataPath, out description);
 		}
 	}
 }

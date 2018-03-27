@@ -31,7 +31,7 @@ namespace UniGit
 		{
 			try
 			{
-				using (var repository = new Repository(gitManager.RepoPath))
+				using (var repository = new Repository(gitManager.GetCurrentRepoPath()))
 				{
 					if (branchNames.Length > 0 && selectedBranch < branchNames.Length)
 					{

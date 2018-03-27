@@ -73,6 +73,7 @@ namespace UniGit
 		public bool UseUnityConsole;
 		public AnimationTypeEnum AnimationType = AnimationTypeEnum.All;
 		public bool CreateFoldersForDriftingMeta;
+		public string ActiveSubModule;
 		private bool isDirty;
 
 		[Flags]

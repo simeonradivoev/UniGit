@@ -1,4 +1,5 @@
 ﻿using LibGit2Sharp;
+using UniGit.Utils;
 
 namespace UniGit
 {
@@ -8,6 +9,7 @@ namespace UniGit
 		private readonly GitExternalManager externalManager;
 		private readonly GitInitializer initializer;
 
+		[UniGitInject]
 		public GitConflictsHandler(GitManager gitManager,GitExternalManager externalManager,GitInitializer initializer)
 		{
 			this.gitManager = gitManager;
@@ -15,10 +17,10 @@ namespace UniGit
 			this.initializer = initializer;
 		}
 
-		public bool CanResolveConflictsWithTool(string path)
+		public bool CanResolveConflictsWithTool(string localPath)
 		{
 			if (!initializer.IsValidRepo) return false;
-			var conflict = gitManager.Repository.Index.Conflicts[path];
+			var conflict = gitManager.Repository.Index.Conflicts[localPath];
 			return !gitManager.Repository.Lookup<Blob>(conflict.Ours.Id).IsBinary;
 		}
 
@@ -28,7 +30,7 @@ namespace UniGit
 
 			if (favor == MergeFileFavor.Normal)
 			{
-				externalManager.HandleConflict(path);
+				externalManager.HandleConflict(gitManager.ToProjectPath(path));
 			}
 			else if (favor == MergeFileFavor.Ours)
 			{

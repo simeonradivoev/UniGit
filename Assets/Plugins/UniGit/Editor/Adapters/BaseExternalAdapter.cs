@@ -4,16 +4,19 @@ using System.Diagnostics;
 using System.IO;
 using JetBrains.Annotations;
 using LibGit2Sharp;
+using UniGit.Utils;
 
 namespace UniGit.Adapters
 {
 	public abstract class BaseExternalAdapter : IExternalAdapter
 	{
 		protected readonly GitManager gitManager;
+		protected readonly GitSettingsJson gitSettings;
 
-		protected BaseExternalAdapter(GitManager gitManager)
+		protected BaseExternalAdapter(GitManager gitManager,GitSettingsJson gitSettings)
 		{
 			this.gitManager = gitManager;
+			this.gitSettings = gitSettings;
 		}
 
 		public abstract bool Push();
@@ -48,7 +51,7 @@ namespace UniGit.Adapters
 					CreateNoWindow = false,
 					UseShellExecute = false,
 					FileName = fullPath,
-					WorkingDirectory = gitManager.RepoPath,
+					WorkingDirectory = gitManager.GetCurrentRepoPath(),
 					WindowStyle = ProcessWindowStyle.Hidden,
 					RedirectStandardOutput = true,
 					Arguments = parameters

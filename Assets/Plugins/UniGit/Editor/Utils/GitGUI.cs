@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using LibGit2Sharp;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace UniGit.Utils
@@ -12,6 +14,7 @@ namespace UniGit.Utils
 		private static readonly GUIContent tmpContent = new GUIContent();
 		private static readonly Stack<bool> enableStack = new Stack<bool>(); 
 		private static readonly Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>();
+		private static int _secureTextFieldHash = "EditorSecurePasswordField".GetHashCode();
 
 		private static StylesClass _styles;
 		private static TexturesClass _textures;
@@ -82,6 +85,8 @@ namespace UniGit.Utils
 			public Texture2D CollabNew;
 			public Texture2D CollabConflict;
 			public Texture2D WarrningIconSmall;
+			public Texture2D ErrorIconSmall;
+			public Texture2D InfoIconSmall;
 		}
 
 		public class ContentsClass
@@ -123,6 +128,8 @@ namespace UniGit.Utils
 			textures.CollabNew = EditorGUIUtility.FindTexture("CollabNew");
 			textures.CollabConflict = EditorGUIUtility.FindTexture("CollabConflict");
 			textures.WarrningIconSmall = EditorGUIUtility.FindTexture("console.warnicon.sml");
+			textures.ErrorIconSmall = EditorGUIUtility.FindTexture("console.erroricon.sml");
+			textures.InfoIconSmall = EditorGUIUtility.FindTexture( "console.infoicon.sml" );
 		}
 
 		private static void InitContents(ContentsClass content)
@@ -236,6 +243,82 @@ namespace UniGit.Utils
 		public static void PopMatrix()
 		{
 			GUI.matrix = matrixStack.Pop();
+		}
+
+		public static void SecurePasswordFieldLayout(GUIContent content, SecureString value,params GUILayoutOption[] layouts)
+		{
+			Rect rect = GUILayoutUtility.GetRect(content, EditorStyles.textField,layouts);
+			SecurePasswordField(rect,content,value);
+		}
+
+		public static void SecurePasswordField(Rect rect, GUIContent content, SecureString value)
+		{
+			int controlId = GUIUtility.GetControlID(_secureTextFieldHash, FocusType.Keyboard, rect);
+			rect = EditorGUI.PrefixLabel(rect, content);
+			EditorGUIUtility.AddCursorRect(rect,MouseCursor.Text);
+			GUIStyle fieldStyle = EditorStyles.textField;
+			Event current = Event.current;
+
+			switch (current.GetTypeForControl(controlId))
+			{
+				case EventType.MouseDown:
+					if (rect.Contains(current.mousePosition))
+					{
+						GUIUtility.keyboardControl = controlId;
+						current.Use();
+					}
+					break;
+				case EventType.KeyDown:
+					if (GUIUtility.keyboardControl == controlId)
+					{
+						if (!char.IsWhiteSpace(current.character) && current.character != '\0')
+						{
+							value.AppendChar(current.character);
+							GUI.changed = true;
+						}
+						else if (current.keyCode == KeyCode.Backspace)
+						{
+							if (value.Length > 0)
+							{
+								value.RemoveAt(value.Length - 1);
+								GUI.changed = true;
+							}
+						}
+						else if(current.character == '\n' || current.keyCode == KeyCode.Escape)
+						{
+							GUIUtility.keyboardControl = 0;
+						}
+						current.Use();
+					}
+					break;
+				case EventType.ValidateCommand:
+					Debug.Log(current.commandName);
+					break;
+				case EventType.KeyUp:
+					if (GUIUtility.keyboardControl == controlId)
+					{
+						current.Use();
+					}
+					break;
+				case EventType.Repaint:
+					fieldStyle.Draw(rect,GetTempContent("".PadRight(value != null ? value.Length : 0,'*')),controlId);
+					break;
+				case EventType.ContextClick:
+					if (rect.Contains(current.mousePosition))
+					{
+						GenericMenu menu = new GenericMenu();
+						if(value != null && value.Length > 0)
+							menu.AddItem(new GUIContent("Clear"),false, () =>
+							{
+								value.Clear();
+								GUI.changed = true;
+							});
+						else menu.AddDisabledItem(new GUIContent("Clear"));
+						menu.ShowAsContext();
+					}
+
+					break;
+			}
 		}
 
 		public static void DrawLoading(Rect rect,GUIContent loadinContent)
