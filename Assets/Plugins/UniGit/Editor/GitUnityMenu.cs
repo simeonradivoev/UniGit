@@ -16,29 +16,35 @@ namespace UniGit
 
         #region Windows
 
-	    [UsedImplicitly,MenuItem("Window/Git/History")]
+	    [UsedImplicitly,MenuItem("Window/Git/History",priority = -10)]
         private static void OpenGitHistoryWindow()
 	    {
 	        UniGitLoader.GetWindow<GitHistoryWindow>();
 	    }
 
-		[UsedImplicitly,MenuItem("Window/Git/Diff")]
+		[UsedImplicitly,MenuItem("Window/Git/Diff",priority = -10)]
 	    private static void OpenGitDiffWindow()
 	    {
 	        UniGitLoader.GetWindow<GitDiffWindow>();
 	    }
 
-		[UsedImplicitly,MenuItem("Window/Git/Log")]
+		[UsedImplicitly,MenuItem("Window/Git/Log",priority = -10)]
 		private static void OpenGitLogWindow()
 		{
 			UniGitLoader.GetWindow<GitLogWindow>();
 		}
 
-		[UsedImplicitly,MenuItem("Window/Git/Settings")]
+		[UsedImplicitly,MenuItem("Window/Git/Settings",priority = -10)]
 	    private static void OpenGitSettingsWindow()
 	    {
 	        UniGitLoader.GetWindow<GitSettingsWindow>();
 	    }
+
+		[UsedImplicitly,MenuItem("Window/Git/Experimental/Remote Tools")]
+		private static void OpenGitRemoteToolsWindow()
+		{
+			UniGitLoader.GetWindow<GitRemoteToolsWindow>();
+		}
 
 		#endregion
 
