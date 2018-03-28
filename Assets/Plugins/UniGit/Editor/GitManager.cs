@@ -358,6 +358,10 @@ namespace UniGit
 					foreach (string path in paths)
 					{
 						gitData.RepositoryStatus.Update(path, repository.RetrieveStatus(path));
+						if (IsSubModule(path))
+						{
+							gitData.RepositoryStatus.Update(path,repository.Submodules[path].RetrieveStatus());
+						}
 					}
 				}
 				else
