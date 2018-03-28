@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	internal class GitDiffWindowToolbarRenderer : IDiffWindowRenderer
+	public class GitDiffWindowToolbarRenderer : IDiffWindowRenderer
 	{
 		private readonly GitManager gitManager;
 		private readonly GitDiffElementContextFactory contextFactory;

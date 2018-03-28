@@ -7,7 +7,7 @@ using UniGit.Utils;
 
 namespace UniGit
 {
-	internal class GitDiffWindowSorter : IComparer<GitDiffWindow.StatusListEntry>
+	public class GitDiffWindowSorter : IComparer<GitDiffWindow.StatusListEntry>
 	{
 		private readonly GitDiffWindow window;
 		private readonly GitManager gitManager;

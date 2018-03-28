@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace UniGit
 {
-	internal class GitDiffElementContextFactory
+	public class GitDiffElementContextFactory
 	{
 		private readonly GitManager gitManager;
 		private readonly GitConflictsHandler conflictsHandler;
