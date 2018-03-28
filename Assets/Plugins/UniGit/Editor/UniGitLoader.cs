@@ -5,6 +5,7 @@ using Assets.Plugins.UniGit.Editor.Hooks;
 using UniGit.Adapters;
 using UniGit.Settings;
 using UniGit.Utils;
+using UniGit.Windows.Diff;
 using UnityEditor;
 using UnityEngine;
 
@@ -70,7 +71,13 @@ namespace UniGit
 				injectionHelper.Bind<GitLfsHelper>();
 				injectionHelper.Bind<FileLinesReader>();
 				injectionHelper.Bind<GitProjectOverlay>().NonLazy();
+				injectionHelper.Bind<GitConflictsHandler>();
 
+				//diff window
+				injectionHelper.Bind<GitDiffWindowToolbarRenderer>().AsTransient();
+				injectionHelper.Bind<GitDiffElementContextFactory>().AsTransient();
+				injectionHelper.Bind<GitDiffWindowCommitRenderer>().AsTransient();
+				injectionHelper.Bind<GitDiffWindowDiffElementRenderer>().AsTransient();
 
 				Rebuild(injectionHelper);
 			}

@@ -36,60 +36,85 @@ namespace UniGit
 			foreach (var entry in data.RepositoryStatus.SubModuleEntries)
 			{
 				string path = entry.Path;
-				GUILayout.BeginHorizontal(moduleStyle,GUILayout.Height(32));
+				float elementTextHeight = EditorStyles.label.CalcHeight(GitGUI.GetTempContent(path), rect.width);
+				Rect elementRect = GUILayoutUtility.GetRect(GUIContent.none, moduleStyle,GUILayout.MinHeight(elementTextHeight + EditorGUIUtility.singleLineHeight + 24));
+
+				if (Event.current.type == EventType.Repaint)
+				{
+					moduleStyle.Draw(elementRect,GUIContent.none, 0);
+				}
+
+				var innerRect = new Rect(elementRect.x + 4,elementRect.y + 2,elementRect.width - 8,elementRect.height - 4);
+
+				Rect nameRect = new Rect(innerRect.x,innerRect.y,innerRect.width - 24,elementTextHeight);
+				GUI.Label(nameRect,GitGUI.GetTempContent(path));
+				Rect hashRect = new Rect(innerRect.x,innerRect.y + elementTextHeight,innerRect.width - 24,EditorGUIUtility.singleLineHeight);
+				GUI.Label(hashRect,GitGUI.GetTempContent(entry.WorkDirId),EditorStyles.miniLabel);
+				Rect iconRect = new Rect(innerRect.x,innerRect.y + elementTextHeight + EditorGUIUtility.singleLineHeight,21,21);
+
 				bool initActive = false;
 				if (entry.Status == SubmoduleStatus.InConfig)
 				{
-					GUILayout.Label(GitGUI.GetTempContent(GitGUI.Textures.WarrningIconSmall,"Module is only in config."),GitGUI.Styles.IconButton,GUILayout.Width(16),GUILayout.Height(16));
+					GUI.Label(iconRect,GitGUI.GetTempContent(GitGUI.Textures.WarrningIconSmall,"Module is only in config."),GitGUI.Styles.IconButton);
 					initActive = true;
+					iconRect.x += EditorGUIUtility.singleLineHeight;
 				}
 				else if (entry.Status.HasFlag(SubmoduleStatus.WorkDirUninitialized))
 				{
-					GUILayout.Label(GitGUI.GetTempContent(GitGUI.Textures.WarrningIconSmall,"Module is uninitialized."),GitGUI.Styles.IconButton,GUILayout.Width(16),GUILayout.Height(16));
+					GUI.Label(iconRect,GitGUI.GetTempContent(GitGUI.Textures.WarrningIconSmall,"Module is uninitialized."),GitGUI.Styles.IconButton);
 					initActive = true;
+					iconRect.x += EditorGUIUtility.singleLineHeight;
 				}
 				else if (entry.Status.HasFlag(SubmoduleStatus.IndexAdded))
 				{
-					GUILayout.Label(GitGUI.GetTempContent(gitOverlay.icons.addedIconSmall.image,"Sub Module is in index but not in head. Commit changes to add module to head."),GitGUI.Styles.IconButton,GUILayout.Width(16),GUILayout.Height(16));
+					GUI.Label(iconRect,GitGUI.GetTempContent(gitOverlay.icons.addedIconSmall.image,"Sub Module is in index but not in head. Commit changes to add module to head."),GitGUI.Styles.IconButton);
+					iconRect.x += EditorGUIUtility.singleLineHeight;
 				}
-				EditorGUILayout.BeginVertical();
-				GUILayout.Label(GitGUI.GetTempContent(entry.Path));
-				EditorGUILayout.EndVertical();
+				else if (entry.Status.HasFlag(SubmoduleStatus.WorkDirModified))
+				{
+					GUI.Label(iconRect,GitGUI.GetTempContent(GitGUI.Textures.CollabPush,"Sub Module in index and in working directory don't match. Stage module or update it."),GitGUI.Styles.IconButton);
+					iconRect.x += EditorGUIUtility.singleLineHeight;
+				}
+
+				if (entry.Status.HasFlag(SubmoduleStatus.WorkDirFilesModified))
+				{
+					GUI.Label(iconRect,GitGUI.GetTempContent(gitOverlay.icons.modifiedIconSmall.image,"Sub Module has modified files."),GitGUI.Styles.IconButton);
+					iconRect.x += EditorGUIUtility.singleLineHeight;
+				}
+
+				if (entry.Status.HasFlag(SubmoduleStatus.WorkDirFilesUntracked))
+				{
+					GUI.Label(iconRect,GitGUI.GetTempContent(gitOverlay.icons.untrackedIconSmall.image,"Sub Module has untracked files."),GitGUI.Styles.IconButton);
+					iconRect.x += EditorGUIUtility.singleLineHeight;
+				}
+
+				if (entry.Status.HasFlag(SubmoduleStatus.WorkDirFilesIndexDirty))
+				{
+					GUI.Label(iconRect,GitGUI.GetTempContent(gitOverlay.icons.addedIconSmall.image,"Sub Module has added files to index."),GitGUI.Styles.IconButton);
+					iconRect.x += EditorGUIUtility.singleLineHeight;
+				}
+
 				GUIContent switchContent = GitGUI.GetTempContent(GitGUI.Textures.OrbitTool, "Explore");
-				Rect switchRect = GUILayoutUtility.GetRect(switchContent, GitGUI.Styles.IconButton);
+				Rect switchRect = new Rect(innerRect.x + innerRect.width - 24,innerRect.y,24,24);
 				EditorGUIUtility.AddCursorRect(switchRect,MouseCursor.Link);
 				if (GUI.Button(switchRect,switchContent,GitGUI.Styles.IconButton))
 				{
 					gitManager.SwitchToSubModule(entry.Path);
 					editorWindow.Close();
 				}
-				GUILayout.EndHorizontal();
-				Rect lastRect = GUILayoutUtility.GetLastRect();
-				if (Event.current.type == EventType.ContextClick && lastRect.Contains(Event.current.mousePosition))
+				Rect optionsRect = new Rect(innerRect.x + innerRect.width - 24,innerRect.y + 24,24,24);
+				EditorGUIUtility.AddCursorRect(optionsRect,MouseCursor.Link);
+				if (GUI.Button(optionsRect, GitGUI.IconContent("UnityEditor.SceneHierarchyWindow", string.Empty, "Options"),GitGUI.Styles.IconButton))
 				{
 					GenericMenu menu = new GenericMenu();
+					BuildOptions(menu, path, initActive);
+					menu.DropDown(optionsRect);
+				}
 
-					if (initActive)
-					{
-						menu.AddItem(new GUIContent("Init/Init"),false, () =>
-						{
-							gitManager.Repository.Submodules.Init(path,false);
-						});
-					}
-					else
-					{
-						menu.AddDisabledItem(new GUIContent("Init/Init"));
-					}
-					
-					menu.AddItem(new GUIContent("Init/Force"),false, () =>
-					{
-						gitManager.Repository.Submodules.Init(path,true);
-					});
-					menu.AddItem(new GUIContent("Update\\Info"),false, () =>
-					{
-						var window = UniGitLoader.GetWindow<GitSubModuleOptionsWizard>(true);
-						window.Init(path);
-					});
+				if (Event.current.type == EventType.ContextClick && elementRect.Contains(Event.current.mousePosition))
+				{
+					GenericMenu menu = new GenericMenu();
+					BuildOptions(menu, path, initActive);
 					menu.ShowAsContext();
 				}
 			}
@@ -101,6 +126,33 @@ namespace UniGit
 					gitManager.SwitchToMainRepository();
 				}
 			}
+		}
+
+		private void BuildOptions(GenericMenu menu, string path,bool initActive)
+		{
+			if (initActive)
+			{
+				menu.AddItem(new GUIContent("Init/Init"),false, () =>
+				{
+					gitManager.Repository.Submodules.Init(path,false);
+					gitManager.MarkDirty(true);
+				});
+			}
+			else
+			{
+				menu.AddDisabledItem(new GUIContent("Init/Init"));
+			}
+					
+			menu.AddItem(new GUIContent("Init/Force"),false, () =>
+			{
+				gitManager.Repository.Submodules.Init(path,true);
+				gitManager.MarkDirty(true);
+			});
+			menu.AddItem(new GUIContent("Update\\Info"),false, () =>
+			{
+				var window = UniGitLoader.GetWindow<GitSubModuleOptionsWizard>(true);
+				window.Init(path);
+			});
 		}
 	}
 }

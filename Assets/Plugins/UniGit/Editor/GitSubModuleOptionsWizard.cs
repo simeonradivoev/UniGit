@@ -58,6 +58,11 @@ namespace UniGit
 					GUILayout.Label("Workdir: " + submodule.WorkDirCommitId.Sha,EditorStyles.miniLabel);
 				if(submodule.HeadCommitId != null)
 					GUILayout.Label("Head: " + submodule.HeadCommitId.Sha,EditorStyles.miniLabel);
+
+				if (submodule.HeadCommitId != submodule.WorkDirCommitId)
+				{
+					EditorGUILayout.HelpBox("Sub module out of sync with super project. Updating sub module will reset it to it's original index.",MessageType.Warning);
+				}
 			}
 			EditorGUILayout.Space();
 			DrawCredentials();
@@ -83,6 +88,7 @@ namespace UniGit
 			try
 			{
 				gitManager.Repository.Submodules.Update(path, options);
+				gitManager.MarkDirty(true);
 			}
 			catch (Exception e)
 			{

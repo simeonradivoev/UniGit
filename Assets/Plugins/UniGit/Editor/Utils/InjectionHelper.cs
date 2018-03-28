@@ -257,7 +257,7 @@ namespace UniGit.Utils
 				return null;
 			}
 
-			throw new Exception(string.Format("Unresolved parameter: {0} with type: {1}", parameter.Name, parameter.ParameterType));
+			throw new Exception(string.Format("Unresolved parameter: '{0}' with type: '{1}' when injecting into '{2}'", parameter.Name, parameter.ParameterType,injecteeType.Name));
 		}
 
 		private bool FindResolves(Type types,string parameterId, Type injecteeType,ICollection<Resolve> outResolves)
@@ -434,6 +434,7 @@ namespace UniGit.Utils
 			private object instance;
 			private object[] arg;
 			private bool nonLazy;
+			private bool cache = true;
 
 			public Resolve(Type type)
 			{
@@ -515,25 +516,40 @@ namespace UniGit.Utils
 				return this;
 			}
 
+			public Resolve AsTransient()
+			{
+				cache = false;
+				return this;
+			}
+
 			public object GetInstance(InjectionHelper injectionHelper)
 			{
-				EnsureInstance(injectionHelper);
-				return instance;
+				if (cache)
+				{
+					EnsureInstance(injectionHelper);
+					return instance;
+				}
+
+				return CreateInstance(injectionHelper);
+			}
+
+			internal object CreateInstance(InjectionHelper injectionHelper)
+			{
+				if (method != null)
+				{
+					object i = method.Invoke(new ResolveCreateContext(injectionHelper, arg));
+					injectionHelper.Inject(i);
+					return i;
+				}
+
+				return injectionHelper.CreateInstance(instanceType, arg);
 			}
 
 			internal void EnsureInstance(InjectionHelper injectionHelper)
 			{
 				if (instance == null)
 				{
-					if (method != null)
-					{
-						instance = method.Invoke(new ResolveCreateContext(injectionHelper, arg));
-						injectionHelper.Inject(instance);
-					}
-					else
-					{
-						instance = injectionHelper.CreateInstance(instanceType, arg);
-					}
+					instance = CreateInstance(injectionHelper);
 				}
 			}
 

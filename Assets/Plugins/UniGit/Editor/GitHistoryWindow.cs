@@ -31,7 +31,7 @@ namespace UniGit
 		[SerializeField] private List<ProfilePicture> serializedProfilePictures;
 		private static Styles styles;
 		private BranchInfo selectedBranch;
-		private BranchInfo[] cachedBranches = new BranchInfo[0];
+		private List<BranchInfo> cachedBranches = new List<BranchInfo>();
 		private CommitInfo[] cachedCommits = new CommitInfo[0];
 		private Rect[] commitRects;
 		private Rect historyScrollContentsRect;
@@ -168,8 +168,9 @@ namespace UniGit
 		{
 			try
 			{
+				cachedBranches.Clear();
 				//update all branches
-				cachedBranches = gitManager.Repository.Branches.Select(b => new BranchInfo(b)).ToArray();
+				cachedBranches.AddRange(gitManager.Repository.Branches.Select(b => new BranchInfo(b)));
 
 				//update selected branch
 				SetSelectedBranch(selectedBranchName);
@@ -380,9 +381,14 @@ namespace UniGit
 				}
 				btRect = new Rect(btRect.x + 70, btRect.y, 64, btRect.height);
 				GUIContent fetchContent = GitGUI.GetTempContent("Fetch", gitOverlay.icons.fetch.image, "Get changes from remote repository but do not merge them.");
-				if (branch.Remote != null)
+				if (branch.Remote == null)
 				{
 					fetchContent.tooltip = "Branch does not have a remote.";
+					GUI.enabled = false;
+				}
+				else if (branch.IsRemote)
+				{
+					fetchContent.tooltip = "Branch is remote.";
 					GUI.enabled = false;
 				}
 				if (GUI.Button(btRect, fetchContent, EditorStyles.toolbarButton))
@@ -856,7 +862,14 @@ namespace UniGit
 			}
 			else if (!branch.IsCurrentRepositoryHead)
 			{
-				content = GitGUI.GetTempContent("Viewing a branch that is not the HEAD.");
+				if (!gitManager.InSubModule)
+				{
+					content = GitGUI.GetTempContent("Viewing a branch that is not the HEAD.",GitGUI.Textures.InfoIconSmall);
+				}
+				else
+				{
+					content = GitGUI.GetTempContent("Viewing a branch that is not the HEAD in sub module. Sub module may be out of sync with it's parent project. An update of sub module might be required.",GitGUI.Textures.WarrningIconSmall);
+				}
 			}
 
 			GUI.Box(rect, content, styles.historyHelpBox);

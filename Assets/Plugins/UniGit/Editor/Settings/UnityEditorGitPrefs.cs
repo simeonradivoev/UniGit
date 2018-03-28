@@ -1,10 +1,30 @@
-﻿using UnityEditor;
+﻿using System;
+using UniGit.Utils;
+using UnityEditor;
 
 namespace UniGit.Settings
 {
-	public class UnityEditorGitPrefs : IGitPrefs
+	public class UnityEditorGitPrefs : IGitPrefs, IDisposable
 	{
 		public const string DisablePostprocess = "UniGit_DisablePostprocess";
+		private readonly GitCallbacks gitCallbacks;
+		private bool dirty;
+
+		[UniGitInject]
+		public UnityEditorGitPrefs(GitCallbacks gitCallbacks)
+		{
+			this.gitCallbacks = gitCallbacks;
+			gitCallbacks.EditorUpdate += OnEditorUpdate;
+		}
+
+		public void OnEditorUpdate()
+		{
+			if (dirty)
+			{
+				dirty = false;
+				gitCallbacks.IssueOnPrefsChange(this);
+			}
+		}
 
 		public void DeleteAll()
 		{
@@ -64,21 +84,30 @@ namespace UniGit.Settings
 		public void SetBool(string key, bool value)
 		{
 			EditorPrefs.SetBool(key, value);
+			dirty = true;
 		}
 
 		public void SetFloat(string key, float value)
 		{
 			EditorPrefs.SetFloat(key, value);
+			dirty = true;
 		}
 
 		public void SetInt(string key, int value)
 		{
 			EditorPrefs.SetInt(key, value);
+			dirty = true;
 		}
 
 		public void SetString(string key, string value)
 		{
 			EditorPrefs.SetString(key, value);
+			dirty = true;
+		}
+
+		public void Dispose()
+		{
+			gitCallbacks.EditorUpdate -= OnEditorUpdate;
 		}
 	}
 }

@@ -10,12 +10,19 @@ namespace UniGit.Status
 		[SerializeField] private string path;
 		[SerializeField] private string url;
 		[SerializeField] private SubmoduleStatus status;
+		[SerializeField] private string workDirId;
 
 		public GitStatusSubModuleEntry(Submodule submodule)
 		{
 			path = GitManager.FixUnityPath(submodule.Path);
 			url = submodule.Url;
+			workDirId = submodule.WorkDirCommitId.Sha;
 			status = submodule.RetrieveStatus();
+		}
+
+		public GitStatusSubModuleEntry(string path)
+		{
+			this.path = path;
 		}
 
 		public string Path
@@ -28,9 +35,15 @@ namespace UniGit.Status
 			get { return url; }
 		}
 
+		public string WorkDirId
+		{
+			get { return workDirId; }
+		}
+
 		public SubmoduleStatus Status
 		{
 			get { return status; }
+			set { status = value; }
 		}
 	}
 }

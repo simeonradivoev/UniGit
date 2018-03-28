@@ -15,7 +15,7 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.4";
+		public const string Version = "1.4.1";
 
 		private readonly string repoPath;
 		private readonly string settingsPath;
@@ -194,34 +194,34 @@ namespace UniGit
 
 		#region Asset Postprocessing
 
-		private void OnWillSaveAssets(string[] paths,ref string[] outputs)
+		private void OnWillSaveAssets(string[] projectPaths,ref string[] outputs)
 		{
-			PostprocessStage(paths);
+			PostprocessStage(projectPaths);
 		}
 
-		private void OnPostprocessImportedAssets(string[] paths)
+		private void OnPostprocessImportedAssets(string[] projectPaths)
 		{
-			PostprocessStage(paths);
+			PostprocessStage(projectPaths);
 		}
 
-		private void OnPostprocessDeletedAssets(string[] paths)
+		private void OnPostprocessDeletedAssets(string[] projectPaths)
 		{
 			//automatic deletion is necessary even if AutoStage is off
-			PostprocessUnstage(paths);
+			PostprocessUnstage(projectPaths);
 		}
 
-		private void OnPostprocessMovedAssets(string[] paths,string[] movedFrom)
+		private void OnPostprocessMovedAssets(string[] projectPaths,string[] movedFromProjectPaths)
 		{
-			PostprocessStage(paths);
+			PostprocessStage(projectPaths);
 			//automatic deletion of previously moved asset is necessary even if AutoStage is off
-			PostprocessUnstage(movedFrom);
+			PostprocessUnstage(movedFromProjectPaths);
 		}
 
-		private void PostprocessStage(string[] paths)
+		private void PostprocessStage(string[] projectPaths)
 		{
 			if(repository == null || !initializer.IsValidRepo) return;
 			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
-			string[] pathsFinal = paths.Where(a => !IsEmptyFolder(a)).SelectMany(GetPathWithMeta).ToArray();
+			string[] pathsFinal = projectPaths.Where(a => !IsEmptyFolder(a)).Select(ToLocalPath).SelectMany(GetPathWithMeta).ToArray();
 			if (pathsFinal.Length > 0)
 			{
 				bool autoStage = gitSettings != null && gitSettings.AutoStage;
@@ -244,11 +244,11 @@ namespace UniGit
 			}
 		}
 
-		private void PostprocessUnstage(string[] paths)
+		private void PostprocessUnstage(string[] projectPaths)
 		{
 			if (repository == null || !initializer.IsValidRepo) return;
 			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
-			string[] pathsFinal = paths.SelectMany(GetPathWithMeta).ToArray();
+			string[] pathsFinal = projectPaths.Select(ToLocalPath).SelectMany(GetPathWithMeta).ToArray();
 			if (pathsFinal.Length > 0)
 			{
 				if (gitSettings != null && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
@@ -312,9 +312,9 @@ namespace UniGit
 			MarkDirty(true);
 		}
 
-		public void MarkDirtyAuto(params string[] paths)
+		public void MarkDirtyAuto(params string[] localPaths)
 		{
-			if(gitSettings.LazyMode) MarkDirty(paths);
+			if(gitSettings.LazyMode) MarkDirty(localPaths);
 			else MarkDirty();
 		}
 
@@ -370,6 +370,7 @@ namespace UniGit
 					{
 						var e = new GitStatusSubModuleEntry(submodule);
 						gitData.RepositoryStatus.Add(e);
+						gitData.RepositoryStatus.Update(e.Path,repository.RetrieveStatus(e.Path));
 					}
 
 					foreach (var remote in repository.Network.Remotes)
@@ -508,9 +509,9 @@ namespace UniGit
 			return false;
 		}
 
-		internal bool IsFileStaging(string path)
+		internal bool IsFileStaging(string localPath)
 		{
-			return asyncStages.Any(s => s.Paths.Contains(path));
+			return asyncStages.Any(s => s.LocalPaths.Contains(localPath));
 		}
 
 		public Texture2D GetGitStatusIcon()
@@ -645,18 +646,18 @@ namespace UniGit
 			}
 		}
 
-		public GitAsyncOperation AsyncStage(string[] paths)
+		public GitAsyncOperation AsyncStage(string[] localPaths)
 		{
 			var operation = asyncManager.QueueWorker(() =>
 			{
-			    GitCommands.Stage(repository,paths);
+			    GitCommands.Stage(repository,localPaths);
 			}, (o) =>
 			{
-				MarkDirtyAuto(paths);
+				MarkDirtyAuto(localPaths);
 				asyncStages.RemoveAll(s => s.Equals(o));
 				callbacks.IssueAsyncStageOperationDone(o);
 			});
-			asyncStages.Add(new AsyncStageOperation(operation,paths));
+			asyncStages.Add(new AsyncStageOperation(operation,localPaths));
 			return operation;
 		}
 
@@ -673,18 +674,18 @@ namespace UniGit
 			}
 		}
 
-		public GitAsyncOperation AsyncUnstage(string[] paths)
+		public GitAsyncOperation AsyncUnstage(string[] localPaths)
 		{
 			var operation = asyncManager.QueueWorker(() =>
 			{
-			    GitCommands.Unstage(repository,paths);
+			    GitCommands.Unstage(repository,localPaths);
 			}, (o) =>
 			{
-				MarkDirtyAuto(paths);
+				MarkDirtyAuto(localPaths);
 				asyncStages.RemoveAll(s => s.Equals(o));
 				callbacks.IssueAsyncStageOperationDone(o);
 			});
-			asyncStages.Add(new AsyncStageOperation(operation, paths));
+			asyncStages.Add(new AsyncStageOperation(operation, localPaths));
 			return operation;
 		}
 
@@ -714,6 +715,10 @@ namespace UniGit
 		public bool IsDirectory(string localPath)
 		{
 			string projectPath = ToProjectPath(localPath);
+			if (IsSubModule(ToProjectPath(localPath)))
+			{
+				return false;
+			}
 			if (Path.IsPathRooted(projectPath))
 			{
 				return Directory.Exists(UniGitPath.Combine(repoPath,projectPath));
@@ -1010,12 +1015,12 @@ namespace UniGit
 		public class AsyncUpdateOperation : IEquatable<GitAsyncOperation>
 		{
 			private readonly GitAsyncOperation operation;
-			private readonly string[] paths;
+			private readonly string[] localPaths;
 
-			public AsyncUpdateOperation(GitAsyncOperation operation, string[] paths)
+			public AsyncUpdateOperation(GitAsyncOperation operation, string[] localPaths)
 			{
 				this.operation = operation;
-				this.paths = paths;
+				this.localPaths = localPaths;
 			}
 
 			public bool Equals(GitAsyncOperation other)
@@ -1042,21 +1047,21 @@ namespace UniGit
 				get { return operation.IsDone; }
 			}
 
-			public string[] Paths
+			public string[] LocalPaths
 			{
-				get { return paths; }
+				get { return localPaths; }
 			}
 		}
 
 		public class AsyncStageOperation : IEquatable<GitAsyncOperation>
 		{
 			private readonly GitAsyncOperation operation;
-			private readonly HashSet<string> paths;
+			private readonly HashSet<string> localPaths;
 
-			public AsyncStageOperation(GitAsyncOperation operation, IEnumerable<string> paths)
+			public AsyncStageOperation(GitAsyncOperation operation, IEnumerable<string> localPaths)
 			{
 				this.operation = operation;
-				this.paths = new HashSet<string>(paths);
+				this.localPaths = new HashSet<string>(localPaths);
 			}
 
 			public bool Equals(GitAsyncOperation other)
@@ -1078,9 +1083,9 @@ namespace UniGit
 				return operation.GetHashCode();
 			}
 
-			public HashSet<string> Paths
+			public HashSet<string> LocalPaths
 			{
-				get { return paths; }
+				get { return localPaths; }
 			}
 
 			public GitAsyncOperation Operation

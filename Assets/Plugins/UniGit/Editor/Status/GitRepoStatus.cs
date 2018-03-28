@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using LibGit2Sharp;
 using UnityEngine;
@@ -57,6 +58,15 @@ namespace UniGit.Status
 			if (status != FileStatus.Nonexistent)
 			{
 				entries.Add(new GitStatusEntry(localFilePath, status));
+			}
+		}
+
+		public void Update(string path,SubmoduleStatus status)
+		{
+			var entry = subModuleEntries.FirstOrDefault(e => e.Path == path);
+			if (entry != null)
+			{
+				entry.Status = status;
 			}
 		}
 

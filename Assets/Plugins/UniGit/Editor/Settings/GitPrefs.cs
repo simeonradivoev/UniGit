@@ -1,20 +1,36 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using UniGit.Utils;
 
 namespace UniGit.Settings
 {
-	public class GitPrefs : IGitPrefs
+	public class GitPrefs : IGitPrefs, IDisposable
 	{
-		private Dictionary<string, bool> bools;
-		private Dictionary<string, float> floats;
-		private Dictionary<string, int> ints;
-		private Dictionary<string,string> strings;
+		private readonly GitCallbacks gitCallbacks;
+		private readonly Dictionary<string, bool> bools;
+		private readonly Dictionary<string, float> floats;
+		private readonly Dictionary<string, int> ints;
+		private readonly Dictionary<string,string> strings;
+		private bool dirty;
 
-		public GitPrefs()
+		[UniGitInject]
+		public GitPrefs(GitCallbacks gitCallbacks)
 		{
+			this.gitCallbacks = gitCallbacks;
 			bools = new Dictionary<string, bool>();
 			floats = new Dictionary<string, float>();
 			ints = new Dictionary<string, int>();
 			strings = new Dictionary<string, string>();
+			gitCallbacks.EditorUpdate += OnEditorUpdate;
+		}
+
+		public void OnEditorUpdate()
+		{
+			if (dirty)
+			{
+				dirty = false;
+				gitCallbacks.IssueOnPrefsChange(this);
+			}
 		}
 
 		public void DeleteAll()
@@ -125,21 +141,30 @@ namespace UniGit.Settings
 		public void SetBool(string key, bool value)
 		{
 			bools[key] = value;
+			dirty = true;
 		}
 
 		public void SetFloat(string key, float value)
 		{
 			floats[key] = value;
+			dirty = true;
 		}
 
 		public void SetInt(string key, int value)
 		{
 			ints[key] = value;
+			dirty = true;
 		}
 
 		public void SetString(string key, string value)
 		{
 			strings[key] = value;
+			dirty = true;
+		}
+
+		public void Dispose()
+		{
+			gitCallbacks.EditorUpdate -= OnEditorUpdate;
 		}
 	}
 }

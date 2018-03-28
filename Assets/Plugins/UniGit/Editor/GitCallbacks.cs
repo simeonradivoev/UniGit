@@ -1,5 +1,6 @@
 ﻿using System;
 using LibGit2Sharp;
+using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
@@ -14,6 +15,13 @@ namespace UniGit
 		{
 			if(RepositoryCreate != null)
 				RepositoryCreate.Invoke();
+		}
+
+		public event Action<IGitPrefs> OnPrefsChange;
+		public void IssueOnPrefsChange(IGitPrefs prefs)
+		{
+			if (OnPrefsChange != null)
+				OnPrefsChange.Invoke(prefs);
 		}
 
 		public event Action<GitRepoStatus, string[]> UpdateRepository;
