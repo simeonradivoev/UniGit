@@ -47,11 +47,11 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEditor">
-      <HintPath>D:\Program Files\Unity 2017.3\Editor\Data\Managed\UnityEditor.dll</HintPath>
+      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEditor.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>D:\Program Files\Unity 2017.3\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -143,6 +143,15 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitHookManager.cs">
       <Link>GitHookManager.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitInitializer.cs">
+      <Link>GitInitializer.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitLog.cs">
+      <Link>GitLog.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitLogWindow.cs">
+      <Link>GitLogWindow.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitManager.cs">
       <Link>GitManager.cs</Link>
     </Compile>
@@ -164,6 +173,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitPushWizard.cs">
       <Link>GitPushWizard.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitRemoteToolsWindow.cs">
+      <Link>GitRemoteToolsWindow.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitResourceManager.cs">
       <Link>GitResourceManager.cs</Link>
     </Compile>
@@ -182,6 +194,12 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitStashWindow.cs">
       <Link>GitStashWindow.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSubModuleOptionsWizard.cs">
+      <Link>GitSubModuleOptionsWizard.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitSubModulesPopup.cs">
+      <Link>GitSubModulesPopup.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitUnityMenu.cs">
       <Link>GitUnityMenu.cs</Link>
     </Compile>
@@ -191,6 +209,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWindows.cs">
       <Link>GitWindows.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWizard.cs">
+      <Link>GitWizard.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\GitWizardBase.cs">
       <Link>GitWizardBase.cs</Link>
     </Compile>
@@ -199,6 +220,9 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Hooks\GitPushHookBase.cs">
       <Link>GitPushHookBase.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\IGitResourceManager.cs">
+      <Link>IGitResourceManager.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\IGitWatcher.cs">
       <Link>IGitWatcher.cs</Link>
@@ -266,11 +290,20 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusEntry.cs">
       <Link>GitStatusEntry.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusRemoteEntry.cs">
+      <Link>GitStatusRemoteEntry.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Status\GitStatusSubModuleEntry.cs">
+      <Link>GitStatusSubModuleEntry.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\UniGitLoader.cs">
       <Link>UniGitLoader.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\ContextGenericMenuPopup.cs">
       <Link>ContextGenericMenuPopup.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\EnumExtensions.cs">
+      <Link>EnumExtensions.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\FileLinesReader.cs">
       <Link>FileLinesReader.cs</Link>
@@ -284,11 +317,17 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAboutWindow.cs">
       <Link>GitAboutWindow.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAnimation.cs">
+      <Link>GitAnimation.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAsyncManager.cs">
       <Link>GitAsyncManager.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitAsyncOperation.cs">
       <Link>GitAsyncOperation.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitCiBuild.cs">
+      <Link>GitCiBuild.cs</Link>
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\GitGUI.cs">
       <Link>GitGUI.cs</Link>
@@ -317,6 +356,9 @@
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\PatternMatcher.cs">
       <Link>PatternMatcher.cs</Link>
     </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\SimpleJSON.cs">
+      <Link>SimpleJSON.cs</Link>
+    </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\StreamExtensions.cs">
       <Link>StreamExtensions.cs</Link>
     </Compile>
@@ -328,6 +370,24 @@
     </Compile>
     <Compile Include="..\Assets\Plugins\UniGit\Editor\Utils\UniGitPath.cs">
       <Link>UniGitPath.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Windows\Diff\GitDiffElementContextFactory.cs">
+      <Link>GitDiffElementContextFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Windows\Diff\GitDiffWindowCommitRenderer.cs">
+      <Link>GitDiffWindowCommitRenderer.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Windows\Diff\GitDiffWindowDiffElementRenderer.cs">
+      <Link>GitDiffWindowDiffElementRenderer.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Windows\Diff\GitDiffWindowSorter.cs">
+      <Link>GitDiffWindowSorter.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Windows\Diff\GitDiffWindowToolbarRenderer.cs">
+      <Link>GitDiffWindowToolbarRenderer.cs</Link>
+    </Compile>
+    <Compile Include="..\Assets\Plugins\UniGit\Editor\Windows\Diff\IDiffWindowRenderer.cs">
+      <Link>IDiffWindowRenderer.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
