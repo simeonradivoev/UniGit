@@ -9,19 +9,6 @@ namespace UniGit.Utils
 {
 	internal static class FlagHelper
 	{
-		public static int GetIndex<T>(this T values) where T : struct
-		{
-			CheckIsEnum<T>(true);
-			int value = Convert.ToInt32(values);
-			int index = 0;
-			while (value > 0)
-			{
-				value >>= 1;
-				index++;
-			}
-			return index;
-		}
-
 		private static void CheckIsEnum<T>(bool withFlags)
 		{
 			if (!typeof(T).IsEnum)
@@ -41,16 +28,6 @@ namespace UniGit.Utils
 			long lValue = Convert.ToInt64(value);
 			long lFlag = Convert.ToInt64(flag);
 			return (lValue & lFlag) != 0;
-		}
-
-		public static IEnumerable<T> GetFlags<T>(this T value) where T : struct
-		{
-			CheckIsEnum<T>(true);
-			foreach (T flag in Enum.GetValues(typeof(T)).Cast<T>())
-			{
-				if (value.IsFlagSet(flag))
-					yield return flag;
-			}
 		}
 
 		public static T SetFlags<T>(this T value, T flags, bool on) where T : struct
@@ -89,24 +66,6 @@ namespace UniGit.Utils
 				lValue |= lFlag;
 			}
 			return (T)Enum.ToObject(typeof(T), lValue);
-		}
-
-		public static string GetDescription(this Enum val)
-		{
-			string name = Enum.GetName(val.GetType(), val);
-			if (name != null)
-			{
-				FieldInfo field = val.GetType().GetField(name);
-				if (field != null)
-				{
-					DescriptionAttribute attr = Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
-					if (attr != null)
-					{
-						return attr.Description;
-					}
-				}
-			}
-			return name;
 		}
 
 		public static string GetDescription<T>(this T value) where T : struct

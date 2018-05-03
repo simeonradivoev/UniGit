@@ -460,26 +460,16 @@ namespace UniGit
 		{
 			float elementHeight = diffElementRenderer.ElementHeight;
 
-			try
-			{
-				if (statusList.TryLock())
+			if (IsGrouping())
 				{
-					if (IsGrouping())
-					{
-						float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-						float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount) * elementHeight;
-						diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), elementsTotalHeight);
-					}
-					else
-					{
-						diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), statusList.Count(IsVisible) * elementHeight);
-					}
+					float totalTypesCount = statusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
+					float elementsTotalHeight = (statusList.Count(IsVisible) + totalTypesCount) * elementHeight;
+					diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), elementsTotalHeight);
 				}
-			}
-			finally
-			{
-				statusList.Unlock();
-			}
+				else
+				{
+					diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), statusList.Count(IsVisible) * elementHeight);
+				}
 
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
 
@@ -666,7 +656,7 @@ namespace UniGit
 		{
 			if (IsGrouping())
 			{
-				if (!settings.MinimizedFileStatus.IsFlagSet(GetMergedStatus(entry.State))) return false;
+				if ((settings.MinimizedFileStatus & GetMergedStatus(entry.State)) == FileStatus.Unaltered) return false;
 			}
 			return entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.IndexOf(filter,StringComparison.InvariantCultureIgnoreCase) >= 0;
 		}
@@ -678,19 +668,19 @@ namespace UniGit
 
 		private static FileStatus GetMergedStatus(FileStatus status)
 		{
-			if (status.IsFlagSet(FileStatus.NewInIndex | FileStatus.NewInWorkdir))
+			if ((status & (FileStatus.NewInIndex | FileStatus.NewInWorkdir)) != FileStatus.Unaltered)
 			{
 				return FileStatus.NewInIndex | FileStatus.NewInWorkdir;
 			}
-			if (status.IsFlagSet(FileStatus.ModifiedInIndex | FileStatus.ModifiedInWorkdir))
+			if ((status & (FileStatus.ModifiedInIndex | FileStatus.ModifiedInWorkdir)) != FileStatus.Unaltered)
 			{
 				return FileStatus.ModifiedInIndex | FileStatus.ModifiedInWorkdir;
 			}
-			if (status.IsFlagSet(FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir))
+			if ((status & (FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir)) != FileStatus.Unaltered)
 			{
 				return FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir;
 			}
-			if (status.IsFlagSet(FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir))
+			if ((status & (FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir)) != FileStatus.Unaltered)
 			{
 				return FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir;
 			}
@@ -1060,26 +1050,6 @@ namespace UniGit
 			public void Clear()
 			{
 				entries.Clear();
-			}
-
-			public bool TryLock()
-			{
-				return Monitor.TryEnter(lockObj);
-			}
-
-			public bool Wait()
-			{
-				return Monitor.Wait(lockObj);
-			}
-
-			public void Lock()
-			{
-				Monitor.Enter(lockObj);
-			}
-
-			public void Unlock()
-			{
-				Monitor.Exit(lockObj);
 			}
 
 			public object LockObj

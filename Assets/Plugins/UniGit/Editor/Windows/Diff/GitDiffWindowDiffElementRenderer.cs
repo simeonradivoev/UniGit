@@ -28,6 +28,8 @@ namespace UniGit.Windows.Diff
 			public GUIStyle diffElementName;
 			public GUIStyle diffElementPath;
 			public GUIStyle toggle;
+			public Texture folderIcon;
+			public Texture defaultAssetIcon;
 		}
 
 		private Styles styles;
@@ -61,6 +63,8 @@ namespace UniGit.Windows.Diff
 				diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } },
 				diffElementPath = new GUIStyle(EditorStyles.label) { onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture }, wordWrap = true, fixedHeight = 0, alignment = TextAnchor.MiddleLeft },
 				toggle = new GUIStyle("IN Toggle") { fixedHeight = 32,normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() },
+				folderIcon = EditorGUIUtility.IconContent("Folder Icon").image,
+				defaultAssetIcon = EditorGUIUtility.IconContent("DefaultAsset Icon").image
 			};
 		}
 
@@ -116,18 +120,18 @@ namespace UniGit.Windows.Diff
 				GUIContent tmpContent = GUIContent.none;
 				if (string.IsNullOrEmpty(extension))
 				{
-					tmpContent = GitGUI.IconContent("Folder Icon", string.Empty, "Folder");
+					tmpContent = GitGUI.GetTempContent(styles.folderIcon, "Folder");
 				}
 
 				if (tmpContent.image == null)
 				{
 					if (asset != null)
 					{
-						tmpContent = GitGUI.GetTempContent(string.Empty,AssetPreview.GetMiniThumbnail(asset), asset.GetType().Name);
+						tmpContent = GitGUI.GetTempContent(string.Empty,AssetDatabase.GetCachedIcon(projectPath), asset.GetType().Name);
 					}
 					else
 					{
-						tmpContent = GitGUI.IconContent("DefaultAsset Icon", string.Empty, "Unknown Type");
+						tmpContent = GitGUI.GetTempContent(styles.defaultAssetIcon, "Unknown Type");
 					}
 				}
 
