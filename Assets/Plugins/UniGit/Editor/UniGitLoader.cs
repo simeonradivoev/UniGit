@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Assets.Plugins.UniGit.Editor.Hooks;
 using UniGit.Adapters;
 using UniGit.Settings;
@@ -134,7 +135,10 @@ namespace UniGit
 		private static void OnLogEntry(GitLog.LogEntry logEntry)
 		{
 			if (!GitSettings.UseUnityConsole)
-				GetGitWindow<GitLogWindow>();
+			{
+				//async call it to prevent threading problems
+				GitCallbacks.DelayCall += () => { GetGitWindow<GitLogWindow>(); };
+			}
 		}
 
 		private static GitCallbacks GetGitCallbacks(InjectionHelper.ResolveCreateContext context)
