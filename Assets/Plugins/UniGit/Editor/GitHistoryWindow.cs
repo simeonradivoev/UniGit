@@ -195,14 +195,9 @@ namespace UniGit
 
 				commitRects = new Rect[commitCount];
 				cachedCommits = newCachedCommits;
-				status.Lock();
-				try
+				lock (status.LockObj)
 				{
 					hasConflicts = status.Any(s => s.Status == FileStatus.Conflicted);
-				}
-				finally
-				{
-					status.Unlock();
 				}
 			}
 			catch (Exception e)

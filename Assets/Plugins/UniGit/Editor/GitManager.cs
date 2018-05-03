@@ -349,9 +349,7 @@ namespace UniGit
 
 		private void RebuildStatus(string[] paths)
 		{
-			gitData.RepositoryStatus.Lock();
-
-			try
+			lock (gitData.RepositoryStatus.LockObj)
 			{
 				if (paths != null && paths.Length > 0)
 				{
@@ -360,7 +358,7 @@ namespace UniGit
 						gitData.RepositoryStatus.Update(path, repository.RetrieveStatus(path));
 						if (IsSubModule(path))
 						{
-							gitData.RepositoryStatus.Update(path,repository.Submodules[path].RetrieveStatus());
+							gitData.RepositoryStatus.Update(path, repository.Submodules[path].RetrieveStatus());
 						}
 					}
 				}
@@ -374,7 +372,7 @@ namespace UniGit
 					{
 						var e = new GitStatusSubModuleEntry(submodule);
 						gitData.RepositoryStatus.Add(e);
-						gitData.RepositoryStatus.Update(e.Path,repository.RetrieveStatus(e.Path));
+						gitData.RepositoryStatus.Update(e.Path, repository.RetrieveStatus(e.Path));
 					}
 
 					foreach (var remote in repository.Network.Remotes)
@@ -383,10 +381,6 @@ namespace UniGit
 						gitData.RepositoryStatus.Add(e);
 					}
 				}
-			}
-			finally
-			{
-				gitData.RepositoryStatus.Unlock();
 			}
 		}
 

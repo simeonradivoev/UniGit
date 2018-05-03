@@ -85,19 +85,9 @@ namespace UniGit.Status
 			return false;
 		}
 
-		public bool TryEnterLock()
+		public object LockObj
 		{
-			return Monitor.TryEnter(lockObj);
-		}
-
-		public void Lock()
-		{
-			Monitor.Enter(lockObj);
-		}
-
-		public void Unlock()
-		{
-			Monitor.Exit(lockObj);
+			get { return lockObj; }
 		}
 
 		public IEnumerable<GitStatusSubModuleEntry> SubModuleEntries

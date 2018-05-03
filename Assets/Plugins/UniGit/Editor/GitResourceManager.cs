@@ -98,11 +98,11 @@ namespace UniGit
 				imageBytes = ms.ToArray();
 			}
 
-			var img = new Texture2D(width, height, TextureFormat.RGBA32, false, true)
+			var img = new Texture2D(width, height, TextureFormat.RGBA32, false, false)
 			{
 				hideFlags = HideFlags.HideAndDontSave,
 				name = "UniGitEditorResource.Image." + name,
-				wrapMode = TextureWrapMode.Clamp
+				wrapMode = TextureWrapMode.Clamp,
 			};
 			if (!img.LoadImage(imageBytes))
 			{

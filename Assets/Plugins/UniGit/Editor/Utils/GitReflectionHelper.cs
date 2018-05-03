@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using UnityEditor;
+using UnityEngine.Assertions;
 
 namespace UniGit.Utils
 {
@@ -8,16 +9,12 @@ namespace UniGit.Utils
 	{
 		private Func<EditorWindow, bool> hasFocusFucntion;
 		private Type projectWindowType;
-		private Type editModeLauncherType;
-		private FieldInfo testRunningField;
-		
+		public static bool TestsRunning;
 
 		public GitReflectionHelper()
 		{
 			hasFocusFucntion = (Func<EditorWindow,bool>)Delegate.CreateDelegate(typeof(Func<EditorWindow,bool>), typeof(EditorWindow).GetProperty("hasFocus", BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(true));
 			projectWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
-			editModeLauncherType = typeof(UnityEditor.TestTools.RequirePlatformSupportAttribute).Assembly.GetType("UnityEditor.TestTools.TestRunner.EditModeLauncher");
-			testRunningField = editModeLauncherType.GetField("IsRunning");
 		}
 
 		public Func<EditorWindow, bool> HasFocusFucntion
@@ -28,11 +25,6 @@ namespace UniGit.Utils
 		public Type ProjectWindowType
 		{
 			get { return projectWindowType; }
-		}
-
-		public FieldInfo TestRunningField
-		{
-			get { return testRunningField; }
 		}
 	}
 }

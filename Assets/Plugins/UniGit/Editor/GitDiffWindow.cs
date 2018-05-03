@@ -259,46 +259,34 @@ namespace UniGit
 
 				if (paths == null || paths.Length <= 0)
 				{
-					statusList.Lock();
-
-					try
+					lock (statusList.LockObj)
 					{
-						status.Lock();
-						foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
+						lock (status.LockObj)
 						{
-							newStatusList.Add(entry,null);
+							foreach (var entry in status.Where(e => settings.showFileStatusTypeFilter.IsFlagSet(e.Status)))
+							{
+								newStatusList.Add(entry, null);
+							}
+							newStatusList.Sort(sorter);
+							statusList = newStatusList;
 						}
-						newStatusList.Sort(sorter);
-						statusList = newStatusList;
-						status.Unlock();
-					}
-					finally
-					{
-						statusList.Unlock();
-						status.Unlock();
 					}
 				}
 				else
 				{
-					statusList.Lock();
-
-					try
+					lock (statusList.LockObj)
 					{
 						newStatusList.Copy(statusList);
 						newStatusList.RemoveRange(paths);
 						foreach (var path in paths)
 						{
 							GitStatusEntry entry;
-							if (status.Get(path,out entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
+							if (status.Get(path, out entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
 							{
-								newStatusList.Add(entry,sorter);
+								newStatusList.Add(entry, sorter);
 							}
 						}
 						statusList = newStatusList;
-					}
-					finally
-					{
-						statusList.Unlock();
 					}
 				}
 				
@@ -1079,6 +1067,11 @@ namespace UniGit
 				return Monitor.TryEnter(lockObj);
 			}
 
+			public bool Wait()
+			{
+				return Monitor.Wait(lockObj);
+			}
+
 			public void Lock()
 			{
 				Monitor.Enter(lockObj);
@@ -1089,9 +1082,9 @@ namespace UniGit
 				Monitor.Exit(lockObj);
 			}
 
-			public bool IsLocked()
+			public object LockObj
 			{
-				return Monitor.Wait(lockObj);
+				get { return lockObj; }
 			}
 
 			IEnumerator IEnumerable.GetEnumerator()

@@ -128,8 +128,7 @@ namespace UniGit
 
 		private static void OnBeforeAssemblyReload()
 		{
-			if(!(bool)ReflectionHelper.TestRunningField.GetValue(null))
-				injectionHelper.Dispose();
+			injectionHelper.Dispose();
 		}
 
 		private static void OnLogEntry(GitLog.LogEntry logEntry)

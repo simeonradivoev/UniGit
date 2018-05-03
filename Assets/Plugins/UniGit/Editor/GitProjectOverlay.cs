@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using LibGit2Sharp;
 using UniGit.Settings;
 using UniGit.Status;
@@ -123,7 +124,7 @@ namespace UniGit
 					}
 					else
 					{
-						if(!data.RepositoryStatus.TryEnterLock()) return;
+						if(!Monitor.TryEnter(data.RepositoryStatus.LockObj)) return;
 						isUpdating = true;
 						GitProfilerProxy.BeginSample("Git Project Window status tree building");
 						try
@@ -140,7 +141,7 @@ namespace UniGit
 						}
 						finally
 						{
-							data.RepositoryStatus.Unlock();
+							Monitor.Exit(data.RepositoryStatus.LockObj);
 							GitProfilerProxy.EndSample();
 						}
 						isDirty = false;
@@ -229,10 +230,10 @@ namespace UniGit
 		{
 			asyncManager.QueueWorkerWithLock(() =>
 			{
-				status.Lock();
-				UpdateStatusTree(status, true);
-				status.Unlock();
-
+				lock (status.LockObj)
+				{
+					UpdateStatusTree(status, true);
+				}
 			}, statusTreeLock);
 		}
 
