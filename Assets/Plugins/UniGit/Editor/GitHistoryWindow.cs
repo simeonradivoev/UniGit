@@ -789,7 +789,7 @@ namespace UniGit
 					if (selectedBranch.IsCurrentRepositoryHead && !isHead)
 					{
 						var rect1 = buttonRect;
-						menu.AddItem(new GUIContent("Reset"), false, () =>
+						menu.AddItem(new GUIContent("♻ Reset"), false, () =>
 						{
 							if (externalManager.TakeReset(gitManager.Repository.Lookup<Commit>(commit.Id)))
 							{
@@ -804,10 +804,10 @@ namespace UniGit
 					}
 					else
 					{
-						menu.AddDisabledItem(new GUIContent("Reset"));
+						menu.AddDisabledItem(new GUIContent("♻ Reset"));
 					}
 					var rect2 = buttonRect;
-					menu.AddItem(new GUIContent("Branch Out"), false, () =>
+					menu.AddItem(new GUIContent("⎇ Branch Out"), false, () =>
 					{
 						popupsQueue.Enqueue(new KeyValuePair<Rect, PopupWindowContent>(rect2, injectionHelper.CreateInstance<GitCreateBranchWindow>(gitManager.Repository.Lookup<Commit>(commit.Id))));
 					});

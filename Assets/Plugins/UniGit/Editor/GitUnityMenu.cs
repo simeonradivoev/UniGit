@@ -16,25 +16,25 @@ namespace UniGit
 
         #region Windows
 
-	    [UsedImplicitly,MenuItem("Window/Git/History",priority = -10)]
+	    [UsedImplicitly,MenuItem("Window/Git/⌛ History", priority = -10)]
         private static void OpenGitHistoryWindow()
 	    {
 	        UniGitLoader.GetWindow<GitHistoryWindow>();
 	    }
 
-		[UsedImplicitly,MenuItem("Window/Git/Diff",priority = -10)]
+		[UsedImplicitly,MenuItem("Window/Git/⎘ Diff", priority = -10)]
 	    private static void OpenGitDiffWindow()
 	    {
 	        UniGitLoader.GetWindow<GitDiffWindow>();
 	    }
 
-		[UsedImplicitly,MenuItem("Window/Git/Log",priority = -10)]
+		[UsedImplicitly,MenuItem("Window/Git/❖Log", priority = -10)]
 		private static void OpenGitLogWindow()
 		{
 			UniGitLoader.GetWindow<GitLogWindow>();
 		}
 
-		[UsedImplicitly,MenuItem("Window/Git/Settings",priority = -10)]
+		[UsedImplicitly,MenuItem("Window/Git/⚙ Settings", priority = -10)]
 	    private static void OpenGitSettingsWindow()
 	    {
 	        UniGitLoader.GetWindow<GitSettingsWindow>();
@@ -49,7 +49,7 @@ namespace UniGit
 		#endregion
 
 		#region UniGit menus
-		[UsedImplicitly,MenuItem("UniGit/About",false,0)]
+		[UsedImplicitly,MenuItem("UniGit/📖 About", false,0)]
 		private static void OpenAboutWindow()
 		{
 			EditorWindow.GetWindow<GitAboutWindow>(true,"About UniGit");
@@ -70,19 +70,19 @@ namespace UniGit
 			return !initializer.IsValidRepo;
 		}
 
-		[UsedImplicitly,MenuItem("UniGit/Report Issue", false, 0)]
+		[UsedImplicitly,MenuItem("UniGit/⚑ Report Issue", false, 0)]
 		private static void ReportIssue()
 		{
 			GitLinks.GoTo(GitLinks.ReportIssue);
 		}
 
-		[UsedImplicitly,MenuItem("UniGit/Help",false ,0)]
+		[UsedImplicitly,MenuItem("UniGit/⛐ Help", false ,0)]
 		private static void Help()
 		{
 			GitLinks.GoTo(GitLinks.Wiki);
 		}
 
-		[UsedImplicitly,MenuItem("UniGit/Donate",false,20)]
+		[UsedImplicitly,MenuItem("UniGit/💰 Donate", false,20)]
 		private static void Donate()
 		{
 			GitLinks.GoTo(GitLinks.Donate);

@@ -859,9 +859,9 @@ namespace UniGit
 
 		public void AddItemsToMenu(GenericMenu menu)
 		{
-			menu.AddItem(new GUIContent("Reload"),false, ReloadCallback);
-			menu.AddItem(new GUIContent("Donate"),false, ()=>{GitLinks.GoTo(GitLinks.Donate);});
-			menu.AddItem(new GUIContent("Help"),false, ()=>{GitLinks.GoTo(GitLinks.DiffWindowHelp);});
+			menu.AddItem(new GUIContent("♺ Reload"),false, ReloadCallback);
+			menu.AddItem(new GUIContent("💰 Donate"),false, ()=>{GitLinks.GoTo(GitLinks.Donate);});
+			menu.AddItem(new GUIContent("⛐ Help"),false, ()=>{GitLinks.GoTo(GitLinks.DiffWindowHelp);});
 		}
 
 		#endregion

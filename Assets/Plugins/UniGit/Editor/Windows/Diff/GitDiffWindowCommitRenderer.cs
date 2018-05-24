@@ -136,27 +136,27 @@ namespace UniGit
 		private void BuildCommitMenu(GenericMenu commitMenu,GitDiffWindow window)
 		{
 			if(gitManager == null) return;
-			commitMenu.AddItem(new GUIContent("Commit"), false, ()=> CommitCallback(window));
+			commitMenu.AddItem(new GUIContent("✔ Commit"), false, ()=> CommitCallback(window));
 			if (!gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit))
 			{
-				commitMenu.AddItem(new GUIContent("Commit And Push"), false, ()=> CommitAndPushCallback(window));
+				commitMenu.AddItem(new GUIContent("➔ Commit And Push"), false, ()=> CommitAndPushCallback(window));
 			}
 			else
 			{
-				commitMenu.AddDisabledItem(new GUIContent("Commit And Push"));
+				commitMenu.AddDisabledItem(new GUIContent("✔ Commit And Push"));
 			}
 			commitMenu.AddSeparator("");
-			commitMenu.AddItem(new GUIContent("Commit Message/Clear"), false, window.ClearCommitMessage);
-			commitMenu.AddItem(new GUIContent("Commit Message/Read from file"), gitSettings.ReadFromFile, ()=>ToggleReadFromFile(window));
+			commitMenu.AddItem(new GUIContent("Commit Message/✖ Clear"), false, window.ClearCommitMessage);
+			commitMenu.AddItem(new GUIContent("Commit Message/📖 Read from file"), gitSettings.ReadFromFile, ()=>ToggleReadFromFile(window));
 			if (File.Exists(initializer.GitCommitMessageFilePath))
 			{
-				commitMenu.AddItem(new GUIContent("Commit Message/Open File"), false, OpenCommitMessageFile);
+				commitMenu.AddItem(new GUIContent("Commit Message/✎ Open File"), false, OpenCommitMessageFile);
 			}
 			else
 			{
-				commitMenu.AddDisabledItem(new GUIContent("Commit Message/Open File"));
+				commitMenu.AddDisabledItem(new GUIContent("Commit Message/⤷ Open File"));
 			}
-			commitMenu.AddItem(new GUIContent("Commit Message/Reload"), false, window.ReadCommitMessage);
+			commitMenu.AddItem(new GUIContent("Commit Message/♺ Reload"), false, window.ReadCommitMessage);
 		}
 
 		private void ToggleReadFromFile(GitDiffWindow window)
@@ -185,7 +185,7 @@ namespace UniGit
 
 		private void CommitCallback(GitDiffWindow window)
 		{
-			if (EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes?", "Commit","Cancel"))
+			if (EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes?", "✔ Commit", "✖ Cancel"))
 			{
 				window.Commit();
 			}
@@ -193,7 +193,7 @@ namespace UniGit
 
 		private void CommitAndPushCallback(GitDiffWindow window)
 		{
-			if (gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "Commit and Push","Cancel"))
+			if (gitSettings.ExternalsType.IsFlagSet(GitSettingsJson.ExternalsTypeEnum.Commit) || EditorUtility.DisplayDialog("Are you sure?", "Are you sure you want to commit the changes and then push them?", "➔ Commit and Push", "✖ Cancel"))
 			{
 				if (window.Commit())
 				{
