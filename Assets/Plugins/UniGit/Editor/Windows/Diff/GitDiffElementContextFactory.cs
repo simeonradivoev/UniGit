@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
+using UniGit.Windows.Diff;
 using UnityEditor;
 using UnityEngine;
 
@@ -27,7 +28,7 @@ namespace UniGit
 
 		internal void Build(IGenericMenu editMenu,GitDiffWindow window)
 		{
-			GitDiffWindow.StatusListEntry[] entries = window.GetStatusList().Where(window.IsSelected).ToArray();
+			StatusListEntry[] entries = window.GetStatusList().Where(window.IsSelected).ToArray();
 			FileStatus selectedFlags = entries.Select(e => e.State).CombineFlags();
 
 			GUIContent addContent = new GUIContent("Stage", GitGUI.Textures.CollabPush);
@@ -69,7 +70,7 @@ namespace UniGit
 				}
 				else if(!selectedFlags.IsFlagSet(FileStatus.Ignored))
 				{
-					if (entries[0].MetaChange == (GitDiffWindow.MetaChangeEnum.Object | GitDiffWindow.MetaChangeEnum.Meta))
+					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 					{
 						editMenu.AddItem(new GUIContent("Difference/Asset", diffIcon), false, () => { SeeDifferenceObject(entries[0]); });
 						editMenu.AddItem(new GUIContent("Difference/Meta", diffIcon), false, () => { SeeDifferenceMeta(entries[0]); });
@@ -79,7 +80,7 @@ namespace UniGit
 						editMenu.AddItem(new GUIContent("Difference", diffIcon), false, () => { SeeDifferenceAuto(entries[0]); });
 					}
 
-					if (entries[0].MetaChange == (GitDiffWindow.MetaChangeEnum.Object | GitDiffWindow.MetaChangeEnum.Meta))
+					if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 					{
 						editMenu.AddItem(new GUIContent("Difference with previous version/Asset", diffIcon), false, () => { SeeDifferencePrevObject(entries[0]); });
 						editMenu.AddItem(new GUIContent("Difference with previous version/Meta", diffIcon), false, () => { SeeDifferencePrevMeta(entries[0]); });
@@ -101,7 +102,7 @@ namespace UniGit
 				editMenu.AddDisabledItem(new GUIContent("Revert", GitGUI.Textures.AnimationWindow));
 			else if(entries.Length >= 1)
 			{
-				if(entries[0].MetaChange == (GitDiffWindow.MetaChangeEnum.Object | GitDiffWindow.MetaChangeEnum.Meta))
+				if(entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
 					editMenu.AddItem(new GUIContent("Revert/Asset", GitGUI.Textures.AnimationWindow), false, () => RevertSelectedObjects(window));
 					editMenu.AddItem(new GUIContent("Revert/Meta", GitGUI.Textures.AnimationWindow), false, () => RevertSelectedMeta(window));
@@ -115,7 +116,7 @@ namespace UniGit
 			if (entries.Length >= 1)
 			{
 				editMenu.AddSeparator("");
-				if (entries[0].MetaChange == (GitDiffWindow.MetaChangeEnum.Object | GitDiffWindow.MetaChangeEnum.Meta))
+				if (entries[0].MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
 					if (gitManager.CanBlame(entries[0].State))
 					{
@@ -272,9 +273,9 @@ namespace UniGit
 			}
 		}
 
-		private void BlameAuto(GitDiffWindow.StatusListEntry entry)
+		private void BlameAuto(StatusListEntry entry)
 		{
-			if (entry.MetaChange.IsFlagSet(GitDiffWindow.MetaChangeEnum.Object))
+			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
 			{
 				gitManager.ShowBlameWizard(entry.LocalPath, externalManager);
 			}
@@ -284,12 +285,12 @@ namespace UniGit
 			}
 		}
 
-		private void BlameMeta(GitDiffWindow.StatusListEntry entry)
+		private void BlameMeta(StatusListEntry entry)
 		{
 			gitManager.ShowBlameWizard(GitManager.MetaPathFromAsset(entry.LocalPath), externalManager);
 		}
 
-		private void BlameObject(GitDiffWindow.StatusListEntry entry)
+		private void BlameObject(StatusListEntry entry)
 		{
 			gitManager.ShowBlameWizard(entry.LocalPath, externalManager);
 		}
@@ -334,9 +335,9 @@ namespace UniGit
 			conflictsHandler.ResolveConflicts((string)localPath, MergeFileFavor.Normal);
 		}
 
-		private void SeeDifferenceAuto(GitDiffWindow.StatusListEntry entry)
+		private void SeeDifferenceAuto(StatusListEntry entry)
 		{
-			if (entry.MetaChange.IsFlagSet(GitDiffWindow.MetaChangeEnum.Object))
+			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
 			{
 				SeeDifferenceObject(entry);
 			}
@@ -346,19 +347,19 @@ namespace UniGit
 			}
 		}
 
-		private void SeeDifferenceObject(GitDiffWindow.StatusListEntry entry)
+		private void SeeDifferenceObject(StatusListEntry entry)
 		{
 			gitManager.ShowDiff(entry.LocalPath,externalManager);
 		}
 
-		private void SeeDifferenceMeta(GitDiffWindow.StatusListEntry entry)
+		private void SeeDifferenceMeta(StatusListEntry entry)
 		{
 			gitManager.ShowDiff(GitManager.MetaPathFromAsset(entry.LocalPath), externalManager);
 		}
 
-		private void SeeDifferencePrevAuto(GitDiffWindow.StatusListEntry entry)
+		private void SeeDifferencePrevAuto(StatusListEntry entry)
 		{
-			if (entry.MetaChange.IsFlagSet(GitDiffWindow.MetaChangeEnum.Object))
+			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
 			{
 				SeeDifferencePrevObject(entry);
 			}
@@ -368,12 +369,12 @@ namespace UniGit
 			}
 		}
 
-		private void SeeDifferencePrevObject(GitDiffWindow.StatusListEntry entry)
+		private void SeeDifferencePrevObject(StatusListEntry entry)
 		{
 			gitManager.ShowDiffPrev(entry.LocalPath, externalManager);
 		}
 
-		private void SeeDifferencePrevMeta(GitDiffWindow.StatusListEntry entry)
+		private void SeeDifferencePrevMeta(StatusListEntry entry)
 		{
 			gitManager.ShowDiffPrev(GitManager.MetaPathFromAsset(entry.LocalPath), externalManager);
 		}

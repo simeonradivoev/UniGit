@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -347,22 +348,27 @@ namespace UniGit
 			}
 		}
 
-		private void RebuildStatus(string[] paths)
+		private void RebuildStatus(string[] paths,bool threaded)
 		{
-			lock (gitData.RepositoryStatus.LockObj)
+			if (paths != null && paths.Length > 0)
 			{
-				if (paths != null && paths.Length > 0)
+				List<GitAsyncOperation> operations = new List<GitAsyncOperation>();
+				foreach (string path in paths)
 				{
-					foreach (string path in paths)
+					operations.Add(asyncManager.QueueWorkerWithLock((p) =>
 					{
-						gitData.RepositoryStatus.Update(path, repository.RetrieveStatus(path));
-						if (IsSubModule(path))
+						gitData.RepositoryStatus.Update(p, repository.RetrieveStatus(p));
+						if (IsSubModule(p))
 						{
-							gitData.RepositoryStatus.Update(path, repository.Submodules[path].RetrieveStatus());
+							gitData.RepositoryStatus.Update(p, repository.Submodules[p].RetrieveStatus());
 						}
-					}
+					}, path, gitData.RepositoryStatus.LockObj, threaded));
 				}
-				else
+				while (operations.Any(o => !o.IsDone)) { }  //wait till all done
+			}
+			else
+			{
+				lock (gitData.RepositoryStatus.LockObj)
 				{
 					var options = GetStatusOptions();
 					var s = repository.RetrieveStatus(options);
@@ -399,7 +405,7 @@ namespace UniGit
 
 		private void RetreiveStatusThreaded(string[] paths)
 		{
-			asyncManager.QueueWorkerWithLock(() => { RetreiveStatus(paths, true); }, statusRetriveLock);
+			asyncManager.QueueWorkerWithLock(() => { RetreiveStatus(paths, true); }, statusRetriveLock,true);
 		}
 
 		private void RetreiveStatus(string[] paths)
@@ -422,7 +428,7 @@ namespace UniGit
 			if (!threaded) GitProfilerProxy.BeginSample("Git Repository Status Retrieval");
 			try
 			{
-				RebuildStatus(paths);
+				RebuildStatus(paths,threaded);
 				FinishUpdating(threaded, paths);
 			}
 			catch (ThreadAbortException)
@@ -654,7 +660,7 @@ namespace UniGit
 				MarkDirtyAuto(localPaths);
 				asyncStages.RemoveAll(s => s.Equals(o));
 				callbacks.IssueAsyncStageOperationDone(o);
-			});
+			},true);
 			asyncStages.Add(new AsyncStageOperation(operation,localPaths));
 			return operation;
 		}
@@ -682,7 +688,7 @@ namespace UniGit
 				MarkDirtyAuto(localPaths);
 				asyncStages.RemoveAll(s => s.Equals(o));
 				callbacks.IssueAsyncStageOperationDone(o);
-			});
+			},true);
 			asyncStages.Add(new AsyncStageOperation(operation, localPaths));
 			return operation;
 		}

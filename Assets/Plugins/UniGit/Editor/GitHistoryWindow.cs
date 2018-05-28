@@ -139,17 +139,17 @@ namespace UniGit
 		protected override void OnGitUpdate(GitRepoStatus status,string[] path)
 		{
 			Repaint();
-			StartUpdateChaches(status);
+			StartUpdateCaches(status);
 		}
 
-		private void StartUpdateChaches(GitRepoStatus status)
+		private void StartUpdateCaches(GitRepoStatus status)
 		{
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.CommitListGui))
 			{
 				loadingCommits = asyncManager.QueueWorkerWithLock(UpdateChaches, status, "Loading Commits", (o) =>
 				{
 					OnCachesUpdated();
-				}, commitCachesLock);
+				}, commitCachesLock,true);
 			}
 			else
 			{
@@ -445,7 +445,7 @@ namespace UniGit
 						selectBranchMenu.AddItem(new GUIContent(cachedBranch.FriendlyName), selectedBranchName == cachedBranch.CanonicalName, (b) =>
 						{
 							SetSelectedBranch((string)b);
-							StartUpdateChaches(data.RepositoryStatus);
+							StartUpdateCaches(data.RepositoryStatus);
 						}, cachedBranch.CanonicalName);
 					}
 					selectBranchMenu.ShowAsContext();
@@ -609,7 +609,7 @@ namespace UniGit
 					if (GUI.Button(loadMoreRect, GitGUI.IconContent("ol plus", "More","Show more commits."), styles.loadMoreCommitsBtn))
 					{
 						maxCommitsCount += CommitsPerExpand;
-						StartUpdateChaches(data.RepositoryStatus);
+						StartUpdateCaches(data.RepositoryStatus);
 					}
 					GitGUI.StartEnable(maxCommitsCount != MaxFirstCommitCount);
 					if (GUI.Button(resetRect, GitGUI.GetTempContent("Reset","Reset the number of commits show."), styles.resetCommitsBtn))
@@ -622,7 +622,7 @@ namespace UniGit
 						else
 						{
 							maxCommitsCount = MaxFirstCommitCount;
-							StartUpdateChaches(data.RepositoryStatus);
+							StartUpdateCaches(data.RepositoryStatus);
 						}
 					}
 					GitGUI.EndEnable();
@@ -831,7 +831,7 @@ namespace UniGit
 		private void ViewBranchCallback(BranchInfo branch)
 		{
 			SetSelectedBranch(branch.CanonicalName);
-			StartUpdateChaches(data.RepositoryStatus);
+			StartUpdateCaches(data.RepositoryStatus);
 		}
 
 		private void SwitchToBranchCallback(BranchInfo branch,Rect rect)
@@ -910,7 +910,9 @@ namespace UniGit
 			{
 				if (texWww.isDone)
 				{
-					tex = texWww.texture;
+					tex = new Texture2D(ProfilePixtureSize,ProfilePixtureSize,TextureFormat.ARGB32,true,false);
+					texWww.LoadImageIntoTexture(tex);
+					tex.Apply(true);
 					cachedProfilePicturesDictionary.Add(email, tex);
 					serializedProfilePictures.RemoveAll(p => p.email == email);
 					serializedProfilePictures.Add(new ProfilePicture(tex,email));

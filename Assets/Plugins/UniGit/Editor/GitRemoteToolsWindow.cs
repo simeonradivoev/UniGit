@@ -30,19 +30,16 @@ namespace UniGit
 		[SerializeField] private string currentCommentsSerialzied;
 		[SerializeField] private int currentIssue = -1;
 		private List<Element> elements = new List<Element>();
-		private GitManager gitManager;
 		private GitCallbacks callbacks;
 		private Vector2 issuesScroll;
 		private Vector2 currentIssueScroll;
-		private IAsyncResult result;
 		private static Styles styles;
 		private GitSettingsJson settings;
 		private int callsLeft = 0;
 
 		[UniGitInject]
-		private void Construct(GitManager gitManager,GitSettingsJson settings)
+		private void Construct(GitSettingsJson settings)
 		{
-			this.gitManager = gitManager;
 			this.settings = settings;
 			Refresh();
 		}
@@ -141,7 +138,6 @@ namespace UniGit
 			var currentIssueObj = GetIssue(currentIssue);
 
 			var current = Event.current;
-			GUI.enabled = result == null || result.IsCompleted;
 			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 			if (GUILayout.Button(new GUIContent("Refresh"),EditorStyles.toolbarButton))
 			{
@@ -527,7 +523,6 @@ namespace UniGit
 
 		public class Label : Element
 		{
-			public int id;
 			public Color color;
 			public string url;
 			public string name;

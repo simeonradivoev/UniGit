@@ -12,7 +12,6 @@ namespace UniGit
 		[SerializeField] private bool init;
 		[SerializeField] private string path;
 		private SubmoduleUpdateOptions options;
-		private GitManager gitManager;
 		private Submodule submodule;
 
 		[UniGitInject]

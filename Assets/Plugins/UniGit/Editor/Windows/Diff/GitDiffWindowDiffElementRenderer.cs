@@ -68,7 +68,7 @@ namespace UniGit.Windows.Diff
 			};
 		}
 
-		internal void DoFileDiff(Rect rect,GitDiffWindow.StatusListEntry info,bool enabled,bool selected,GitDiffWindow window)
+		internal void DoFileDiff(Rect rect,StatusListEntry info,bool enabled,bool selected,GitDiffWindow window)
 		{
 			RectOffset elementPadding = GetElementStyle().padding;
 			float iconSize = GetElementStyle().fixedHeight - elementPadding.vertical;
@@ -148,12 +148,12 @@ namespace UniGit.Windows.Diff
 					x += 25;
 				}
 				
-				if (info.MetaChange == (GitDiffWindow.MetaChangeEnum.Object | GitDiffWindow.MetaChangeEnum.Meta))
+				if (info.MetaChange == (MetaChangeEnum.Object | MetaChangeEnum.Meta))
 				{
 					GUI.Box(new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.objectIconSmall.image, "main asset file changed"), GUIStyle.none);
 					x += 25;
 				}
-				if (info.MetaChange.IsFlagSet(GitDiffWindow.MetaChangeEnum.Meta))
+				if (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta))
 				{
 					GUI.Box(new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.metaIconSmall.image, ".meta file changed"), GUIStyle.none);
 					x += 25;

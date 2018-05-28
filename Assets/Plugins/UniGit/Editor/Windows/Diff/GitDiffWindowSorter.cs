@@ -4,10 +4,11 @@ using System.IO;
 using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
+using UniGit.Windows.Diff;
 
 namespace UniGit
 {
-	public class GitDiffWindowSorter : IComparer<GitDiffWindow.StatusListEntry>
+	public class GitDiffWindowSorter : IComparer<StatusListEntry>
 	{
 		private readonly GitDiffWindow window;
 		private readonly GitManager gitManager;
@@ -18,7 +19,7 @@ namespace UniGit
 			this.gitManager = gitManager;
 		}
 
-		public int Compare(GitDiffWindow.StatusListEntry x, GitDiffWindow.StatusListEntry y)
+		public int Compare(StatusListEntry x, StatusListEntry y)
 		{
 			int stateCompare = window.IsGrouping() ? GetPriority(x.State).CompareTo(GetPriority(y.State)) : 0;
 			if (stateCompare == 0)

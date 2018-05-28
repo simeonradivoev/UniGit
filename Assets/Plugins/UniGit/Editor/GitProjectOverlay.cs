@@ -234,7 +234,7 @@ namespace UniGit
 				{
 					UpdateStatusTree(status, true);
 				}
-			}, statusTreeLock);
+			}, statusTreeLock,true);
 		}
 
 		private void UpdateStatusTree(GitRepoStatus status, bool threaded = false)
@@ -243,7 +243,8 @@ namespace UniGit
 			{
 				var subModules = status.SubModuleEntries;
 				if (gitManager.InSubModule) subModules = subModules.Concat(new []{new GitStatusSubModuleEntry(gitSettings.ActiveSubModule) });
-				var newStatusTree = new StatusTreeClass(gitSettings,gitManager, status,subModules,cullNonAssetPaths);
+				var newStatusTree = new StatusTreeClass(gitSettings,gitManager,cullNonAssetPaths);
+				newStatusTree.Build(status, subModules);
 				statusTree = newStatusTree;
 				gitManager.ExecuteAction(RepaintProjectWidnow, threaded);
 			}
@@ -315,19 +316,14 @@ namespace UniGit
 			private readonly GitManager gitManager;
 			private readonly bool cullNonAssetPaths;
 
-			public StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager,bool cullNonAssetPaths)
+			internal StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager,bool cullNonAssetPaths)
 			{
 				this.gitManager = gitManager;
 				this.cullNonAssetPaths = cullNonAssetPaths;
 				this.gitSettings = gitSettings;
 			}
 
-			public StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager, IEnumerable<GitStatusEntry> status,IEnumerable<GitStatusSubModuleEntry> subModules,bool cullNonAssetPaths) : this(gitSettings,gitManager,cullNonAssetPaths)
-			{
-				Build(status,subModules);
-			}
-
-			private void Build(IEnumerable<GitStatusEntry> status,IEnumerable<GitStatusSubModuleEntry> subModules)
+			internal void Build(IEnumerable<GitStatusEntry> status,IEnumerable<GitStatusSubModuleEntry> subModules)
 			{
 				foreach (var entry in status)
 				{

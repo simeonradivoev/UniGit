@@ -18,7 +18,6 @@ namespace UniGit
 		public static GitManager GitManager;
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
-		private static GitReflectionHelper ReflectionHelper;
 		private static GitSettingsJson GitSettings;
 		private static UniGitData uniGitData;
 
@@ -103,7 +102,7 @@ namespace UniGit
 
 			GitManager = injectionHelper.GetInstance<GitManager>();
 				
-			ReflectionHelper = injectionHelper.GetInstance<GitReflectionHelper>();
+			injectionHelper.GetInstance<GitReflectionHelper>();
 			GitSettings = injectionHelper.GetInstance<GitSettingsJson>();
 				
 			GitCallbacks.OnLogEntry += OnLogEntry;

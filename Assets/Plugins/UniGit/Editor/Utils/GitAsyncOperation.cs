@@ -4,18 +4,17 @@ namespace UniGit.Utils
 {
 	public class GitAsyncOperation
 	{
-		private string name;
-		private bool isDone;
 		public event Action<GitAsyncOperation> onComplete;
 
-		private GitAsyncOperation(string name)
+		internal GitAsyncOperation(string name,object state)
 		{
-			this.name = name;
+			this.State = state;
+			this.Name = name;
 		}
 
-		internal static GitAsyncOperation Create(string name)
+		internal virtual void Invoke(object state)
 		{
-			return new GitAsyncOperation(name);
+			Initialized = true;
 		}
 
 		internal void Complete()
@@ -27,19 +26,60 @@ namespace UniGit.Utils
 			}
 		}
 
-		internal void MarkDone()
+		public void MarkDone()
 		{
-			isDone = true;
+			IsDone = true;
 		}
 
-		public string Name
+		public string Name { get; private set; }
+		public bool IsDone { get; private set; }
+		public bool Initialized { get; internal set; }
+		public object State { get; private set; }
+	}
+
+	public class GitAsyncOperationSimple : GitAsyncOperation
+	{
+		private readonly Action invokeAction;
+
+		internal GitAsyncOperationSimple(string name, Action invokeAction) : base(name,null)
 		{
-			get { return name; }
+			this.invokeAction = invokeAction;
 		}
 
-		public bool IsDone
+		internal sealed override void Invoke(object state)
 		{
-			get { return isDone; }
+			base.Invoke(state);
+			try
+			{
+				invokeAction.Invoke();
+			}
+			finally
+			{
+				MarkDone();
+			}
+		}
+	}
+
+	public class GitAsyncOperationComplex<T> : GitAsyncOperation
+	{
+		private readonly Action<T> invokeAction;
+
+		internal GitAsyncOperationComplex(string name, Action<T> invokeAction, T param) : base(name,param)
+		{
+			this.invokeAction = invokeAction;
+		}
+
+		internal sealed override void Invoke(object state)
+		{
+			base.Invoke(state);
+			try
+			{
+				invokeAction.Invoke((T)state);
+			}
+			finally
+			{
+				MarkDone();
+			}
 		}
 	}
 }
