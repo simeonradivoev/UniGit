@@ -10,32 +10,34 @@ namespace UniGit.Utils
 	{
 		private readonly FileLinesReader fileLinesReader;
 		private readonly string repoPath;
-		private readonly List<Regex> lfsFilters;
+		private readonly Regex[] lfsFilters; //array should be a bit faster then list for iterations 
 
 		[UniGitInject]
 		public GitLfsHelper(string repoPath, FileLinesReader fileLinesReader)
 		{
-			lfsFilters = new List<Regex>();
 			this.repoPath = repoPath;
 			this.fileLinesReader = fileLinesReader;
-			ReadGitAttributes();
+			lfsFilters = ReadGitAttributes();
 		}
 
-		private void ReadGitAttributes()
+		private Regex[] ReadGitAttributes()
 		{
+			var list = new List<Regex>();
 			var attributesPath = Path.Combine(repoPath, ".gitattributes");
 			string[] attributesLines;
 			if (fileLinesReader.ReadLines(attributesPath,out attributesLines))
 			{
 				foreach (var line in attributesLines)
 				{
-					ReadLine(line);
+					ReadLine(line, list);
 				}
 			}
+			return list.ToArray();
 		}
 
-		private void ReadLine(string line)
+		private void ReadLine(string line,List<Regex> list)
 		{
+			
 			string[] pairs = line.Split(new []{ ' ' },StringSplitOptions.RemoveEmptyEntries);
 			if (pairs.Length > 0)
 			{
@@ -49,14 +51,19 @@ namespace UniGit.Utils
 						                 .Replace("?", ".")
 					                 + '$';
 					var regex = new Regex(pattern, RegexOptions.Compiled);
-					lfsFilters.Add(regex);
+					list.Add(regex);
 				}
 			}
 		}
 
 		public bool IsLfsPath(string path)
 		{
-			return lfsFilters.Any(f => f.IsMatch(path));
+			//we need no GC that's why use a for loop
+			for (int i = 0; i < lfsFilters.Length; i++)
+			{
+				if (lfsFilters[i].IsMatch(path)) return true;
+			}
+			return false;
 		}
 	}
 }

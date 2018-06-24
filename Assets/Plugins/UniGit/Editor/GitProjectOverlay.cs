@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using LibGit2Sharp;
 using UniGit.Settings;
@@ -19,6 +20,7 @@ namespace UniGit
 	/// </summary>
 	public class GitProjectOverlay : IDisposable, IGitWatcher
 	{
+		private static Func<string, int> GetMainAssetOrInProgressProxyInstanceID;
 		public const string ForceUpdateKey = "ForceUpdateProjectOverlay";
 
 		private readonly GitManager gitManager;
@@ -93,6 +95,11 @@ namespace UniGit
 			{
 				projectWindows = new List<EditorWindow>(Resources.FindObjectsOfTypeAll(reflectionHelper.ProjectWindowType).Cast<EditorWindow>()); 
 			};
+
+			//shortcut to getting instance id without loading asset
+			var method = typeof(AssetDatabase).GetMethod("GetMainAssetOrInProgressProxyInstanceID", BindingFlags.NonPublic | BindingFlags.Static);
+			if(method != null)
+				GetMainAssetOrInProgressProxyInstanceID = (Func<string, int>)Delegate.CreateDelegate(typeof(Func<string, int>), method);
 		}
 
 		private void OnUpdateRepository(GitRepoStatus status,string[] paths)
@@ -176,13 +183,13 @@ namespace UniGit
 			var status = statusTree.GetStatus(path);
 			if (status != null)
 			{
-				Object assetObject = AssetDatabase.LoadMainAssetAtPath(path);
-				if (assetObject != null && ProjectWindowUtil.IsFolder(assetObject.GetInstanceID()) && !status.IsSubModule)
+				if (AssetDatabase.IsValidFolder(path) && !status.IsSubModule)
 				{
+					int folderInstanceId = GetAssetInstanceId(path);
 					//exclude the Assets folder
 					if (status.Depth == 0) return;
 					//todo cache expandedProjectWindowItems into a HashSet for faster Contains
-					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(assetObject.GetInstanceID())) return;
+					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(folderInstanceId)) return;
 				}
 				bool small = rect.height <= 16;
 				if (small)
@@ -195,6 +202,13 @@ namespace UniGit
 				}
 				
 			}
+		}
+
+		private int GetAssetInstanceId(string path)
+		{
+			if (GetMainAssetOrInProgressProxyInstanceID != null) return GetMainAssetOrInProgressProxyInstanceID.Invoke(path);
+			var obj = AssetDatabase.LoadMainAssetAtPath(path);
+			return obj.GetInstanceID();
 		}
 
 		private void DrawFileIcon(Rect rect, GUIContent icon)

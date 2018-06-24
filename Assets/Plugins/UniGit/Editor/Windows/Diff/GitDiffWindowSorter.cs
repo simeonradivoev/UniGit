@@ -60,11 +60,13 @@ namespace UniGit
 						stateCompare = string.Compare(x.LocalPath, y.LocalPath, StringComparison.InvariantCultureIgnoreCase);
 						break;
 					case GitDiffWindow.SortType.ModificationDate:
+						//todo cache modification dates
 						DateTime modifedTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitManager.GetCurrentRepoPath(), p))));
 						DateTime modifedRightTime = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetLastWriteTime(UniGitPath.Combine(gitManager.GetCurrentRepoPath(),p))));
 						stateCompare = DateTime.Compare(modifedRightTime,modifedTimeLeft);
 						break;
 					case GitDiffWindow.SortType.CreationDate:
+						//todo cache creation dates
 						DateTime createdTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetCreationTime(UniGitPath.Combine(gitManager.GetCurrentRepoPath(),p))));
 						DateTime createdRightTime = GetClosest(gitManager.GetPathWithMeta(y.LocalPath).Select(p => File.GetCreationTime(UniGitPath.Combine(gitManager.GetCurrentRepoPath(),p))));
 						stateCompare = DateTime.Compare(createdRightTime,createdTimeLeft);

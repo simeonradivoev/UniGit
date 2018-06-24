@@ -185,10 +185,7 @@ namespace UniGit.Utils
 		{
 			for (int i = activeOperations.Count-1; i >= 0; i--)
 			{
-				if (!activeOperations[i].Initialized)
-				{
-					activeOperations[i].Invoke(activeOperations[i].State);
-				}
+				//todo Make sure thread always finishes. For some reason operation on another thread may not complete or even start and will never be done.
 				if (activeOperations[i].IsDone)
 				{
 					try

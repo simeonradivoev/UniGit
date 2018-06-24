@@ -16,7 +16,7 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.4.2";
+		public const string Version = "1.4.3";
 
 		private readonly string repoPath;
 		private readonly string settingsPath;
@@ -523,7 +523,7 @@ namespace UniGit
 			if (!initializer.IsValidRepo) return GitGUI.Textures.CollabNew;
 			if (Repository == null) return GitGUI.Textures.Collab;
 			if (isUpdating) return GitGUI.GetTempSpinAnimatedTexture();
-			if (Repository.Index.Conflicts.Any()) return GitGUI.Textures.CollabConflict;
+			if (gitData.RepositoryStatus.Any(e => e.Status.IsFlagSet(FileStatus.Conflicted))) return GitGUI.Textures.CollabConflict;
 			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
 			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
 			if (behindBy.GetValueOrDefault(0) > 0)

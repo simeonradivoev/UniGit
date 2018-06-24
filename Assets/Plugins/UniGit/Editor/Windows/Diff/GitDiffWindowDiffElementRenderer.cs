@@ -13,7 +13,7 @@ namespace UniGit.Windows.Diff
 	{
 		internal const string SmallElementsKey = "UniGitDiffElementsSmall";
 		private readonly GitManager gitManager;
-		private readonly GitLfsHelper lfsHelper;
+
 		private readonly GitOverlay gitOverlay;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitCallbacks gitCallbacks;
@@ -35,11 +35,10 @@ namespace UniGit.Windows.Diff
 		private Styles styles;
 
 		[UniGitInject]
-		public GitDiffWindowDiffElementRenderer(GitManager gitManager, GitLfsHelper lfsHelper, GitOverlay gitOverlay, GitSettingsJson gitSettings,GitCallbacks gitCallbacks,
+		public GitDiffWindowDiffElementRenderer(GitManager gitManager, GitOverlay gitOverlay, GitSettingsJson gitSettings,GitCallbacks gitCallbacks,
 			IGitPrefs prefs)
 		{
 			this.gitManager = gitManager;
-			this.lfsHelper = lfsHelper;
 			this.gitOverlay = gitOverlay;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
@@ -158,12 +157,12 @@ namespace UniGit.Windows.Diff
 					GUI.Box(new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.metaIconSmall.image, ".meta file changed"), GUIStyle.none);
 					x += 25;
 				}
-				if (lfsHelper.IsLfsPath(info.LocalPath))
+				if (info.Flags.IsFlagSet(StatusEntryFlags.IsLfs))
 				{
 					GUI.Box(new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.lfsObjectIconSmall.image, "Lfs Object"), GUIStyle.none);
 					x += 25;
 				}
-				if (gitManager.IsSubModule(info.LocalPath))
+				if (info.Flags.IsFlagSet(StatusEntryFlags.IsSubModule))
 				{
 					GUI.Box(new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight + 4, 21, 21), GitGUI.GetTempContent(gitOverlay.icons.submoduleTagIconSmall.image, "Sub Module"), GUIStyle.none);
 					x += 25;

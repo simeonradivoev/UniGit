@@ -74,9 +74,11 @@ namespace UniGit
 			get { return UniGitPath.Combine(gitPath, Path.Combine("UniGit", "Settings")); }
 		}
 
-		public string GitCommitMessageFilePath
+		public string GetCommitMessageFilePath(string subModule)
 		{
-			get { return UniGitPath.Combine(gitPath, "UniGit","Settings", "CommitMessage.txt"); }
+			if(!string.IsNullOrEmpty(subModule))
+				return UniGitPath.Combine(gitPath, "UniGit", "Settings", string.Format("CommitMessage_{0}.txt",subModule));
+			return UniGitPath.Combine(gitPath, "UniGit", "Settings", "CommitMessage.txt");
 		}
 
 		public string GitIgnoreFilePath

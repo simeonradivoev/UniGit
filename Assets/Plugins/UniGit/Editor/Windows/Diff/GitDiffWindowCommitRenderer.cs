@@ -148,7 +148,7 @@ namespace UniGit
 			commitMenu.AddSeparator("");
 			commitMenu.AddItem(new GUIContent("Commit Message/✖ Clear"), false, window.ClearCommitMessage);
 			commitMenu.AddItem(new GUIContent("Commit Message/📖 Read from file"), gitSettings.ReadFromFile, ()=>ToggleReadFromFile(window));
-			if (File.Exists(initializer.GitCommitMessageFilePath))
+			if (File.Exists(initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule)))
 			{
 				commitMenu.AddItem(new GUIContent("Commit Message/✎ Open File"), false, OpenCommitMessageFile);
 			}
@@ -177,9 +177,10 @@ namespace UniGit
 
 		private void OpenCommitMessageFile()
 		{
-			if (File.Exists(initializer.GitCommitMessageFilePath))
+			var path = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
+			if (File.Exists(path))
 			{
-				Application.OpenURL(initializer.GitCommitMessageFilePath);
+				Application.OpenURL(path);
 			}
 		}
 

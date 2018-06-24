@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;
@@ -43,6 +44,7 @@ namespace UniGit
 		private readonly HashSet<string> pathsToBeUpdated = new HashSet<string>();
 		private bool needsAsyncStatusListUpdate;
 		private GitExternalManager externalManager;
+		private GitLfsHelper lfsHelper;
 		private GitAsyncManager asyncManager;
 		private GitOverlay gitOverlay;
 		private InjectionHelper injectionHelper;
@@ -105,8 +107,10 @@ namespace UniGit
 			GitDiffWindowToolbarRenderer toolbarRenderer,
 			GitDiffElementContextFactory elementContextFactory,
 			GitDiffWindowCommitRenderer gitDiffWindowCommitRenderer,
-			GitDiffWindowDiffElementRenderer diffElementRenderer)
+			GitDiffWindowDiffElementRenderer diffElementRenderer,
+			GitLfsHelper lfsHelper)
 		{
+			this.lfsHelper = lfsHelper;
 			this.externalManager = externalManager;
 			this.asyncManager = asyncManager;
 			this.gitOverlay = gitOverlay;
@@ -253,7 +257,7 @@ namespace UniGit
 			}
 			try
 			{
-				var newStatusList = new DiffWindowStatusList(gitSettings,gitManager);
+				var newStatusList = new DiffWindowStatusList(gitSettings,gitManager,lfsHelper);
 
 				if (paths == null || paths.Length <= 0)
 				{
@@ -312,9 +316,10 @@ namespace UniGit
 
 			if (gitManager != null && gitSettings != null && gitSettings.ReadFromFile)
 			{
-				if (File.Exists(initializer.GitCommitMessageFilePath))
+				var path = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
+				if (File.Exists(path))
 				{
-					var lastWriteTime = File.GetLastWriteTime(initializer.GitCommitMessageFilePath);
+					var lastWriteTime = File.GetLastWriteTime(path);
 					if (lastWriteTime.CompareTo(settings.lastMessageUpdate) != 0)
 					{
 						settings.lastMessageUpdate = lastWriteTime;
@@ -700,9 +705,10 @@ namespace UniGit
 
 		internal void ReadCommitMessageFromFile()
 		{
-			if (File.Exists(initializer.GitCommitMessageFilePath))
+			var filePath = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
+			if (File.Exists(filePath))
 			{
-				settings.commitMessageFromFile = File.ReadAllText(initializer.GitCommitMessageFilePath);
+				settings.commitMessageFromFile = File.ReadAllText(filePath);
 			}
 			else
 			{
@@ -730,7 +736,7 @@ namespace UniGit
 		{
 			try
 			{
-				SaveCommitMessageToFile(initializer, settings.commitMessageFromFile);
+				SaveCommitMessageToFile(initializer, gitSettings, settings.commitMessageFromFile);
 			}
 			catch (Exception e)
 			{
@@ -741,7 +747,7 @@ namespace UniGit
 			}
 		}
 
-	    private static void SaveCommitMessageToFile(GitInitializer initializer,string message)
+	    private static void SaveCommitMessageToFile(GitInitializer initializer,GitSettingsJson gitSettings,string message)
 	    {
 	        try
 	        {
@@ -751,7 +757,7 @@ namespace UniGit
 	                Directory.CreateDirectory(settingsFolder);
 	            }
 
-	            File.WriteAllText(initializer.GitCommitMessageFilePath, message);
+	            File.WriteAllText(initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule), message);
 	        }
 	        catch (Exception e)
 	        {
@@ -782,7 +788,7 @@ namespace UniGit
 	    {
 	        if (gitSettings.ReadFromFile)
 	        {
-	            SaveCommitMessageToFile(initializer, commitMessage);
+	            SaveCommitMessageToFile(initializer, gitSettings, commitMessage);
 	        }
             gitManager.Prefs.SetString(CommitMessageKey, commitMessage);
         }
