@@ -1,0 +1,62 @@
+.container {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
+}
+
+.centeredWrapper{
+    align-items: center;
+    padding: 8px 8px 8px 8px;
+}
+
+.bigWarning {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    background-color: rgba(0, 0, 0, 0.6);
+    width: auto;
+    height: 120px;
+    min-height: 120px;
+    align-items: center;
+    border-radius: 16px;
+    padding: 0 16px 0 16px;
+    overflow: hidden;
+}
+
+.bigWarning Label {
+    margin-top: 42px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.infoBox{
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 16 16 16 16;
+    overflow: hidden;
+    -unity-text-align: middle-Center;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0.3);
+    margin-bottom: 32px;
+}
+
+.infoText{
+    white-space: normal;
+    color: rgba(0, 0, 0, 0.8)
+}
+
+.bigButton{
+    height: 32px;
+    bottom: 8px;
+    width: 128px;
+}
+
+#Commits{
+    height: auto;
+    flex-grow: 1;
+}
+
+#CommitsWindow{
+    flex-grow: 1;
+}

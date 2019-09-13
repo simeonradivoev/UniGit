@@ -56,7 +56,7 @@ namespace UniGit.Windows.Diff
 			styles = new Styles()
 			{
 				assetIcon = new GUIStyle("NotificationBackground") {contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter, imagePosition = ImagePosition.ImageOnly, padding = new RectOffset(4, 4, 4, 4), border = new RectOffset(12, 12, 12, 12)},
-				diffElementSelected = "TL LogicBar 1",
+				diffElementSelected = "Icon.ClipSelected",
 				diffElementSmall = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 48,margin = new RectOffset(),padding = new RectOffset(4,4,4,4),border = new RectOffset(8,8,8,8)},
 				diffElementBig = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 60,margin = new RectOffset(),padding = new RectOffset(6,6,6,6),border = new RectOffset(8,8,8,8)},
 				diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } },

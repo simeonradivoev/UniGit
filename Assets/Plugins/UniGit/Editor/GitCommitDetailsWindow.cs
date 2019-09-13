@@ -34,7 +34,7 @@ namespace UniGit
 				changes = gitManager.Repository.Diff.Compare<TreeChanges>(parentCommit.Tree, commitTree);
 			}
 
-			commitMessageStyle = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(4,4,4,4),wordWrap = true};
+			commitMessageStyle = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(4,4,4,4),wordWrap = true,normal = {textColor = Color.black}};
 		}
 
 		public override Vector2 GetWindowSize()

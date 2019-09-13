@@ -8,7 +8,10 @@ using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
+using PopupWindow = UnityEditor.PopupWindow;
 using Random = UnityEngine.Random;
 
 namespace UniGit
@@ -23,7 +26,6 @@ namespace UniGit
 		public const int ProfilePixtureSize = 32;
 
 		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
-		private Rect scorllRect { get { return new Rect(0,toolbarRect.height+2,position.width,position.height);} }
 
 		private List<string> lodingProfilePicturesToRemove; 
 		private Dictionary<string, WWW> loadingProfilePictures;
@@ -48,8 +50,17 @@ namespace UniGit
 		private GitOverlay gitOverlay;
 		private InjectionHelper injectionHelper;
 
-		#region Styles
-		public class Styles
+        #region Visual Elements
+
+        private VisualElement invalidRepoElement;
+        private VisualElement commitsWindowElement;
+        private VisualElement commitsElement;
+        private VisualElement toolbarElement;
+
+        #endregion
+
+        #region Styles
+        public class Styles
 		{
 			public GUIStyle historyKnobNormal;
 			public GUIStyle historyKnobHead;
@@ -95,7 +106,7 @@ namespace UniGit
 						otherCommitTag = new GUIStyle("AssetLabel") {normal = {background = ((GUIStyle) "sv_iconselector_labelselection").normal.background}},
 						historyHelpBox = new GUIStyle(EditorStyles.helpBox) {richText = true, padding = new RectOffset(8, 8, 8, 8), alignment = TextAnchor.MiddleLeft, contentOffset = new Vector2(24, -2)},
 						historyHelpBoxLabel = new GUIStyle("CN EntryWarn"),
-						commitMessage = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 4, 4, 4), clipping = TextClipping.Clip},
+						commitMessage = new GUIStyle("Badge") {alignment = TextAnchor.UpperLeft, padding = new RectOffset(6, 4, 6, 4),fixedHeight = 22, clipping = TextClipping.Clip},
 						avatar = new GUIStyle("ShurikenEffectBg") {contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.ImageOnly},
 						avatarName = new GUIStyle("ShurikenEffectBg") {contentOffset = Vector3.zero, alignment = TextAnchor.MiddleCenter, clipping = TextClipping.Clip, imagePosition = ImagePosition.TextOnly, fontSize = 28, fontStyle = FontStyle.Bold, normal = {textColor = Color.white}},
 						historyLine = "AppToolbar",
@@ -134,6 +145,8 @@ namespace UniGit
 			{
 				maxCommitsCount = MaxFirstCommitCount;
 			}
+
+			ConstructGUI(rootVisualElement);
 		}
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] path)
@@ -308,34 +321,69 @@ namespace UniGit
 		private const float helpBoxHeight = 38;
 		private readonly float commitSpacing = EditorGUIUtility.singleLineHeight / 2;
 
-		[UsedImplicitly]
+		private void ConstructGUI(VisualElement root)
+		{
+			var uxml = Resources.Load<VisualTreeAsset>("Styles/HistoryWindow");
+			var uss = Resources.Load<StyleSheet>("Styles/HistoryWindowSheet");
+			uxml.CloneTree(root);
+			root.styleSheets.Add(uss);
+
+			toolbarElement = root.Q("Toolbar");
+
+			invalidRepoElement = root.Q("InvalidRepository");
+			root.Q<Button>("CreateRepository").clickable.clicked += () =>
+			{
+				if (!initializer.IsValidRepo)
+				{
+					initializer.InitializeRepositoryAndRecompile();
+				}
+            };
+
+			commitsWindowElement = root.Q("CommitsWindow");
+			commitsElement = root.Q("Commits");
+
+			var mainGuiElement = new IMGUIContainer(MainGUI);
+			mainGuiElement.style.flexGrow = 1;
+
+			var toolbarImgui = new IMGUIContainer(DoToolbar);
+			toolbarImgui.style.flexGrow = 1;
+			toolbarElement.Add(toolbarImgui);
+
+			commitsElement.Add(mainGuiElement);
+		}
+
 		private void OnGUI()
 		{
 			CreateStyles();
+        }
 
-			if (gitManager == null || !initializer.IsValidRepo)
-			{
-				InvalidRepoGUI(initializer);
-				return;
-			}
+		[UsedImplicitly]
+        private void Update()
+		{
+			bool validRepo = gitManager != null && initializer.IsValidRepo;
+            invalidRepoElement.style.display = !validRepo ? DisplayStyle.Flex : DisplayStyle.None;
+            commitsWindowElement.style.display = validRepo && gitManager.Repository != null && selectedBranch != null ? DisplayStyle.Flex : DisplayStyle.None;
+		}
 
-			if(gitManager.Repository == null || selectedBranch == null) return;
-			RepositoryInformation repoInformation = gitManager.Repository.Info;
-			DoToolbar(toolbarRect, repoInformation);
-			EditorGUILayout.Space();
+		private void MainGUI()
+		{
+			var repoInformation = gitManager.Repository.Info;
 
-			DoHistoryScrollRect(scorllRect, repoInformation);
+			DoHistoryScrollRect(commitsElement.contentRect, repoInformation);
 
 			if (popupsQueue.Count > 0)
 			{
 				var content = popupsQueue.Dequeue();
 				PopupWindow.Show(content.Key, content.Value);
 			}
-		}
+        }
 
-		private void DoToolbar(Rect rect, RepositoryInformation info)
-		{
-			Branch branch = selectedBranch.LoadBranch(gitManager);
+        private void DoToolbar()
+        {
+	        Rect rect = toolbarElement.contentRect;
+	        var info = gitManager.Repository.Info;
+
+	        Branch branch = selectedBranch.LoadBranch(gitManager);
 			if (branch == null)
 			{
 				EditorGUILayout.HelpBox(string.Format("Invalid Branch: '{0}'", selectedBranch.CanonicalName),MessageType.Warning,true);
@@ -721,7 +769,7 @@ namespace UniGit
 				EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x, EditorGUIUtility.singleLineHeight), GitGUI.GetTempContent(GitGUI.FormatRemainningTime(commit.Committer.When.DateTime)));
 				y += EditorGUIUtility.singleLineHeight + 3;
 				int firstNewLineIndex = commit.Message.IndexOf(Environment.NewLine);
-				EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x - 10, EditorGUIUtility.singleLineHeight + 4), GitGUI.GetTempContent(firstNewLineIndex > 0 ? commit.Message.Substring(0, firstNewLineIndex) : commit.Message), styles.commitMessage);
+				EditorGUI.LabelField(new Rect(rect.x + x, rect.y + y, rect.width - x - 10, EditorGUIUtility.singleLineHeight + 4), GitGUI.GetTempContent(firstNewLineIndex > 0 ? commit.Message.Substring(0, firstNewLineIndex) : commit.Message, commit.Message), styles.commitMessage);
 				y += 8;
 				if (branches != null)
 				{
@@ -982,10 +1030,7 @@ namespace UniGit
 			{
 				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
 				{
-					if (!initializer.IsValidRepo)
-					{
-						initializer.InitializeRepositoryAndRecompile();
-					}
+					
 					GUIUtility.ExitGUI();
 					return;
 				}

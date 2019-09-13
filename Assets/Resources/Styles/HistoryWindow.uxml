@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd"
+    xsi:schemaLocation="UnityEngine.UIElements ../UIElementsSchema/UnityEngine.UIElements.xsd UnityEditor.UIElements ../UIElementsSchema/UnityEditor.UIElements.xsd"
+    xmlns:editor="UnityEditor.UIElements">
+    <Template path="Assets/Resources/Styles/InvalidRepository.uxml" name="InvalidRepository"/>
+
+    <VisualElement class="container">
+        <Instance template="InvalidRepository" name="InvalidRepository"/>
+        <VisualElement name="CommitsWindow">
+            <editor:Toolbar name="Toolbar">
+            </editor:Toolbar>
+            <VisualElement name="Commits">
+            </VisualElement>
+        </VisualElement>
+    </VisualElement>
+</UXML>
