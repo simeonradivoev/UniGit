@@ -27,7 +27,12 @@ namespace UniGit.Utils
 			return path.EndsWith(".meta");
 		}
 
-		public static string FixUnityPath(string path)
+        public static string ToUnityPath(string path)
+        {
+            return path.Replace(Path.DirectorySeparatorChar, UniGitPathHelper.UnityDeirectorySeparatorChar);
+        }
+
+        public static string FixUnityPath(string path)
 		{
 			return path.Replace(UniGitPathHelper.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
 		}

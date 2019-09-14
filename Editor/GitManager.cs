@@ -762,7 +762,11 @@ namespace UniGit
 
 		public string ToLocalPath(string projectPath)
 		{
-			if (inSubModule) return projectPath.Replace(gitSettings.ActiveSubModule.Replace("\\","/") + "/","");
+            if (!string.IsNullOrEmpty(paths.RepoProjectRelativePath))
+            {
+                projectPath = UniGitPathHelper.SubtractDirectory(projectPath, UniGitPathHelper.ToUnityPath(paths.RepoProjectRelativePath));
+            }
+            if (inSubModule) return projectPath.Replace(gitSettings.ActiveSubModule.Replace("\\","/") + "/","");
 			return projectPath;
 		}
 
