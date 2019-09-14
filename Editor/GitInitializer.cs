@@ -61,7 +61,7 @@ namespace UniGit
 		public string GetCommitMessageFilePath(string subModule)
 		{
 			if(!string.IsNullOrEmpty(subModule))
-				return UniGitPathHelper.Combine(paths.GitPath, "UniGit", "Settings", $"CommitMessage_{subModule}.txt");
+				return UniGitPathHelper.Combine(paths.GitPath, "UniGit", "Settings", $"CommitMessage_{UniGitPathHelper.GetFriendlyNameFromPath(subModule)}.txt");
 			return UniGitPathHelper.Combine(paths.GitPath, "UniGit", "Settings", "CommitMessage.txt");
 		}
 

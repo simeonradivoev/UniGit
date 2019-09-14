@@ -50,8 +50,9 @@ namespace UniGit
 			EditorGUILayout.BeginHorizontal();
 			if (repoInfo.CurrentOperation == CurrentOperation.Merge)
 				GUILayout.Label(GitGUI.GetTempContent("Merge"), styles.mergeIndicator);
-			window.CommitMaximized = GUILayout.Toggle(window.CommitMaximized, GitGUI.GetTempContent(gitSettings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), styles.commitMessageFoldoud, GUILayout.Width(gitSettings.ReadFromFile ? 210 : 116));
-			if (!window.CommitMaximized)
+            window.CommitMaximized = GUILayout.Toggle(window.CommitMaximized, GitGUI.GetTempContent(gitSettings.ReadFromFile ? "File Commit Message: (Read Only)" : "Commit Message: "), styles.commitMessageFoldoud, GUILayout.Width(gitSettings.ReadFromFile ? 210 : 116));
+            EditorGUI.BeginDisabledGroup(true);
+            if (!window.CommitMaximized)
 			{
 				if (!gitSettings.ReadFromFile)
 				{
@@ -68,7 +69,8 @@ namespace UniGit
 					GUILayout.Label(GitGUI.GetTempContent(settings.commitMessageFromFile), GUI.skin.textArea, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 				}
 			}
-			EditorGUILayout.EndHorizontal();
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
 			if (window.CommitMaximized)
 			{
 				commitScroll = EditorGUILayout.BeginScrollView(commitScroll, GUILayout.Height(window.CalculateCommitTextHeight()));

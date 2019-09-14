@@ -10,6 +10,11 @@ namespace UniGit.Utils
 		public const char UnityDeirectorySeparatorChar = '/';
 		public const char NewLineChar = '\n';
 
+        public static string GetFriendlyNameFromPath(string path,char separator = '_')
+        {
+            return path.Replace(UniGitPathHelper.UnityDeirectorySeparatorChar, separator).Replace(Path.DirectorySeparatorChar, separator);
+        }
+
 		public static bool IsPathInAssetFolder(string path)
 		{
 			return path.StartsWith("Assets");

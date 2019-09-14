@@ -788,7 +788,15 @@ namespace UniGit
 	                Directory.CreateDirectory(settingsFolder);
 	            }
 
-	            File.WriteAllText(initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule), message);
+                var commitMessageFilePath = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
+                var commitMessageFileDirectory = Path.GetDirectoryName(commitMessageFilePath);
+
+                if (!Directory.Exists(commitMessageFileDirectory))
+                {
+                    Directory.CreateDirectory(commitMessageFileDirectory);
+                }
+
+                File.WriteAllText(commitMessageFileDirectory, message);
 	        }
 	        catch (Exception e)
 	        {

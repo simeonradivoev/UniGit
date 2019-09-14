@@ -278,9 +278,9 @@ namespace UniGit
 			if (!string.IsNullOrEmpty(activeModule))
 			{
 				var subModule = mainRepository.Submodules[activeModule];
-				if (subModule != null && Repository.IsValid(subModule.Path))
+				if (subModule != null && Repository.IsValid(UniGitPathHelper.Combine(paths.RepoProjectRelativePath,subModule.Path)))
 				{
-					var subModuleRepo = new Repository(subModule.Path);
+					var subModuleRepo = new Repository(UniGitPathHelper.Combine(paths.RepoProjectRelativePath, subModule.Path));
 					mainRepository.Dispose();
 					inSubModule = true;
 					dotGitDirCached = subModuleRepo.Info.Path;
@@ -294,12 +294,13 @@ namespace UniGit
 
 		public void SwitchToSubModule(string path)
 		{
-			if (gitSettings.ActiveSubModule != path && Repository.IsValid(path))
+			if (gitSettings.ActiveSubModule != path && Repository.IsValid(UniGitPathHelper.Combine(paths.RepoProjectRelativePath,path)))
 			{
 				gitSettings.ActiveSubModule = path;
 				gitSettings.MarkDirty();
 				MarkDirty(true);
 			}
+
 		}
 
 		public void SwitchToMainRepository()
@@ -766,7 +767,7 @@ namespace UniGit
             {
                 projectPath = UniGitPathHelper.SubtractDirectory(projectPath, UniGitPathHelper.ToUnityPath(paths.RepoProjectRelativePath));
             }
-            if (inSubModule) return projectPath.Replace(gitSettings.ActiveSubModule.Replace("\\","/") + "/","");
+            if (inSubModule) return UniGitPathHelper.SubtractDirectory(projectPath, gitSettings.ActiveSubModule);
 			return projectPath;
 		}
 
