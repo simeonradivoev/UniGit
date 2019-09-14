@@ -80,7 +80,7 @@ namespace UniGit
 
 		public void ShowChooseMainRepositoryPathPopup(EditorWindow context = null)
 		{
-			var rootProjectPath = UniGitPathHelper.ProjectPath;
+			var rootProjectPath = paths.ProjectPath;
 
             var repoPath = EditorUtility.OpenFolderPanel("Repository Path", rootProjectPath, "");
 			if (string.IsNullOrEmpty(repoPath))

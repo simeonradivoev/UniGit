@@ -37,13 +37,15 @@ namespace UniGit
 
 				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
 
-				string repoPath = UniGitPathHelper.ProjectPath;
+                string projectPath = UniGitPathHelper.FixUnityPath(
+                    Application.dataPath.Replace(UniGitPathHelper.UnityDeirectorySeparatorChar + "Assets", ""));
+                string repoPath = projectPath;
                 if (EditorPrefs.HasKey(RepoPathKey))
 				{
 					repoPath = UniGitPathHelper.FixUnityPath(UniGitPathHelper.Combine(repoPath, EditorPrefs.GetString(RepoPathKey)));
 				}
 
-                injectionHelper.Bind<UniGitPaths>().FromInstance(new UniGitPaths(repoPath));
+                injectionHelper.Bind<UniGitPaths>().FromInstance(new UniGitPaths(repoPath, projectPath));
 				injectionHelper.Bind<GitInitializer>().NonLazy();
 				injectionHelper.Bind<UniGitData>().FromMethod(c => uniGitData); //must have a getter so that it can be injected 
 				injectionHelper.Bind<GitCallbacks>().FromMethod(GetGitCallbacks);

@@ -10,8 +10,6 @@ namespace UniGit.Utils
 		public const char UnityDeirectorySeparatorChar = '/';
 		public const char NewLineChar = '\n';
 
-		public static string ProjectPath => FixUnityPath(Application.dataPath.Replace(UnityDeirectorySeparatorChar + "Assets", ""));
-
 		public static bool IsPathInAssetFolder(string path)
 		{
 			return path.StartsWith("Assets");
@@ -39,6 +37,11 @@ namespace UniGit.Utils
 
         public static string SubtractDirectory(string from, string value)
         {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(from))
+            {
+                return value;
+            }
+
             var replaced = from.Replace(value, "");
             if (replaced.Length > 0 && replaced[0] == Path.DirectorySeparatorChar ||
                 replaced[0] == Path.AltDirectorySeparatorChar)

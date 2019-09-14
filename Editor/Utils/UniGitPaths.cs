@@ -16,23 +16,26 @@
 
 		public string CredentialsFilePath { get; private set; }
 
+        public string ProjectPath { get; private set; }
+
 		/// <summary>
         /// The .git folder for the repository.
         /// </summary>
 		public string GitPath { get; private set; }
 
-		public UniGitPaths(string repoPath)
-		{
-			SetRepoPath(repoPath);
+		public UniGitPaths(string repoPath,string projectPath)
+        {
+            this.ProjectPath = projectPath;
+            SetRepoPath(repoPath);
 		}
 
 		public void SetRepoPath(string repoPath)
 		{
 			this.RepoPath = repoPath;
 
-            if (!UniGitPathHelper.PathsEqual(repoPath, UniGitPathHelper.ProjectPath))
+            if (!UniGitPathHelper.PathsEqual(repoPath, ProjectPath))
             {
-                RepoProjectRelativePath = UniGitPathHelper.SubtractDirectory(repoPath,UniGitPathHelper.ProjectPath);
+                RepoProjectRelativePath = UniGitPathHelper.SubtractDirectory(repoPath, ProjectPath);
             }
 
             SettingsFolderPath = UniGitPathHelper.Combine(repoPath, ".git", "UniGit");

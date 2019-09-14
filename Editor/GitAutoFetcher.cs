@@ -59,7 +59,7 @@ namespace UniGit
 			GitProfilerProxy.BeginSample("Git automatic fetching");
 			try
 			{
-				gitManager.Repository.Network.Fetch(remote, new FetchOptions()
+                GitCommands.Fetch(gitManager.Repository, remote, new FetchOptions()
 				{
 					CredentialsProvider = credentialsManager.FetchChangesAutoCredentialHandler,
 					OnTransferProgress = gitManager.FetchTransferProgressHandler,

@@ -45,7 +45,7 @@ namespace UniGit
 		{
 			try
 			{
-			    GitCommands.Fetch(gitManager.Repository,remotes[selectedRemote].Name, fetchOptions);
+			    GitCommands.Fetch(gitManager.Repository,remotes[selectedRemote], fetchOptions);
 #if UNITY_EDITOR
 				logger.Log(LogType.Log,"Fetch Complete");
 #endif

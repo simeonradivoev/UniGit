@@ -14,13 +14,16 @@ namespace UniGit
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitCallbacks gitCallbacks;
 		private Regex ignoreFoldersRegex;
+        private UniGitPaths paths;
 
 		[UniGitInject]
 		public GitFileWatcher(GitManager gitManager,
 			GitCallbacks gitCallbacks,
 			GitSettingsJson gitSettings,
+            UniGitPaths paths,
 			[UniGitInjectOptional] bool trackAssetsPath)
-		{
+        {
+            this.paths = paths;
 			this.gitManager = gitManager;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
@@ -48,7 +51,7 @@ namespace UniGit
 		private void CreateWatchers()
 		{
 			string rootedPath = gitManager.GetCurrentRepoPath();
-			string projectPath = rootedPath.Replace(UniGitPathHelper.ProjectPath, "");
+			string projectPath = rootedPath.Replace(paths.ProjectPath, "");
 			if (!UniGitPathHelper.IsPathInAssetFolder(projectPath))
 			{
 				var mainFileWatcher = new FileSystemWatcher(rootedPath)

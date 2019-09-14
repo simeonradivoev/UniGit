@@ -81,7 +81,7 @@ namespace UniGit.Settings
 				titleContent.image = GitGUI.IconContentTex("ToolHandleGlobal");
 
 			GUILayout.Label(titleContent, isHead ? "IN BigTitle" : "ShurikenModuleTitle", GUILayout.ExpandWidth(true));
-			int selectedRemote = Array.IndexOf(remoteCacheList, branch.Remote);
+			int selectedRemote = Array.FindIndex(remoteCacheList, e => e.Remote == branch.Remote);
 			EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Remote"));
 			if (remoteNames != null)

@@ -47,7 +47,7 @@ namespace UniGit
 				{
 					try
 					{
-						gitManager.Repository.Checkout(branch, checkoutOptions);
+						GitCommands.Checkout(gitManager.Repository,branch, checkoutOptions);
 					}
 					catch (Exception e)
 					{

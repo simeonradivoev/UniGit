@@ -42,7 +42,7 @@ namespace UniGit
 			var branch = gitManager.Repository.Branches[branchNames[selectedBranch]];
 			if (branch != null)
 			{
-				gitManager.Repository.Checkout(branch, checkoutOptions);
+                GitCommands.Checkout(gitManager.Repository,branch, checkoutOptions);
 			}
 			else
 			{
