@@ -35,8 +35,10 @@ namespace UniGit
 		private readonly UniGitData data;
 		private readonly ILogger logger;
 		private readonly bool cullNonAssetPaths;
+        private readonly UniGitPaths paths;
+        private readonly InjectionHelper injectionHelper;
 
-		private StatusTreeClass statusTree;
+        private StatusTreeClass statusTree;
 		private bool isDirty = true;
 		private bool isUpdating;
 		private List<EditorWindow> projectWindows;
@@ -51,6 +53,7 @@ namespace UniGit
 			IGitPrefs prefs,
 			UniGitData data,
 			ILogger logger,
+            InjectionHelper injectionHelper,
 			[UniGitInjectOptional] bool cullNonAssetPaths = true)
 		{
 			if (iconStyle == null)
@@ -82,8 +85,9 @@ namespace UniGit
 			this.gitOverlay = gitOverlay;
 			this.prefs = prefs;
 			this.cullNonAssetPaths = cullNonAssetPaths;
+            this.injectionHelper = injectionHelper;
 
-			gitManager.AddWatcher(this);
+            gitManager.AddWatcher(this);
 
 			gitCallbacks.EditorUpdate += OnEditorUpdate;
 			gitCallbacks.ProjectWindowItemOnGUI += CustomIcons;
@@ -255,8 +259,10 @@ namespace UniGit
 			try
 			{
 				var subModules = status.SubModuleEntries;
-				if (gitManager.InSubModule) subModules = subModules.Concat(new []{new GitStatusSubModuleEntry(gitSettings.ActiveSubModule) });
-				var newStatusTree = new StatusTreeClass(gitSettings,gitManager,cullNonAssetPaths);
+				if (gitManager.InSubModule)
+                    subModules = subModules.Concat(new []{new GitStatusSubModuleEntry(gitSettings.ActiveSubModule) });
+
+                var newStatusTree = injectionHelper.CreateInstance<StatusTreeClass>(cullNonAssetPaths);
 				newStatusTree.Build(status, subModules);
 				statusTree = newStatusTree;
 				gitManager.ExecuteAction(RepaintProjectWidnow, threaded);
@@ -328,9 +334,12 @@ namespace UniGit
 			private readonly GitSettingsJson gitSettings;
 			private readonly GitManager gitManager;
 			private readonly bool cullNonAssetPaths;
+            private readonly UniGitPaths paths;
 
-			internal StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager,bool cullNonAssetPaths)
-			{
+            [UniGitInject]
+			public StatusTreeClass(GitSettingsJson gitSettings,GitManager gitManager,bool cullNonAssetPaths, UniGitPaths paths)
+            {
+                this.paths = paths;
 				this.gitManager = gitManager;
 				this.cullNonAssetPaths = cullNonAssetPaths;
 				this.gitSettings = gitSettings;
@@ -349,7 +358,7 @@ namespace UniGit
 
 				foreach (var module in subModules)
 				{
-					currentPathArray = module.Path.Split('\\');
+					currentPathArray = UniGitPathHelper.Combine(paths.RepoProjectRelativePath,module.Path).Split('\\');
 					currentSubModuleStatus = module.Status;
 					AddSubModuleRecursive(0, entries);
 				}
