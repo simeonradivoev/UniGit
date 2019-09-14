@@ -1,0 +1,13 @@
+<UXML xmlns="UnityEngine.UIElements"  xmlns:editor="UnityEditor.UIElements">
+    <Template path="Packages/uni-git/Editor/UI/InvalidRepository.uxml" name="InvalidRepository"/>
+
+    <VisualElement class="container">
+        <Instance template="InvalidRepository" name="InvalidRepository"/>
+        <VisualElement name="CommitsWindow">
+            <editor:Toolbar name="Toolbar">
+            </editor:Toolbar>
+            <VisualElement name="Commits">
+            </VisualElement>
+        </VisualElement>
+    </VisualElement>
+</UXML>

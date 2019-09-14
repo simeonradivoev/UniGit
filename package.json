@@ -1,0 +1,20 @@
+{
+  "name": "uni-git",
+  "version": "1.5.0",
+  "displayName": "UniGit",
+  "description": "An open source GIT Unity3D editor plugin.",
+  "unity": "2019.2",
+  "unityRelease": "3f1",
+  "dependencies": {
+ },
+ "keywords": [
+    "git",
+    "source-control",
+    "open-source"
+  ],
+  "author": {
+    "name": "Simeon Radivoev",
+    "email": "simeonradivoev@gmail.com",
+    "url": "https://simeonradivoev.com"
+  } 
+}

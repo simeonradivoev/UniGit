@@ -1,0 +1,13 @@
+<UXML xmlns="UnityEngine.UIElements"  xmlns:editor="UnityEditor.UIElements">
+    <VisualElement class="centeredWrapper">
+        <VisualElement class="bigWarning">
+            <Label text="Not a GIT Repository"/>
+        </VisualElement>
+            <VisualElement class="infoBox">
+              <Label name="RepoPath" class="infoText" />
+              <Label class="infoText" text="If you have an existing remote repository and want to clone it, you will have to do so outside of the editor. If repository is located in a sub folder choose so below." />
+            </VisualElement>
+        <Button name="FindRepository" class="bigButton" text="Find"/>
+        <Button name="CreateRepository" class="bigButton" text="Create"/>
+    </VisualElement>
+</UXML>
