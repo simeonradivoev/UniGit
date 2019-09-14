@@ -25,7 +25,7 @@ namespace UniGit.Settings
 		{
 		}
 
-		internal override void OnGUI(Rect rect, Event current)
+		internal override void OnGUI()
 		{
 			if(remotes == null) return;
 			int remoteCount = remotes.Count();
@@ -80,7 +80,7 @@ namespace UniGit.Settings
 			{
 				PopupWindow.Show(addRepositoryButtonRect, new AddRepositoryPopup(gitManager,remotes));
 			}
-			if (current.type == EventType.Repaint) addRepositoryButtonRect = GUILayoutUtility.GetLastRect();
+			if (Event.current.type == EventType.Repaint) addRepositoryButtonRect = GUILayoutUtility.GetLastRect();
 			GUILayout.FlexibleSpace();
 			EditorGUILayout.EndHorizontal();
 		}

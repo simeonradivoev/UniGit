@@ -61,11 +61,11 @@ namespace UniGit
 		{
 			RegisterFilter();
 
-			if (File.Exists(UniGitPath.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
+			if (File.Exists(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
 			{
-				using (TextReader file = File.OpenText(UniGitPath.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
+				using (TextReader file = File.OpenText(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
 				{
-					trackedInfo = file.ReadToEnd().Split(UniGitPath.NewLineChar).Select(GitLfsTrackedInfo.Parse).Where(l => l != null).ToArray();
+					trackedInfo = file.ReadToEnd().Split(UniGitPathHelper.NewLineChar).Select(GitLfsTrackedInfo.Parse).Where(l => l != null).ToArray();
 				}
 			}
 
@@ -79,7 +79,7 @@ namespace UniGit
 
 		public void SaveTracking()
 		{
-			using (StreamWriter file = File.CreateText(UniGitPath.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
+			using (StreamWriter file = File.CreateText(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
 			{
 				foreach (var info in trackedInfo)
 				{
@@ -104,7 +104,7 @@ namespace UniGit
 		{
 			string output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs", "install", null);
 			
-			if (!Directory.Exists(UniGitPath.Combine(gitManager.GetCurrentDotGitFolder(),"lfs")))
+			if (!Directory.Exists(UniGitPathHelper.Combine(gitManager.GetCurrentDotGitFolder(),"lfs")))
 			{
 				logger.Log(LogType.Error,"Git-LFS install failed! (Try manually)");
 				logger.Log(LogType.Error,output);
@@ -158,7 +158,7 @@ namespace UniGit
 
 		public bool CheckInitialized()
 		{
-			return Directory.Exists(UniGitPath.Combine(gitManager.GetCurrentDotGitFolder(), "lfs")) && File.Exists(UniGitPath.Combine(gitManager.GetCurrentDotGitFolder(),"hooks", "pre-push"));
+			return Directory.Exists(UniGitPathHelper.Combine(gitManager.GetCurrentDotGitFolder(), "lfs")) && File.Exists(UniGitPathHelper.Combine(gitManager.GetCurrentDotGitFolder(),"hooks", "pre-push"));
 		}
 
 		public void Dispose()

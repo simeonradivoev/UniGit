@@ -41,7 +41,7 @@ public class GitManagerTests : TestRepoFixture
     {
         File.AppendAllText(injectionHelper.GetInstance<GitInitializer>().GitIgnoreFilePath, "testFile.txt");
         string lockedFilePathName = "testFile.txt";
-        string lockedFilePath = UniGitPath.Combine(gitManager.GetCurrentRepoPath(), lockedFilePathName);
+        string lockedFilePath = UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), lockedFilePathName);
         using (var lockFileStream = File.CreateText(lockedFilePath))
         {
             lockFileStream.WriteLine("This is a locked test file");

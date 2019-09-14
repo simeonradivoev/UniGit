@@ -64,7 +64,7 @@ namespace UniGit
 						if (GUILayout.Button(GitGUI.GetTempContent(chunk), GitGUI.Styles.BreadcrumMid))
 						{
 							string assetPath = string.Join("/", pathChunks,0,i+1);
-							if (GitManager.IsMetaPath(assetPath))
+							if (UniGitPathHelper.IsMetaPath(assetPath))
 							{
 								assetPath = GitManager.AssetPathFromMeta(assetPath);
 							}
@@ -124,7 +124,7 @@ namespace UniGit
 					EditorGUILayout.LabelField(Path.GetFileName(file.Path));
 					DrawTreeEntry(file.Target as Tree, depth + 1);
 				}
-				else if (!GitManager.IsMetaPath(file.Path))
+				else if (!UniGitPathHelper.IsMetaPath(file.Path))
 				{
 					EditorGUI.indentLevel = depth;
 					EditorGUILayout.LabelField(file.Path);

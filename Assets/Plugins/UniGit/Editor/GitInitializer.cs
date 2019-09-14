@@ -1,33 +1,30 @@
 ﻿using System.IO;
-using System.Linq;
 using LibGit2Sharp;
 using UniGit.Utils;
-using UnityEditor;
 using UnityEngine;
 
 namespace UniGit
 {
 	public class GitInitializer
 	{
-		private readonly string repoPath;
-		private readonly string gitPath;
+		private readonly UniGitPaths paths;
 		private readonly ILogger logger;
 		private readonly GitCallbacks callbacks;
 
 		[UniGitInject]
-		public GitInitializer(string repoPath,
+		public GitInitializer(
+			UniGitPaths paths,
 			ILogger logger,
 			GitCallbacks callbacks)
 		{
-			this.repoPath = repoPath;
+			this.paths = paths;
 			this.logger = logger;
 			this.callbacks = callbacks;
-			gitPath = UniGitPath.Combine(repoPath, ".git");
 		}
 
 		public void InitializeRepository()
 		{
-			Repository.Init(repoPath);
+			Repository.Init(paths.RepoPath);
 			Directory.CreateDirectory(GitSettingsFolderPath);
 			string newGitIgnoreFile = GitIgnoreFilePath;
 			if (!File.Exists(newGitIgnoreFile))
@@ -46,44 +43,28 @@ namespace UniGit
 		internal void InitializeRepositoryAndRecompile()
 		{
 			InitializeRepository();
-			callbacks.IssueAssetDatabaseRefresh();
-			callbacks.IssueSaveDatabaseRefresh();
-			callbacks.IssueRepositoryCreate();
+			RecompileSoft();
 			//Update(true);
 		}
 
-		internal static void Recompile()
+		internal void RecompileSoft()
 		{
-			var importer = PluginImporter.GetAllImporters().FirstOrDefault(i => i.assetPath.EndsWith("UniGitResources.dll"));
-			if (importer == null)
-			{
-				Debug.LogError("Could not find LibGit2Sharp.dll. You will have to close and open Unity to recompile scripts.");
-				return;
-			}
-			importer.SetCompatibleWithEditor(true);
-			importer.SaveAndReimport();
-		}
+			callbacks.IssueAssetDatabaseRefresh();
+			callbacks.IssueSaveDatabaseRefresh();
+			callbacks.IssueRepositoryCreate();
+        }
 
-		public  bool IsValidRepo
-		{
-			get { return Repository.IsValid(repoPath); }
-		}
+		public  bool IsValidRepo => !string.IsNullOrEmpty(paths.RepoPath) && Repository.IsValid(paths.RepoPath);
 
-		public string GitSettingsFolderPath
-		{
-			get { return UniGitPath.Combine(gitPath, Path.Combine("UniGit", "Settings")); }
-		}
+		public string GitSettingsFolderPath => UniGitPathHelper.Combine(paths.GitPath, Path.Combine("UniGit", "Settings"));
 
 		public string GetCommitMessageFilePath(string subModule)
 		{
 			if(!string.IsNullOrEmpty(subModule))
-				return UniGitPath.Combine(gitPath, "UniGit", "Settings", string.Format("CommitMessage_{0}.txt",subModule));
-			return UniGitPath.Combine(gitPath, "UniGit", "Settings", "CommitMessage.txt");
+				return UniGitPathHelper.Combine(paths.GitPath, "UniGit", "Settings", $"CommitMessage_{subModule}.txt");
+			return UniGitPathHelper.Combine(paths.GitPath, "UniGit", "Settings", "CommitMessage.txt");
 		}
 
-		public string GitIgnoreFilePath
-		{
-			get { return UniGitPath.Combine(repoPath, ".gitignore"); }
-		}
+		public string GitIgnoreFilePath => UniGitPathHelper.Combine(paths.RepoPath, ".gitignore");
 	}
 }

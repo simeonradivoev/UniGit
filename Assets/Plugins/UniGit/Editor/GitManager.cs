@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -17,9 +16,6 @@ namespace UniGit
 	public class GitManager : IDisposable
 	{
 		public const string Version = "1.4.3";
-
-		private readonly string repoPath;
-		private readonly string settingsPath;
 
 		private Repository repository;
 		private readonly GitSettingsJson gitSettings;
@@ -41,21 +37,21 @@ namespace UniGit
 		private readonly List<IGitWatcher> watchers = new List<IGitWatcher>();
 		private readonly ILogger logger;
 		private readonly GitInitializer initializer;
+		private readonly UniGitPaths paths;
 
 		[UniGitInject]
-		public GitManager(string repoPath,
-			string settingsPath,
+		public GitManager(
 			GitCallbacks callbacks, 
 			GitSettingsJson settings, 
 			IGitPrefs prefs, 
 			GitAsyncManager asyncManager,
 			UniGitData gitData,
 			ILogger logger,
-			GitInitializer initializer)
+			GitInitializer initializer,
+			UniGitPaths paths)
 		{
-			this.settingsPath = settingsPath;
+			this.paths = paths;
 			this.gitData = gitData;
-			this.repoPath = repoPath;
 			this.callbacks = callbacks;
 			this.prefs = prefs;
 			this.asyncManager = asyncManager;
@@ -101,8 +97,8 @@ namespace UniGit
 
 		public void DeleteRepository()
 		{
-			if(string.IsNullOrEmpty(repoPath)) return;
-			DeleteDirectory(repoPath);
+			if(string.IsNullOrEmpty(paths.RepoPath)) return;
+			DeleteDirectory(paths.RepoPath);
 		}
 
 		private void DeleteDirectory(string targetDir)
@@ -277,7 +273,7 @@ namespace UniGit
 
 		private Repository CreateRepository(string activeModule)
 		{
-			var mainRepository = new Repository(repoPath);
+			var mainRepository = new Repository(paths.RepoPath);
 
 			if (!string.IsNullOrEmpty(activeModule))
 			{
@@ -341,7 +337,7 @@ namespace UniGit
 		{
 			foreach (var path in paths)
 			{
-				string fixedPath = FixUnityPath(path);
+				string fixedPath = UniGitPathHelper.FixUnityPath(path);
 				if(IsDirectory(fixedPath)) continue;
 				if(!gitData.DirtyFilesQueue.Contains(fixedPath))
 					gitData.DirtyFilesQueue.Add(fixedPath);
@@ -725,14 +721,14 @@ namespace UniGit
 			}
 			if (Path.IsPathRooted(projectPath))
 			{
-				return Directory.Exists(UniGitPath.Combine(repoPath,projectPath));
+				return Directory.Exists(UniGitPathHelper.Combine(paths.RepoPath, projectPath));
 			}
 			return Directory.Exists(projectPath);
 		}
 
 		public bool IsEmptyFolderMeta(string path)
 		{
-			if (IsMetaPath(path))
+			if (UniGitPathHelper.IsMetaPath(path))
 			{
 				return IsEmptyFolder(path.Substring(0, path.Length - 5));
 			}
@@ -750,12 +746,12 @@ namespace UniGit
 
 		public bool IsSubModule(string projectPath)
 		{
-			return gitData.RepositoryStatus != null && gitData.RepositoryStatus.SubModuleEntries.Any(m => UniGitPath.Compare(m.Path,projectPath));
+			return gitData.RepositoryStatus != null && gitData.RepositoryStatus.SubModuleEntries.Any(m => UniGitPathHelper.Compare(m.Path,projectPath));
 		}
 
 		public string ToProjectPath(string localPath)
 		{
-			if (inSubModule) return UniGitPath.Combine(gitSettings.ActiveSubModule, localPath);
+			if (inSubModule) return UniGitPathHelper.Combine(gitSettings.ActiveSubModule, localPath);
 			return localPath;
 		}
 
@@ -771,21 +767,21 @@ namespace UniGit
 		/// <returns></returns>
 		public string GetCurrentRepoPath()
 		{
-			if (inSubModule) return UniGitPath.Combine(repoPath, gitSettings.ActiveSubModule);
-			return repoPath;
+			if (inSubModule) return UniGitPathHelper.Combine(paths.RepoPath, gitSettings.ActiveSubModule);
+			return paths.RepoPath;
 		}
 
 		public string GetCurrentDotGitFolder()
 		{
 			if (inSubModule) return dotGitDirCached;
-			return UniGitPath.Combine(repoPath,".git");
+			return UniGitPathHelper.Combine(paths.RepoPath, ".git");
 		}
 
 		#region Enumeration helpers
 
 		public IEnumerable<string> GetPathWithMeta(string path)
 		{
-			if (IsMetaPath(path))
+			if (UniGitPathHelper.IsMetaPath(path))
 			{
 				string assetPath = AssetPathFromMeta(path);
 				yield return path;
@@ -820,7 +816,7 @@ namespace UniGit
 
 		public string GetRelativePath(string rootPath)
 		{
-			return rootPath.Replace(repoPath, "").TrimStart(UniGitPath.UnityDeirectorySeparatorChar,Path.DirectorySeparatorChar);
+			return rootPath.Replace(paths.RepoPath, "").TrimStart(UniGitPathHelper.UnityDeirectorySeparatorChar,Path.DirectorySeparatorChar);
 		}
 		#endregion
 
@@ -830,7 +826,7 @@ namespace UniGit
 
 		public static string AssetPathFromMeta(string metaPath)
 		{
-			if (IsMetaPath(metaPath))
+			if (UniGitPathHelper.IsMetaPath(metaPath))
 			{
 				return metaPath.Substring(0, metaPath.Length - 5);
 			}
@@ -851,21 +847,6 @@ namespace UniGit
 		{
 			return fileStatus.IsFlagSet(FileStatus.ModifiedInIndex | FileStatus.NewInIndex | FileStatus.RenamedInIndex | FileStatus.TypeChangeInIndex | FileStatus.DeletedFromIndex);
 		}
-
-		public static bool IsPathInAssetFolder(string path)
-		{
-			return path.StartsWith("Assets");
-		}
-
-		public static bool IsMetaPath(string path)
-		{
-			return path.EndsWith(".meta");
-		}
-
-		public static string FixUnityPath(string path)
-		{
-			return path.Replace(UniGitPath.UnityDeirectorySeparatorChar, Path.DirectorySeparatorChar);
-		}
 		#endregion
 
 		#region Repository Handlers Handlers
@@ -873,10 +854,10 @@ namespace UniGit
 		{
 			if (gitSettings.CreateFoldersForDriftingMeta)
 			{
-				if (IsMetaPath(path))
+				if (UniGitPathHelper.IsMetaPath(path))
 				{
 					string assetPath = AssetPathFromMeta(path);
-					string rootedAssetPath = Path.Combine(repoPath, assetPath);
+					string rootedAssetPath = Path.Combine(paths.RepoPath, assetPath);
 					if (!Path.HasExtension(assetPath) && !File.Exists(rootedAssetPath) && !Directory.Exists(rootedAssetPath))
 					{
 						Directory.CreateDirectory(rootedAssetPath);
@@ -1004,15 +985,7 @@ namespace UniGit
 			}
 		}
 
-		public string SettingsDirectory
-		{
-			get { return Path.GetDirectoryName(settingsPath); }
-		}
-
-		public Queue<Action> ActionQueue
-		{
-			get { return actionQueue; }
-		}
+		public Queue<Action> ActionQueue => actionQueue;
 
 		#endregion
 

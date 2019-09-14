@@ -34,14 +34,17 @@ namespace UniGit
 		private readonly GitSettingsJson gitSettings;
 		private GitCallbacks gitCallbacks;
 		private ILogger logger;
+		private UniGitPaths paths;
 
 		[UniGitInject]
 		public GitCredentialsManager(GitManager gitManager,
 			GitSettingsJson gitSettings,
 			List<ICredentialsAdapter> adapters, 
 			GitCallbacks gitCallbacks,
-			ILogger logger)
+			ILogger logger,
+			UniGitPaths paths)
 		{
+			this.paths = paths;
 			this.gitSettings = gitSettings;
 			this.gitManager = gitManager;
 			this.adapters = adapters.ToArray();
@@ -67,7 +70,7 @@ namespace UniGit
 
 		private void LoadGitCredentials()
 		{
-			string credentialsFilePath = CredentialsFilePath;
+			string credentialsFilePath = paths.CredentialsFilePath;
 
 			GitCredentialsJson credentialsJson = null;
 			if (File.Exists(credentialsFilePath))
@@ -136,36 +139,46 @@ namespace UniGit
 
 		private void SaveCredentialsToFile(GitCredentialsJson credentials)
 		{
-			ValidateCredentialsPath();
-			string credentialsFilePath = CredentialsFilePath;
+            if (ValidateCredentialsPath())
+            {
+	            string credentialsFilePath = paths.CredentialsFilePath;
 
-			try
-			{
-				string json = JsonUtility.ToJson(credentials);
-				
-				using (var fileStream = new FileStream(credentialsFilePath,FileMode.OpenOrCreate,FileAccess.Write))
-				using (DESCryptoServiceProvider p = new DESCryptoServiceProvider())
-				using (var dec = p.CreateEncryptor(Encoding.ASCII.GetBytes(KeyOne),Encoding.ASCII.GetBytes(KeyTwo)))
-				using (CryptoStream cryptoStream = new CryptoStream(fileStream,dec,CryptoStreamMode.Write))
-				using(StreamWriter streamWriter = new StreamWriter(cryptoStream))
-				{
-					streamWriter.Write(json);
-				}
-			}
-			catch (Exception e)
-			{
-				logger.LogFormat(LogType.Error,"Could not serialize GitCredentialsJson to json file at: {0}",credentialsFilePath);
-				logger.LogException(e);
-			}
+	            try
+	            {
+		            string json = JsonUtility.ToJson(credentials);
+
+		            using (var fileStream = new FileStream(credentialsFilePath, FileMode.OpenOrCreate, FileAccess.Write))
+		            using (DESCryptoServiceProvider p = new DESCryptoServiceProvider())
+		            using (var dec = p.CreateEncryptor(Encoding.ASCII.GetBytes(KeyOne), Encoding.ASCII.GetBytes(KeyTwo)))
+		            using (CryptoStream cryptoStream = new CryptoStream(fileStream, dec, CryptoStreamMode.Write))
+		            using (StreamWriter streamWriter = new StreamWriter(cryptoStream))
+		            {
+			            streamWriter.Write(json);
+		            }
+	            }
+	            catch (Exception e)
+	            {
+		            logger.LogFormat(LogType.Error, "Could not serialize GitCredentialsJson to json file at: {0}", credentialsFilePath);
+		            logger.LogException(e);
+	            }
+            }
 		}
 
-		private void ValidateCredentialsPath()
+		private bool ValidateCredentialsPath()
 		{
-			string settingsFileDirectory = gitManager.SettingsDirectory;
+			string settingsFileDirectory = paths.SettingsFolderPath;
+			if (string.IsNullOrEmpty(settingsFileDirectory))
+			{
+				return true;
+			}
+
 			if (!Directory.Exists(settingsFileDirectory))
 			{
 				Directory.CreateDirectory(settingsFileDirectory);
+				return true;
 			}
+
+			return false;
 		}
 
 		#region Selection
@@ -525,26 +538,12 @@ namespace UniGit
 
 		public GitCredentialsJson GitCredentials
 		{
-			get { return gitCredentials; }
-			internal set { gitCredentials = value; }
+			get => gitCredentials;
+			internal set => gitCredentials = value;
 		}
 
-		public string CredentialsFilePath
-		{
-			get
-			{
-				return UniGitPath.Combine(gitManager.SettingsDirectory, "Credentials.json");
-			}
-		}
+		public GUIContent[] AdapterNames => adapterNames;
 
-		public GUIContent[] AdapterNames
-		{
-			get { return adapterNames; }
-		}
-
-		public string[] AdapterIds
-		{
-			get { return adapterIds; }
-		}
+		public string[] AdapterIds => adapterIds;
 	}
 }

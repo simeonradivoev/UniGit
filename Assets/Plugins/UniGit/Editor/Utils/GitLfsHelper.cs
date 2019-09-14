@@ -9,13 +9,13 @@ namespace UniGit.Utils
 	public class GitLfsHelper
 	{
 		private readonly FileLinesReader fileLinesReader;
-		private readonly string repoPath;
-		private readonly Regex[] lfsFilters; //array should be a bit faster then list for iterations 
+		private readonly Regex[] lfsFilters; //array should be a bit faster then list for iterations
+		private readonly UniGitPaths paths;
 
 		[UniGitInject]
-		public GitLfsHelper(string repoPath, FileLinesReader fileLinesReader)
+		public GitLfsHelper(UniGitPaths paths, FileLinesReader fileLinesReader)
 		{
-			this.repoPath = repoPath;
+			this.paths = paths;
 			this.fileLinesReader = fileLinesReader;
 			lfsFilters = ReadGitAttributes();
 		}
@@ -23,7 +23,7 @@ namespace UniGit.Utils
 		private Regex[] ReadGitAttributes()
 		{
 			var list = new List<Regex>();
-			var attributesPath = Path.Combine(repoPath, ".gitattributes");
+			var attributesPath = Path.Combine(paths.RepoPath, ".gitattributes");
 			string[] attributesLines;
 			if (fileLinesReader.ReadLines(attributesPath,out attributesLines))
 			{

@@ -112,8 +112,8 @@ namespace UniGit.Windows.Diff
 			if (current.type == EventType.Repaint)
 			{
 				Object asset = null;
-				if(GitManager.IsPathInAssetFolder(projectPath))
-					asset = AssetDatabase.LoadAssetAtPath(GitManager.IsMetaPath(projectPath) ? GitManager.AssetPathFromMeta(projectPath) : projectPath, typeof(Object));
+				if(UniGitPathHelper.IsPathInAssetFolder(projectPath))
+					asset = AssetDatabase.LoadAssetAtPath(UniGitPathHelper.IsMetaPath(projectPath) ? GitManager.AssetPathFromMeta(projectPath) : projectPath, typeof(Object));
 
 				string extension = Path.GetExtension(projectPath);
 				GUIContent tmpContent = GUIContent.none;

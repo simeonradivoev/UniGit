@@ -11,7 +11,6 @@ using UniGit.Utils;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace UniGit
 {
@@ -344,7 +343,7 @@ namespace UniGit
 					currentProjectPath = gitManager.ToProjectPath(entry.LocalPath);
 					currentPathArray = currentProjectPath.Split('\\');
 					currentStatus = !gitSettings.ShowEmptyFolders && gitManager.IsEmptyFolderMeta(currentProjectPath) ? FileStatus.Ignored : entry.Status;
-					if(cullNonAssetPaths && !GitManager.IsPathInAssetFolder(currentProjectPath)) continue;
+					if(cullNonAssetPaths && !UniGitPathHelper.IsPathInAssetFolder(currentProjectPath)) continue;
 					AddRecursive(0, entries);
 				}
 
@@ -410,7 +409,7 @@ namespace UniGit
 			public StatusTreeEntry GetStatus(string path)
 			{
 				StatusTreeEntry entry;
-				GetStatusRecursive(0, path.Split(new[] { UniGitPath.UnityDeirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries), entries, out entry);
+				GetStatusRecursive(0, path.Split(new[] { UniGitPathHelper.UnityDeirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries), entries, out entry);
 				return entry;
 			}
 

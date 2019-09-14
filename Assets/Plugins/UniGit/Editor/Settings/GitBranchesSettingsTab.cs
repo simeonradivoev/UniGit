@@ -35,7 +35,7 @@ namespace UniGit.Settings
 			this.logger = logger;
 		}
 
-		internal override void OnGUI(Rect rect, Event current)
+		internal override void OnGUI()
 		{
 			var branches = gitManager.Repository.Branches;
 			DoBranch(gitManager.Repository.Head, branches);

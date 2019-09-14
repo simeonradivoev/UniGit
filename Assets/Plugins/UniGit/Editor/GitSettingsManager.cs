@@ -11,15 +11,17 @@ namespace UniGit
 	{
 		private readonly GitSettingsJson settings;
 		private readonly GitCallbacks gitCallbacks;
-		private readonly string settingsPath;
 		private readonly ILogger logger;
 		private readonly GitInitializer initializer;
+		private readonly GitManager gitManager;
+		private readonly UniGitPaths paths;
 
 		[UniGitInject]
-		public GitSettingsManager(GitSettingsJson settings,string settingsPath,GitCallbacks gitCallbacks,ILogger logger,GitInitializer initializer)
+		public GitSettingsManager(UniGitPaths paths, GitSettingsJson settings,GitCallbacks gitCallbacks,ILogger logger,GitInitializer initializer, GitManager gitManager)
 		{
+			this.paths = paths;
+			this.gitManager = gitManager;
 			this.settings = settings;
-			this.settingsPath = settingsPath;
 			this.gitCallbacks = gitCallbacks;
 			this.logger = logger;
 			this.initializer = initializer;
@@ -39,7 +41,7 @@ namespace UniGit
 
 		private void ValidateSettingsPath()
 		{
-			string settingsFileDirectory = Path.GetDirectoryName(settingsPath);
+			string settingsFileDirectory = paths.SettingsFolderPath;
 			if(string.IsNullOrEmpty(settingsFileDirectory)) return;
 			if (!Directory.Exists(settingsFileDirectory))
 			{
@@ -50,7 +52,7 @@ namespace UniGit
 
 		public void LoadGitSettings()
 		{
-			string settingsFilePath = settingsPath;
+			string settingsFilePath = paths.SettingsFilePath;
 			if (File.Exists(settingsFilePath))
 			{
 				try
@@ -77,12 +79,46 @@ namespace UniGit
 			SaveSettingsToFile();
 		}
 
+		public void ShowChooseMainRepositoryPathPopup(EditorWindow context = null)
+		{
+			var rootProjectPath = UniGitPathHelper.ProjectPath;
+
+            var repoPath = EditorUtility.OpenFolderPanel("Repository Path", rootProjectPath, "");
+			if (string.IsNullOrEmpty(repoPath))
+			{
+				return;
+			}
+
+			bool isRootPath = UniGitPathHelper.PathsEqual(repoPath, rootProjectPath);
+			bool isChildOfRoot = UniGitPathHelper.IsSubDirectoryOf(repoPath, rootProjectPath);
+
+            if (isRootPath || isChildOfRoot)
+			{
+				if (isRootPath)
+				{
+					EditorPrefs.DeleteKey(UniGitLoader.RepoPathKey);
+				}
+				else
+				{
+					string localPath = repoPath.Replace(rootProjectPath + UniGitPathHelper.UnityDeirectorySeparatorChar, "");
+					EditorPrefs.SetString(UniGitLoader.RepoPathKey, localPath);
+				}
+
+				paths.SetRepoPath(repoPath);
+				initializer.RecompileSoft();
+            }
+			else if(context)
+			{
+				context.ShowNotification(new GUIContent("Invalid Path !"));
+			}
+		}
+
 		public void SaveSettingsToFile()
 		{
 			if(!initializer.IsValidRepo) return;
 
 			ValidateSettingsPath();
-			string settingsFilePath = settingsPath;
+			string settingsFilePath = paths.SettingsFilePath;
 
 			try
 			{

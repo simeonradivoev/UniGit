@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Assets.Plugins.UniGit.Editor.Hooks;
 using UniGit.Adapters;
 using UniGit.Settings;
@@ -15,6 +14,7 @@ namespace UniGit
 	[InitializeOnLoad]
 	public static class UniGitLoader
 	{
+		public static string RepoPathKey => "UniGit_MainRepositoryLocalPath_" + Application.productName;
 		public static GitManager GitManager;
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
@@ -37,14 +37,14 @@ namespace UniGit
 
 				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
 
-				string repoPath = GitManager.FixUnityPath(Application.dataPath.Replace(UniGitPath.UnityDeirectorySeparatorChar + "Assets", ""));
-				string settingsPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "Settings.json");
-				string logPath = UniGitPath.Combine(repoPath, ".git", "UniGit", "log.txt");
+				string repoPath = UniGitPathHelper.ProjectPath;
+                if (EditorPrefs.HasKey(RepoPathKey))
+				{
+					repoPath = UniGitPathHelper.FixUnityPath(UniGitPathHelper.Combine(repoPath, EditorPrefs.GetString(RepoPathKey)));
+				}
 
+                injectionHelper.Bind<UniGitPaths>().FromInstance(new UniGitPaths(repoPath));
 				injectionHelper.Bind<GitInitializer>().NonLazy();
-				injectionHelper.Bind<string>().FromInstance(repoPath).WithId("repoPath");
-				injectionHelper.Bind<string>().FromInstance(settingsPath).WithId("settingsPath");
-				injectionHelper.Bind<string>().FromInstance(logPath).WithId("logPath");
 				injectionHelper.Bind<UniGitData>().FromMethod(c => uniGitData); //must have a getter so that it can be injected 
 				injectionHelper.Bind<GitCallbacks>().FromMethod(GetGitCallbacks);
 				injectionHelper.Bind<IGitPrefs>().To<UnityEditorGitPrefs>();
@@ -242,9 +242,9 @@ namespace UniGit
 
 		private static void HandlePaths()
 		{
-			AddPath(UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2"));
-			AddPath(UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86"));
-			AddPath(UniGitPath.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86_64"));
+			AddPath(UniGitPathHelper.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2"));
+			AddPath(UniGitPathHelper.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86"));
+			AddPath(UniGitPathHelper.Combine(Environment.CurrentDirectory,"Assets","Plugins","LibGit2","x86_64"));
 		}
 
 		private static void AddPath(string path)

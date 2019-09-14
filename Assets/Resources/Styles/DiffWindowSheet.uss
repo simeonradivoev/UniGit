@@ -1,0 +1,3 @@
+#DiffWindow{
+    flex-grow: 1;
+}

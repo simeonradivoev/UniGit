@@ -20,11 +20,11 @@ namespace UniGit.Utils
 
 			List<string> filesToCopy = new List<string>
 			{
-				Application.dataPath.Replace("Assets", UniGitPath.Combine("Library", "ScriptAssemblies", "UniGit.dll")), 
-				Application.dataPath.Replace("Assets", UniGitPath.Combine("Library", "ScriptAssemblies", "UniGit.dll.mdb")), 
-				UniGitPath.Combine(Application.dataPath, "Plugins", "UniGit", "Editor", "UniGitResources.dll"),
-				UniGitPath.Combine(Application.dataPath, "Plugins", "UniGit", "Editor", "UniGitResources.dll.mdb"),
-				UniGitPath.Combine(Application.dataPath, "Plugins", "UniGit", "Editor", "UniGitResources.pdb")
+				Application.dataPath.Replace("Assets", UniGitPathHelper.Combine("Library", "ScriptAssemblies", "UniGit.dll")), 
+				Application.dataPath.Replace("Assets", UniGitPathHelper.Combine("Library", "ScriptAssemblies", "UniGit.dll.mdb")), 
+				UniGitPathHelper.Combine(Application.dataPath, "Plugins", "UniGit", "Editor", "UniGitResources.dll"),
+				UniGitPathHelper.Combine(Application.dataPath, "Plugins", "UniGit", "Editor", "UniGitResources.dll.mdb"),
+				UniGitPathHelper.Combine(Application.dataPath, "Plugins", "UniGit", "Editor", "UniGitResources.pdb")
 			};
 
 			foreach (var file in filesToCopy)

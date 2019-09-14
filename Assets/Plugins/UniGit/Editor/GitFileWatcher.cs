@@ -4,7 +4,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using LibGit2Sharp;
 using UniGit.Utils;
-using UnityEngine;
 
 namespace UniGit
 {
@@ -49,8 +48,8 @@ namespace UniGit
 		private void CreateWatchers()
 		{
 			string rootedPath = gitManager.GetCurrentRepoPath();
-			string projectPath = rootedPath.Replace(GitManager.FixUnityPath(Application.dataPath).Replace("Assets",""), "");
-			if (!GitManager.IsPathInAssetFolder(projectPath))
+			string projectPath = rootedPath.Replace(UniGitPathHelper.ProjectPath, "");
+			if (!UniGitPathHelper.IsPathInAssetFolder(projectPath))
 			{
 				var mainFileWatcher = new FileSystemWatcher(rootedPath)
 				{

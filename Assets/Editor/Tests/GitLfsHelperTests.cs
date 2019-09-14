@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using UniGit;
 using UniGit.Utils;
 
 public class GitLfsHelperTests
@@ -14,7 +15,7 @@ public class GitLfsHelperTests
 			"NavMesh*.asset filter=lfs diff=lfs merge=lfs -text"
 		};
 		var fileReaderMock = new FileLinesReaderMock(lines);
-		var helper = new GitLfsHelper("", fileReaderMock);
+		var helper = new GitLfsHelper(new UniGitPaths(""), fileReaderMock);
 
 		Assert.IsTrue(helper.IsLfsPath("C:\\UniGit\\Test\\Image.jpg"));
 		Assert.IsTrue(helper.IsLfsPath("C:\\UniGit\\Test\\LightingData.asset"));

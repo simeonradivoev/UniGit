@@ -1,5 +1,6 @@
 ﻿using System;
 using LibGit2Sharp;
+using UniGit.Utils;
 using UnityEngine;
 
 namespace UniGit.Status
@@ -14,7 +15,7 @@ namespace UniGit.Status
 
 		public GitStatusSubModuleEntry(Submodule submodule)
 		{
-			path = GitManager.FixUnityPath(submodule.Path);
+			path = UniGitPathHelper.FixUnityPath(submodule.Path);
 			url = submodule.Url;
 			workDirId = submodule.WorkDirCommitId.Sha;
 			status = submodule.RetrieveStatus();

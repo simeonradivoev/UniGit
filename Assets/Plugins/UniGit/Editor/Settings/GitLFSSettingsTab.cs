@@ -27,7 +27,7 @@ namespace UniGit.Settings
 			this.lfsManager = lfsManager;
 		}
 
-		internal override void OnGUI(Rect rect, Event current)
+		internal override void OnGUI()
 		{
 
 			if (!lfsManager.Installed)
@@ -94,7 +94,7 @@ namespace UniGit.Settings
 					{
 						PopupWindow.Show(trackFileRect, injectionHelper.CreateInstance<GitLfsTrackPopupWindow>());
 					}
-					if (current.type == EventType.Repaint)
+					if (Event.current.type == EventType.Repaint)
 					{
 						trackFileRect = GUILayoutUtility.GetLastRect();
 					}

@@ -21,7 +21,7 @@ namespace UniGit.Settings
 			this.externalManager = externalManager;
 		}
 
-		internal override void OnGUI(Rect rect, Event current)
+		internal override void OnGUI()
 		{
 			if (gitSettings == null) return;
 

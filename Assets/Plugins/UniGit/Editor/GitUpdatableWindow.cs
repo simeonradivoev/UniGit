@@ -4,6 +4,7 @@ using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace UniGit
 {
@@ -20,13 +21,24 @@ namespace UniGit
 		[NonSerialized] private bool lastHadFocus;
 		[NonSerialized] private bool isDirty;
 		[NonSerialized] protected GitInitializer initializer;
+		[NonSerialized] protected GitSettingsManager settingsManager;
+		[NonSerialized] protected UniGitPaths paths;
 
-		protected virtual void OnEnable()
+        #region VisualElements
+
+        private VisualElement invalidRepoElement;
+        private Label invalidRepoPathLabel;
+
+        #endregion
+
+        protected virtual void OnEnable()
 		{
 			GitWindows.AddWindow(this);
 			if(gitManager != null)
 				titleContent.image = gitManager.GetGitStatusIcon();
-		}
+
+			ConstructGUI(rootVisualElement);
+        }
 
         [UniGitInject]
 		private void Construct(GitManager gitManager,
@@ -35,8 +47,12 @@ namespace UniGit
 	        ILogger logger,
 	        GitSettingsJson gitSettings,
 	        GitCallbacks gitCallbacks,
-	        GitInitializer initializer)
+	        GitInitializer initializer,
+	        GitSettingsManager settingsManager,
+	        UniGitPaths paths)
 		{
+			this.paths = paths;
+			this.settingsManager = settingsManager;
 			this.logger = logger;
 			this.gitSettings = gitSettings;
 			this.initializer = initializer;
@@ -67,6 +83,34 @@ namespace UniGit
 		}
 
 		#endregion
+
+		protected virtual void ConstructGUI(VisualElement root)
+		{
+			root.styleSheets.Add(Resources.Load<StyleSheet>("Styles/RootSheet"));
+
+            invalidRepoElement = root.Q("InvalidRepository");
+            invalidRepoPathLabel = invalidRepoElement.Q<Label>("RepoPath");
+            var findRepositoryButton = root.Q<Button>("FindRepository");
+
+            invalidRepoElement.styleSheets.Add(Resources.Load<StyleSheet>("Styles/InvalidRepositorySheet"));
+			if (invalidRepoElement != null)
+			{
+				invalidRepoElement.Q<Button>("CreateRepository").clickable.clicked += () =>
+				{
+					if (!initializer.IsValidRepo)
+					{
+						initializer.InitializeRepositoryAndRecompile();
+					}
+				};
+            }
+
+			findRepositoryButton.clickable.clicked += () =>
+			{
+				settingsManager.ShowChooseMainRepositoryPathPopup(this);
+			};
+
+			invalidRepoPathLabel.text = this.paths.RepoPath;
+        }
 
 		protected virtual void Subscribe(GitCallbacks callbacks)
 		{
@@ -156,6 +200,17 @@ namespace UniGit
 			isDirty = true;
 		}
 
+		protected virtual void Update()
+		{
+			bool validRepo = gitManager != null && initializer.IsValidRepo;
+			if (invalidRepoElement != null)
+			{
+				invalidRepoElement.style.display = !validRepo ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
+			invalidRepoPathLabel.text = this.paths.RepoPath;
+        }
+
 		protected void OnDisable()
 		{
 			GitWindows.RemoveWindow(this);
@@ -181,38 +236,17 @@ namespace UniGit
 
 		#endregion
 
-		public bool IsInitialized
-		{
-			get { return initialized; }
-		}
+		public bool IsInitialized => initialized;
 
-		public bool HasFocus
-		{
-			get
-			{
-				return reflectionHelper.HasFocusFucntion.Invoke(this);
-			}
-		}
+		public bool HasFocus => reflectionHelper.HasFocusFucntion.Invoke(this);
 
-		public virtual bool IsWatching
-		{
-			get { return HasFocus; }
-		}
+		public virtual bool IsWatching => HasFocus;
 
-		public bool IsValid
-		{
-			get { return this; }
-		}
+		public bool IsValid => this;
 
-		protected bool LastHadFocus
-		{
-			get { return lastHadFocus; }
-		}
+		protected bool LastHadFocus => lastHadFocus;
 
-		protected bool IsDirty
-		{
-			get { return isDirty; }
-		}
+		protected bool IsDirty => isDirty;
 
 		protected abstract void OnGitUpdate(GitRepoStatus status,string[] paths);
 		protected abstract void OnInitialize();

@@ -77,11 +77,11 @@ namespace UniGit
 			var asset = AssetDatabase.LoadAssetAtPath<MonoScript>(manager.ToProjectPath(blameLocalPath));
 			if (asset != null)
 			{
-				lines = asset.text.Split(new[] { UniGitPath.NewLineChar }, StringSplitOptions.None);
+				lines = asset.text.Split(new[] { UniGitPathHelper.NewLineChar }, StringSplitOptions.None);
 			}
 			else
 			{
-				lines = File.ReadAllLines(UniGitPath.Combine(manager.GetCurrentRepoPath(),blameLocalPath));
+				lines = File.ReadAllLines(UniGitPathHelper.Combine(manager.GetCurrentRepoPath(),blameLocalPath));
 			}
 			
 			commitLog = manager.Repository.Commits.QueryBy(blameLocalPath).Where(e => blameHunk.Any(h => h.FinalCommit.Sha == e.Commit.Sha)).ToArray();

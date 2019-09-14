@@ -4,7 +4,6 @@ using System.Linq;
 using System.Security;
 using LibGit2Sharp;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace UniGit.Utils

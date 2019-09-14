@@ -2,6 +2,7 @@
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace UniGit.Settings
 {
@@ -37,7 +38,7 @@ namespace UniGit.Settings
 			gitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
 		}
 
-		internal abstract void OnGUI(Rect rect, Event current);
+		internal abstract void OnGUI();
 
 		protected virtual void OnInitialize()
 		{
@@ -53,6 +54,11 @@ namespace UniGit.Settings
 		{
 			hasFocused = false;
 			initilized = false;
+		}
+
+		public virtual VisualElement ConstructContents()
+		{
+			return new IMGUIContainer(OnGUI);
 		}
 
 		public virtual void OnGitUpdate(GitRepoStatus status, string[] paths)

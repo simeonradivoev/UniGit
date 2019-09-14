@@ -1,11 +1,13 @@
 ﻿using System;
-using JetBrains.Annotations;
+using System.Linq;
 using LibGit2Sharp;
 using UniGit.Settings;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace UniGit
 {
@@ -14,18 +16,27 @@ namespace UniGit
 		private const float AnimationDuration = 0.4f;
 		private const string WindowTitle = "Git Settings";
 
-		private GitSettingsTab[] tabs;
+		[NonSerialized] private VisualElement[] tabs;
+		[NonSerialized] private ToolbarButton[] toolbarButtons;
 		[SerializeField] private int tab;
-		private int lastTabIndex;
+		private int lastTabIndex = -1;
 		private readonly InjectionHelper injectionHelper = new InjectionHelper();
-		private GitOverlay gitOverlay;
 		private GitAnimation gitAnimation;
 		private GitAnimation.GitTween animationTween;
 
+		#region Visual Elements
+
+		private VisualElement settingsWindowElement;
+		private VisualElement settingsTabsElement;
+		private VisualElement tabsToolbar;
+		private Button helpButton;
+		private Button donateButton;
+
+		#endregion
+
         [UniGitInject]
-		private void Construct(InjectionHelper parentInjectionHelper,GitOverlay gitOverlay,GitAnimation gitAnimation)
+		private void Construct(InjectionHelper parentInjectionHelper,GitAnimation gitAnimation)
         {
-	        this.gitOverlay = gitOverlay;
 	        this.gitAnimation = gitAnimation;
 			injectionHelper.SetParent(parentInjectionHelper);
             injectionHelper.Bind<GitSettingsTab>().To<GitGeneralSettingsTab>();
@@ -51,20 +62,57 @@ namespace UniGit
 			{
 				foreach (var settingsTab in tabs)
 				{
-					settingsTab.Dispose();
+					((GitSettingsTab)settingsTab.userData).Dispose();
 				}
 				tabs = null;
 			}
 
 			try
 			{
-				tabs = injectionHelper.GetInstances<GitSettingsTab>().ToArray();
+				var tabsArray = injectionHelper.GetInstances<GitSettingsTab>().ToArray();
+				tabs = tabsArray.Select(t => t.ConstructContents()).ToArray();
+				toolbarButtons = tabsArray.Select(t => new ToolbarButton()).ToArray();
+
+                for (int i = 0; i < tabsArray.Length; i++)
+				{
+					tabs[i].userData = tabsArray[i];
+					tabsToolbar.Add(toolbarButtons[i]);
+                    InitTabVisuals(i, tabsArray[i],tabs[i], toolbarButtons[i]);
+				}
 			}
 			catch (Exception e)
 			{
 				logger.Log(LogType.Error,"There was a problem while creating the settings window tabs.");
 				logger.LogException(e);
 			}
+		}
+
+		private void InitTabVisuals(int tabIndex, GitSettingsTab tabData,VisualElement tabVisualElement,ToolbarButton toolbarButton)
+		{
+			tabVisualElement.style.display = tabIndex == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+			tabVisualElement.style.position = Position.Absolute;
+			tabVisualElement.style.top = 0;
+			tabVisualElement.style.right = 0;
+			tabVisualElement.style.left = 0;
+			tabVisualElement.style.bottom = 0;
+			settingsTabsElement.Add(tabVisualElement);
+
+			toolbarButton.text = tabData.Name.text;
+			toolbarButton.userData = tabIndex;
+			toolbarButton.SetEnabled(tabIndex != 0);
+
+            toolbarButton.clickable.clicked += () =>
+			{
+				if (this.tab != tabIndex)
+				{
+					lastTabIndex = this.tab;
+					toolbarButtons[this.tab].SetEnabled(true);
+					this.tab = tabIndex;
+					toolbarButtons[tabIndex].SetEnabled(false);
+                    animationTween = gitAnimation.StartAnimation(AnimationDuration, this,
+						GitSettingsJson.AnimationTypeEnum.Settings);
+				}
+			};
 		}
 
 		protected override void OnInitialize()
@@ -74,14 +122,14 @@ namespace UniGit
 			{
 				InitTabs();
 			}
-			if(currentTab != null) currentTab.OnFocus();
+			currentTab?.OnFocus();
 			OnGitUpdate(null, null);
 		}
 
 		protected override void OnLostFocus()
 		{
 			base.OnLostFocus();
-			if (currentTab != null) currentTab.OnLostFocus();
+			currentTab?.OnLostFocus();
 			LoseFocus();
 		}
 
@@ -95,91 +143,75 @@ namespace UniGit
 			
 		}
 
-		[UsedImplicitly]
-		private void OnGUI()
+		protected override void Update()
 		{
-			if (gitManager == null || !initializer.IsValidRepo)
+			base.Update();
+
+			bool validRepo = gitManager != null && initializer.IsValidRepo;
+			settingsWindowElement.style.display = validRepo && gitManager.Repository != null ? DisplayStyle.Flex : DisplayStyle.None;
+
+			if (validRepo)
 			{
-				GitHistoryWindow.InvalidRepoGUI(initializer);
-				return;
+				AnimateTabs();
 			}
+        }
 
-			Event current = Event.current;
-
-			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-			EditorGUI.BeginChangeCheck();
-			if (tabs != null)
+		private void AnimateTabs()
+		{
+			if (animationTween.Valid)
 			{
-				for (int i = 0; i < tabs.Length; i++)
+				float animTime = GitAnimation.ApplyEasing(animationTween.Percent);
+				int animDir = (int)Mathf.Sign(tab - lastTabIndex);
+
+				if (lastTabElement != null)
 				{
-					bool value = GUILayout.Toggle(tab == i, tabs[i].Name, EditorStyles.toolbarButton);
-					if (tab != i && value)
-					{
-						lastTabIndex = tab;
-						tab = i;
-						animationTween = gitAnimation.StartAnimation(AnimationDuration,this,GitSettingsJson.AnimationTypeEnum.Settings);
-					}
+					float pos = (1 - animTime) * -animDir * settingsTabsElement.contentRect.width;
+
+					lastTabElement.style.right = -pos;
+					lastTabElement.style.left = pos;
+
+					lastTabElement.style.display = DisplayStyle.Flex;
+				}
+
+				if (currentTabElement != null)
+				{
+					float pos = animTime * animDir * settingsTabsElement.contentRect.width;
+					currentTabElement.style.right = -pos;
+					currentTabElement.style.left = pos;
+					currentTabElement.style.display = DisplayStyle.Flex;
 				}
 			}
-			if (EditorGUI.EndChangeCheck())
+			else
 			{
-				LoseFocus();
-				if(currentTab != null) currentTab.OnFocus();
-			}
-			GUILayout.FlexibleSpace();
-			if (GitGUI.LinkButtonLayout(gitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
-			{
-				GitLinks.GoTo(GitLinks.Donate);
-			}
-			if (GitGUI.LinkButtonLayout(GitGUI.Contents.Help, GitGUI.Styles.IconButton))
-			{
-				GitLinks.GoTo(GitLinks.SettingsWindowHelp);
-			}
-			EditorGUILayout.EndHorizontal();
-			Rect lastRect = new Rect(0,0,position.width,EditorGUIUtility.singleLineHeight * 1.5f);
-
-			EditorGUILayout.Space();
-			if (gitManager.Repository != null)
-			{
-				Rect localRect = new Rect(0, 0, position.width, position.height - lastRect.y - lastRect.height);
-				if (animationTween.Valid)
+				if (currentTabElement != null)
 				{
-					float animTime = GitAnimation.ApplyEasing(animationTween.Percent);
-					int animDir = (int)Mathf.Sign(tab - lastTabIndex);
-					Matrix4x4 lastMatrix = GUI.matrix;
-					GUI.matrix = lastMatrix * Matrix4x4.Translate(new Vector3(localRect.width * (1-animTime) * -animDir, 0));
-					if (lastTab != null)
-					{
-						GUILayout.BeginArea(new Rect(0,lastRect.y + lastRect.height,localRect.width,localRect.height));
-						lastTab.OnGUI(localRect,current);
-						GUILayout.EndArea();
-					}
-					GUI.matrix = lastMatrix * Matrix4x4.Translate(new Vector3(localRect.width * animTime * animDir, 0));
-					if (currentTab != null)
-					{
-						GUILayout.BeginArea(new Rect(0,lastRect.y + lastRect.height,localRect.width,localRect.height));
-						currentTab.OnGUI(localRect,current);
-						GUILayout.EndArea();
-					}
-					GUI.matrix = lastMatrix;
+					currentTabElement.style.display = DisplayStyle.Flex;
 				}
-				else
-				{
-					if (currentTab != null)
-					{
-						GUILayout.BeginArea(new Rect(0,lastRect.y + lastRect.height,localRect.width,localRect.height));
-						currentTab.OnGUI(localRect,current);
-						GUILayout.EndArea();
-					}
-				}
-				
-			}
-			EditorGUILayout.Space();
 
-			if (current.type == EventType.MouseDown)
-			{
-				LoseFocus();
+				if (lastTabElement != null)
+				{
+					lastTabElement.style.display = DisplayStyle.None;
+				}
 			}
+        }
+
+		protected override void ConstructGUI(VisualElement root)
+		{
+			var uxml = Resources.Load<VisualTreeAsset>("Styles/SettingsWindow");
+			var uss = Resources.Load<StyleSheet>("Styles/SettingsWindowSheet");
+			uxml.CloneTree(root);
+			root.styleSheets.Add(uss);
+
+            base.ConstructGUI(root);
+
+            settingsWindowElement = root.Q("SettingsWindow");
+            settingsTabsElement = root.Q("SettingsTabs");
+            tabsToolbar = root.Q("TabsToolbar");
+            helpButton = root.Q<Button>("Help");
+            donateButton = root.Q<Button>("Donate");
+
+            helpButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.SettingsWindowHelp);
+			donateButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.Donate);
 		}
 
 		protected override void OnGitUpdate(GitRepoStatus status, string[] paths)
@@ -216,39 +248,45 @@ namespace UniGit
 			{
 				foreach (var settingsTab in tabs)
 				{
-					settingsTab.Dispose();
+					((GitSettingsTab)settingsTab.userData).Dispose();
 				}
 
 				tabs = null;
 			}
 		}
 
-		private GitSettingsTab lastTab
+		private VisualElement lastTabElement
 		{
 			get
 			{
 				if (tabs == null) return null;
-				int tabIndex = Mathf.Max(lastTabIndex, 0);
+				if (lastTabIndex < 0) return null;
+				int tabIndex = lastTabIndex;
 				if (tabIndex < tabs.Length)
 					return tabs[tabIndex];
 				return null;
 			}
 		}
 
-		private GitSettingsTab currentTab
+		private VisualElement currentTabElement
 		{
 			get
 			{
 				if (tabs == null) return null;
-				int tabIndex = Mathf.Max((int)tab, 0);
+				if (tab < 0) return null;
+				int tabIndex = tab;
 				if (tabIndex < tabs.Length)
 					return tabs[tabIndex];
 				return null;
 			}
 		}
 
-		//we don't have any need to Git Status in settings
-		public override bool IsWatching
+        private GitSettingsTab lastTab => (GitSettingsTab)lastTabElement?.userData;
+
+        private GitSettingsTab currentTab => (GitSettingsTab) currentTabElement?.userData;
+
+        //we don't have any need to Git Status in settings
+        public override bool IsWatching
 		{
 			get { return false; }
 		}

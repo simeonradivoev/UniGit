@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using JetBrains.Annotations;
 using LibGit2Sharp;
 using UniGit.Status;
@@ -11,7 +10,9 @@ using UniGit.Utils;
 using UniGit.Windows.Diff;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
+using PopupWindow = UnityEditor.PopupWindow;
 
 namespace UniGit
 {
@@ -55,7 +56,13 @@ namespace UniGit
 		private GitDiffWindowDiffElementRenderer diffElementRenderer;
 		private Rect diffScrollContentRect;
 
-		[Serializable]
+		#region Visual Elements
+
+		private VisualElement diffWindowElement;
+
+        #endregion
+
+        [Serializable]
 		public class Settings
 		{
 			public FileStatus showFileStatusTypeFilter = (FileStatus)(-1);
@@ -334,31 +341,55 @@ namespace UniGit
 		private void OnGUI()
 		{
 			CreateStyles();
+		}
 
-			if (gitManager == null || !initializer.IsValidRepo)
+		protected override void ConstructGUI(VisualElement root)
+		{
+			var uxml = Resources.Load<VisualTreeAsset>("Styles/DiffWindow");
+			var uss = Resources.Load<StyleSheet>("Styles/DiffWindowSheet");
+
+			uxml.CloneTree(root);
+			root.styleSheets.Add(uss);
+
+            base.ConstructGUI(root);
+
+            diffWindowElement = root.Q("DiffWindow");
+
+            var diffImgui = new IMGUIContainer(MainGUI);
+            diffWindowElement.Add(diffImgui);
+			diffImgui.style.flexGrow = 1;
+		}
+
+		protected override void Update()
+		{
+			base.Update();
+
+			bool validRepo = gitManager != null && initializer.IsValidRepo;
+			if (diffWindowElement != null)
 			{
-				GitHistoryWindow.InvalidRepoGUI(initializer);
-				return;
-			}
+				diffWindowElement.style.display = validRepo && gitManager.Repository != null ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+		}
 
-			if (gitManager.Repository == null) return;
+		private void MainGUI()
+		{
 			RepositoryInformation repoInfo = gitManager.Repository.Info;
 			GUILayout.BeginArea(CommitRect);
-			gitDiffWindowCommitRenderer.DoCommit(repoInfo,this,ref commitScroll);
+			gitDiffWindowCommitRenderer.DoCommit(repoInfo, this, ref commitScroll);
 			GUILayout.EndArea();
 
-			toolbarRenderer.DoDiffToolbar(DiffToolbarRect,this,ref filter);
+			toolbarRenderer.DoDiffToolbar(DiffToolbarRect, this, ref filter);
 
 			if (diffWindowStatusList == null)
 			{
-				if(gitSettings.AnimationType.HasFlag(GitSettingsJson.AnimationTypeEnum.Loading)) Repaint();
+				if (gitSettings.AnimationType.HasFlag(GitSettingsJson.AnimationTypeEnum.Loading)) Repaint();
 				GitGUI.DrawLoading(new Rect(0, 0, position.width, position.height), GitGUI.GetTempContent(GetStatusBuildingState()));
 			}
 			else
 			{
 				DoDiffScroll(Event.current);
 			}
-			
+
 
 			editoSerializedObject.ApplyModifiedProperties();
 
@@ -367,7 +398,7 @@ namespace UniGit
 				GUIUtility.keyboardControl = 0;
 				GUI.FocusControl(null);
 			}
-		}
+        }
 
 		internal float CalculateCommitTextHeight()
 		{
@@ -807,7 +838,7 @@ namespace UniGit
 		private SelectionId CreateSelectionId(StatusListEntry entry)
 		{
 			string projectPath = gitManager.ToProjectPath(entry.LocalPath);
-			string guid = GitManager.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
+			string guid = UniGitPathHelper.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
 			return string.IsNullOrEmpty(guid) ? new SelectionId(projectPath,true) : new SelectionId(guid,false);
 		}
 
@@ -883,7 +914,7 @@ namespace UniGit
 		internal void DeleteAsset(string localPath)
 		{
 			string projectPath = gitManager.ToProjectPath(localPath);
-			if (GitManager.IsPathInAssetFolder(projectPath))
+			if (UniGitPathHelper.IsPathInAssetFolder(projectPath))
 			{
 				AssetDatabase.DeleteAsset(projectPath);
 			}

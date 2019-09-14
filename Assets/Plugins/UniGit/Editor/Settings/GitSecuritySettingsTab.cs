@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Security;
-using CredentialManagement;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
@@ -29,7 +28,7 @@ namespace UniGit.Settings
 			this.gitOverlay = gitOverlay;
 		}
 
-		internal override void OnGUI(Rect rect, Event current)
+		internal override void OnGUI()
 		{
 			EditorGUILayout.BeginHorizontal();
 			if (gitSettings != null)
@@ -243,7 +242,7 @@ namespace UniGit.Settings
 			{
 				PopupWindow.Show(addCredentialsRect, new AddCredentialPopup(credentialsManager));
 			}
-			if (current.type == EventType.Repaint)
+			if (Event.current.type == EventType.Repaint)
 			{
 				addCredentialsRect = GUILayoutUtility.GetLastRect();
 			}

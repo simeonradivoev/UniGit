@@ -1,0 +1,24 @@
+.container {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
+}
+
+.centeredWrapper{
+    align-items: center;
+    padding: 8px 8px 8px 8px;
+}
+
+.bigButton{
+    height: 32px;
+    bottom: 8px;
+    width: 128px;
+}
+
+.smallIconButton{
+	width: 14px;
+	height: 14px;
+	cursor: link;
+}

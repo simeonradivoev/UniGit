@@ -20,15 +20,19 @@ public class TestRepoFixture
 	public void Setup()
 	{
 	    injectionHelper = new InjectionHelper();
-		injectionHelper.Bind<string>().WithId("repoPath").FromInstance(@"D:\Test_Repo");
-		injectionHelper.Bind<string>().WithId("settingsPath").FromInstance(@"D:\Test_Repo\.git\UniGit\Settings.json");
-		injectionHelper.Bind<GitSettingsJson>().FromInstance(new GitSettingsJson {Threading = 0});
-		injectionHelper.Bind<GitCallbacks>();
+	    injectionHelper.Bind<UniGitPaths>().FromInstance(new UniGitPaths(@"D:\Test_Repo"));
+	    injectionHelper.Bind<GitSettingsJson>().FromInstance(new GitSettingsJson
+	    {
+		    Threading = 0
+	    });
+
+        injectionHelper.Bind<GitCallbacks>();
 		injectionHelper.Bind<IGitPrefs>().To<GitPrefs>();
 		injectionHelper.Bind<GitAsyncManager>();
 		injectionHelper.Bind<GitManager>();
 		injectionHelper.Bind<GitReflectionHelper>();
 		injectionHelper.Bind<GitOverlay>();
+		injectionHelper.Bind<GitSettingsManager>();
 		injectionHelper.Bind<IGitResourceManager>().To<GitResourceManagerMock>();
 		injectionHelper.Bind<ILogger>().FromInstance(Debug.unityLogger);
 		injectionHelper.Bind<UniGitData>();

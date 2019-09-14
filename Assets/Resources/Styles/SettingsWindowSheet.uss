@@ -1,0 +1,23 @@
+#SettingsWindow{
+    flex-grow: 1;
+}
+
+#SettingsTabs{
+    flex-grow: 1;
+}
+
+#TabsToolbar{
+	margin-bottom: 8px;
+}
+
+#Donate{
+	position: absolute;
+	right: 4px;
+	background-image: resource("Icons/donate");
+}
+
+#Help{
+	position: absolute;
+	right: 22px;
+	background-image: resource("_Help");
+}

@@ -170,14 +170,14 @@ namespace UniGit
 			var patch = gitManager.Repository.Diff.Compare<Patch>(oldTree.Tree, newTree.Tree, new[] { localPath }, explicitPathsOptions,compareOptions);
 			var changes = patch[localPath];
 			isBinary = changes.IsBinaryComparison;
-			return changes.Patch.Split(UniGitPath.NewLineChar);
+			return changes.Patch.Split(UniGitPathHelper.NewLineChar);
 		}
 
 		private void BuildChangeSections(Commit commit)
 		{
 			int lastIndexFileLine = 0;
 			Stream indexFileContent;
-			string indexFilePath = UniGitPath.Combine(gitManager.GetCurrentRepoPath(), localPath);
+			string indexFilePath = UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), localPath);
 			if (File.Exists(indexFilePath))
 			{
 				indexFileContent = File.OpenRead(indexFilePath);

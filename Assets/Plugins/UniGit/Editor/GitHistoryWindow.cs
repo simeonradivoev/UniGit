@@ -8,7 +8,6 @@ using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using PopupWindow = UnityEditor.PopupWindow;
@@ -24,8 +23,6 @@ namespace UniGit
 		private const int CommitsPerExpand = 8;
 		private const int MaxFirstCommitCount = 16;
 		public const int ProfilePixtureSize = 32;
-
-		private Rect toolbarRect { get { return new Rect(0,0,position.width, EditorGUIUtility.singleLineHeight);} }
 
 		private List<string> lodingProfilePicturesToRemove; 
 		private Dictionary<string, WWW> loadingProfilePictures;
@@ -50,9 +47,8 @@ namespace UniGit
 		private GitOverlay gitOverlay;
 		private InjectionHelper injectionHelper;
 
-        #region Visual Elements
+		#region Visual Elements
 
-        private VisualElement invalidRepoElement;
         private VisualElement commitsWindowElement;
         private VisualElement commitsElement;
         private VisualElement toolbarElement;
@@ -129,9 +125,10 @@ namespace UniGit
 		private void Construct(GitExternalManager externalManager, 
 	        GitAsyncManager asyncManager,
 	        GitOverlay gitOverlay,
-	        InjectionHelper injectionHelper)
-        {
-	        this.gitOverlay = gitOverlay;
+	        InjectionHelper injectionHelper,
+	        GitSettingsManager settingsManager)
+		{
+			this.gitOverlay = gitOverlay;
 			this.externalManager = externalManager;
 			this.asyncManager = asyncManager;
 	        this.injectionHelper = injectionHelper;
@@ -145,8 +142,6 @@ namespace UniGit
 			{
 				maxCommitsCount = MaxFirstCommitCount;
 			}
-
-			ConstructGUI(rootVisualElement);
 		}
 
 		protected override void OnGitUpdate(GitRepoStatus status,string[] path)
@@ -321,28 +316,20 @@ namespace UniGit
 		private const float helpBoxHeight = 38;
 		private readonly float commitSpacing = EditorGUIUtility.singleLineHeight / 2;
 
-		private void ConstructGUI(VisualElement root)
+		protected override void ConstructGUI(VisualElement root)
 		{
 			var uxml = Resources.Load<VisualTreeAsset>("Styles/HistoryWindow");
 			var uss = Resources.Load<StyleSheet>("Styles/HistoryWindowSheet");
 			uxml.CloneTree(root);
 			root.styleSheets.Add(uss);
 
-			toolbarElement = root.Q("Toolbar");
+			base.ConstructGUI(root);
 
-			invalidRepoElement = root.Q("InvalidRepository");
-			root.Q<Button>("CreateRepository").clickable.clicked += () =>
-			{
-				if (!initializer.IsValidRepo)
-				{
-					initializer.InitializeRepositoryAndRecompile();
-				}
-            };
+            toolbarElement = root.Q("Toolbar");
+            commitsWindowElement = root.Q("CommitsWindow");
+            commitsElement = root.Q("Commits");
 
-			commitsWindowElement = root.Q("CommitsWindow");
-			commitsElement = root.Q("Commits");
-
-			var mainGuiElement = new IMGUIContainer(MainGUI);
+            var mainGuiElement = new IMGUIContainer(MainGUI);
 			mainGuiElement.style.flexGrow = 1;
 
 			var toolbarImgui = new IMGUIContainer(DoToolbar);
@@ -358,11 +345,12 @@ namespace UniGit
         }
 
 		[UsedImplicitly]
-        private void Update()
+        protected override void Update()
 		{
+			base.Update();
 			bool validRepo = gitManager != null && initializer.IsValidRepo;
-            invalidRepoElement.style.display = !validRepo ? DisplayStyle.Flex : DisplayStyle.None;
-            commitsWindowElement.style.display = validRepo && gitManager.Repository != null && selectedBranch != null ? DisplayStyle.Flex : DisplayStyle.None;
+			commitsWindowElement.style.display = validRepo && gitManager.Repository != null && selectedBranch != null ? DisplayStyle.Flex : DisplayStyle.None;
+			toolbarElement.style.display = commitsWindowElement.style.display;
 		}
 
 		private void MainGUI()
@@ -997,47 +985,6 @@ namespace UniGit
 			}
 
 			return sBuilder.ToString(); // Return the hexadecimal string. 
-		}
-		#endregion
-
-		#region Invalid Repo GUI
-		internal static void InvalidRepoGUI(GitInitializer initializer)
-		{
-		    if (initializer == null)
-		    {
-		        Rect initilizingRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-                GitGUI.DrawLoading(new Rect(initilizingRect.x, initilizingRect.y, initilizingRect.width, initilizingRect.height), GitGUI.GetTempContent("Initializing..."));
-                return;
-            }
-
-			EditorGUILayout.BeginHorizontal();
-			GUILayout.FlexibleSpace();
-			GUILayout.Box(GitGUI.GetTempContent("Not a GIT Repository"), "NotificationBackground");
-			GUILayout.FlexibleSpace();
-			EditorGUILayout.EndHorizontal();
-
-			EditorGUILayout.BeginHorizontal();
-			GUILayout.FlexibleSpace();
-			//initialization tips
-			EditorGUILayout.HelpBox("If you have an existing remote repository and want to clone it, you will have to do so outside of the editor.", MessageType.Info);
-			GUILayout.FlexibleSpace();
-			EditorGUILayout.EndHorizontal();
-
-			GUILayout.FlexibleSpace();
-			EditorGUILayout.BeginHorizontal();
-			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(GitGUI.GetTempContent("Create"), GitGUI.Styles.LargeButton, GUILayout.Height(32), GUILayout.Width(128)))
-			{
-				if (EditorUtility.DisplayDialog("Initialize Repository", "Are you sure you want to initialize a Repository for your project", "Yes", "Cancel"))
-				{
-					
-					GUIUtility.ExitGUI();
-					return;
-				}
-			}
-			GUILayout.FlexibleSpace();
-			EditorGUILayout.EndHorizontal();
-			EditorGUILayout.Space();
 		}
 		#endregion
 

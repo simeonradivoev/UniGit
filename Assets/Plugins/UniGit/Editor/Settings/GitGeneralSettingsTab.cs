@@ -10,7 +10,9 @@ namespace UniGit.Settings
 	{
 		private readonly string[] autoRebaseOptions = { "never", "local", "remote", "always" };
 		private readonly GitLfsManager lfsManager;
+		private readonly GitSettingsManager settingsManager;
 		private Vector2 scroll;
+		private UniGitPaths paths;
 
 		[UniGitInject]
 		public GitGeneralSettingsTab(GitManager gitManager, 
@@ -19,13 +21,17 @@ namespace UniGit.Settings
 			UniGitData data,
 			GitSettingsJson gitSettings,
 			GitCallbacks gitCallbacks,
-			GitInitializer initializer) 
+			GitInitializer initializer,
+			GitSettingsManager settingsManager,
+			UniGitPaths paths) 
 			: base(new GUIContent("General"), gitManager, settingsWindow,data,gitSettings,gitCallbacks,initializer)
 		{
+			this.paths = paths;
 			this.lfsManager = lfsManager;
+			this.settingsManager = settingsManager;
 		}
 
-		internal override void OnGUI(Rect rect, Event current)
+		internal override void OnGUI()
 		{
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			//todo cache general settings to reduce lookup
@@ -101,9 +107,22 @@ namespace UniGit.Settings
 			}
 			EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(),MouseCursor.Link);
 			GUILayout.EndHorizontal();
-			
 
-			using (Configuration c = Configuration.BuildFrom(gitManager.GetCurrentDotGitFolder()))
+			EditorGUI.BeginDisabledGroup(true);
+			EditorGUILayout.TextField(new GUIContent("Repository Path"), paths.RepoPath);
+			EditorGUI.EndDisabledGroup();
+
+			GUILayout.BeginHorizontal();
+			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Main Path"));
+			if (GUILayout.Button("Select Main Repository Path", EditorStyles.miniButton))
+			{
+				settingsManager.ShowChooseMainRepositoryPathPopup(settingsWindow);
+				GUIUtility.ExitGUI();
+			}
+			GUILayout.EndHorizontal();
+
+			string currentConfigFolder = gitManager.GetCurrentDotGitFolder();
+            using (Configuration c = Configuration.BuildFrom(currentConfigFolder))
 			{
 				EditorGUILayout.LabelField(GitGUI.GetTempContent("User"), EditorStyles.boldLabel);
 				EditorGUI.indentLevel = 1;
@@ -177,7 +196,7 @@ namespace UniGit.Settings
 
 		private void OpenGitIgnore()
 		{
-			Application.OpenURL(UniGitPath.Combine(gitManager.GetCurrentRepoPath(), ".gitignore"));
+			Application.OpenURL(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitignore"));
 		}
 
 		public void AddItemsToMenu(GenericMenu menu)

@@ -2,7 +2,6 @@
 using System.Security;
 using CredentialManagement;
 using UniGit.Attributes;
-using UnityEngine;
 
 namespace UniGit.Adapters
 {

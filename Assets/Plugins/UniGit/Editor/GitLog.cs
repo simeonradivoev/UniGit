@@ -13,17 +13,17 @@ namespace UniGit
 {
 	public class GitLog : ILogHandler, IEnumerable<GitLog.LogEntry>, IDisposable
 	{
+		private readonly UniGitPaths paths;
 		private readonly UniGitData data;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitCallbacks gitCallbacks;
-		private readonly string logPath;
 		private Regex logTypeRegex;
 		private Regex lineAndNumberRegex;
 
 		[UniGitInject]
-		public GitLog(string logPath,UniGitData data,GitSettingsJson gitSettings,GitCallbacks gitCallbacks)
+		public GitLog(UniGitPaths paths,UniGitData data,GitSettingsJson gitSettings,GitCallbacks gitCallbacks)
 		{
-			this.logPath = logPath;
+			this.paths = paths;
 			this.data = data;
 			this.gitSettings = gitSettings;
 			this.gitCallbacks = gitCallbacks;
@@ -47,7 +47,7 @@ namespace UniGit
 			}
 			var entry = new LogEntry(logType, string.Format(format, args),DateTime.Now,StackTraceUtility.ExtractStackTrace());
 			data.LogEntries.Add(entry);
-			using (StreamWriter streamWriter = File.AppendText(logPath))
+			using (StreamWriter streamWriter = File.AppendText(paths.LogsFilePath))
 			{
 				streamWriter.WriteLine(FormatWithLogType(logType,format),args);
 				streamWriter.WriteLine(entry.StackTrace);
@@ -64,7 +64,7 @@ namespace UniGit
 			}
 			var entry = new LogEntry(LogType.Exception, exception.Message,DateTime.Now,StackTraceUtility.ExtractStringFromException(exception));
 			data.LogEntries.Add(entry);
-			using (StreamWriter streamWriter = File.AppendText(logPath))
+			using (StreamWriter streamWriter = File.AppendText(paths.LogsFilePath))
 			{
 				streamWriter.WriteLine(FormatWithLogType(LogType.Exception,exception.Message));
 			}
@@ -80,7 +80,7 @@ namespace UniGit
 		{
 			StringBuilder stringBuilder = null;
 
-			using(var logFileStream = File.Open(logPath, FileMode.OpenOrCreate))
+			using(var logFileStream = File.Open(paths.LogsFilePath, FileMode.OpenOrCreate))
 			using (StreamReader fileReader = new StreamReader(logFileStream))
 			{
 				LogEntry? currentEntry = null;
@@ -124,8 +124,8 @@ namespace UniGit
 			var match = lineAndNumberRegex.Match(stackTrace);
 			if (match.Success)
 			{
-				var path = match.Groups[2].Value.Replace(Path.DirectorySeparatorChar,UniGitPath.UnityDeirectorySeparatorChar).Trim();
-				return GitManager.IsPathInAssetFolder(path) && !string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path));
+				var path = match.Groups[2].Value.Replace(Path.DirectorySeparatorChar,UniGitPathHelper.UnityDeirectorySeparatorChar).Trim();
+				return UniGitPathHelper.IsPathInAssetFolder(path) && !string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path));
 			}
 			return false;
 		}
@@ -135,7 +135,7 @@ namespace UniGit
 			var match = lineAndNumberRegex.Match(stackTrace);
 			if (match.Success)
 			{
-				var path = match.Groups[2].Value.Replace(Path.DirectorySeparatorChar,UniGitPath.UnityDeirectorySeparatorChar).Trim();
+				var path = match.Groups[2].Value.Replace(Path.DirectorySeparatorChar,UniGitPathHelper.UnityDeirectorySeparatorChar).Trim();
 				int line;
 				if (int.TryParse(match.Groups[3].Value,out line))
 				{
@@ -164,7 +164,7 @@ namespace UniGit
 		public void Clear()
 		{
 			data.LogEntries.Clear();
-			File.WriteAllText(logPath,"");
+			File.WriteAllText(paths.LogsFilePath,"");
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()

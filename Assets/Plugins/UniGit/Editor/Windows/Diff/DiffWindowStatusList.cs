@@ -41,7 +41,7 @@ namespace UniGit.Windows.Diff
 		{
 			StatusListEntry statusEntry;
 
-			if (GitManager.IsMetaPath(entry.LocalPath))
+			if (UniGitPathHelper.IsMetaPath(entry.LocalPath))
 			{
 				string mainAssetPath = GitManager.AssetPathFromMeta(entry.LocalPath);
 				if (!gitSettings.ShowEmptyFolders && gitManager.IsEmptyFolder(mainAssetPath)) return;
@@ -110,7 +110,7 @@ namespace UniGit.Windows.Diff
 		{
 			foreach (var path in paths)
 			{
-				if (GitManager.IsMetaPath(path))
+				if (UniGitPathHelper.IsMetaPath(path))
 				{
 					var assetPath = GitManager.AssetPathFromMeta(path);
 					for (int i = entries.Count - 1; i >= 0; i--)
@@ -205,7 +205,7 @@ namespace UniGit.Windows.Diff
 		public string GetGuid(GitManager gitManager)
 		{
 			string projectPath = gitManager.ToProjectPath(localPath);
-			return GitManager.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
+			return UniGitPathHelper.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
 		}
 
 		public string LocalPath

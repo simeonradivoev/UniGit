@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Security;
-using CredentialManagement;
 using LibGit2Sharp;
 using UniGit.Utils;
 using UnityEditor;

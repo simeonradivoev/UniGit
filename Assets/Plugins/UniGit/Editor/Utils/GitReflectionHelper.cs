@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using UnityEditor;
-using UnityEngine.Assertions;
 
 namespace UniGit.Utils
 {
