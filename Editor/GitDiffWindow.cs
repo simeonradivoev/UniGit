@@ -743,7 +743,7 @@ namespace UniGit
 			}
 			else
 			{
-				logger.Log(LogType.Error,"Commit message file missing. Creating new file.");
+				logger.Log(LogType.Warning,"Commit message file missing. Creating new file.");
 				SaveCommitMessageToFile();
 			}
 		}
@@ -780,13 +780,13 @@ namespace UniGit
 
 	    private static void SaveCommitMessageToFile(GitInitializer initializer,GitSettingsJson gitSettings,string message)
 	    {
-	        try
-	        {
-	            string settingsFolder = initializer.GitSettingsFolderPath;
-	            if (!Directory.Exists(settingsFolder))
-	            {
-	                Directory.CreateDirectory(settingsFolder);
-	            }
+            try
+            {
+                string settingsFolder = initializer.GitSettingsFolderPath;
+                if (!Directory.Exists(settingsFolder))
+                {
+                    Directory.CreateDirectory(settingsFolder);
+                }
 
                 var commitMessageFilePath = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
                 var commitMessageFileDirectory = Path.GetDirectoryName(commitMessageFilePath);
@@ -797,8 +797,12 @@ namespace UniGit
                 }
 
                 File.WriteAllText(commitMessageFileDirectory, message);
-	        }
-	        catch (Exception e)
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Debug.LogWarning("Commit message file is forced to read only.");
+            }
+            catch (Exception e)
 	        {
 #if UNITY_EDITOR
 	            Debug.LogError("Could not save commit message to file. Saving to Prefs");
