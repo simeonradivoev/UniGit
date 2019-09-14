@@ -29,7 +29,7 @@
 			this.RepoPath = repoPath;
 
 			SettingsFolderPath = UniGitPathHelper.Combine(repoPath, ".git", "UniGit");
-            SettingsFilePath = UniGitPathHelper.Combine(SettingsFilePath, "Settings.json");
+            SettingsFilePath = UniGitPathHelper.Combine(SettingsFolderPath, "Settings.json");
             LogsFolderPath = SettingsFolderPath;
             LogsFilePath = UniGitPathHelper.Combine(LogsFolderPath, "log.txt");
             CredentialsFilePath = UniGitPathHelper.Combine(SettingsFolderPath, "Credentials.json");

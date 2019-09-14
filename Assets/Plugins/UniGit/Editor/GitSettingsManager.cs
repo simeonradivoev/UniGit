@@ -13,14 +13,12 @@ namespace UniGit
 		private readonly GitCallbacks gitCallbacks;
 		private readonly ILogger logger;
 		private readonly GitInitializer initializer;
-		private readonly GitManager gitManager;
 		private readonly UniGitPaths paths;
 
 		[UniGitInject]
-		public GitSettingsManager(UniGitPaths paths, GitSettingsJson settings,GitCallbacks gitCallbacks,ILogger logger,GitInitializer initializer, GitManager gitManager)
+		public GitSettingsManager(UniGitPaths paths, GitSettingsJson settings,GitCallbacks gitCallbacks,ILogger logger,GitInitializer initializer)
 		{
 			this.paths = paths;
-			this.gitManager = gitManager;
 			this.settings = settings;
 			this.gitCallbacks = gitCallbacks;
 			this.logger = logger;
@@ -75,8 +73,9 @@ namespace UniGit
 			{
 				settings.Copy(oldSettingsFile);
 				logger.Log(LogType.Log,"Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
-			}
-			SaveSettingsToFile();
+
+				SaveSettingsToFile();
+            }
 		}
 
 		public void ShowChooseMainRepositoryPathPopup(EditorWindow context = null)
