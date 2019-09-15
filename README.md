@@ -8,6 +8,7 @@ An open source GIT Unity3D editor plugin.
 ![UniGit Icon](https://i.imgur.com/k63M0tG.png)
 
 # Contents
+* [Wiki](https://github.com/simeonradivoev/UniGit/wiki)
 * [Features](#features)
 * [Screenshots](#screenshots)
 * [Installation](#installation)
@@ -49,9 +50,13 @@ For more info on all the features and how to use them, check out the [wiki](http
 ![Settings window](https://i.imgur.com/OcDCyEK.png)
 ### Git Log
 ![Git Log Window](https://i.imgur.com/sUUBBel.png)
+### Blame Window
+![Blame Window](https://i.imgur.com/33dmPAG.png)
+### Sub Modules
+![Sub Modules](https://i.imgur.com/tHSxZI8.png)
 
 # Installation
-In a unity project go to your `Packages` folder. Open `manifest.json` and add into into the dependencies the following line: 
+In a unity project go to your `Packages` folder. Open `manifest.json` and add into the dependencies the following line: 
 
 ```
 "uni-git": "https://github.com/simeonradivoev/UniGit.git"

@@ -18,8 +18,9 @@ namespace UniGit.Utils
 		public const string ReportIssue = "https://github.com/simeonradivoev/UniGit/issues/new";
 		public const string Wiki = "https://github.com/simeonradivoev/UniGit/wiki";
 		public const string GitLFS = "https://git-lfs.github.com/";
+        public const string ConfigurationHelp = "https://github.com/simeonradivoev/UniGit/wiki/Setup#configuration";
 
-		public static Tuple<string, string>[] Credits = 
+        public static Tuple<string, string>[] Credits = 
 		{
 			new Tuple<string, string>("Git Stash Icon : Christian Scheb","https://www.christianscheb.de"),
 			new Tuple<string, string>("Additional Icons : Freepik","https://www.flaticon.com/authors/freepik"),

@@ -93,7 +93,9 @@ namespace UniGit
 
             invalidRepoElement = root.Q("InvalidRepository");
             invalidRepoPathLabel = invalidRepoElement.Q<Label>("RepoPath");
-            var findRepositoryButton = root.Q<Button>("FindRepository");
+            var findRepositoryButton = invalidRepoElement.Q<Button>("FindRepository");
+            var invalidRepoHelpButton = invalidRepoElement.Q<Button>("Help");
+            invalidRepoHelpButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.ConfigurationHelp);
 
             invalidRepoElement.styleSheets.Add(resourceManager.LoadUniGitAsset<StyleSheet>("Editor/UI/InvalidRepositorySheet.uss"));
 			if (invalidRepoElement != null)

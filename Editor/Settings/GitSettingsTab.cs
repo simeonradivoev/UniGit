@@ -38,6 +38,14 @@ namespace UniGit.Settings
 			gitCallbacks.UpdateRepository += OnGitManagerUpdateInternal;
 		}
 
+        private void OnGUIInternal()
+        {
+            if (gitManager != null && initializer.IsValidRepo && initilized)
+            {
+                OnGUI();
+            }
+        }
+
 		internal abstract void OnGUI();
 
 		protected virtual void OnInitialize()
@@ -58,7 +66,7 @@ namespace UniGit.Settings
 
 		public virtual VisualElement ConstructContents()
 		{
-			return new IMGUIContainer(OnGUI);
+			return new IMGUIContainer(OnGUIInternal);
 		}
 
 		public virtual void OnGitUpdate(GitRepoStatus status, string[] paths)

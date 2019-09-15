@@ -32,3 +32,10 @@
     white-space: normal;
     color: rgba(0, 0, 0, 0.8)
 }
+
+#Help{
+    background-image: resource("_Help");
+    position: absolute;
+    right: 6px;
+    top: 6px;
+}
