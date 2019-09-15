@@ -5,7 +5,7 @@ An open source GIT Unity3D editor plugin.
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://github.com/simeonradivoev/UniGit/blob/master/LICENSE.md)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4A4LQGA69LQ5A)
 
-![UniGit Icon](https://github.com/simeonradivoev/UniGit/raw/master/Images/UnityGitIcon.png)
+![UniGit Icon](https://i.imgur.com/k63M0tG.png)
 
 # Contents
 * [Features](#features)
@@ -22,7 +22,7 @@ An open source GIT Unity3D editor plugin.
 * Secure Credentials Manager
 * Project View status icons
 * Open Source
-* Conflict resolvement 
+* Conflict resolvent 
 * Support for External programs like Tortoise Git
 * Support for Credential Managers like Windows Credentials Manager
 * (Beta) Support for Git LFS
@@ -31,26 +31,26 @@ An open source GIT Unity3D editor plugin.
 * In-Editor Diff Inspection
 * Git Log Window
 
-For more info on all the fetures and how to use them, chek out the [wiki](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage).
+For more info on all the features and how to use them, check out the [wiki](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage).
 
 # Screenshots
 ### History Window
-![Git history window](https://github.com/simeonradivoev/UniGit/raw/master/Images/HistoryScreenshot.png)
+![Git history window](https://i.imgur.com/ciX4Vdo.png)
 ### Diff Window
-![Git Diff Window](https://github.com/simeonradivoev/UniGit/raw/master/Images/DiffScreenshot.png)
+![Git Diff Window](https://i.imgur.com/EUWwd3L.png)
 ### Project View status overlays
-![Project View Overlays](https://github.com/simeonradivoev/UniGit/raw/master/Images/ProjectScreenshot.png)
+![Project View Overlays](https://i.imgur.com/5YMjxjG.png)
 ### Diff Inspector
-![Diff Inspector](https://github.com/simeonradivoev/UniGit/raw/master/Images/DiffInspector.png)
+![Diff Inspector](https://i.imgur.com/xHO8AJD.png)
 ### Settings window
-![Settings window](https://github.com/simeonradivoev/UniGit/raw/master/Images/SettingsGeneralScreenshot.png)
+![Settings window](https://i.imgur.com/OcDCyEK.png)
 ### Git Log
-![Git Log Window](https://github.com/simeonradivoev/UniGit/raw/master/Images/GitLogScreenshot.png)
+![Git Log Window](https://i.imgur.com/sUUBBel.png)
 
 # Building
-As of Unity 2017.3, [Assembly Definition files](https://docs.unity3d.com/Manual/ScriptCompilationAssemblyDefinitionFiles.html) were introduced. UniGit has an assemby definition file that that unity uses to compile a dll located in `Library/ScriptAssemblies/UniGit.dll`, once the editor has compiled all the scripts.
+As of Unity 2017.3, [Assembly Definition files](https://docs.unity3d.com/Manual/ScriptCompilationAssemblyDefinitionFiles.html) were introduced. UniGit has an assembly definition file that that unity uses to compile a dll located in `Library/ScriptAssemblies/UniGit.dll`, once the editor has compiled all the scripts.
 
-*You can create a .unitypackage by going to `UniGit > Export Package` in Unity's top menu. Unity automatically updates all file paths and dependancy DLLs such as: UnityEngine.dll and UnityEditor.dll*
+*You can create a .unitypackage by going to `UniGit > Export Package` in Unity's top menu. Unity automatically updates all file paths and dependency DLLs such as: UnityEngine.dll and UnityEditor.dll*
 
 *You can build a .dll library using the provided Visual Studio 2015 project in the *UniGitVs* folder.<br>
 There are also build scripts provided in the *UniGitVs* folder called `build_dev.bat` and `build_release`
