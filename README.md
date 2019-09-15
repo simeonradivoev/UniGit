@@ -38,22 +38,18 @@ An open source GIT Unity3D editor plugin.
 For more info on all the features and how to use them, check out the [wiki](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage).
 
 # Screenshots
-### History Window
-![Git history window](https://i.imgur.com/ciX4Vdo.png)
-### Diff Window
-![Git Diff Window](https://i.imgur.com/EUWwd3L.png)
-### Project View status overlays
-![Project View Overlays](https://i.imgur.com/5YMjxjG.png)
-### Diff Inspector
-![Diff Inspector](https://i.imgur.com/xHO8AJD.png)
-### Settings window
-![Settings window](https://i.imgur.com/OcDCyEK.png)
-### Git Log
-![Git Log Window](https://i.imgur.com/sUUBBel.png)
-### Blame Window
-![Blame Window](https://i.imgur.com/33dmPAG.png)
-### Sub Modules
-![Sub Modules](https://i.imgur.com/tHSxZI8.png)
+| History Window | Diff Window
+| :-: | :-: |
+| [![Git history window](https://i.imgur.com/ciX4Vdom.png)](https://i.imgur.com/ciX4Vdo.png) | [![Git Diff Window](https://i.imgur.com/EUWwd3Lm.png)](https://i.imgur.com/EUWwd3L.png) |
+
+| Status Overlays | Diff Inspector | Settings window |
+| :-: | :-: | :-: |
+| [![Project View Overlays](https://i.imgur.com/5YMjxjGb.png)](https://i.imgur.com/5YMjxjG.png) | [![Diff Inspector](https://i.imgur.com/xHO8AJDb.png)](https://i.imgur.com/xHO8AJD.png) | [![Settings window](https://i.imgur.com/OcDCyEKb.png)](https://i.imgur.com/OcDCyEK.png) |
+
+| Blame Window | Sub Modules | Git Log |
+| :-: | :-: | :-: |
+| [![Blame Window](https://i.imgur.com/33dmPAGb.png)](https://i.imgur.com/33dmPAG.png) | [![Sub Modules](https://i.imgur.com/tHSxZI8b.png)](https://i.imgur.com/tHSxZI8.png) |  [![Git Log Window](https://i.imgur.com/sUUBBelb.png)](https://i.imgur.com/sUUBBel.png) |
+
 
 # Installation
 In a unity project go to your `Packages` folder. Open `manifest.json` and add into the dependencies the following line: 
