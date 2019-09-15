@@ -10,11 +10,12 @@ An open source GIT Unity3D editor plugin.
 # Contents
 * [Features](#features)
 * [Screenshots](#screenshots)
+* [Installation](#installation)
 * [Building](#building)
+* [Asset Store](#asset-store)
 * [Limitations](#limitations)
 * [Not implemented yet](#not-implemented-yet)
 * [Unity Thread](https://forum.unity3d.com/threads/opensource-unigit-in-editor-git-gui.440646/)
-* [Asset Store](http://u3d.as/Bxf)
 
 # [Features:](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage)
 * Pull, Push, Merge, Fetch changes
@@ -30,6 +31,8 @@ An open source GIT Unity3D editor plugin.
 * Branch Switching and Creation
 * In-Editor Diff Inspection
 * Git Log Window
+* Non Root Project Repositories
+* Animated UI
 
 For more info on all the features and how to use them, check out the [wiki](https://github.com/simeonradivoev/UniGit/wiki/Features-and-Usage).
 
@@ -47,16 +50,33 @@ For more info on all the features and how to use them, check out the [wiki](http
 ### Git Log
 ![Git Log Window](https://i.imgur.com/sUUBBel.png)
 
+# Installation
+In a unity project go to your `Packages` folder. Open `manifest.json` and add into into the dependencies the following line: 
+
+```
+"uni-git": "https://github.com/simeonradivoev/UniGit.git"
+```
+
+It should look something like this:
+
+```
+{
+    "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.modules.ui": "1.0.0",
+        "uni-git": "https://github.com/simeonradivoev/UniGit.git",
+    } 
+}
+```
+
 # Building
-As of Unity 2017.3, [Assembly Definition files](https://docs.unity3d.com/Manual/ScriptCompilationAssemblyDefinitionFiles.html) were introduced. UniGit has an assembly definition file that that unity uses to compile a dll located in `Library/ScriptAssemblies/UniGit.dll`, once the editor has compiled all the scripts.
+As of the new Unity Package system. There is no need to build UniGit into dlls. The new package system allows packages to be pulled directly from git and unity compiles all the source codes and generally keeps the package away from any project files. This is really convenient and allows for quick and easy updates. Images and resources also don't need to be packed in an assembly they can just be included in the package and be managed by unity.
 
-*You can create a .unitypackage by going to `UniGit > Export Package` in Unity's top menu. Unity automatically updates all file paths and dependency DLLs such as: UnityEngine.dll and UnityEditor.dll*
+# Asset store
+As of version 1.5 the assets store is no longer supported because of the new package system. Check out the [Installation](#installation) guide to see how to include Uni git in your project
 
-*You can build a .dll library using the provided Visual Studio 2015 project in the *UniGitVs* folder.<br>
-There are also build scripts provided in the *UniGitVs* folder called `build_dev.bat` and `build_release`
-All you need is to change the Path to Unity's DLLs. You can check [Unity's Managed Plugins Documentation](https://docs.unity3d.com/Manual/UsingDLL.html) for more info or you can use the built-in UniGit package exporter as mentioned above.*
-
-Once you change the path of unity's DLLs, you can build the project. Visual studio will copy all necessary files into `UniGitVs/bin/Debug` or `UniGitVs/bin/Release` folders. These files include the UniGit icons and resources, as well as the LibGit2Sharp library and it's dependencies, so that you can quickly copy all the files and put it in your project neatly wrapped in a DLL library.
+It may be re-added later down the line once the asset store is more tightly integrated with the package manager.
+Older version can be found on the [Asset Store](http://u3d.as/Bxf)
 
 ## Notes
 * UniGit is developed on a windows machine and has only been tested on a windows machine.
