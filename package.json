@@ -4,7 +4,6 @@
   "displayName": "UniGit",
   "description": "An open source GIT Unity3D editor plugin.",
   "unity": "2019.2",
-  "unityRelease": "3f1",
   "dependencies": {
  },
  "keywords": [
