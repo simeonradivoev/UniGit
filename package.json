@@ -1,6 +1,6 @@
 {
-  "name": "uni-git",
-  "version": "1.5.1",
+  "name": "com.simeonradivoev.uni-git",
+  "version": "1.5.2",
   "displayName": "UniGit",
   "description": "An open source GIT Unity3D editor plugin.",
   "unity": "2019.2",

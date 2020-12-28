@@ -65,7 +65,7 @@ It should look something like this:
     "dependencies": {
         "com.unity.ugui": "1.0.0",
         "com.unity.modules.ui": "1.0.0",
-        "uni-git": "https://github.com/simeonradivoev/UniGit.git",
+        "com.simeonradivoev.uni-git": "https://github.com/simeonradivoev/UniGit.git",
     } 
 }
 ```
