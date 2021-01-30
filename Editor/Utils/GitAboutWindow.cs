@@ -2,6 +2,7 @@
 using LibGit2Sharp;
 using UnityEditor;
 using UnityEngine;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace UniGit.Utils
 {
@@ -49,11 +50,12 @@ namespace UniGit.Utils
 		{
 			var version = GlobalSettings.Version;
 
-			GUILayout.Label(GitGUI.GetTempContent("UniGit"), "TL Selection H1");
+			GUILayout.Label(GitGUI.GetTempContent("UniGit"), "LODLevelNotifyText", GUILayout.ExpandWidth(true));
 
-			GUILayout.BeginVertical("IN GameObjectHeader");
+			GUILayout.BeginVertical("AC BoldHeader");
 			GUILayout.Label(GitGUI.GetTempContent("Created by: Simeon Radivoev"));
-			GUILayout.Label(GitGUI.GetTempContent("UniGit Version: " + GitManager.Version));
+            var packageInfo = PackageInfo.FindForAssembly(this.GetType().Assembly);
+            GUILayout.Label(GitGUI.GetTempContent("UniGit Version: " + packageInfo.version));
 			GUILayout.Label(GitGUI.GetTempContent("Git Version: " + gitVersion));
 			GUILayout.Label(GitGUI.GetTempContent("LibGit2Sharp Features: " + version.Features));
 			GUILayout.Label(GitGUI.GetTempContent("License:  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"),EditorStyles.wordWrappedLabel);

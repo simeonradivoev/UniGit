@@ -13,7 +13,7 @@
 #Donate{
 	position: absolute;
 	right: 4px;
-	background-image: resource("Icons/donate");
+	background-image: resource("PreviewPackageInUse");
 }
 
 #HelpSettings{

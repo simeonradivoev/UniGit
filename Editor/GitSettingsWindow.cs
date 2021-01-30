@@ -29,8 +29,8 @@ namespace UniGit
 		private VisualElement settingsWindowElement;
 		private VisualElement settingsTabsElement;
 		private VisualElement tabsToolbar;
-		private Button helpButton;
-		private Button donateButton;
+		private VisualElement helpButton;
+		private VisualElement donateButton;
 
 		#endregion
 
@@ -219,14 +219,12 @@ namespace UniGit
             settingsWindowElement = root.Q("SettingsWindow");
             settingsTabsElement = root.Q("SettingsTabs");
             tabsToolbar = root.Q("TabsToolbar");
-            helpButton = root.Q<Button>("HelpSettings");
-            helpButton.tooltip = "Help";
-            donateButton = root.Q<Button>("Donate");
-            donateButton.tooltip = "Donate";
+            helpButton = root.Q<VisualElement>("HelpSettings");
+            donateButton = root.Q<VisualElement>("Donate");
 
-            helpButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.SettingsWindowHelp);
-            donateButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.Donate);
-		}
+            helpButton.RegisterCallback<ClickEvent>(e => GitLinks.GoTo(GitLinks.SettingsWindowHelp));
+            donateButton.RegisterCallback<ClickEvent>(e => GitLinks.GoTo(GitLinks.Donate));
+        }
 
 		protected override void OnGitUpdate(GitRepoStatus status, string[] paths)
 		{

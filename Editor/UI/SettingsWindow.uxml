@@ -5,8 +5,8 @@
         <Instance template="InvalidRepository" name="InvalidRepository"/>
         <VisualElement name="SettingsWindow">
           <editor:Toolbar name="TabsToolbar">
-            <Button name="Donate" class="smallIconButton" />
-            <Button name="HelpSettings" class="smallIconButton" />
+            <VisualElement name="Donate" class="smallIconButton" tooltip="Donate" />
+            <VisualElement name="HelpSettings" class="smallIconButton" tooltip="Help" />
           </editor:Toolbar>
           <VisualElement name="SettingsTabs">
 

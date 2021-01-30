@@ -15,9 +15,7 @@ namespace UniGit
 {
 	public class GitManager : IDisposable
 	{
-		public const string Version = "1.4.3";
-
-		private Repository repository;
+        private Repository repository;
 		private readonly GitSettingsJson gitSettings;
         private readonly UniGitData gitData;
 		private readonly object statusRetriveLock = new object();
