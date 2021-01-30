@@ -41,7 +41,7 @@ namespace UniGit
 
         public T LoadUniGitAsset<T>(string path) where T : Object
         {
-            return AssetDatabase.LoadAssetAtPath<T>($"Packages/uni-git/{path}");
+            return AssetDatabase.LoadAssetAtPath<T>($"Packages/com.simeonradivoev.uni-git/{path}");
         }
 	}
 }

@@ -12,7 +12,7 @@ namespace UniGit.Utils
 
 		public GitReflectionHelper()
 		{
-			hasFocusFucntion = (Func<EditorWindow,bool>)Delegate.CreateDelegate(typeof(Func<EditorWindow,bool>), typeof(EditorWindow).GetProperty("hasFocus", BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(true));
+			hasFocusFucntion = (Func<EditorWindow,bool>)Delegate.CreateDelegate(typeof(Func<EditorWindow,bool>), typeof(EditorWindow).GetProperty("hasFocus",BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(false));
 			projectWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
 		}
 
