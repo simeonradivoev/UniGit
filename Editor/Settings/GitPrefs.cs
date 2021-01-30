@@ -25,13 +25,11 @@ namespace UniGit.Settings
 		}
 
 		public void OnEditorUpdate()
-		{
-			if (dirty)
-			{
-				dirty = false;
-				gitCallbacks.IssueOnPrefsChange(this);
-			}
-		}
+        {
+            if (!dirty) return;
+            dirty = false;
+            gitCallbacks.IssueOnPrefsChange(this);
+        }
 
 		public void DeleteAll()
 		{
@@ -50,84 +48,46 @@ namespace UniGit.Settings
 		}
 
 		public bool GetBool(string key)
-		{
-			bool value;
-			if (bools.TryGetValue(key,out value))
-			{
-				return value;
-			}
-			return false;
-		}
+        {
+            return bools.TryGetValue(key,out var value) && value;
+        }
 
 		public bool GetBool(string key, bool def)
-		{
-			bool value;
-			if (bools.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return def;
-		}
+        {
+            return bools.TryGetValue(key, out var value) ? value : def;
+        }
 
 		public float GetFloat(string key)
-		{
-			float value;
-			if (floats.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return value;
-		}
+        {
+            floats.TryGetValue(key, out var value);
+            return value;
+        }
 
 		public float GetFloat(string key, float def)
-		{
-			float value;
-			if (floats.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return def;
-		}
+        {
+            return floats.TryGetValue(key, out var value) ? value : def;
+        }
 
 		public int GetInt(string key)
-		{
-			int value;
-			if (ints.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return value;
-		}
+        {
+            ints.TryGetValue(key, out var value);
+            return value;
+        }
 
 		public int GetInt(string key, int def)
-		{
-			int value;
-			if (ints.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return def;
-		}
+        {
+            return ints.TryGetValue(key, out var value) ? value : def;
+        }
 
 		public string GetString(string key, string def)
-		{
-			string value;
-			if (strings.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return def;
-		}
+        {
+            return strings.TryGetValue(key, out var value) ? value : def;
+        }
 
 		public string GetString(string key)
-		{
-			string value;
-			if (strings.TryGetValue(key, out value))
-			{
-				return value;
-			}
-			return null;
-		}
+        {
+            return strings.TryGetValue(key, out var value) ? value : null;
+        }
 
 		public bool HasKey(string key)
 		{

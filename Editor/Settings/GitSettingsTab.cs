@@ -10,7 +10,7 @@ namespace UniGit.Settings
 	{
 		protected GitSettingsWindow settingsWindow;
 		private bool hasFocused;
-		private bool initilized;
+		private bool initialized;
 		protected readonly GitManager gitManager;
 		protected readonly GitSettingsJson gitSettings;
 		protected readonly GUIContent name;
@@ -40,7 +40,7 @@ namespace UniGit.Settings
 
         private void OnGUIInternal()
         {
-            if (gitManager != null && initializer.IsValidRepo && initilized)
+            if (gitManager != null && initializer.IsValidRepo && initialized)
             {
                 OnGUI();
             }
@@ -57,7 +57,7 @@ namespace UniGit.Settings
 		{
 			hasFocused = true;
 
-            if (hasFocused && initilized && gitManager.Repository != null && data.Initialized && initializer.IsValidRepo)
+            if (hasFocused && initialized && gitManager.Repository != null && data.Initialized && initializer.IsValidRepo)
             {
                 OnGitManagerUpdateInternal(data.RepositoryStatus, null);
             }
@@ -82,24 +82,20 @@ namespace UniGit.Settings
 		{
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
-			if (!initilized || !initializer.IsValidRepo) return;
+			if (!initialized || !initializer.IsValidRepo) return;
 			OnGitUpdate(status, paths);
 		}
 
 		private void OnEditorUpdateInternal()
-		{
-			//Only initialize if the editor Window is focused
-			if (hasFocused && !initilized && gitManager.Repository != null)
-			{
-				if (data.Initialized)
-				{
-					initilized = true;
-					if (!initializer.IsValidRepo) return;
-					OnInitialize();
-					OnGitManagerUpdateInternal(data.RepositoryStatus, null);
-				}
-			}
-		}
+        {
+            //Only initialize if the editor Window is focused
+            if (!hasFocused || initialized || gitManager.Repository == null) return;
+            if (!data.Initialized) return;
+            initialized = true;
+            if (!initializer.IsValidRepo) return;
+            OnInitialize();
+            OnGitManagerUpdateInternal(data.RepositoryStatus, null);
+        }
 
 		public void Dispose()
 		{
@@ -108,9 +104,6 @@ namespace UniGit.Settings
 			gitCallbacks.UpdateRepository -= OnGitManagerUpdateInternal;
 		}
 
-		public GUIContent Name
-		{
-			get { return name; }
-		}
-	}
+		public GUIContent Name => name;
+    }
 }

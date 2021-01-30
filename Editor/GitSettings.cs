@@ -75,9 +75,8 @@ namespace UniGit
 		public bool CreateFoldersForDriftingMeta;
 		public string ActiveSubModule;
 		public string RemoteToken;
-		private bool isDirty;
 
-		[Flags]
+        [Flags]
 		[Serializable]
 		public enum ExternalsTypeEnum
 		{
@@ -143,17 +142,14 @@ namespace UniGit
 
 		internal void MarkDirty()
 		{
-			isDirty = true;
+			IsDirty = true;
 		}
 
 		internal void ResetDirty()
 		{
-			isDirty = false;
+			IsDirty = false;
 		}
 
-		internal bool IsDirty
-		{
-			get { return isDirty; }
-		}
-	}
+		internal bool IsDirty { get; private set; }
+    }
 }

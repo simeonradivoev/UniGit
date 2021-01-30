@@ -56,12 +56,12 @@ namespace UniGit.Windows.Diff
 			styles = new Styles()
 			{
 				assetIcon = new GUIStyle("NotificationBackground") {contentOffset = Vector2.zero, alignment = TextAnchor.MiddleCenter, imagePosition = ImagePosition.ImageOnly, padding = new RectOffset(4, 4, 4, 4), border = new RectOffset(12, 12, 12, 12)},
-				diffElementSelected = "Icon.ClipSelected",
+				diffElementSelected = "OL SelectedRow",
 				diffElementSmall = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 48,margin = new RectOffset(),padding = new RectOffset(4,4,4,4),border = new RectOffset(8,8,8,8)},
 				diffElementBig = new GUIStyle("ProjectBrowserHeaderBgTop") {fixedHeight = 60,margin = new RectOffset(),padding = new RectOffset(6,6,6,6),border = new RectOffset(8,8,8,8)},
 				diffElementName = new GUIStyle(EditorStyles.boldLabel) { fontSize = 12, onNormal = new GUIStyleState() { textColor = Color.white * 0.95f, background = Texture2D.blackTexture } },
 				diffElementPath = new GUIStyle(EditorStyles.label) { onNormal = new GUIStyleState() { textColor = Color.white * 0.9f, background = Texture2D.blackTexture }, wordWrap = true, fixedHeight = 0, alignment = TextAnchor.MiddleLeft },
-				toggle = new GUIStyle("IN Toggle") { fixedHeight = 32,normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() },
+				toggle = new GUIStyle("MenuToggleItem") { fixedHeight = 32,normal = { background = (Texture2D)GitGUI.IconContentTex("toggle@2x") }, onNormal = { background = (Texture2D)GitGUI.IconContentTex("toggle on@2x") }, active = { background = (Texture2D)GitGUI.IconContentTex("toggle act@2x") }, onActive = { background = (Texture2D)GitGUI.IconContentTex("toggle on act@2x") }, fixedWidth = 0, border = new RectOffset(), padding = new RectOffset(), margin = new RectOffset() },
 				folderIcon = EditorGUIUtility.IconContent("Folder Icon").image,
 				defaultAssetIcon = EditorGUIUtility.IconContent("DefaultAsset Icon").image
 			};
@@ -69,19 +69,19 @@ namespace UniGit.Windows.Diff
 
 		internal void DoFileDiff(Rect rect,StatusListEntry info,bool enabled,bool selected,GitDiffWindow window)
 		{
-			RectOffset elementPadding = GetElementStyle().padding;
-			float iconSize = GetElementStyle().fixedHeight - elementPadding.vertical;
-			float toggleSize = styles.toggle.fixedHeight;
+			var elementPadding = GetElementStyle().padding;
+			var iconSize = GetElementStyle().fixedHeight - elementPadding.vertical;
+			var toggleSize = styles.toggle.fixedHeight;
 
-			Event current = Event.current;
-			string projectPath = gitManager.ToProjectPath(info.LocalPath);
-			string fileName = info.Name;
+			var current = Event.current;
+			var projectPath = gitManager.ToProjectPath(info.LocalPath);
+			var fileName = info.Name;
 
 			GitGUI.StartEnable(enabled);
-			Rect stageToggleRect = new Rect(rect.x + rect.width - toggleSize * 2, rect.y + (rect.height - toggleSize) * 0.5f, toggleSize, toggleSize);
-			bool canUnstage = GitManager.CanUnstage(info.State);
-			bool canStage = GitManager.CanStage(info.State);
-			float maxPathSize = rect.width - stageToggleRect.width - toggleSize - 21;
+			var stageToggleRect = new Rect(rect.x + rect.width - toggleSize * 2, rect.y + (rect.height - toggleSize) * 0.5f, toggleSize, toggleSize);
+			var canUnstage = GitManager.CanUnstage(info.State);
+			var canStage = GitManager.CanStage(info.State);
+			var maxPathSize = rect.width - stageToggleRect.width - toggleSize - 21;
 
 			if (current.type == EventType.Repaint)
 			{
@@ -91,11 +91,11 @@ namespace UniGit.Windows.Diff
 			if (canStage && canUnstage)
 			{
 				maxPathSize -= stageToggleRect.width - 4;
-				Rect stageWarnningRect = new Rect(stageToggleRect.x - stageToggleRect.width - 4, stageToggleRect.y, stageToggleRect.width, stageToggleRect.height);
+				var stageWarnningRect = new Rect(stageToggleRect.x - stageToggleRect.width - 4, stageToggleRect.y, stageToggleRect.width, stageToggleRect.height);
 				EditorGUIUtility.AddCursorRect(stageWarnningRect, MouseCursor.Link);
 				if (GUI.Button(stageWarnningRect, GitGUI.IconContent("console.warnicon", "", "Unstaged changed pending. Stage to update index."), GUIStyle.none))
 				{
-					string[] localPaths = gitManager.GetPathWithMeta(info.LocalPath).ToArray();
+					var localPaths = gitManager.GetPathWithMeta(info.LocalPath).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 					{
 						gitManager.AsyncStage(localPaths).onComplete += (o) => { window.Repaint(); };
@@ -115,8 +115,8 @@ namespace UniGit.Windows.Diff
 				if(UniGitPathHelper.IsPathInAssetFolder(projectPath))
 					asset = AssetDatabase.LoadAssetAtPath(UniGitPathHelper.IsMetaPath(projectPath) ? GitManager.AssetPathFromMeta(projectPath) : projectPath, typeof(Object));
 
-				string extension = Path.GetExtension(projectPath);
-				GUIContent tmpContent = GUIContent.none;
+				var extension = Path.GetExtension(projectPath);
+				var tmpContent = GUIContent.none;
 				if (string.IsNullOrEmpty(extension))
 				{
 					tmpContent = GitGUI.GetTempContent(styles.folderIcon, "Folder");
@@ -134,7 +134,7 @@ namespace UniGit.Windows.Diff
 					}
 				}
 
-				float x = rect.x + elementPadding.left;
+				var x = rect.x + elementPadding.left;
 				GUI.Box(new Rect(x, rect.y + elementPadding.top, iconSize,iconSize), tmpContent, styles.assetIcon);
 				x += iconSize + 8;
 
@@ -168,10 +168,10 @@ namespace UniGit.Windows.Diff
 					x += 25;
 				}
 
-				Vector2 pathSize = styles.diffElementPath.CalcSize(GitGUI.GetTempContent(projectPath));
+				var pathSize = styles.diffElementPath.CalcSize(GitGUI.GetTempContent(projectPath));
 				pathSize.x = Mathf.Min(pathSize.x, maxPathSize - x);
 
-				Rect pathRect = new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight, pathSize.x, EditorGUIUtility.singleLineHeight*2);
+				var pathRect = new Rect(x, rect.y + elementPadding.top + EditorGUIUtility.singleLineHeight, pathSize.x, EditorGUIUtility.singleLineHeight*2);
 
 				styles.diffElementPath.Draw(pathRect, GitGUI.GetTempContent(projectPath),false, selected, selected, false);
 				x += pathRect.width + 4;
@@ -191,10 +191,10 @@ namespace UniGit.Windows.Diff
 				EditorGUI.Toggle(stageToggleRect,canUnstage, styles.toggle);
 				if (EditorGUI.EndChangeCheck())
 				{
-					bool updateFlag = false;
+					var updateFlag = false;
 					if (GitManager.CanStage(info.State))
 					{
-						string[] paths = gitManager.GetPathWithMeta(info.LocalPath).ToArray();
+						var paths = gitManager.GetPathWithMeta(info.LocalPath).ToArray();
 						if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 						{
 							gitManager.AsyncStage(paths).onComplete += (o)=>{ window.Repaint(); };
@@ -208,7 +208,7 @@ namespace UniGit.Windows.Diff
 					}
 					else if (GitManager.CanUnstage(info.State))
 					{
-						string[] paths = gitManager.GetPathWithMeta(info.LocalPath).ToArray();
+						var paths = gitManager.GetPathWithMeta(info.LocalPath).ToArray();
 						if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 						{
 							gitManager.AsyncUnstage(paths).onComplete += (o) => { window.Repaint(); };
@@ -242,9 +242,6 @@ namespace UniGit.Windows.Diff
 			return smallElements ? styles.diffElementSmall : styles.diffElementBig;
 		}
 
-		internal float ElementHeight
-		{
-			get { return GetElementStyle().fixedHeight; }
-		}
-	}
+		internal float ElementHeight => GetElementStyle().fixedHeight;
+    }
 }

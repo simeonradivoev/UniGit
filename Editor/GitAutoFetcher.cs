@@ -54,7 +54,7 @@ namespace UniGit
 		private bool AutoFetchChanges()
 		{
 			if (gitManager.Repository == null || !initializer.IsValidRepo || !gitSettings.AutoFetch) return false;
-			Remote remote = gitManager.Repository.Network.Remotes.FirstOrDefault();
+			var remote = gitManager.Repository.Network.Remotes.FirstOrDefault();
 			if (remote == null) return false;
 			GitProfilerProxy.BeginSample("Git automatic fetching");
 			try

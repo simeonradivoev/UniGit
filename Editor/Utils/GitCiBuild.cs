@@ -10,7 +10,7 @@ namespace UniGit.Utils
 		[UsedImplicitly]
 		static void PerformBuild()
 		{
-			string dllDir = GetArg("-dlldir");
+			var dllDir = GetArg("-dlldir");
 			if (!Directory.Exists(dllDir)) Directory.CreateDirectory(dllDir);
 			else
 			{
@@ -18,7 +18,7 @@ namespace UniGit.Utils
 				Directory.CreateDirectory(dllDir);
 			}
 
-			List<string> filesToCopy = new List<string>
+			var filesToCopy = new List<string>
 			{
 				Application.dataPath.Replace("Assets", UniGitPathHelper.Combine("Library", "ScriptAssemblies", "UniGit.dll")), 
 				Application.dataPath.Replace("Assets", UniGitPathHelper.Combine("Library", "ScriptAssemblies", "UniGit.dll.mdb")), 
@@ -36,7 +36,7 @@ namespace UniGit.Utils
 		private static string GetArg(string name)
 		{
 			var args = System.Environment.GetCommandLineArgs();
-			for (int i = 0; i < args.Length; i++)
+			for (var i = 0; i < args.Length; i++)
 			{
 				if (args[i] == name && args.Length > i + 1)
 				{

@@ -44,25 +44,25 @@ namespace UniGit
 			var settings = window.GitDiffSettings;
 			GUILayout.BeginArea(rect, GUIContent.none, EditorStyles.toolbar);
 			EditorGUILayout.BeginHorizontal();
-			Rect btRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Edit"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64));
+			var btRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Edit"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64));
 			if (GUI.Button(btRect,GitGUI.GetTempContent("Edit"), EditorStyles.toolbarDropDown))
 			{
-				GenericMenuWrapper editMenu = new GenericMenuWrapper(new GenericMenu());
+				var editMenu = new GenericMenuWrapper(new GenericMenu());
 				contextFactory.Build(editMenu,window);
 				editMenu.GenericMenu.DropDown(btRect);
 			}
 			btRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("View"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64));
 			if (GUI.Button(btRect,GitGUI.GetTempContent("View"), EditorStyles.toolbarDropDown))
 			{
-				GenericMenuWrapper viewMenu = new GenericMenuWrapper(new GenericMenu());
+				var viewMenu = new GenericMenuWrapper(new GenericMenu());
 				viewMenu.AddItem(new GUIContent("Small Elements"), prefs.GetBool(GitDiffWindowDiffElementRenderer.SmallElementsKey,false), () => { prefs.SetBool(GitDiffWindowDiffElementRenderer.SmallElementsKey,!prefs.GetBool(GitDiffWindowDiffElementRenderer.SmallElementsKey,false)); });
 				viewMenu.GenericMenu.DropDown(btRect);
 			}
 			btRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Filter"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64));
 			if (GUI.Button(btRect,GitGUI.GetTempContent("Filter"), EditorStyles.toolbarDropDown))
 			{
-				GenericMenu genericMenu = new GenericMenu();
-				FileStatus[] fileStatuses = (FileStatus[])Enum.GetValues(typeof(FileStatus));
+				var genericMenu = new GenericMenu();
+				var fileStatuses = (FileStatus[])Enum.GetValues(typeof(FileStatus));
 				genericMenu.AddItem(new GUIContent("Show All"), settings.showFileStatusTypeFilter == (FileStatus)(-1), () =>
 				{
 					settings.showFileStatusTypeFilter = (FileStatus)(-1);
@@ -73,9 +73,9 @@ namespace UniGit
 					settings.showFileStatusTypeFilter = 0;
 					window.UpdateStatusList();
 				});
-				for (int i = 0; i < fileStatuses.Length; i++)
+				for (var i = 0; i < fileStatuses.Length; i++)
 				{
-					FileStatus flag = fileStatuses[i];
+					var flag = fileStatuses[i];
 					genericMenu.AddItem(new GUIContent(flag.ToString()), settings.showFileStatusTypeFilter != (FileStatus)(-1) && settings.showFileStatusTypeFilter.IsFlagSet(flag), () =>
 					{
 						settings.showFileStatusTypeFilter = settings.showFileStatusTypeFilter.SetFlags(flag, !settings.showFileStatusTypeFilter.IsFlagSet(flag));
@@ -87,10 +87,10 @@ namespace UniGit
 			btRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Sort"), EditorStyles.toolbarDropDown, GUILayout.MinWidth(64));
 			if (GUI.Button(btRect,GitGUI.GetTempContent("Sort"), EditorStyles.toolbarDropDown))
 			{
-				GenericMenu genericMenu = new GenericMenu();
+				var genericMenu = new GenericMenu();
 				foreach (GitDiffWindow.SortType type in Enum.GetValues(typeof(GitDiffWindow.SortType)))
 				{
-					GitDiffWindow.SortType t = type;
+					var t = type;
 					genericMenu.AddItem(new GUIContent(type.GetDescription()), type == settings.sortType, () =>
 					{
 						settings.sortType = t;
@@ -100,7 +100,7 @@ namespace UniGit
 				genericMenu.AddSeparator("");
 				foreach (GitDiffWindow.SortDir dir in Enum.GetValues(typeof(GitDiffWindow.SortDir)))
 				{
-					GitDiffWindow.SortDir d = dir;
+					var d = dir;
 					genericMenu.AddItem(new GUIContent(dir.GetDescription()), dir == settings.sortDir, () =>
 					{
 						settings.sortDir = d;
@@ -121,7 +121,7 @@ namespace UniGit
 				genericMenu.DropDown(btRect);
 			}
 
-			GUIContent modulesContent = GitGUI.GetTempContent("Modules");
+			var modulesContent = GitGUI.GetTempContent("Modules");
 			foreach (var subModule in data.RepositoryStatus.SubModuleEntries)
 			{
 				if (subModule.Status == SubmoduleStatus.InConfig)
@@ -175,10 +175,10 @@ namespace UniGit
 				GUILayout.Toggle(true, GitGUI.GetTempContent(Path.GetFileName(gitSettings.ActiveSubModule),gitOverlay.icons.submoduleIconSmall.image), "GUIEditor.BreadcrumbMid",GUILayout.MinWidth(86));
 			}
 
-			bool isUpdating = gitManager.IsUpdating;
-			bool isStaging = gitManager.IsAsyncStaging;
-			bool isDirty = gitManager.IsDirty;
-			bool statusListUpdate = window.GetStatusListUpdateOperation() != null && !window.GetStatusListUpdateOperation().IsDone;
+			var isUpdating = gitManager.IsUpdating;
+			var isStaging = gitManager.IsAsyncStaging;
+			var isDirty = gitManager.IsDirty;
+			var statusListUpdate = window.GetStatusListUpdateOperation() != null && !window.GetStatusListUpdateOperation().IsDone;
 			GUIContent statusContent = null;
 
 			if (isUpdating)
@@ -191,7 +191,7 @@ namespace UniGit
 			}
 			else if (isDirty)
 			{
-				string updateStatus = GetUpdateStatusMessage(gitManager.GetUpdateStatus());
+				var updateStatus = GetUpdateStatusMessage(gitManager.GetUpdateStatus());
 				statusContent =  GitGUI.GetTempContent(updateStatus + "... ",GitGUI.GetTempSpinAnimatedTexture());
 			}
 			else if (statusListUpdate)
@@ -214,22 +214,16 @@ namespace UniGit
 		}
 
 		private string GetUpdateStatusMessage(GitManager.UpdateStatusEnum status)
-		{
-			switch (status)
-			{
-				case GitManager.UpdateStatusEnum.InvalidRepo:
-					return "Invalid Repository";
-				case GitManager.UpdateStatusEnum.SwitchingToPlayMode:
-					return "Switching to play mode";
-				case GitManager.UpdateStatusEnum.Compiling:
-					return "Compiling";
-				case GitManager.UpdateStatusEnum.UpdatingAssetDatabase:
-					return "Updating Asset Database";
-				case GitManager.UpdateStatusEnum.Updating:
-					return "Updating in progress";
-				default:
-					return "Waiting to update";
-			}
-		}
+        {
+            return status switch
+            {
+                GitManager.UpdateStatusEnum.InvalidRepo => "Invalid Repository",
+                GitManager.UpdateStatusEnum.SwitchingToPlayMode => "Switching to play mode",
+                GitManager.UpdateStatusEnum.Compiling => "Compiling",
+                GitManager.UpdateStatusEnum.UpdatingAssetDatabase => "Updating Asset Database",
+                GitManager.UpdateStatusEnum.Updating => "Updating in progress",
+                _ => "Waiting to update"
+            };
+        }
 	}
 }

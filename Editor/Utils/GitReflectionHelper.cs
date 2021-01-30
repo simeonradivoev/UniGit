@@ -6,24 +6,16 @@ namespace UniGit.Utils
 {
 	public class GitReflectionHelper
 	{
-		private Func<EditorWindow, bool> hasFocusFucntion;
-		private Type projectWindowType;
-		public static bool TestsRunning;
+        public static bool TestsRunning;
 
 		public GitReflectionHelper()
 		{
-			hasFocusFucntion = (Func<EditorWindow,bool>)Delegate.CreateDelegate(typeof(Func<EditorWindow,bool>), typeof(EditorWindow).GetProperty("hasFocus",BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(false));
-			projectWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
+			HasFocusFunction = (Func<EditorWindow,bool>)Delegate.CreateDelegate(typeof(Func<EditorWindow,bool>), typeof(EditorWindow).GetProperty("hasFocus",BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetGetMethod(false));
+			ProjectWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
 		}
 
-		public Func<EditorWindow, bool> HasFocusFucntion
-		{
-			get { return hasFocusFucntion; }
-		}
+		public Func<EditorWindow, bool> HasFocusFunction { get; }
 
-		public Type ProjectWindowType
-		{
-			get { return projectWindowType; }
-		}
-	}
+        public Type ProjectWindowType { get; }
+    }
 }

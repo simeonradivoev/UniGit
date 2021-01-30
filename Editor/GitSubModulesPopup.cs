@@ -12,7 +12,7 @@ namespace UniGit
 		private readonly GitManager gitManager;
 		private string selectedModule;
 		private Vector2 scroll;
-		private GUIStyle moduleStyle;
+		private readonly GUIStyle moduleStyle;
 
 		[UniGitInject]
 		public GitSubModulesPopup(UniGitData data,GitOverlay gitOverlay,GitManager gitManager)
@@ -35,9 +35,9 @@ namespace UniGit
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var entry in data.RepositoryStatus.SubModuleEntries)
 			{
-				string path = entry.Path;
-				float elementTextHeight = EditorStyles.label.CalcHeight(GitGUI.GetTempContent(path), rect.width);
-				Rect elementRect = GUILayoutUtility.GetRect(GUIContent.none, moduleStyle,GUILayout.MinHeight(elementTextHeight + EditorGUIUtility.singleLineHeight + 24));
+				var path = entry.Path;
+				var elementTextHeight = EditorStyles.label.CalcHeight(GitGUI.GetTempContent(path), rect.width);
+				var elementRect = GUILayoutUtility.GetRect(GUIContent.none, moduleStyle,GUILayout.MinHeight(elementTextHeight + EditorGUIUtility.singleLineHeight + 24));
 
 				if (Event.current.type == EventType.Repaint)
 				{
@@ -46,13 +46,13 @@ namespace UniGit
 
 				var innerRect = new Rect(elementRect.x + 4,elementRect.y + 2,elementRect.width - 8,elementRect.height - 4);
 
-				Rect nameRect = new Rect(innerRect.x,innerRect.y,innerRect.width - 24,elementTextHeight);
+				var nameRect = new Rect(innerRect.x,innerRect.y,innerRect.width - 24,elementTextHeight);
 				GUI.Label(nameRect,GitGUI.GetTempContent(path));
-				Rect hashRect = new Rect(innerRect.x,innerRect.y + elementTextHeight,innerRect.width - 24,EditorGUIUtility.singleLineHeight);
+				var hashRect = new Rect(innerRect.x,innerRect.y + elementTextHeight,innerRect.width - 24,EditorGUIUtility.singleLineHeight);
 				GUI.Label(hashRect,GitGUI.GetTempContent(entry.WorkDirId),EditorStyles.miniLabel);
-				Rect iconRect = new Rect(innerRect.x,innerRect.y + elementTextHeight + EditorGUIUtility.singleLineHeight,21,21);
+				var iconRect = new Rect(innerRect.x,innerRect.y + elementTextHeight + EditorGUIUtility.singleLineHeight,21,21);
 
-				bool initActive = false;
+				var initActive = false;
 				if (entry.Status == SubmoduleStatus.InConfig)
 				{
 					GUI.Label(iconRect,GitGUI.GetTempContent(GitGUI.Textures.WarrningIconSmall,"Module is only in config."),GitGUI.Styles.IconButton);
@@ -94,39 +94,37 @@ namespace UniGit
 					iconRect.x += EditorGUIUtility.singleLineHeight;
 				}
 
-				GUIContent switchContent = GitGUI.GetTempContent(GitGUI.Textures.OrbitTool, "Explore");
-				Rect switchRect = new Rect(innerRect.x + innerRect.width - 24,innerRect.y,24,24);
+				var switchContent = GitGUI.GetTempContent(GitGUI.Textures.OrbitTool, "Explore");
+				var switchRect = new Rect(innerRect.x + innerRect.width - 24,innerRect.y,24,24);
 				EditorGUIUtility.AddCursorRect(switchRect,MouseCursor.Link);
 				if (GUI.Button(switchRect,switchContent,GitGUI.Styles.IconButton))
 				{
 					gitManager.SwitchToSubModule(entry.Path);
 					editorWindow.Close();
 				}
-				Rect optionsRect = new Rect(innerRect.x + innerRect.width - 24,innerRect.y + 24,24,24);
+				var optionsRect = new Rect(innerRect.x + innerRect.width - 24,innerRect.y + 24,24,24);
 				EditorGUIUtility.AddCursorRect(optionsRect,MouseCursor.Link);
 				if (GUI.Button(optionsRect, GitGUI.IconContent("UnityEditor.SceneHierarchyWindow", string.Empty, "Options"),GitGUI.Styles.IconButton))
 				{
-					GenericMenu menu = new GenericMenu();
+					var menu = new GenericMenu();
 					BuildOptions(menu, path, initActive);
 					menu.DropDown(optionsRect);
 				}
 
 				if (Event.current.type == EventType.ContextClick && elementRect.Contains(Event.current.mousePosition))
 				{
-					GenericMenu menu = new GenericMenu();
+					var menu = new GenericMenu();
 					BuildOptions(menu, path, initActive);
 					menu.ShowAsContext();
 				}
 			}
 			EditorGUILayout.EndScrollView();
-			if (gitManager.InSubModule)
-			{
-				if (GUILayout.Button(GitGUI.GetTempContent("Return")))
-				{
-					gitManager.SwitchToMainRepository();
-				}
-			}
-		}
+            if (!gitManager.InSubModule) return;
+            if (GUILayout.Button(GitGUI.GetTempContent("Return")))
+            {
+                gitManager.SwitchToMainRepository();
+            }
+        }
 
 		private void BuildOptions(GenericMenu menu, string path,bool initActive)
 		{

@@ -38,12 +38,10 @@ namespace UniGit
         private readonly UniGitPaths paths;
         private readonly InjectionHelper injectionHelper;
 
-        private StatusTreeClass statusTree;
-		private bool isDirty = true;
+        private bool isDirty = true;
 		private bool isUpdating;
-		private List<EditorWindow> projectWindows;
 
-		[UniGitInject]
+        [UniGitInject]
 		public GitProjectOverlay(GitManager gitManager,
 			GitCallbacks gitCallbacks, 
 			GitSettingsJson gitSettings, 
@@ -96,7 +94,7 @@ namespace UniGit
 			//project browsers only get created before delay call but not before constructor
 			gitCallbacks.DelayCall += () =>
 			{
-				projectWindows = new List<EditorWindow>(Resources.FindObjectsOfTypeAll(reflectionHelper.ProjectWindowType).Cast<EditorWindow>()); 
+				ProjectWindows = new List<EditorWindow>(Resources.FindObjectsOfTypeAll(reflectionHelper.ProjectWindowType).Cast<EditorWindow>()); 
 			};
 
 			//shortcut to getting instance id without loading asset
@@ -112,53 +110,50 @@ namespace UniGit
 
 		private void OnEditorUpdate()
 		{
-			if (isDirty && !isUpdating && ((projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke)) | prefs.GetBool(ForceUpdateKey,false)))
-			{
-				if (data.Initialized)
-				{
-					if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status))
-					{
-						isUpdating = true;
-						gitManager.ActionQueue.Enqueue(() =>
-						{
-							try
-							{
-								UpdateStatusTreeThreaded(data.RepositoryStatus);
-							}
-							finally
-							{
-								isUpdating = false;
-							}
-						});
-						isDirty = false;
-					}
-					else
-					{
-						if(!Monitor.TryEnter(data.RepositoryStatus.LockObj)) return;
-						isUpdating = true;
-						GitProfilerProxy.BeginSample("Git Project Window status tree building");
-						try
-						{
+			if (isDirty && !isUpdating && ((ProjectWindows != null && ProjectWindows.Any(reflectionHelper.HasFocusFunction.Invoke)) | prefs.GetBool(ForceUpdateKey,false)))
+            {
+                if (!data.Initialized) return;
+                if (gitSettings.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status))
+                {
+                    isUpdating = true;
+                    gitManager.ActionQueue.Enqueue(() =>
+                    {
+                        try
+                        {
+                            UpdateStatusTreeThreaded(data.RepositoryStatus);
+                        }
+                        finally
+                        {
+                            isUpdating = false;
+                        }
+                    });
+                    isDirty = false;
+                }
+                else
+                {
+                    if(!Monitor.TryEnter(data.RepositoryStatus.LockObj)) return;
+                    isUpdating = true;
+                    GitProfilerProxy.BeginSample("Git Project Window status tree building");
+                    try
+                    {
 							
-							try
-							{
-								UpdateStatusTree(data.RepositoryStatus);
-							}
-							finally
-							{
-								isUpdating = false;
-							}
-						}
-						finally
-						{
-							Monitor.Exit(data.RepositoryStatus.LockObj);
-							GitProfilerProxy.EndSample();
-						}
-						isDirty = false;
-					}
-					
-				}
-			}
+                        try
+                        {
+                            UpdateStatusTree(data.RepositoryStatus);
+                        }
+                        finally
+                        {
+                            isUpdating = false;
+                        }
+                    }
+                    finally
+                    {
+                        Monitor.Exit(data.RepositoryStatus.LockObj);
+                        GitProfilerProxy.EndSample();
+                    }
+                    isDirty = false;
+                }
+            }
 		}
 
 		private IEnumerable<GUIContent> GetIcons(FileStatus status,SubmoduleStatus submoduleStatus, bool isSubModule)
@@ -181,31 +176,28 @@ namespace UniGit
 
 		private void CustomIcons(string guid, Rect rect)
 		{
-			if (statusTree == null) return;
-			string path = AssetDatabase.GUIDToAssetPath(guid);
-			var status = statusTree.GetStatus(path);
-			if (status != null)
-			{
-				if (AssetDatabase.IsValidFolder(path) && !status.IsSubModule)
-				{
-					int folderInstanceId = GetAssetInstanceId(path);
-					//exclude the Assets folder
-					if (status.Depth == 0) return;
-					//todo cache expandedProjectWindowItems into a HashSet for faster Contains
-					if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(folderInstanceId)) return;
-				}
-				bool small = rect.height <= 16;
-				if (small)
-				{
-					DrawFileIcons(rect,GetIcons(status.State,status.SubmoduleStatus,status.isSubModule),status.IsSubModule,path);
-				}
-				else
-				{
-					DrawFileIcon(rect, status.IsSubModule ? gitOverlay.icons.submoduleIcon : gitOverlay.GetDiffTypeIcon(status.State, false));
-				}
-				
-			}
-		}
+			if (StatusTree == null) return;
+			var path = AssetDatabase.GUIDToAssetPath(guid);
+			var status = StatusTree.GetStatus(path);
+            if (status == null) return;
+            if (AssetDatabase.IsValidFolder(path) && !status.IsSubModule)
+            {
+                var folderInstanceId = GetAssetInstanceId(path);
+                //exclude the Assets folder
+                if (status.Depth == 0) return;
+                //todo cache expandedProjectWindowItems into a HashSet for faster Contains
+                if (!status.ForceStatus && InternalEditorUtility.expandedProjectWindowItems.Contains(folderInstanceId)) return;
+            }
+            var small = rect.height <= 16;
+            if (small)
+            {
+                DrawFileIcons(rect,GetIcons(status.State,status.SubmoduleStatus,status.isSubModule),status.IsSubModule,path);
+            }
+            else
+            {
+                DrawFileIcon(rect, status.IsSubModule ? gitOverlay.icons.submoduleIcon : gitOverlay.GetDiffTypeIcon(status.State, false));
+            }
+        }
 
 		private int GetAssetInstanceId(string path)
 		{
@@ -216,16 +208,16 @@ namespace UniGit
 
 		private void DrawFileIcon(Rect rect, GUIContent icon)
 		{
-			float width = Mathf.Min(rect.width, 32);
-			float height = Mathf.Min(rect.height, 32);
+			var width = Mathf.Min(rect.width, 32);
+			var height = Mathf.Min(rect.height, 32);
 			GUI.Label(new Rect(rect.x + rect.width - width, rect.y, width, height), icon, iconStyle);
 		}
 
 		private void DrawFileIcons(Rect rect, IEnumerable<GUIContent> contents,bool subModule,string path)
 		{
-			float width = Mathf.Min(rect.width, 16);
-			float height = Mathf.Min(rect.height, 16);
-			int index = 0;
+			var width = Mathf.Min(rect.width, 16);
+			var height = Mathf.Min(rect.height, 16);
+			var index = 0;
 			foreach (var content in contents)
 			{
 				GUI.Label(new Rect(rect.x + rect.width - width - (width * index), rect.y, width, height), content, iconStyle);
@@ -234,11 +226,10 @@ namespace UniGit
 
 			if (subModule)
 			{
-				float textWidthMin, textWidthMax;
-				string name = Path.GetFileName(path);
-				EditorStyles.label.CalcMinMaxWidth(GitGUI.GetTempContent(name), out textWidthMin, out textWidthMax);
-				float lineX = rect.x + textWidthMin + 18;
-				float lineWidth = Mathf.Max(rect.width - (width * index) - textWidthMin - 20,0);
+                var name = Path.GetFileName(path);
+				EditorStyles.label.CalcMinMaxWidth(GitGUI.GetTempContent(name), out var textWidthMin, out var textWidthMax);
+				var lineX = rect.x + textWidthMin + 18;
+				var lineWidth = Mathf.Max(rect.width - (width * index) - textWidthMin - 20,0);
 				GUI.Box(new Rect(lineX,rect.y + rect.height*0.5f,lineWidth,2),GUIContent.none,lineStyle);
 			}
 		}
@@ -264,7 +255,7 @@ namespace UniGit
 
                 var newStatusTree = injectionHelper.CreateInstance<StatusTreeClass>(cullNonAssetPaths);
 				newStatusTree.Build(status, subModules);
-				statusTree = newStatusTree;
+				StatusTree = newStatusTree;
 				gitManager.ExecuteAction(RepaintProjectWidnow, threaded);
 			}
 			catch (Exception e)
@@ -280,21 +271,15 @@ namespace UniGit
 			gitCallbacks.UpdateRepository -= OnUpdateRepository;
 		}
 
-		public StatusTreeClass StatusTree
-		{
-			get { return statusTree; }
-		}
+		public StatusTreeClass StatusTree { get; private set; }
 
-		public List<EditorWindow> ProjectWindows
-		{
-			get { return projectWindows; }
-		}
+        public List<EditorWindow> ProjectWindows { get; private set; }
 
-		#region Static Helpers
+        #region Static Helpers
 
 		public static void RepaintProjectWidnow()
 		{
-			Type type = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
+			var type = typeof(EditorWindow).Assembly.GetType("UnityEditor.ProjectBrowser");
 			var projectWindow = Resources.FindObjectsOfTypeAll(type).FirstOrDefault();
 			if (projectWindow != null)
 			{
@@ -311,22 +296,16 @@ namespace UniGit
 			isDirty = true;
 		}
 
-		public bool IsWatching
-		{
-			get { return projectWindows != null && projectWindows.Any(reflectionHelper.HasFocusFucntion.Invoke); }
-		}
+		public bool IsWatching => ProjectWindows != null && ProjectWindows.Any(reflectionHelper.HasFocusFunction.Invoke);
 
-		public bool IsValid
-		{
-			get { return true; }
-		}
+        public bool IsValid => true;
 
-		#endregion
+        #endregion
 
 		#region Status Tree
 		public class StatusTreeClass
 		{
-			private Dictionary<string, StatusTreeEntry> entries = new Dictionary<string, StatusTreeEntry>();
+			private readonly Dictionary<string, StatusTreeEntry> entries = new Dictionary<string, StatusTreeEntry>();
 			private string currentProjectPath;
 			private string[] currentPathArray;
 			private FileStatus currentStatus;
@@ -364,61 +343,72 @@ namespace UniGit
 				}
 			}
 
-			private void AddRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
+            private void AddRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
+            {
+                while (true)
+                {
+                    var pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
+
+                    //should a state change be marked at this level (inverse depth)
+                    //bool markState = Settings.ProjectStatusOverlayDepth < 0 || (Mathf.Abs(currentPathArray.Length - entryNameIndex)) <= Math.Max(1, Settings.ProjectStatusOverlayDepth);
+                    //markState = true;
+                    if (entries.TryGetValue(pathChunk, out var entry))
+                    {
+                        entry.State = entry.State.SetFlags(currentStatus, true);
+                    }
+                    else
+                    {
+                        entry = new StatusTreeEntry(entryNameIndex);
+                        entry.State = entry.State.SetFlags(currentStatus);
+                        entries.Add(pathChunk, entry);
+                    }
+
+                    //check if it's at a allowed depth for status forcing on folders
+                    if (currentPathArray.Length - entryNameIndex < (gitSettings.ProjectStatusOverlayDepth + 1))
+                    {
+                        entry.forceStatus = true;
+                    }
+
+                    if (entryNameIndex < currentPathArray.Length - 1)
+                    {
+                        entryNameIndex = entryNameIndex + 1;
+                        entries = entry.SubEntiEntries;
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+
+            private void AddSubModuleRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
+            {
+                while (true)
+                {
+                    var pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
+                    if (!entries.TryGetValue(pathChunk, out var entry))
+                    {
+                        entry = new StatusTreeEntry(entryNameIndex);
+                        entries.Add(pathChunk, entry);
+                    }
+
+                    if (entryNameIndex < currentPathArray.Length - 1)
+                    {
+                        entryNameIndex = entryNameIndex + 1;
+                        entries = entry.SubEntiEntries;
+                        continue;
+                    }
+
+                    entry.isSubModule = true;
+                    entry.SubmoduleStatus = currentSubModuleStatus;
+                    entry.forceStatus = true;
+
+                    break;
+                }
+            }
+
+            public StatusTreeEntry GetStatus(string path)
 			{
-				StatusTreeEntry entry;
-				string pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
-
-				//should a state change be marked at this level (inverse depth)
-				//bool markState = Settings.ProjectStatusOverlayDepth < 0 || (Mathf.Abs(currentPathArray.Length - entryNameIndex)) <= Math.Max(1, Settings.ProjectStatusOverlayDepth);
-				//markState = true;
-				if (entries.TryGetValue(pathChunk, out entry))
-				{
-					entry.State = entry.State.SetFlags(currentStatus, true);
-				}
-				else
-				{
-					entry = new StatusTreeEntry(entryNameIndex);
-					entry.State = entry.State.SetFlags(currentStatus);
-					entries.Add(pathChunk, entry);
-				}
-				//check if it's at a allowed depth for status forcing on folders
-				if (currentPathArray.Length - entryNameIndex < (gitSettings.ProjectStatusOverlayDepth + 1))
-				{
-					entry.forceStatus = true;
-				}
-				if (entryNameIndex < currentPathArray.Length - 1)
-				{
-					AddRecursive(entryNameIndex + 1, entry.SubEntiEntries);
-				}
-			}
-
-			private void AddSubModuleRecursive(int entryNameIndex, Dictionary<string, StatusTreeEntry> entries)
-			{
-				StatusTreeEntry entry;
-				string pathChunk = currentPathArray[entryNameIndex].Replace(".meta", "");
-				if (!entries.TryGetValue(pathChunk, out entry))
-				{
-					entry = new StatusTreeEntry(entryNameIndex);
-					entries.Add(pathChunk, entry);
-				}
-
-				if (entryNameIndex < currentPathArray.Length - 1)
-				{
-					AddSubModuleRecursive(entryNameIndex + 1, entry.SubEntiEntries);
-				}
-				else
-				{
-					entry.isSubModule = true;
-					entry.SubmoduleStatus = currentSubModuleStatus;
-					entry.forceStatus = true;
-				}
-			}
-
-			public StatusTreeEntry GetStatus(string path)
-			{
-				StatusTreeEntry entry;
-				GetStatusRecursive(0, path.Split(new[] { UniGitPathHelper.UnityDeirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries), entries, out entry);
+                GetStatusRecursive(0, path.Split(new[] { UniGitPathHelper.UnityDeirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries), entries, out var entry);
 				return entry;
 			}
 
@@ -429,8 +419,8 @@ namespace UniGit
 					entry = null;
 					return;
 				}
-				StatusTreeEntry entryTmp;
-				if (entries.TryGetValue(path[entryNameIndex], out entryTmp))
+
+                if (entries.TryGetValue(path[entryNameIndex], out var entryTmp))
 				{
 					if (entryNameIndex < path.Length - 1)
 					{
@@ -447,39 +437,24 @@ namespace UniGit
 
 		public class StatusTreeEntry
 		{
-			private Dictionary<string, StatusTreeEntry> subEntiEntries = new Dictionary<string, StatusTreeEntry>();
-			internal bool forceStatus;
-			private readonly int depth;
-			public FileStatus State { get; set; }
+            internal bool forceStatus;
+            public FileStatus State { get; set; }
 			internal bool isSubModule;
 			public SubmoduleStatus SubmoduleStatus { get; set; }
 
 			public StatusTreeEntry(int depth)
 			{
-				this.depth = depth;
+				this.Depth = depth;
 			}
 
-			public int Depth
-			{
-				get { return depth; }
-			}
+			public int Depth { get; }
 
-			public bool ForceStatus
-			{
-				get { return forceStatus; }
-			}
+            public bool ForceStatus => forceStatus;
 
-			public bool IsSubModule
-			{
-				get { return isSubModule; }
-			}
+            public bool IsSubModule => isSubModule;
 
-			public Dictionary<string, StatusTreeEntry> SubEntiEntries
-			{
-				get { return subEntiEntries; }
-				set { subEntiEntries = value; }
-			}
-		}
+            public Dictionary<string, StatusTreeEntry> SubEntiEntries { get; set; } = new Dictionary<string, StatusTreeEntry>();
+        }
 		#endregion
 	}
 }

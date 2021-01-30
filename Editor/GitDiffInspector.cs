@@ -156,14 +156,11 @@ namespace UniGit
 			}
 
 
-			if (changes != null)
-			{
-				isBinary = changes.IsBinaryComparison;
-				return changes.Patch.Split('\n');
-			}
+            if (changes == null) return new string[0];
+            isBinary = changes.IsBinaryComparison;
+            return changes.Patch.Split('\n');
 
-			return new string[0];
-		}
+        }
 
 		private string[] GetLines(Commit oldTree, Commit newTree)
 		{
@@ -175,9 +172,9 @@ namespace UniGit
 
 		private void BuildChangeSections(Commit commit)
 		{
-			int lastIndexFileLine = 0;
+			var lastIndexFileLine = 0;
 			Stream indexFileContent;
-			string indexFilePath = UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), localPath);
+			var indexFilePath = UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), localPath);
 			if (File.Exists(indexFilePath))
 			{
 				indexFileContent = File.OpenRead(indexFilePath);
@@ -187,7 +184,7 @@ namespace UniGit
 				indexFileContent = new MemoryStream();
 			}
 
-			StreamReader indexFileReader = new StreamReader(indexFileContent);
+			var indexFileReader = new StreamReader(indexFileContent);
 
 			var lines = GetLines(commit);
 			try
@@ -208,9 +205,9 @@ namespace UniGit
 
 		private void BuildChangeSections(Commit oldCommit,Commit newCommit)
 		{
-			int lastIndexFileLine = 0;
-			Stream indexFileContent = ((Blob)newCommit.Tree[localPath].Target).GetContentStream();
-			StreamReader indexFileReader = new StreamReader(indexFileContent);
+			var lastIndexFileLine = 0;
+			var indexFileContent = ((Blob)newCommit.Tree[localPath].Target).GetContentStream();
+			var indexFileReader = new StreamReader(indexFileContent);
 
 			var lines = GetLines(oldCommit, newCommit);
 			try
@@ -235,9 +232,9 @@ namespace UniGit
 			ChangeSection currentSection = null;
 			IChangeBlob currentBlob = null;
 
-			LineChangeType lastLineChangeType = LineChangeType.Normal;
+			var lastLineChangeType = LineChangeType.Normal;
 
-			for (int i = 0; i < lines.Length - 1; i++)
+			for (var i = 0; i < lines.Length - 1; i++)
 			{
 				if (lines[i].StartsWith("@@"))
 				{
@@ -247,12 +244,10 @@ namespace UniGit
 					if (currentSection == null)
 					{
 						//the first normal section before any changes
-						var prevNormalSection = new ChangeSection(false);
-						prevNormalSection.addedStartLine = 1;
-						prevNormalSection.removedStartLine = 1;
-						var b = new NormalBlob();
+                        var prevNormalSection = new ChangeSection(false) {addedStartLine = 1, removedStartLine = 1};
+                        var b = new NormalBlob();
 
-						for (int j = 0; j < newSection.addedStartLine - 1; j++)
+						for (var j = 0; j < newSection.addedStartLine - 1; j++)
 						{
 							b.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
 							lastIndexFileLine++;
@@ -265,8 +260,8 @@ namespace UniGit
 						var nextNormalSection = new ChangeSection(false);
 						var b = new NormalBlob();
 
-						int start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
-						int count = (newSection.addedStartLine - (currentSection.addedStartLine + currentSection.addedLineCount));
+						var start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
+						var count = (newSection.addedStartLine - (currentSection.addedStartLine + currentSection.addedLineCount));
 
 						nextNormalSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
 						nextNormalSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
@@ -277,7 +272,7 @@ namespace UniGit
 							lastIndexFileLine++;
 						}
 
-						for (int j = 0; j < count; j++)
+						for (var j = 0; j < count; j++)
 						{
 							b.lines.Add(ColorizeLine(indexFileReader.ReadLine()));
 							lastIndexFileLine++;
@@ -292,7 +287,7 @@ namespace UniGit
 				}
 				else if (currentSection != null)
 				{
-					LineChangeType lineChangeType = LineChangeType.Normal;
+					var lineChangeType = LineChangeType.Normal;
 					if (lines[i].StartsWith("+"))
 						lineChangeType = LineChangeType.Added;
 					else if (lines[i].StartsWith("-"))
@@ -300,30 +295,24 @@ namespace UniGit
 
 					if (lastLineChangeType == LineChangeType.Normal && lineChangeType != LineChangeType.Normal)
 					{
-						if (currentBlob != null) currentBlob.Finish();
-						currentBlob = CreateNewBlob(lineChangeType, currentSection);
+                        currentBlob?.Finish();
+                        currentBlob = CreateNewBlob(lineChangeType, currentSection);
 					}
 					else if (lastLineChangeType != LineChangeType.Normal && lineChangeType == LineChangeType.Normal)
 					{
-						if (currentBlob != null) currentBlob.Finish();
-						currentBlob = CreateNewBlob(lineChangeType, currentSection);
+                        currentBlob?.Finish();
+                        currentBlob = CreateNewBlob(lineChangeType, currentSection);
 					}
 
-					if (currentBlob != null)
-					{
-						currentBlob.AddLine(lineChangeType, ColorizeLine(lines[i]));
-					}
+                    currentBlob?.AddLine(lineChangeType, ColorizeLine(lines[i]));
 
-					lastLineChangeType = lineChangeType;
+                    lastLineChangeType = lineChangeType;
 				}
 			}
 
-			if (currentBlob != null)
-			{
-				currentBlob.Finish();
-			}
+            currentBlob?.Finish();
 
-			if (currentSection != null)
+            if (currentSection != null)
 			{
 				var lastSection = new ChangeSection(false);
 				var lastNormalBlob = new NormalBlob();
@@ -331,7 +320,7 @@ namespace UniGit
 				lastSection.addedStartLine = currentSection.addedStartLine + currentSection.addedLineCount;
 				lastSection.removedStartLine = currentSection.removedStartLine + currentSection.removedLineCount;
 
-				int start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
+				var start = (currentSection.addedStartLine + currentSection.addedLineCount) - 1;
 
 				while (lastIndexFileLine < start)
 				{
@@ -404,23 +393,22 @@ namespace UniGit
 					newSection.addedStartLine++;
 				}
 			}
-			if (removedMatch.Success)
-			{
-				int.TryParse(removedMatch.Groups["lineStart"].Value, out newSection.removedStartLine);
-				if (!int.TryParse(removedMatch.Groups["lineCount"].Value, out newSection.removedLineCount))
-				{
-					newSection.removedLineCount = 1;
-				}
 
-				if (newSection.removedLineCount == 0)
-				{
-					newSection.removedStartLine++;
-				}
-			}
-			return newSection;
+            if (!removedMatch.Success) return newSection;
+            int.TryParse(removedMatch.Groups["lineStart"].Value, out newSection.removedStartLine);
+            if (!int.TryParse(removedMatch.Groups["lineCount"].Value, out newSection.removedLineCount))
+            {
+                newSection.removedLineCount = 1;
+            }
+
+            if (newSection.removedLineCount == 0)
+            {
+                newSection.removedStartLine++;
+            }
+            return newSection;
 		}
 
-		private IChangeBlob CreateNewBlob(LineChangeType type,ChangeSection section)
+		private static IChangeBlob CreateNewBlob(LineChangeType type,ChangeSection section)
 		{
 			IChangeBlob blob;
 			if (type == LineChangeType.Normal)
@@ -436,13 +424,11 @@ namespace UniGit
 			if(changeSections == null) return;
 			foreach (var changeSection in changeSections)
 			{
-				AddRemoveBlob firstChange = (AddRemoveBlob)changeSection.changeBlobs.FirstOrDefault(b => b is AddRemoveBlob);
-				if (firstChange != null)
-				{
-					scrollVertical = Mathf.Max((changeSection.addedStartLine - 8), 0) * EditorGUIUtility.singleLineHeight;
-					return;
-				}
-			}
+				var firstChange = (AddRemoveBlob)changeSection.changeBlobs.FirstOrDefault(b => b is AddRemoveBlob);
+                if (firstChange == null) continue;
+                scrollVertical = Mathf.Max((changeSection.addedStartLine - 8), 0) * EditorGUIUtility.singleLineHeight;
+                return;
+            }
 		}
 
 		private float GetLineWidth(string line)
@@ -452,21 +438,27 @@ namespace UniGit
 		}
 
 		private string ColorizeLine(string line)
-		{
-			if(synataxHighlight)
-				return uberRegex.Process(line);
-			return line;
-		}
+        {
+            return synataxHighlight ? uberRegex.Process(line) : line;
+        }
 
 		private void InitStyles()
-		{
-			if (styles == null)
-			{
-				styles = new Styles();
-				styles.NormalLine = new GUIStyle(EditorStyles.label) {padding = {left = 6},normal = new GUIStyleState() { background = Texture2D.whiteTexture },onNormal = new GUIStyleState() { background = Texture2D.whiteTexture },richText = true};
-				styles.LineNum = new GUIStyle(EditorStyles.label) { padding = { left = 6,right = 6},normal = { background = Texture2D.whiteTexture } };
-			}
-		}
+        {
+            styles ??= new Styles
+            {
+                NormalLine = new GUIStyle(EditorStyles.label)
+                {
+                    padding = {left = 6},
+                    normal = new GUIStyleState() {background = Texture2D.whiteTexture},
+                    onNormal = new GUIStyleState() {background = Texture2D.whiteTexture},
+                    richText = true
+                },
+                LineNum = new GUIStyle(EditorStyles.label)
+                {
+                    padding = {left = 6, right = 6}, normal = {background = Texture2D.whiteTexture}
+                }
+            };
+        }
 
 		private void OnGUI()
 		{
@@ -496,42 +488,42 @@ namespace UniGit
 				return;
 			}
 
-			if (animationTween == null)
-			{
-				animationTween = gitAnimation.StartManualAnimation(AnimationDuration,this,out animationTime,GitSettingsJson.AnimationTypeEnum.DiffInspector);
-			}
+			animationTween ??= gitAnimation.StartManualAnimation(AnimationDuration, this, out animationTime,GitSettingsJson.AnimationTypeEnum.DiffInspector);
 
-			float toolbarHeight = EditorStyles.toolbar.fixedHeight;
-			float difHeight = position.height - toolbarHeight;
+			var toolbarHeight = EditorStyles.toolbar.fixedHeight;
+			var difHeight = position.height - toolbarHeight;
 
 			DrawToolbar();
 
-			Rect resizeRect = new Rect(position.width * otherFileWindowWidth - 3, toolbarHeight,6, difHeight);
-			Rect indexFileRect = new Rect(position.width * otherFileWindowWidth + (resizeRect.width/2), toolbarHeight, position.width * (1 - otherFileWindowWidth) - (resizeRect.width / 2), difHeight);
-			Rect otherFileScrollRect = new Rect(0, toolbarHeight, position.width * otherFileWindowWidth - (resizeRect.width / 2), difHeight);
+			var resizeRect = new Rect(position.width * otherFileWindowWidth - 3, toolbarHeight,6, difHeight);
+			var indexFileRect = new Rect(position.width * otherFileWindowWidth + (resizeRect.width/2), toolbarHeight, position.width * (1 - otherFileWindowWidth) - (resizeRect.width / 2), difHeight);
+			var otherFileScrollRect = new Rect(0, toolbarHeight, position.width * otherFileWindowWidth - (resizeRect.width / 2), difHeight);
 
 			gitAnimation.Update(animationTween,ref animationTime);
-			float animTime = GitAnimation.ApplyEasing(animationTween.Percent);
+			var animTime = GitAnimation.ApplyEasing(animationTween.Percent);
 
-			if (Event.current.type == EventType.MouseDown && otherFileScrollRect.Contains(Event.current.mousePosition))
-			{
-				selectedFile = FileType.OtherFile;
-				Repaint();
-			}
-			else if (Event.current.type == EventType.MouseDown && indexFileRect.Contains(Event.current.mousePosition))
-			{
-				selectedFile = FileType.IndexFile;
-				Repaint();
-			}
+			switch (Event.current.type)
+            {
+                case EventType.MouseDown when otherFileScrollRect.Contains(Event.current.mousePosition):
+                    selectedFile = FileType.OtherFile;
+                    Repaint();
+                    break;
+                case EventType.MouseDown when indexFileRect.Contains(Event.current.mousePosition):
+                    selectedFile = FileType.IndexFile;
+                    Repaint();
+                    break;
+            }
 
 			GUI.Box(resizeRect,GUIContent.none);
 
-			if (Event.current.type == EventType.MouseUp)
-				isResizingFileWindow = false;
-			if (Event.current.type == EventType.MouseDown && resizeRect.Contains(Event.current.mousePosition))
-				isResizingFileWindow = true;
+            isResizingFileWindow = Event.current.type switch
+            {
+                EventType.MouseUp => false,
+                EventType.MouseDown when resizeRect.Contains(Event.current.mousePosition) => true,
+                _ => isResizingFileWindow
+            };
 
-			if (isResizingFileWindow)
+            if (isResizingFileWindow)
 			{
 				otherFileWindowWidth = Mathf.Clamp(Event.current.mousePosition.x / position.width,0.1f,0.9f);
 				EditorGUIUtility.AddCursorRect(position,MouseCursor.ResizeHorizontal);
@@ -548,12 +540,9 @@ namespace UniGit
 			DrawBlobs(false, otherFileScrollRect, indexFileRect);
 			DrawBlobs(true, indexFileRect, otherFileScrollRect);
 
-			if(selectedFile == FileType.IndexFile)
-				GUI.Box(indexFileRect,GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
-			else
-				GUI.Box(otherFileScrollRect, GUIContent.none, GitGUI.Styles.SelectionBoxGlow);
+            GUI.Box(selectedFile == FileType.IndexFile ? indexFileRect : otherFileScrollRect, GUIContent.none,GitGUI.Styles.SelectionBoxGlow);
 
-			GUI.color = new Color(1,1,1,Mathf.Lerp(0,1,animTime));
+            GUI.color = new Color(1,1,1,Mathf.Lerp(0,1,animTime));
 			GUI.Box(new Rect(0,0,position.width,position.height - toolbarHeight), GUIContent.none);
 			GUI.color = Color.white;
 		}
@@ -561,7 +550,7 @@ namespace UniGit
 		private void DrawToolbar()
 		{
 			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-			Rect goToLineRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton);
+			var goToLineRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton);
 			if (GUI.Button(goToLineRect, GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton))
 			{
 				PopupWindow.Show(goToLineRect, new GoToLinePopup(GoToLine));
@@ -589,15 +578,13 @@ namespace UniGit
 
 		private void GoToPreviousChange()
 		{
-			for (int i = changeSections.Count-1; i >= 0; i--)
+			for (var i = changeSections.Count-1; i >= 0; i--)
 			{
 				var changeSection = changeSections[i];
-				if (changeSection.hasChanges && changeSection.GetStartLine(selectedFile) < GetSelectedLine(selectedFile))
-				{
-					GoToLine(changeSection.GetStartLine(selectedFile));
-					return;
-				}
-			}
+                if (!changeSection.hasChanges || changeSection.GetStartLine(selectedFile) >= GetSelectedLine(selectedFile)) continue;
+                GoToLine(changeSection.GetStartLine(selectedFile));
+                return;
+            }
 
 			var firstChangeSection = changeSections.Last(s => s.hasChanges);
 			if (firstChangeSection != null)
@@ -609,13 +596,11 @@ namespace UniGit
 		private void GoToNextChange()
 		{
 			foreach (var changeSection in changeSections)
-			{
-				if (changeSection.hasChanges && changeSection.GetStartLine(selectedFile) > GetSelectedLine(selectedFile))
-				{
-					GoToLine(changeSection.GetStartLine(selectedFile));
-					return;
-				}
-			}
+            {
+                if (!changeSection.hasChanges || changeSection.GetStartLine(selectedFile) <= GetSelectedLine(selectedFile)) continue;
+                GoToLine(changeSection.GetStartLine(selectedFile));
+                return;
+            }
 
 			var firstChangeSection = changeSections.First(s => s.hasChanges);
 			if (firstChangeSection != null)
@@ -633,11 +618,9 @@ namespace UniGit
 		}
 
 		private int GetSelectedLine(FileType fileType)
-		{
-			if (fileType == FileType.IndexFile)
-				return selectedIndexFileLine;
-			return selectedOtherFileLine;
-		}
+        {
+            return fileType == FileType.IndexFile ? selectedIndexFileLine : selectedOtherFileLine;
+        }
 
 		private void SetSelectedLine(FileType fileType,int line)
 		{
@@ -649,42 +632,40 @@ namespace UniGit
 
 		private float GetLineHeight(FileType fileType,int line)
 		{
-			int realLineCount = 0;
+			var realLineCount = 0;
 			foreach (var changeSection in changeSections)
 			{
-				int startLine = changeSection.GetStartLine(fileType);
-				int lineCount = changeSection.GetLineCout(fileType);
+				var startLine = changeSection.GetStartLine(fileType);
+				var lineCount = changeSection.GetLineCout(fileType);
 				if (startLine + lineCount > line)
 				{
 					realLineCount += line - startLine;
 					break;
 				}
-				else
-				{
-					realLineCount += changeSection.changeBlobs.Sum(b => b.Lines);
-				}
-			}
+
+                realLineCount += changeSection.changeBlobs.Sum(b => b.Lines);
+            }
 
 			return realLineCount * EditorGUIUtility.singleLineHeight;
 		}
 
 		private void DrawBlobs(bool showAdd,Rect rect,Rect otherRect)
 		{
-			float maxLineWidth = Mathf.Max(this.maxLineWidth, rect.width - maxLineNumWidth);
-			float totalLineWidth = maxLineNumWidth + maxLineWidth + GUI.skin.verticalScrollbar.fixedWidth;
-			float scrollMaxHorizontal = Mathf.Max(1, Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth));
-			bool isRapaint = Event.current.type == EventType.Repaint;
+			var maxLineWidth = Mathf.Max(this.maxLineWidth, rect.width - maxLineNumWidth);
+			var totalLineWidth = maxLineNumWidth + maxLineWidth + GUI.skin.verticalScrollbar.fixedWidth;
+			var scrollMaxHorizontal = Mathf.Max(1, Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth));
+			var isRapaint = Event.current.type == EventType.Repaint;
 
 			float height = 0;
-			Rect viewRect = new Rect(0,0, totalLineWidth, totalLinesHeight);
-			Rect screenRect = new Rect(scrollHorizontalNormal * viewRect.width, scrollVertical, rect.width,rect.height);
+			var viewRect = new Rect(0,0, totalLineWidth, totalLinesHeight);
+			var screenRect = new Rect(scrollHorizontalNormal * viewRect.width, scrollVertical, rect.width,rect.height);
 			var newScroll = GUI.BeginScrollView(rect, new Vector2(scrollHorizontalNormal * scrollMaxHorizontal, scrollVertical), viewRect);
 			scrollHorizontalNormal = Mathf.Clamp01(newScroll.x / scrollMaxHorizontal);
 			scrollVertical = newScroll.y;
 
 			if (Event.current.type == EventType.MouseDrag && (Event.current.button == 2 || (Event.current.button == 0 && Event.current.shift)))
 			{
-				Vector2 scrollDelta = new Vector2(Event.current.delta.x / scrollMaxHorizontal * 0.5f, Event.current.delta.y * 0.5f);
+				var scrollDelta = new Vector2(Event.current.delta.x / scrollMaxHorizontal * 0.5f, Event.current.delta.y * 0.5f);
 				scrollHorizontalNormal -= scrollDelta.x;
 				scrollVertical -= scrollDelta.y;
 				Repaint();
@@ -697,89 +678,89 @@ namespace UniGit
 
 			GUI.Box(new Rect(0,0,maxLineNumWidth,totalLinesHeight),GUIContent.none, GitGUI.Styles.GroupBox);
 
-			int currentScrollLine = Mathf.FloorToInt(scrollVertical / EditorGUIUtility.singleLineHeight);
-			int linesVisible = Mathf.FloorToInt(rect.height / EditorGUIUtility.singleLineHeight)+1;
-			int visibleLineCount = 0;
+			var currentScrollLine = Mathf.FloorToInt(scrollVertical / EditorGUIUtility.singleLineHeight);
+			var linesVisible = Mathf.FloorToInt(rect.height / EditorGUIUtility.singleLineHeight)+1;
+			var visibleLineCount = 0;
 
 			foreach (var changeSection in changeSections)
-			{
-				int line = showAdd ? changeSection.addedStartLine : changeSection.removedStartLine;
-				for (int b = 0; b < changeSection.changeBlobs.Count; b++)
-				{
-					int visibleLineOffset = Mathf.Max(currentScrollLine - visibleLineCount,0);
-					var blob = changeSection.changeBlobs[b];
+            {
+                var line = showAdd ? changeSection.addedStartLine : changeSection.removedStartLine;
+                foreach (var blob in changeSection.changeBlobs)
+                {
+                    var visibleLineOffset = Mathf.Max(currentScrollLine - visibleLineCount,0);
 
-					if (blob is NormalBlob)
-					{
-						var normalBlob = ((NormalBlob) blob);
-						for (int i = visibleLineOffset; i < Mathf.Min(normalBlob.lines.Count,visibleLineOffset + linesVisible); i++)
-						{
-							float currentHeight = height + i * EditorGUIUtility.singleLineHeight;
-							int currentLine = line + i;
-							Rect lineRect = new Rect(maxLineNumWidth, currentHeight, maxLineWidth, EditorGUIUtility.singleLineHeight);
-							if (IsRectVisible(lineRect, screenRect))
-							{
-								Rect lineNumRect = new Rect(0, currentHeight, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
-								GUI.backgroundColor = new Color(0, 0, 0, 0);
-								GUI.Label(lineNumRect, currentLine.ToString(), styles.LineNum);
-								GUI.Label(lineRect, normalBlob.lines[i], styles.NormalLine);
-								GUI.backgroundColor = Color.white;
+                    switch (blob)
+                    {
+                        case NormalBlob normalBlob:
+                        {
+                            for (var i = visibleLineOffset; i < Mathf.Min(normalBlob.lines.Count,visibleLineOffset + linesVisible); i++)
+                            {
+                                var currentHeight = height + i * EditorGUIUtility.singleLineHeight;
+                                var currentLine = line + i;
+                                var lineRect = new Rect(maxLineNumWidth, currentHeight, maxLineWidth, EditorGUIUtility.singleLineHeight);
+                                if (IsRectVisible(lineRect, screenRect))
+                                {
+                                    var lineNumRect = new Rect(0, currentHeight, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
+                                    GUI.backgroundColor = new Color(0, 0, 0, 0);
+                                    GUI.Label(lineNumRect, currentLine.ToString(), styles.LineNum);
+                                    GUI.Label(lineRect, normalBlob.lines[i], styles.NormalLine);
+                                    GUI.backgroundColor = Color.white;
 
-								DoLineEvents(lineRect, showAdd, currentLine);
+                                    DoLineEvents(lineRect, showAdd, currentLine);
 								
-								if (showAdd ? currentLine == selectedIndexFileLine : currentLine == selectedOtherFileLine)
-								{
-									GUI.Box(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, GitGUI.Styles.LightmapEditorSelectedHighlight);
-								}
-							}
-						}
+                                    if (showAdd ? currentLine == selectedIndexFileLine : currentLine == selectedOtherFileLine)
+                                    {
+                                        GUI.Box(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none, GitGUI.Styles.LightmapEditorSelectedHighlight);
+                                    }
+                                }
+                            }
 
-						visibleLineCount += normalBlob.Lines;
-						height += EditorGUIUtility.singleLineHeight * normalBlob.lines.Count;
-					}
-					else if (blob is AddRemoveBlob)
-					{
-						var addRemoveBlob = (AddRemoveBlob)blob;
-						List<string> lines = showAdd ? addRemoveBlob.addedLines : addRemoveBlob.removedLines;
-						for (int i = visibleLineOffset; i < Mathf.Min(addRemoveBlob.maxCount,visibleLineOffset + linesVisible); i++)
-						{
-							float currentHeight = height + i * EditorGUIUtility.singleLineHeight;
-							int currentLine = line + i;
-							Rect lineRect = new Rect(maxLineNumWidth, currentHeight, Mathf.Max(maxLineWidth,rect.width - maxLineNumWidth), EditorGUIUtility.singleLineHeight);
-							if (IsRectVisible(lineRect, screenRect))
-							{
-								if (i < lines.Count)
-								{
-									if (isRapaint)
-									{
-										Rect lineNumRect = new Rect(0, currentHeight, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
-										GUI.backgroundColor = showAdd ? new Color(0, 0.8f, 0, 0.2f) : new Color(1, 0, 0, 0.15f);
-										styles.LineNum.Draw(lineNumRect,GitGUI.GetTempContent(currentLine.ToString()),-1);
-										GUI.backgroundColor = showAdd ? new Color(0, 1, 0, 0.1f) : new Color(1, 0, 0, 0.1f);
-										styles.NormalLine.Draw(lineRect,GitGUI.GetTempContent(lines[i]),-1);
-										GUI.backgroundColor = Color.white;
-									}
+                            visibleLineCount += normalBlob.Lines;
+                            height += EditorGUIUtility.singleLineHeight * normalBlob.lines.Count;
+                            break;
+                        }
+                        case AddRemoveBlob addRemoveBlob:
+                        {
+                            var lines = showAdd ? addRemoveBlob.addedLines : addRemoveBlob.removedLines;
+                            for (var i = visibleLineOffset; i < Mathf.Min(addRemoveBlob.maxCount,visibleLineOffset + linesVisible); i++)
+                            {
+                                var currentHeight = height + i * EditorGUIUtility.singleLineHeight;
+                                var currentLine = line + i;
+                                var lineRect = new Rect(maxLineNumWidth, currentHeight, Mathf.Max(maxLineWidth,rect.width - maxLineNumWidth), EditorGUIUtility.singleLineHeight);
+                                if (!IsRectVisible(lineRect, screenRect)) continue;
+                                if (i < lines.Count)
+                                {
+                                    if (isRapaint)
+                                    {
+                                        var lineNumRect = new Rect(0, currentHeight, maxLineNumWidth, EditorGUIUtility.singleLineHeight);
+                                        GUI.backgroundColor = showAdd ? new Color(0, 0.8f, 0, 0.2f) : new Color(1, 0, 0, 0.15f);
+                                        styles.LineNum.Draw(lineNumRect,GitGUI.GetTempContent(currentLine.ToString()),-1);
+                                        GUI.backgroundColor = showAdd ? new Color(0, 1, 0, 0.1f) : new Color(1, 0, 0, 0.1f);
+                                        styles.NormalLine.Draw(lineRect,GitGUI.GetTempContent(lines[i]),-1);
+                                        GUI.backgroundColor = Color.white;
+                                    }
 
-									DoLineEvents(lineRect, showAdd, currentLine);
+                                    DoLineEvents(lineRect, showAdd, currentLine);
 
-									if (showAdd ? currentLine == selectedIndexFileLine : currentLine == selectedOtherFileLine)
-									{
-										if(isRapaint) (GitGUI.Styles.LightmapEditorSelectedHighlight).Draw(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
-									}
-								}
-								else if(isRapaint)
-								{
-									GUI.backgroundColor = new Color(0, 0, 0, 0.05f);
-									styles.NormalLine.Draw(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
-									GUI.backgroundColor = Color.white;
-								}
-							}
-						}
-						visibleLineCount += addRemoveBlob.maxCount;
-						height += EditorGUIUtility.singleLineHeight * addRemoveBlob.maxCount;
-					}
-				}
-			}
+                                    if (showAdd ? currentLine == selectedIndexFileLine : currentLine == selectedOtherFileLine)
+                                    {
+                                        if(isRapaint) (GitGUI.Styles.LightmapEditorSelectedHighlight).Draw(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
+                                    }
+                                }
+                                else if(isRapaint)
+                                {
+                                    GUI.backgroundColor = new Color(0, 0, 0, 0.05f);
+                                    styles.NormalLine.Draw(new Rect(0, currentHeight, Mathf.Max(totalLineWidth, rect.width), EditorGUIUtility.singleLineHeight), GUIContent.none,-1);
+                                    GUI.backgroundColor = Color.white;
+                                }
+                            }
+                            visibleLineCount += addRemoveBlob.maxCount;
+                            height += EditorGUIUtility.singleLineHeight * addRemoveBlob.maxCount;
+                            break;
+                        }
+                    }
+                }
+            }
 			GUI.EndScrollView();
 		}
 
@@ -794,7 +775,7 @@ namespace UniGit
 			}
 			else if (Event.current.type == EventType.ContextClick && lineRect.Contains(Event.current.mousePosition))
 			{
-				GenericMenu genericMenu = new GenericMenu();
+				var genericMenu = new GenericMenu();
 				BuildLineContextMenu(genericMenu, line);
 				genericMenu.ShowAsContext();
 				Event.current.Use();
@@ -876,8 +857,8 @@ namespace UniGit
 
 			public UberRegex(ColoredRegex[] regexes)
 			{
-				StringBuilder stringBuilder = new StringBuilder();
-				for (int i = 0; i < regexes.Length; i++)
+				var stringBuilder = new StringBuilder();
+				for (var i = 0; i < regexes.Length; i++)
 				{
 					stringBuilder.AppendFormat(i == 0 ? "(?<{0}>{1})" : "|(?<{0}>{1})", regexes[i].Name, regexes[i].Pattern);
 					groupReplaces.Add(regexes[i].Replace);
@@ -892,7 +873,7 @@ namespace UniGit
 
 			private string Replace(Match match)
 			{
-				for (int i = 0; i < groupReplaces.Count; i++)
+				for (var i = 0; i < groupReplaces.Count; i++)
 				{
 					var group = match.Groups[i + 1];
 					if (group.Success)
@@ -968,11 +949,8 @@ namespace UniGit
 
 			}
 
-			public int Lines
-			{
-				get { return lines.Count; }
-			}
-		}
+			public int Lines => lines.Count;
+        }
 
 		public class AddRemoveBlob : IChangeBlob
 		{
@@ -997,10 +975,7 @@ namespace UniGit
 				maxCount = Mathf.Max(removedLines.Count, addedLines.Count);
 			}
 
-			public int Lines
-			{
-				get { return maxCount; }
-			}
-		}
+			public int Lines => maxCount;
+        }
 	}
 }

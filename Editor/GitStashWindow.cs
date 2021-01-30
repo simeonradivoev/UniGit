@@ -35,7 +35,7 @@ namespace UniGit
 		public override void OnGUI(Rect rect)
 		{
 			if(Event.current.type == EventType.MouseMove) editorWindow.Repaint();
-			int stashCount = stashCollection.Count();
+			var stashCount = stashCollection.Count();
 			EditorGUILayout.BeginHorizontal("IN BigTitle");
 			if (GUILayout.Button(GitGUI.GetTempContent("Stash Save",gitOverlay.icons.stashIcon.image,"Save changes in working directory to stash.")))
 			{
@@ -45,12 +45,12 @@ namespace UniGit
 
 			GUI.enabled = true;
 			stashScroll = EditorGUILayout.BeginScrollView(stashScroll, GUILayout.ExpandHeight(true));
-			int stashId = 0;
+			var stashId = 0;
 			foreach (var stash in stashCollection)
 			{
-				string msg = stash.Message;
-				GUIContent stashContent = GitGUI.GetTempContent(msg);
-				Rect stastRect = GUILayoutUtility.GetRect(stashContent, stashStyle);
+				var msg = stash.Message;
+				var stashContent = GitGUI.GetTempContent(msg);
+				var stastRect = GUILayoutUtility.GetRect(stashContent, stashStyle);
 				if (Event.current.type == EventType.Repaint)
 				{
 					stashStyle.Draw(stastRect, stashContent, stastRect.Contains(Event.current.mousePosition) || stashId == selectedStash, false, false, false);

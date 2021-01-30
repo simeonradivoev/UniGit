@@ -28,18 +28,16 @@ namespace UniGit
 		}
 
 		private void OnEditorUpdate()
-		{
-			if (settings.IsDirty)
-			{
-				SaveSettingsToFile();
-				gitCallbacks.IssueSettingsChange();
-				settings.ResetDirty();
-			}
-		}
+        {
+            if (!settings.IsDirty) return;
+            SaveSettingsToFile();
+            gitCallbacks.IssueSettingsChange();
+            settings.ResetDirty();
+        }
 
 		private void ValidateSettingsPath()
 		{
-			string settingsFileDirectory = paths.SettingsFolderPath;
+			var settingsFileDirectory = paths.SettingsFolderPath;
 			if(string.IsNullOrEmpty(settingsFileDirectory)) return;
 			if (!Directory.Exists(settingsFileDirectory))
 			{
@@ -50,33 +48,29 @@ namespace UniGit
 
 		public void LoadGitSettings()
 		{
-			string settingsFilePath = paths.SettingsFilePath;
-			if (File.Exists(settingsFilePath))
-			{
-				try
-				{
-					JsonUtility.FromJsonOverwrite(File.ReadAllText(settingsFilePath), settings);
-				}
-				catch (Exception e)
-				{
-					logger.Log(LogType.Error,"Could not deserialize git settings. Creating new settings.");
-					logger.LogException(e);
-				}
-			}
-		}
+			var settingsFilePath = paths.SettingsFilePath;
+            if (!File.Exists(settingsFilePath)) return;
+            try
+            {
+                JsonUtility.FromJsonOverwrite(File.ReadAllText(settingsFilePath), settings);
+            }
+            catch (Exception e)
+            {
+                logger.Log(LogType.Error,"Could not deserialize git settings. Creating new settings.");
+                logger.LogException(e);
+            }
+        }
 
 		public void LoadOldSettingsFile()
 		{
 			var oldSettingsFile = EditorGUIUtility.Load("UniGit/Git-Settings.asset") as GitSettings;
 
-			if (oldSettingsFile != null)
-			{
-				settings.Copy(oldSettingsFile);
-				logger.Log(LogType.Log,"Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
+            if (oldSettingsFile == null) return;
+            settings.Copy(oldSettingsFile);
+            logger.Log(LogType.Log,"Old Git Settings transferred to new json settings file. Old settings can now safely be removed.");
 
-				SaveSettingsToFile();
-            }
-		}
+            SaveSettingsToFile();
+        }
 
 		public void ShowChooseMainRepositoryPathPopup(EditorWindow context = null)
 		{
@@ -88,8 +82,8 @@ namespace UniGit
 				return;
 			}
 
-			bool isRootPath = UniGitPathHelper.PathsEqual(repoPath, rootProjectPath);
-			bool isChildOfRoot = UniGitPathHelper.IsSubDirectoryOf(repoPath, rootProjectPath);
+			var isRootPath = UniGitPathHelper.PathsEqual(repoPath, rootProjectPath);
+			var isChildOfRoot = UniGitPathHelper.IsSubDirectoryOf(repoPath, rootProjectPath);
 
             if (isRootPath || isChildOfRoot)
 			{
@@ -99,7 +93,7 @@ namespace UniGit
 				}
 				else
 				{
-					string localPath = repoPath.Replace(rootProjectPath + UniGitPathHelper.UnityDeirectorySeparatorChar, "");
+					var localPath = repoPath.Replace(rootProjectPath + UniGitPathHelper.UnityDeirectorySeparatorChar, "");
 					EditorPrefs.SetString(UniGitLoader.RepoPathKey, localPath);
 				}
 
@@ -117,11 +111,11 @@ namespace UniGit
 			if(!initializer.IsValidRepo) return;
 
 			ValidateSettingsPath();
-			string settingsFilePath = paths.SettingsFilePath;
+			var settingsFilePath = paths.SettingsFilePath;
 
 			try
 			{
-				string json = JsonUtility.ToJson(settings);
+				var json = JsonUtility.ToJson(settings);
 				File.WriteAllText(settingsFilePath, json);
 			}
 			catch (Exception e)

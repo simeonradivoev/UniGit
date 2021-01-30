@@ -29,15 +29,13 @@ namespace UniGit.Filters
 			if(!lfsManager.IsEnabled) return;
 			try
 			{
-				Process process;
-				FilterMode mode;
-				if (!processes.TryGetValue(path,out process))
+                if (!processes.TryGetValue(path,out var process))
 				{
 					logger.LogFormat(LogType.Log,"Could not find lfs process for path: {0} when cleaning",path);
 					return;
 				}
 
-				if (!modes.TryGetValue(path, out mode))
+				if (!modes.TryGetValue(path, out var mode))
 				{
 					logger.LogFormat(LogType.Log,"Could not find lfs filter mode for path: {0} when cleaning",path);
 					return;
@@ -64,15 +62,12 @@ namespace UniGit.Filters
 			if (!lfsManager.IsEnabled) return;
 			try
 			{
-				Process process;
-				FilterMode mode;
-
-				if (!processes.TryGetValue(path, out process))
+                if (!processes.TryGetValue(path, out var process))
 				{
 					throw new Exception("Could not find lfs process for path: " + path);
 				}
 
-				if (!modes.TryGetValue(path, out mode))
+				if (!modes.TryGetValue(path, out var mode))
 				{
 					throw new Exception("Could not find lfs filter mode for path: " + path);
 				}
@@ -154,13 +149,13 @@ namespace UniGit.Filters
 						startInfo.Arguments = "clean";
 						break;
 					default:
-						throw new ArgumentOutOfRangeException("mode");
+						throw new ArgumentOutOfRangeException(nameof(mode));
 				}
 
 				process.StartInfo = startInfo;
 				if (!process.Start())
 				{
-					logger.LogFormat(LogType.Error,"Cound not start lfs process of type: {0} for path: {1}",mode,path);
+					logger.LogFormat(LogType.Error,"Could not start lfs process of type: {0} for path: {1}",mode,path);
 				}
 				else
 				{
@@ -185,15 +180,13 @@ namespace UniGit.Filters
 			if (!lfsManager.IsEnabled) return;
 			try
 			{
-				Process process;
-				FilterMode mode;
-				if (!processes.TryGetValue(path, out process))
+                if (!processes.TryGetValue(path, out var process))
 				{
 					logger.LogFormat(LogType.Log,"Could not find lfs process for path: {0} when smudging",path);
 					return;
 				}
 
-				if (!modes.TryGetValue(path, out mode))
+				if (!modes.TryGetValue(path, out var mode))
 				{
 					logger.LogFormat(LogType.Log,"Could not find lfs filter mode for path: {0} when smudging",path);
 					return;

@@ -8,8 +8,8 @@ namespace UniGit.Utils
 		{
 			if(value.GetType() != flag.GetType()) throw new ArgumentException("Enums must be of the same type " + value.GetType() + " " + flag.GetType(),"value");
 
-			int valueInt = Convert.ToInt32(value);
-			int flagInt = Convert.ToInt32(flag);
+			var valueInt = Convert.ToInt32(value);
+			var flagInt = Convert.ToInt32(flag);
 			return (valueInt & flagInt) == flagInt;
 		}
 	}

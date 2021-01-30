@@ -26,25 +26,16 @@ namespace UniGit.Status
 			this.path = path;
 		}
 
-		public string Path
-		{
-			get { return path; }
-		}
+		public string Path => path;
 
-		public string Url
-		{
-			get { return url; }
-		}
+        public string Url => url;
 
-		public string WorkDirId
-		{
-			get { return workDirId; }
-		}
+        public string WorkDirId => workDirId;
 
-		public SubmoduleStatus Status
+        public SubmoduleStatus Status
 		{
-			get { return status; }
-			set { status = value; }
-		}
+			get => status;
+            set => status = value;
+        }
 	}
 }

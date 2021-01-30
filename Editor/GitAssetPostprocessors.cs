@@ -18,10 +18,10 @@ namespace UniGit
 			[UsedImplicitly]
 			private static string[] OnWillSaveAssets(string[] paths)
 			{
-				string[] outputs = new string[paths.Length];
+				var outputs = new string[paths.Length];
 				Array.Copy(paths, outputs, paths.Length);
-				if (OnWillSaveAssetsEvent != null) OnWillSaveAssetsEvent.Invoke(paths,ref outputs);
-				return outputs;
+                OnWillSaveAssetsEvent?.Invoke(paths,ref outputs);
+                return outputs;
 			}
 		}
 
@@ -30,9 +30,9 @@ namespace UniGit
 			[UsedImplicitly]
 			static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 			{
-				if(importedAssets.Length > 0 && OnPostprocessImportedAssetsEvent != null) OnPostprocessImportedAssetsEvent.Invoke(importedAssets);
-				if(deletedAssets.Length > 0 && OnPostprocessDeletedAssetsEvent != null) OnPostprocessDeletedAssetsEvent.Invoke(deletedAssets);
-				if(movedAssets.Length > 0 && OnPostprocessMovedAssetsEvent != null) OnPostprocessMovedAssetsEvent.Invoke(movedAssets, movedFromAssetPaths);
+				if(importedAssets.Length > 0) OnPostprocessImportedAssetsEvent?.Invoke(importedAssets);
+				if(deletedAssets.Length > 0) OnPostprocessDeletedAssetsEvent?.Invoke(deletedAssets);
+				if(movedAssets.Length > 0) OnPostprocessMovedAssetsEvent?.Invoke(movedAssets, movedFromAssetPaths);
 			}
 		}
 	}

@@ -197,24 +197,22 @@ namespace UniGit.Utils
 		{
             lock (activeOperations)
             {
-                for (int i = activeOperations.Count - 1; i >= 0; i--)
+                for (var i = activeOperations.Count - 1; i >= 0; i--)
                 {
                     //todo Make sure thread always finishes. For some reason operation on another thread may not complete or even start and will never be done.
-                    if (activeOperations[i].IsDone)
+                    if (!activeOperations[i].IsDone) continue;
+                    try
                     {
-                        try
-                        {
-                            activeOperations[i].Complete();
-                        }
-                        catch (Exception e)
-                        {
-                            logger.Log(LogType.Error, "There was a problem while notifying async operation of completion");
-                            logger.LogException(e);
-                        }
-                        finally
-                        {
-                            activeOperations.RemoveAt(i);
-                        }
+                        activeOperations[i].Complete();
+                    }
+                    catch (Exception e)
+                    {
+                        logger.Log(LogType.Error, "There was a problem while notifying async operation of completion");
+                        logger.LogException(e);
+                    }
+                    finally
+                    {
+                        activeOperations.RemoveAt(i);
                     }
                 }
             }

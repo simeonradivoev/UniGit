@@ -59,24 +59,17 @@ namespace UniGit.Utils
 		public static string Combine(params string[] paths)
 		{
 			string finalPath = null;
-			for (int i = 0; i < paths.Length; i++)
-			{
-				if (finalPath == null)
-				{
-					finalPath = paths[i];
-				}
-				else
-				{
-					finalPath = Path.Combine(finalPath, paths[i]);
-				}
-			}
+			foreach (var path in paths)
+            {
+                finalPath = finalPath == null ? path : Path.Combine(finalPath, path);
+            }
 			return finalPath;
 		}
 
 		public static bool Compare(string lhs, string rhs)
 		{
 			if (lhs.Length != rhs.Length) return false;
-			for (int i = 0; i < lhs.Length; i++)
+			for (var i = 0; i < lhs.Length; i++)
 			{
 				if (lhs[i] == Path.DirectorySeparatorChar && rhs[i] == Path.AltDirectorySeparatorChar) continue;
 				if (lhs[i] != rhs[i]) return false;
@@ -95,7 +88,7 @@ namespace UniGit.Utils
 			}
 			catch (Exception error)
 			{
-				var message = String.Format("Unable to check directories {0} and {1}: {2}", x, y, error);
+				var message = $"Unable to check directories {x} and {y}: {error}";
 				Trace.WriteLine(message);
 			}
 
@@ -123,7 +116,7 @@ namespace UniGit.Utils
 			}
 			catch (Exception error)
 			{
-				var message = String.Format("Unable to check directories {0} and {1}: {2}", candidate, other, error);
+				var message = $"Unable to check directories {candidate} and {other}: {error}";
 				Trace.WriteLine(message);
 			}
 

@@ -27,14 +27,14 @@ namespace UniGit
 			this.externalManager = externalManager;
 			this.gitOverlay = gitOverlay;
 			commitTree = commit.Tree;
-			Commit parentCommit = commit.Parents.FirstOrDefault();
+			var parentCommit = commit.Parents.FirstOrDefault();
 
 			if (parentCommit != null)
 			{
 				changes = gitManager.Repository.Diff.Compare<TreeChanges>(parentCommit.Tree, commitTree);
 			}
 
-			commitMessageStyle = new GUIStyle("TL SelectionButton") {alignment = TextAnchor.UpperLeft,padding = new RectOffset(4,4,4,4),wordWrap = true,normal = {textColor = Color.black}};
+			commitMessageStyle = new GUIStyle(GitGUI.Styles.ObjectField) {alignment = TextAnchor.UpperLeft,padding = new RectOffset(4,4,4,4),wordWrap = true};
 		}
 
 		public override Vector2 GetWindowSize()
@@ -45,7 +45,7 @@ namespace UniGit
 		public override void OnGUI(Rect rect)
 		{
 			EditorGUILayout.Space();
-			float msgHeight = commitMessageStyle.CalcHeight(GitGUI.GetTempContent(commit.Message), rect.width);
+			var msgHeight = commitMessageStyle.CalcHeight(GitGUI.GetTempContent(commit.Message), rect.width);
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			EditorGUILayout.LabelField(GitGUI.GetTempContent(commit.Message), commitMessageStyle, GUILayout.Height(msgHeight));
 			if (changes != null)
@@ -57,13 +57,13 @@ namespace UniGit
 					EditorGUILayout.BeginHorizontal("ProjectBrowserHeaderBgTop");
 					GUILayout.Label(new GUIContent(gitOverlay.GetDiffTypeIcon(change.Status, true)) {tooltip = change.Status.ToString()}, GUILayout.Width(16));
 					GUILayout.Space(8);
-					string[] pathChunks = change.Path.Split(Path.DirectorySeparatorChar);
-					for (int i = 0; i < pathChunks.Length; i++)
+					var pathChunks = change.Path.Split(Path.DirectorySeparatorChar);
+					for (var i = 0; i < pathChunks.Length; i++)
 					{
-						string chunk = pathChunks[i];
+						var chunk = pathChunks[i];
 						if (GUILayout.Button(GitGUI.GetTempContent(chunk), GitGUI.Styles.BreadcrumMid))
 						{
-							string assetPath = string.Join("/", pathChunks,0,i+1);
+							var assetPath = string.Join("/", pathChunks,0,i+1);
 							if (UniGitPathHelper.IsMetaPath(assetPath))
 							{
 								assetPath = GitManager.AssetPathFromMeta(assetPath);
@@ -85,13 +85,13 @@ namespace UniGit
 
 		private void ShowContextMenuForElement(string changePath,string assetPath)
 		{
-			GenericMenu menu = new GenericMenu();
+			var menu = new GenericMenu();
 			if (commit.Parents.Count() == 1)
 			{
 
 				menu.AddItem(new GUIContent("Difference with previous commit"), false, () =>
 				{
-					Commit parent = commit.Parents.Single();
+					var parent = commit.Parents.Single();
 					gitManager.ShowDiff(changePath, parent,commit, externalManager);
 				});
 			}

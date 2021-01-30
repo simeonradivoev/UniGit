@@ -32,18 +32,18 @@ namespace UniGit.Adapters
 		public abstract bool Switch();
 
 		[StringFormatMethod("parametersFormat")]
-		public bool CallProccess(string name, string parametersFormat, params object[] arg)
+		public bool CallProcess(string name, string parametersFormat, params object[] arg)
 		{
-			return CallProccess(name, string.Format(parametersFormat, arg));
+			return CallProcess(name, string.Format(parametersFormat, arg));
 		}
 
-		public bool CallProccess(string name, string parameters)
+		public bool CallProcess(string name, string parameters)
 		{
-			string fullPath = GitExternalManager.GetFullPath(name);
+			var fullPath = GitExternalManager.GetFullPath(name);
 
 			if (fullPath != null)
 			{
-				ProcessStartInfo startInfo = new ProcessStartInfo
+				var startInfo = new ProcessStartInfo
 				{
 					CreateNoWindow = false,
 					UseShellExecute = false,
@@ -55,16 +55,14 @@ namespace UniGit.Adapters
 				};
 
 				try
-				{
-					// Start the process with the info we specified.
+                {
+                    // Start the process with the info we specified.
 					// Call WaitForExit and then the using statement will close.
-					using (Process exeProcess = Process.Start(startInfo))
-					{
-						if (exeProcess == null) return false;
-						exeProcess.WaitForExit();
-						return true;
-					}
-				}
+                    using var exeProcess = Process.Start(startInfo);
+                    if (exeProcess == null) return false;
+                    exeProcess.WaitForExit();
+                    return true;
+                }
 				catch
 				{
 					return false;

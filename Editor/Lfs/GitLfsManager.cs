@@ -14,11 +14,7 @@ namespace UniGit
 {
 	public class GitLfsManager : ISettingsAffector, IDisposable
 	{
-		private readonly bool isInstalled;
-		private bool initilized;
-		private readonly string version;
-		private GitLfsTrackedInfo[] trackedInfo = new GitLfsTrackedInfo[0];
-		private readonly GitManager gitManager;
+        private readonly GitManager gitManager;
 		private readonly GitCallbacks gitCallbacks;
 		private readonly ILogger logger;
 		private readonly GitSettingsJson gitSettings;
@@ -35,22 +31,20 @@ namespace UniGit
 
 			try
 			{
-				version = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(), "git-lfs", "version", null);
-				isInstalled = true;
+				Version = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(), "git-lfs", "version", null);
+				Installed = true;
 			}
 			catch (Exception)
 			{
-				isInstalled = false;
+				Installed = false;
 				return;
 			}
 
 			UpdateInitilized();
-			if (Initilized)
-			{
-				RegisterFilter();
-				Update();
-			}
-		}
+            if (!Initialized) return;
+            RegisterFilter();
+            Update();
+        }
 
 		private void OnUpdateRepository(GitRepoStatus status, string[] paths)
 		{
@@ -62,26 +56,24 @@ namespace UniGit
 			RegisterFilter();
 
 			if (File.Exists(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
-			{
-				using (TextReader file = File.OpenText(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
-				{
-					trackedInfo = file.ReadToEnd().Split(UniGitPathHelper.NewLineChar).Select(GitLfsTrackedInfo.Parse).Where(l => l != null).ToArray();
-				}
-			}
+            {
+                using TextReader file = File.OpenText(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes"));
+                TrackedInfo = file.ReadToEnd().Split(UniGitPathHelper.NewLineChar).Select(GitLfsTrackedInfo.Parse).Where(l => l != null).ToArray();
+            }
 
 			UpdateInitilized();
 		}
 
 		private void UpdateInitilized()
 		{
-			initilized = CheckInitialized();
+			Initialized = CheckInitialized();
 		}
 
 		public void SaveTracking()
 		{
-			using (StreamWriter file = File.CreateText(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
+			using (var file = File.CreateText(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), ".gitattributes")))
 			{
-				foreach (var info in trackedInfo)
+				foreach (var info in TrackedInfo)
 				{
 					file.WriteLine(info.ToString());
 				}
@@ -91,18 +83,16 @@ namespace UniGit
 		}
 
 		private void RegisterFilter()
-		{
-			if (GlobalSettings.GetRegisteredFilters().All(f => f.Name != "lfs"))
-			{
-				var filteredFiles = new List<FilterAttributeEntry> {new FilterAttributeEntry("lfs")};
-				var filter = new GitLfsFilter("lfs", filteredFiles,this, gitManager,logger);
-				GlobalSettings.RegisterFilter(filter);
-			}
-		}
+        {
+            if (GlobalSettings.GetRegisteredFilters().Any(f => f.Name == "lfs")) return;
+            var filteredFiles = new List<FilterAttributeEntry> {new FilterAttributeEntry("lfs")};
+            var filter = new GitLfsFilter("lfs", filteredFiles,this, gitManager,logger);
+            GlobalSettings.RegisterFilter(filter);
+        }
 
 		public bool Initialize()
 		{
-			string output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs", "install", null);
+			var output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs", "install", null);
 			
 			if (!Directory.Exists(UniGitPathHelper.Combine(gitManager.GetCurrentDotGitFolder(),"lfs")))
 			{
@@ -119,7 +109,7 @@ namespace UniGit
 		{
 			try
 			{
-				string output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs", string.Format("track \"*{0}\"", extension), null);
+				var output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs",$"track \"*{extension}\"", null);
 				EditorUtility.DisplayDialog("Track File", output, "Ok");
 			}
 			catch (Exception e)
@@ -133,7 +123,7 @@ namespace UniGit
 		{
 			try
 			{
-				string output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs", string.Format("track \"*{0}\"", extension), null);
+				var output = GitHelper.RunExeOutput(gitManager.GetCurrentRepoPath(),"git-lfs",$"track \"*{extension}\"", null);
 				EditorUtility.DisplayDialog("Untrack File", output, "Ok");
 			}
 			catch (Exception e)
@@ -147,7 +137,7 @@ namespace UniGit
 
 		public void AffectThreading(ref GitSettingsJson.ThreadingType setting)
 		{
-			if (isInstalled && Initilized)
+			if (Installed && Initialized)
 			{
 				setting.ClearFlags(GitSettingsJson.ThreadingType.Stage);
 				setting.ClearFlags(GitSettingsJson.ThreadingType.Unstage);
@@ -164,35 +154,17 @@ namespace UniGit
 		public void Dispose()
 		{
 			if(gitCallbacks != null) gitCallbacks.UpdateRepository -= OnUpdateRepository;
-			if(gitManager != null) gitManager.RemoveSettingsAffector(this);
-		}
+            gitManager?.RemoveSettingsAffector(this);
+        }
 
-		public bool Initilized
-		{
-			get { return initilized; }
-		}
+		public bool Initialized { get; private set; }
 
-		public bool Installed
-		{
-			get { return isInstalled; }
-		}
+        public bool Installed { get; }
 
-		public string Version
-		{
-			get { return version; }
-		}
+        public string Version { get; }
 
-		public bool IsEnabled
-		{
-			get
-			{
-				return !gitSettings.DisableGitLFS;
-			}
-		}
+        public bool IsEnabled => !gitSettings.DisableGitLFS;
 
-		public GitLfsTrackedInfo[] TrackedInfo
-		{
-			get { return trackedInfo; }
-		}
-	}
+        public GitLfsTrackedInfo[] TrackedInfo { get; private set; } = new GitLfsTrackedInfo[0];
+    }
 }

@@ -20,11 +20,11 @@ namespace UniGit
 	{
 		private const string WindowName = "Git Diff";
 
-		public Rect CommitRect { get { return new Rect(0,0,position.width, commitMaximized ? 48 + CalculateCommitTextHeight() : 46);} }
-		public Rect DiffToolbarRect { get { return new Rect(0, CommitRect.height, position.width, 18); } }
-		public Rect DiffRect { get { return new Rect(0,CommitRect.height + DiffToolbarRect.height, position.width,position.height - CommitRect.height - DiffToolbarRect.height);} }
+		public Rect CommitRect => new Rect(0,0,position.width, commitMaximized ? 48 + CalculateCommitTextHeight() : 46);
+        public Rect DiffToolbarRect => new Rect(0, CommitRect.height, position.width, 18);
+        public Rect DiffRect => new Rect(0,CommitRect.height + DiffToolbarRect.height, position.width,position.height - CommitRect.height - DiffToolbarRect.height);
 
-		internal const string CommitMessageKey = "UniGitCommitMessage";
+        internal const string CommitMessageKey = "UniGitCommitMessage";
 		internal const string CommitMessageUndoGroup = "Commit Message Change";
 
 		[SerializeField] private Vector2 diffScroll;
@@ -143,11 +143,11 @@ namespace UniGit
 
 		protected override void OnEnable()
 		{
-			if(selections == null) selections = new List<SelectionId>();
+			selections ??= new List<SelectionId>();
 			titleContent.text = WindowName;
 			base.OnEnable();
 			editoSerializedObject = new SerializedObject(this);
-			if (settings == null) settings = new Settings();
+			settings ??= new Settings();
 			if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
 			{
 				Undo.RegisterFullObjectHierarchyUndo(this, "Commit Message Changed");
@@ -170,14 +170,12 @@ namespace UniGit
 		internal void UpdateStatusList()
 		{
 			if(gitManager.Repository == null || !IsInitialized) return;
-			if (data.Initialized)
-			{
-				if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
-					CreateStatusListThreaded(data.RepositoryStatus, null);
-				else
-					CreateStatusList(data.RepositoryStatus);
-			}
-		}
+            if (!data.Initialized) return;
+            if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.StatusListGui))
+                CreateStatusListThreaded(data.RepositoryStatus, null);
+            else
+                CreateStatusList(data.RepositoryStatus);
+        }
 
 		protected override void OnInitialize()
 		{
@@ -191,30 +189,24 @@ namespace UniGit
 		}
 
 		protected override void OnEditorUpdate()
-		{
-			if (IsInitialized && needsAsyncStatusListUpdate && (statusListUpdateOperation == null || statusListUpdateOperation.IsDone))
-			{
-				if (data.Initialized)
-				{
-					needsAsyncStatusListUpdate = false;
-					CreateStatusListThreaded(data.RepositoryStatus, null);
-				}
-			}
-		}
+        {
+            if (!IsInitialized || !needsAsyncStatusListUpdate || (statusListUpdateOperation != null && !statusListUpdateOperation.IsDone)) return;
+            if (!data.Initialized) return;
+            needsAsyncStatusListUpdate = false;
+            CreateStatusListThreaded(data.RepositoryStatus, null);
+        }
 
 		private void CreateStatusListThreaded(GitRepoStatus status,string[] paths)
 		{
 			if (statusListUpdateOperation != null && !statusListUpdateOperation.IsDone)
 			{
 				needsAsyncStatusListUpdate = true;
-				if (paths != null)
-				{
-					foreach (var path in paths)
-					{
-						pathsToBeUpdated.Add(path);
-					}
-				}
-			}
+                if (paths == null) return;
+                foreach (var path in paths)
+                {
+                    pathsToBeUpdated.Add(path);
+                }
+            }
 			else
 			{
 				statusListUpdateOperation = asyncManager.QueueWorkerWithLock(() =>
@@ -287,13 +279,12 @@ namespace UniGit
 					{
 						newStatusList.Copy(diffWindowStatusList);
 						newStatusList.RemoveRange(paths);
-						List<GitAsyncOperation> operations = new List<GitAsyncOperation>();
+						var operations = new List<GitAsyncOperation>();
 						foreach (var path in paths)
 						{
 							operations.Add(asyncManager.QueueWorkerWithLock((p) =>
 							{
-								GitStatusEntry entry;
-								if (status.Get(p, out entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
+                                if (status.Get(p, out var entry) && settings.showFileStatusTypeFilter.IsFlagSet(entry.Status))
 								{
 									newStatusList.Add(entry, sorter);
 								}
@@ -321,21 +312,17 @@ namespace UniGit
 			base.OnFocus();
 			GUI.FocusControl(null);
 
-			if (gitManager != null && gitSettings != null && gitSettings.ReadFromFile)
-			{
-				var path = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
-				if (File.Exists(path))
-				{
-					var lastWriteTime = File.GetLastWriteTime(path);
-					if (lastWriteTime.CompareTo(settings.lastMessageUpdate) != 0)
-					{
-						settings.lastMessageUpdate = lastWriteTime;
-						ReadCommitMessageFromFile();
-						EditorGUI.FocusTextInControl("");
-					}
-				}
-			}
-		}
+            if (gitManager == null || gitSettings == null || !gitSettings.ReadFromFile) return;
+            var path = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
+            if (!File.Exists(path)) return;
+            var lastWriteTime = File.GetLastWriteTime(path);
+            if (lastWriteTime.CompareTo(settings.lastMessageUpdate) != 0)
+            {
+                settings.lastMessageUpdate = lastWriteTime;
+                ReadCommitMessageFromFile();
+                EditorGUI.FocusTextInControl("");
+            }
+        }
 
 		[UsedImplicitly]
 		private void OnGUI()
@@ -364,7 +351,7 @@ namespace UniGit
 		{
 			base.Update();
 
-			bool validRepo = gitManager != null && initializer.IsValidRepo;
+			var validRepo = gitManager != null && initializer.IsValidRepo;
 			if (diffWindowElement != null)
 			{
 				diffWindowElement.style.display = validRepo && gitManager.Repository != null ? DisplayStyle.Flex : DisplayStyle.None;
@@ -373,7 +360,7 @@ namespace UniGit
 
 		private void MainGUI()
 		{
-			RepositoryInformation repoInfo = gitManager.Repository?.Info;
+			var repoInfo = gitManager.Repository?.Info;
 
             if (repoInfo != null)
             {
@@ -406,16 +393,16 @@ namespace UniGit
 
 		internal float CalculateCommitTextHeight()
 		{
-			string commitMessage = GetActiveCommitMessage(false);
+			var commitMessage = GetActiveCommitMessage(false);
 			return Mathf.Clamp(GUI.skin.textArea.CalcHeight(GitGUI.GetTempContent(commitMessage), position.width) + EditorGUIUtility.singleLineHeight, 50, gitSettings.MaxCommitTextAreaSize);
 		}
 
 		public bool Commit()
 		{
-			Signature signature = gitManager.Signature;
+			var signature = gitManager.Signature;
 			try
 			{
-				string commitMessage = GetActiveCommitMessage(true);
+				var commitMessage = GetActiveCommitMessage(true);
 				if (!externalManager.TakeCommit(commitMessage))
 				{
 					GitProfilerProxy.BeginSample("Git Commit");
@@ -504,89 +491,88 @@ namespace UniGit
 
 		private void DoDiffScroll(Event current)
 		{
-			float elementHeight = diffElementRenderer.ElementHeight;
+			var elementHeight = diffElementRenderer.ElementHeight;
 
 			if (IsGrouping())
-				{
-					float totalTypesCount = diffWindowStatusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
-					float elementsTotalHeight = (diffWindowStatusList.Count(IsVisible) + totalTypesCount) * elementHeight;
-					diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), elementsTotalHeight);
-				}
-				else
-				{
-					diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), diffWindowStatusList.Count(IsVisible) * elementHeight);
-				}
+            {
+                float totalTypesCount = diffWindowStatusList.Select(i => GetMergedStatus(i.State)).Distinct().Count();
+                var elementsTotalHeight = (diffWindowStatusList.Count(IsVisible) + totalTypesCount) * elementHeight;
+                diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), elementsTotalHeight);
+            }
+            else
+            {
+                diffScrollContentRect = new Rect(0, 0, Mathf.Max(DiffRect.width - 16, 420), diffWindowStatusList.Count(IsVisible) * elementHeight);
+            }
 
 			diffScroll = GUI.BeginScrollView(DiffRect, diffScroll, diffScrollContentRect);
 
-			int index = 0;
+			var index = 0;
 			FileStatus? lastFileStatus = null;
 			float infoX = 0;
 
-			for (int i = 0; i < diffWindowStatusList.Count; i++)
-			{
-				var info = diffWindowStatusList[i];
-				bool isVisible = IsVisible(info);
-				Rect elementRect;
+			foreach (var info in diffWindowStatusList)
+            {
+                var isVisible = IsVisible(info);
+                Rect elementRect;
 
-				if (IsGrouping())
-				{
-					FileStatus mergedStatus = GetMergedStatus(info.State);
-					if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
-					{
-						elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-						lastFileStatus = mergedStatus;
-						FileStatus newState = lastFileStatus.Value;
-						if (current.type == EventType.Repaint)
-						{
-							styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false, false, false, false);
-							GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(gitOverlay.GetDiffTypeIcon(info.State, false).image), false, false, false, false);
-						}
+                if (IsGrouping())
+                {
+                    var mergedStatus = GetMergedStatus(info.State);
+                    if (!lastFileStatus.HasValue || lastFileStatus != mergedStatus)
+                    {
+                        elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
+                        lastFileStatus = mergedStatus;
+                        var newState = lastFileStatus.Value;
+                        if (current.type == EventType.Repaint)
+                        {
+                            styles.diffScrollHeader.Draw(elementRect, GitGUI.GetTempContent(mergedStatus.ToString()), false, false, false, false);
+                            GUIStyle.none.Draw(new Rect(elementRect.x + 12, elementRect.y + 14, elementRect.width - 12, elementRect.height - 24), GitGUI.GetTempContent(gitOverlay.GetDiffTypeIcon(info.State, false).image), false, false, false, false);
+                        }
 
-						if (elementRect.Contains(current.mousePosition))
-						{
-							if (current.type == EventType.ContextClick)
-							{
-								GenericMenu selectAllMenu = new GenericMenu();
-								elementContextFactory.Build(newState, selectAllMenu,this);
-								selectAllMenu.ShowAsContext();
-								current.Use();
-							}
-							else if (current.type == EventType.MouseDown && current.button == 0)
-							{
-								settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isVisible);
-								if (!isVisible)
-								{
-									ClearSelected(e => e.State == newState);
-								}
+                        if (elementRect.Contains(current.mousePosition))
+                        {
+                            if (current.type == EventType.ContextClick)
+                            {
+                                var selectAllMenu = new GenericMenu();
+                                elementContextFactory.Build(newState, selectAllMenu,this);
+                                selectAllMenu.ShowAsContext();
+                                current.Use();
+                            }
+                            else if (current.type == EventType.MouseDown && current.button == 0)
+                            {
+                                settings.MinimizedFileStatus = settings.MinimizedFileStatus.SetFlags(mergedStatus, !isVisible);
+                                if (!isVisible)
+                                {
+                                    ClearSelected(e => e.State == newState);
+                                }
 
-								Repaint();
-								current.Use();
-							}
-						}
+                                Repaint();
+                                current.Use();
+                            }
+                        }
 
-						infoX += elementRect.height;
-					}
-				}
+                        infoX += elementRect.height;
+                    }
+                }
 
-				if (!isVisible) continue;
-				elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
-				//check visibility
-				if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
-				{
-					bool isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.LocalPath)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.LocalPath))) || updatingPaths.Contains(info.LocalPath) || pathsToBeUpdated.Contains(info.LocalPath);
-					bool isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.LocalPath)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.LocalPath)));
-					bool isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.LocalPath)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.LocalPath)));
+                if (!isVisible) continue;
+                elementRect = new Rect(0, infoX, diffScrollContentRect.width + 16, elementHeight);
+                //check visibility
+                if (elementRect.y <= DiffRect.height + diffScroll.y && elementRect.y + elementRect.height >= diffScroll.y)
+                {
+                    var isUpdating = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileUpdating(info.LocalPath)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileUpdating(GitManager.MetaPathFromAsset(info.LocalPath))) || updatingPaths.Contains(info.LocalPath) || pathsToBeUpdated.Contains(info.LocalPath);
+                    var isStaging = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileStaging(info.LocalPath)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileStaging(GitManager.MetaPathFromAsset(info.LocalPath)));
+                    var isDirty = (info.MetaChange.IsFlagSet(MetaChangeEnum.Object) && gitManager.IsFileDirty(info.LocalPath)) || (info.MetaChange.IsFlagSet(MetaChangeEnum.Meta) && gitManager.IsFileDirty(GitManager.MetaPathFromAsset(info.LocalPath)));
 
-					bool selected = IsSelected(info);
-					bool enabled = !isUpdating && !isDirty && !isStaging;
-					diffElementRenderer.DoFileDiff(elementRect, info, enabled, selected,this);
-					DoFileDiffSelection(elementRect, info, index, enabled, selected);
-				}
+                    var selected = IsSelected(info);
+                    var enabled = !isUpdating && !isDirty && !isStaging;
+                    diffElementRenderer.DoFileDiff(elementRect, info, enabled, selected,this);
+                    DoFileDiffSelection(elementRect, info, index, enabled, selected);
+                }
 
-				infoX += elementRect.height;
-				index++;
-			}
+                infoX += elementRect.height;
+                index++;
+            }
 
 			GUI.EndScrollView();
 
@@ -596,13 +582,13 @@ namespace UniGit
 				{
 					if (gitSettings.UseSimpleContextMenus)
 					{
-						GenericMenuWrapper genericMenuWrapper = new GenericMenuWrapper(new GenericMenu());
+						var genericMenuWrapper = new GenericMenuWrapper(new GenericMenu());
 						elementContextFactory.Build(genericMenuWrapper,this);
 						genericMenuWrapper.GenericMenu.ShowAsContext();
 					}
 					else
 					{
-						ContextGenericMenuPopup popup = injectionHelper.CreateInstance<ContextGenericMenuPopup>();
+						var popup = injectionHelper.CreateInstance<ContextGenericMenuPopup>();
 						elementContextFactory.Build(popup,this);
 						PopupWindow.Show(new Rect(Event.current.mousePosition, Vector2.zero), popup);
 					}
@@ -621,90 +607,89 @@ namespace UniGit
 					}
 				}
 
-				if (current.type == EventType.MouseDrag && current.button == 2)
-				{
-					diffScroll.y -= current.delta.y;
-					Repaint();
-				}
-			}
+                if (current.type != EventType.MouseDrag || current.button != 2) return;
+                diffScroll.y -= current.delta.y;
+                Repaint();
+            }
 		}
 
 		private void DoFileDiffSelection(Rect elementRect,StatusListEntry info, int index,bool enabled,bool selected)
 		{
-			Event current = Event.current;
+			var current = Event.current;
 
-			if (elementRect.Contains(current.mousePosition) && enabled)
-			{
-				if (current.type == EventType.MouseDown)
-				{
-					if (current.button == 0)
-					{
-						if (current.modifiers == EventModifiers.Control)
-						{
-							lastSelectedIndex = index;
-							if(selected)
-								RemoveSelected(info);
-							else
-								AddSelected(info);
-							GUI.FocusControl(info.LocalPath);
-						}
-						else if (current.shift)
-						{
-							if (!current.control) ClearSelection();
+            if (!elementRect.Contains(current.mousePosition) || !enabled) return;
+            if (current.type != EventType.MouseDown) return;
+            switch (current.button)
+            {
+                case 0:
+                {
+                    if (current.modifiers == EventModifiers.Control)
+                    {
+                        lastSelectedIndex = index;
+                        if(selected)
+                            RemoveSelected(info);
+                        else
+                            AddSelected(info);
+                        GUI.FocusControl(info.LocalPath);
+                    }
+                    else if (current.shift)
+                    {
+                        if (!current.control) ClearSelection();
 
-							int tmpIndex = 0;
-							foreach (var selectInfo in diffWindowStatusList)
-							{
-								FileStatus mergedStatus = GetMergedStatus(selectInfo.State);
-								bool isExpanded = settings.MinimizedFileStatus.IsFlagSet(mergedStatus);
-								if (!isExpanded) continue;
-								if (tmpIndex >= Mathf.Min(lastSelectedIndex, index) && tmpIndex <= Mathf.Max(lastSelectedIndex, index))
-								{
-									AddSelected(selectInfo);
-								}
-								tmpIndex++;
-							}
-							if (current.control) lastSelectedIndex = index;
-							GUI.FocusControl(info.LocalPath);
-						}
-						else
-						{
-							if (current.clickCount == 2)
-							{
-								Selection.activeObject = AssetDatabase.LoadAssetAtPath(gitManager.ToProjectPath(info.LocalPath), typeof (Object));
-							}
-							else
-							{
-								lastSelectedIndex = index;
-								ClearSelection();
-								AddSelected(info);
-								GUI.FocusControl(info.LocalPath);
-							}
-						}
-						current.Use();
-						Repaint();
-					}
-					else if (current.button == 1)
-					{
-						if (!selected)
-						{
-							ClearSelection();
-							AddSelected(info);
-							current.Use();
-							Repaint();
-						}
-					}
-				}
-			}
-		}
+                        var tmpIndex = 0;
+                        foreach (var selectInfo in diffWindowStatusList)
+                        {
+                            var mergedStatus = GetMergedStatus(selectInfo.State);
+                            var isExpanded = settings.MinimizedFileStatus.IsFlagSet(mergedStatus);
+                            if (!isExpanded) continue;
+                            if (tmpIndex >= Mathf.Min(lastSelectedIndex, index) && tmpIndex <= Mathf.Max(lastSelectedIndex, index))
+                            {
+                                AddSelected(selectInfo);
+                            }
+                            tmpIndex++;
+                        }
+                        if (current.control) lastSelectedIndex = index;
+                        GUI.FocusControl(info.LocalPath);
+                    }
+                    else
+                    {
+                        if (current.clickCount == 2)
+                        {
+                            Selection.activeObject = AssetDatabase.LoadAssetAtPath(gitManager.ToProjectPath(info.LocalPath), typeof (Object));
+                        }
+                        else
+                        {
+                            lastSelectedIndex = index;
+                            ClearSelection();
+                            AddSelected(info);
+                            GUI.FocusControl(info.LocalPath);
+                        }
+                    }
+                    current.Use();
+                    Repaint();
+                    break;
+                }
+                case 1:
+                {
+                    if (!selected)
+                    {
+                        ClearSelection();
+                        AddSelected(info);
+                        current.Use();
+                        Repaint();
+                    }
+
+                    break;
+                }
+            }
+        }
 
 		private bool IsVisible(StatusListEntry entry)
 		{
-			if (IsGrouping())
-			{
-				if ((settings.MinimizedFileStatus & GetMergedStatus(entry.State)) == FileStatus.Unaltered) return false;
-			}
-			return entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.IndexOf(filter,StringComparison.InvariantCultureIgnoreCase) >= 0;
+            if (!IsGrouping())
+                return entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.IndexOf(filter, StringComparison.InvariantCultureIgnoreCase) >= 0;
+            if ((settings.MinimizedFileStatus & GetMergedStatus(entry.State)) == FileStatus.Unaltered) return false;
+            return entry.Name == null || string.IsNullOrEmpty(filter) || entry.Name.IndexOf(filter,StringComparison.InvariantCultureIgnoreCase) >= 0;
 		}
 
 		internal bool IsGrouping()
@@ -753,19 +738,11 @@ namespace UniGit
 		}
 
 		internal void ReadCommitMessage()
-		{
-			//load commit from previous versions and remove the key
-			if (gitManager.Prefs.HasKey(CommitMessageKey))
-			{
-				settings.commitMessage = gitManager.Prefs.GetString(CommitMessageKey);
-			}
-			else
-			{
-				settings.commitMessage = "";
-			}
-
-			GUI.FocusControl("");
-		}
+        {
+            //load commit from previous versions and remove the key
+            settings.commitMessage = gitManager.Prefs.HasKey(CommitMessageKey) ? gitManager.Prefs.GetString(CommitMessageKey) : "";
+            GUI.FocusControl("");
+        }
 
 		private void SaveCommitMessageToFile()
 		{
@@ -786,7 +763,7 @@ namespace UniGit
 	    {
             try
             {
-                string settingsFolder = initializer.GitSettingsFolderPath;
+                var settingsFolder = initializer.GitSettingsFolderPath;
                 if (!Directory.Exists(settingsFolder))
                 {
                     Directory.CreateDirectory(settingsFolder);
@@ -795,6 +772,8 @@ namespace UniGit
                 var commitMessageFilePath = initializer.GetCommitMessageFilePath(gitSettings.ActiveSubModule);
                 var commitMessageFileDirectory = Path.GetDirectoryName(commitMessageFilePath);
 
+                if (string.IsNullOrEmpty(commitMessageFileDirectory)) return;
+
                 if (!Directory.Exists(commitMessageFileDirectory))
                 {
                     Directory.CreateDirectory(commitMessageFileDirectory);
@@ -802,7 +781,7 @@ namespace UniGit
 
                 File.WriteAllText(commitMessageFileDirectory, message);
             }
-            catch (UnauthorizedAccessException e)
+            catch (UnauthorizedAccessException)
             {
                 Debug.LogWarning("Commit message file is forced to read only.");
             }
@@ -853,15 +832,15 @@ namespace UniGit
 
 		private SelectionId CreateSelectionId(StatusListEntry entry)
 		{
-			string projectPath = gitManager.ToProjectPath(entry.LocalPath);
-			string guid = UniGitPathHelper.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
+			var projectPath = gitManager.ToProjectPath(entry.LocalPath);
+			var guid = UniGitPathHelper.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
 			return string.IsNullOrEmpty(guid) ? new SelectionId(projectPath,true) : new SelectionId(guid,false);
 		}
 
 		internal bool IsSelected(StatusListEntry entry)
 		{
-			int selectionsCount = selections.Count;
-			for (int i = 0; i < selectionsCount; i++)
+			var selectionsCount = selections.Count;
+			for (var i = 0; i < selectionsCount; i++)
 			{
 				if (SelectionPredicate(selections[i], entry))
 				{
@@ -879,15 +858,13 @@ namespace UniGit
 
 		internal void RemoveSelected(StatusListEntry entry)
 		{
-			for (int i = selections.Count-1; i >= 0; i--)
+			for (var i = selections.Count-1; i >= 0; i--)
 			{
 				var selection = selections[i];
-				if (SelectionPredicate(selection, entry))
-				{
-					selections.RemoveAt(i);
-					break;
-				}
-			}
+                if (!SelectionPredicate(selection, entry)) continue;
+                selections.RemoveAt(i);
+                break;
+            }
 		}
 
 		private bool SelectionPredicate(SelectionId id, StatusListEntry entry)
@@ -929,7 +906,7 @@ namespace UniGit
 
 		internal void DeleteAsset(string localPath)
 		{
-			string projectPath = gitManager.ToProjectPath(localPath);
+			var projectPath = gitManager.ToProjectPath(localPath);
 			if (UniGitPathHelper.IsPathInAssetFolder(projectPath))
 			{
 				AssetDatabase.DeleteAsset(projectPath);
@@ -950,12 +927,9 @@ namespace UniGit
 
 		#region Getters and Setters
 
-		public Settings GitDiffSettings
-		{
-			get { return settings; }
-		}
+		public Settings GitDiffSettings => settings;
 
-		internal DiffWindowStatusList GetStatusList()
+        internal DiffWindowStatusList GetStatusList()
 		{
 			return diffWindowStatusList;
 		}
@@ -967,21 +941,19 @@ namespace UniGit
 
 		public bool CommitMaximized
 		{
-			get { return commitMaximized; }
-			set { commitMaximized = value; }
-		}
+			get => commitMaximized;
+            set => commitMaximized = value;
+        }
 
 		#endregion
 
 		#region Status List
 
-		
-
-		[Serializable]
-		private struct SelectionId
+        [Serializable]
+		private readonly struct SelectionId
 		{
-			public bool isPath;
-			public string id;
+			public readonly bool isPath;
+			public readonly string id;
 
 			public SelectionId(string id,bool isPath) : this()
 			{

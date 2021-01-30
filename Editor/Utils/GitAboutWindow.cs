@@ -26,8 +26,8 @@ namespace UniGit.Utils
 
 		private void GetGitVersion()
 		{
-			System.Diagnostics.Process process = new System.Diagnostics.Process();
-			System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo
+			var process = new System.Diagnostics.Process();
+			var startInfo = new System.Diagnostics.ProcessStartInfo
 			{
 				CreateNoWindow = true,
 				RedirectStandardOutput = true,

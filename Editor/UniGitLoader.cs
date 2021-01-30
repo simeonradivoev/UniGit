@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using Assets.Plugins.UniGit.Editor.Hooks;
 using UniGit.Adapters;
+using UniGit.Hooks;
 using UniGit.Settings;
 using UniGit.Utils;
 using UniGit.Windows.Diff;
@@ -19,11 +19,10 @@ namespace UniGit
 		private static readonly InjectionHelper injectionHelper;
 		public static GitCallbacks GitCallbacks;
 		private static GitSettingsJson GitSettings;
-		private static UniGitData uniGitData;
 
-		static UniGitLoader()
+        static UniGitLoader()
 		{
-			HandlePaths();
+            HandlePaths();
 
 			GitProfilerProxy.BeginSample("UniGit Initialization");
 			try
@@ -35,11 +34,11 @@ namespace UniGit
 
 				GitWindows.Init();
 
-				uniGitData = CreateUniGitData(); //data must be created manually to not call unity methods from constructors
+				var uniGitData = CreateUniGitData();
 
-                string projectPath = UniGitPathHelper.FixUnityPath(
+                var projectPath = UniGitPathHelper.FixUnityPath(
                     Application.dataPath.Replace(UniGitPathHelper.UnityDeirectorySeparatorChar + "Assets", ""));
-                string repoPath = projectPath;
+                var repoPath = projectPath;
                 if (EditorPrefs.HasKey(RepoPathKey))
 				{
 					repoPath = UniGitPathHelper.FixUnityPath(UniGitPathHelper.Combine(repoPath, EditorPrefs.GetString(RepoPathKey)));
@@ -124,9 +123,9 @@ namespace UniGit
 
 		//emulate Unity's delayed call
 		private static void OnEditorUpdate()
-		{
-			if(GitCallbacks != null) GitCallbacks.IssueDelayCall(true);
-		}
+        {
+            GitCallbacks?.IssueDelayCall(true);
+        }
 
 		private static void OnBeforeAssemblyReload()
 		{
@@ -180,12 +179,8 @@ namespace UniGit
 	    public static T FindWindow<T>() where T : EditorWindow
 	    {
 	        var editorWindow = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
-	        if (editorWindow != null)
-	        {
-	            return editorWindow;
-	        }
-	        return null;
-	    }
+	        return editorWindow != null ? editorWindow : null;
+        }
 
 	    public static T GetWindow<T>() where T : EditorWindow
 	    {
@@ -251,8 +246,8 @@ namespace UniGit
 
 		private static void AddPath(string path)
 		{
-			string currentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
-			if(!currentPath.Contains(path))
+			var currentPath = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.Process);
+			if(currentPath != null && !currentPath.Contains(path))
 			{
 				Environment.SetEnvironmentVariable("PATH", currentPath + path + Path.PathSeparator, EnvironmentVariableTarget.Process);
 			}

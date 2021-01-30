@@ -28,7 +28,7 @@ namespace UniGit.Settings
 		internal override void OnGUI()
 		{
 			if(remotes == null) return;
-			int remoteCount = remotes.Count();
+			var remoteCount = remotes.Count();
 			if (remoteCount <= 0)
 			{
 				EditorGUILayout.HelpBox("No Remotes", MessageType.Info);
@@ -100,29 +100,27 @@ namespace UniGit.Settings
 
 		internal class RemoteEntry
 		{
-			private readonly Remote remote;
-			private string name;
-			public string Url { get; set; }
+            public string Url { get; set; }
 			public string PushUrl { get; set; }
 			public TagFetchMode TagFetchMode { get; set; }
 
 			public RemoteEntry(Remote remote)
 			{
-				this.remote = remote;
+				this.Remote = remote;
 				Update();
 			}
 
 			private void Update()
 			{
-				name = remote.Name;
-				Url = remote.Url;
-				PushUrl = remote.PushUrl;
-				TagFetchMode = remote.TagFetchMode;
+				Name = Remote.Name;
+				Url = Remote.Url;
+				PushUrl = Remote.PushUrl;
+				TagFetchMode = Remote.TagFetchMode;
 			}
 
 			public void Update(RemoteCollection remotes)
 			{
-				remotes.Update(remote, UpdateAction);
+				remotes.Update(Remote, UpdateAction);
 				Update();
 			}
 
@@ -137,26 +135,20 @@ namespace UniGit.Settings
 			{
 				if (obj is Remote)
 				{
-					return remote.Equals(obj);
+					return Remote.Equals(obj);
 				}
 				return ReferenceEquals(this, obj);
 			}
 
 			public override int GetHashCode()
 			{
-				return remote.GetHashCode();
+				return Remote.GetHashCode();
 			}
 
-			public Remote Remote
-			{
-				get { return remote; }
-			}
+			public Remote Remote { get; }
 
-			public string Name
-			{
-				get { return name; }
-			}
-		}
+            public string Name { get; private set; }
+        }
 
 		private class AddRepositoryPopup : PopupWindowContent
 		{

@@ -26,7 +26,7 @@ namespace UniGit
 		{
 			Repository.Init(paths.RepoPath);
 			Directory.CreateDirectory(GitSettingsFolderPath);
-			string newGitIgnoreFile = GitIgnoreFilePath;
+			var newGitIgnoreFile = GitIgnoreFilePath;
 			if (!File.Exists(newGitIgnoreFile))
 			{
 				File.WriteAllText(newGitIgnoreFile, GitIgnoreTemplate.Template);

@@ -29,8 +29,7 @@ namespace UniGit.Settings
 
 		internal override void OnGUI()
 		{
-
-			if (!lfsManager.Installed)
+            if (!lfsManager.Installed)
 			{
 				EditorGUILayout.HelpBox("Git LFS not installed", MessageType.Warning);
 				if (GUILayout.Button(GitGUI.GetTempContent("Download")))
@@ -59,9 +58,9 @@ namespace UniGit.Settings
 				{
 					GUILayout.Label(GitGUI.GetTempContent("Settings"), GitGUI.Styles.ProjectBrowserHeaderBgTop);
 
-					using (Configuration c = Configuration.BuildFrom(gitManager.GetCurrentDotGitFolder()))
+					using (var c = Configuration.BuildFrom(gitManager.GetCurrentDotGitFolder()))
 					{
-						string url = c.GetValueOrDefault("lfs.url", "");
+						var url = c.GetValueOrDefault("lfs.url", "");
 						if (string.IsNullOrEmpty(url))
 						{
 							EditorGUILayout.HelpBox("You should specify a LFS server URL", MessageType.Warning);
@@ -81,12 +80,10 @@ namespace UniGit.Settings
 						GUI.SetNextControlName(info.GetHashCode() + " Type");
 						info.Type = (GitLfsTrackedInfo.TrackType)EditorGUILayout.EnumPopup(GitGUI.GetTempContent("Type"), info.Type);
 
-						if (info.IsDirty)
-						{
-							lfsManager.SaveTracking();
-							break;
-						}
-					}
+                        if (!info.IsDirty) continue;
+                        lfsManager.SaveTracking();
+                        break;
+                    }
 
 					EditorGUILayout.EndScrollView();
 

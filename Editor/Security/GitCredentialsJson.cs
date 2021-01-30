@@ -12,17 +12,15 @@ namespace UniGit.Security
 	{
 		[SerializeField, HideInInspector]
 		private List<GitCredential> entries;
-		private bool isDirty;
 
-		public GitCredentialsJson()
+        public GitCredentialsJson()
 		{
 			entries = new List<GitCredential>();
 		}
 
 		public GitCredential GetEntry(string url)
 		{
-			if (entries == null) return null;
-			return entries.FirstOrDefault(r => r.URL.Equals(url, StringComparison.InvariantCultureIgnoreCase));
+            return entries?.FirstOrDefault(r => r.URL.Equals(url, StringComparison.InvariantCultureIgnoreCase));
 		}
 
 		internal void AddEntry(GitCredential entry)
@@ -52,22 +50,16 @@ namespace UniGit.Security
 
 		internal void MarkDirty()
 		{
-			isDirty = true;
+			IsDirty = true;
 		}
 
 		internal void ResetDirty()
 		{
-			isDirty = false;
+			IsDirty = false;
 		}
 
-		public List<GitCredential> Entries
-		{
-			get { return entries; }
-		}
+		public List<GitCredential> Entries => entries;
 
-		internal bool IsDirty
-		{
-			get { return isDirty; }
-		}
-	}
+        internal bool IsDirty { get; private set; }
+    }
 }

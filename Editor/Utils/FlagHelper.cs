@@ -29,16 +29,16 @@ namespace UniGit.Utils
 		public static bool IsFlagSet<T>(this T value, T flag) where T : struct, IConvertible
 		{
 			CheckIsEnum<T>(true);
-			int lValue = value.ToInt32(CultureInfo.InvariantCulture);
-			int lFlag = flag.ToInt32(CultureInfo.InvariantCulture);
+			var lValue = value.ToInt32(CultureInfo.InvariantCulture);
+			var lFlag = flag.ToInt32(CultureInfo.InvariantCulture);
 			return (lValue & lFlag) != 0;
 		}
 
 		public static T SetFlags<T>(this T value, T flags, bool on) where T : struct, IConvertible
 		{
 			CheckIsEnum<T>(true);
-			int lValue = value.ToInt32(CultureInfo.InvariantCulture);
-			int lFlag = flags.ToInt32(CultureInfo.InvariantCulture);
+			var lValue = value.ToInt32(CultureInfo.InvariantCulture);
+			var lFlag = flags.ToInt32(CultureInfo.InvariantCulture);
 			if (on)
 			{
 				lValue |= lFlag;
@@ -63,10 +63,10 @@ namespace UniGit.Utils
 		public static T CombineFlags<T>(this IEnumerable<T> flags) where T : struct, IConvertible
 		{
 			CheckIsEnum<T>(true);
-			int lValue = 0;
-			foreach (T flag in flags)
+			var lValue = 0;
+			foreach (var flag in flags)
 			{
-				int lFlag = Convert.ToInt32(flag);
+				var lFlag = Convert.ToInt32(flag);
 				lValue |= lFlag;
 			}
 			return (T)Enum.ToObject(typeof(T), lValue);
@@ -75,20 +75,15 @@ namespace UniGit.Utils
 		public static string GetDescription<T>(this T value) where T : struct
 		{
 			CheckIsEnum<T>(false);
-			string name = Enum.GetName(typeof(T), value);
-			if (name != null)
-			{
-				FieldInfo field = typeof(T).GetField(name);
-				if (field != null)
-				{
-					DescriptionAttribute attr = Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
-					if (attr != null)
-					{
-						return attr.Description;
-					}
-				}
-			}
-			return name;
+			var name = Enum.GetName(typeof(T), value);
+            if (name == null) return null;
+            var field = typeof(T).GetField(name);
+            if (field == null) return name;
+            if (Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) is DescriptionAttribute attr)
+            {
+                return attr.Description;
+            }
+            return name;
 		}
 	}
 }

@@ -10,7 +10,7 @@ namespace UniGit.Utils
 		public static GitTween Empty = new GitTween(0,0,null,GitSettingsJson.AnimationTypeEnum.None);
 		private readonly GitCallbacks gitCallbacks;
 		private readonly GitSettingsJson gitSettings;
-		private List<GitTween> tweens;
+		private readonly List<GitTween> tweens;
 		private double lastTime;
 
 		[UniGitInject]
@@ -53,7 +53,7 @@ namespace UniGit.Utils
 
 		public void Update(GitTween tween, ref double lastTime)
 		{
-			float deltaTime = (float)(EditorApplication.timeSinceStartup - lastTime);
+			var deltaTime = (float)(EditorApplication.timeSinceStartup - lastTime);
 			tween.Time = Mathf.Max(0, tween.Time - deltaTime);
 			if(tween.EditorWindow != null) tween.EditorWindow.Repaint();
 			lastTime = EditorApplication.timeSinceStartup;
@@ -61,8 +61,8 @@ namespace UniGit.Utils
 
 		private void OnEditorUpdate()
 		{
-			float deltaTime = (float)(EditorApplication.timeSinceStartup - lastTime);
-			for (int i = tweens.Count-1; i >= 0; i--)
+			var deltaTime = (float)(EditorApplication.timeSinceStartup - lastTime);
+			for (var i = tweens.Count-1; i >= 0; i--)
 			{
 				var tween = tweens[i];
 				tween.Time = Mathf.Max(0, tween.Time - deltaTime);
@@ -82,53 +82,32 @@ namespace UniGit.Utils
 
 		public class GitTween
 		{
-			private float time;
-			private float maxTime;
-			private EditorWindow editorWindow;
-			private GitSettingsJson.AnimationTypeEnum animationType;
-
-			public GitTween(float time, float maxTime,EditorWindow editorWindow,GitSettingsJson.AnimationTypeEnum animationType)
+            public GitTween(float time, float maxTime,EditorWindow editorWindow,GitSettingsJson.AnimationTypeEnum animationType)
 			{
-				this.animationType = animationType;
-				this.time = time;
-				this.maxTime = maxTime;
-				this.editorWindow = editorWindow;
+				this.AnimationType = animationType;
+				this.Time = time;
+				this.MaxTime = maxTime;
+				this.EditorWindow = editorWindow;
 			}
 
-			public EditorWindow EditorWindow
-			{
-				get { return editorWindow; }
-			}
+			public EditorWindow EditorWindow { get; }
 
-			public float Time
-			{
-				get { return time; }
-				set { time = value; }
-			}
+            public float Time { get; set; }
 
-			public float Percent
+            public float Percent
 			{
 				get
 				{
-					if (maxTime == 0) return 1;
-					return time / maxTime; 
+					if (MaxTime == 0) return 1;
+					return Time / MaxTime; 
 				}
 			}
 
-			public float MaxTime
-			{
-				get { return maxTime; }
-			}
+			public float MaxTime { get; }
 
-			public GitSettingsJson.AnimationTypeEnum AnimationType
-			{
-				get { return animationType; }
-			}
+            public GitSettingsJson.AnimationTypeEnum AnimationType { get; }
 
-			public bool Valid
-			{
-				get { return time > 0; }
-			}
-		}
+            public bool Valid => Time > 0;
+        }
 	}
 }

@@ -14,7 +14,7 @@ namespace UniGit.Utils
 
 		private readonly List<Resolve> resolves;
 	    private InjectionHelper parent;
-		private Resolve injectorResolve;
+		private readonly Resolve injectorResolve;
 		private bool disposed;
 
 		public InjectionHelper()
@@ -75,12 +75,12 @@ namespace UniGit.Utils
 			if (constructor != null)
 			{
 				var parameterInfos = constructor.GetParameters();
-				object[] args = new object[parameterInfos.Length];
-				for (int i = 0; i < parameterInfos.Length; i++)
+				var args = new object[parameterInfos.Length];
+				for (var i = 0; i < parameterInfos.Length; i++)
 				{
 					args[i] = HandleParameter(parameterInfos[i], type,additionalArguments);
 				}
-				object instance = constructor.Invoke(args);
+				var instance = constructor.Invoke(args);
 				Inject(instance);
 				return instance;
 			}
@@ -99,12 +99,12 @@ namespace UniGit.Utils
 
 		private void Inject(Type type,object obj,BindingFlags flags)
 		{
-			List<MethodInfo> infos = GetInjectMethods(type,flags);
+			var infos = GetInjectMethods(type,flags);
 			foreach (var methodInfo in infos)
 			{
 				var parameterInfos = methodInfo.GetParameters();
-				object[] args = new object[parameterInfos.Length];
-				for (int i = 0; i < parameterInfos.Length; i++)
+				var args = new object[parameterInfos.Length];
+				for (var i = 0; i < parameterInfos.Length; i++)
 				{
 					args[i] = HandleParameter(parameterInfos[i], type,null);
 				}
@@ -123,8 +123,8 @@ namespace UniGit.Utils
 
 		private List<MethodInfo> GetInjectMethods(Type type,BindingFlags bindingFlags)
 		{
-			List<MethodInfo> infos = new List<MethodInfo>();
-			Type lastType = type;
+			var infos = new List<MethodInfo>();
+			var lastType = type;
 			while (lastType != null)
 			{
 				var methods = lastType.GetMethods(bindingFlags);
@@ -144,7 +144,7 @@ namespace UniGit.Utils
 			return infos;
 		}
 
-		private bool HasInjectAttribute(MethodInfo methodInfo)
+		private static bool HasInjectAttribute(MethodInfo methodInfo)
 		{
 			return methodInfo.GetCustomAttributes(typeof(UniGitInject), true).Length > 0;
 		}
@@ -156,14 +156,13 @@ namespace UniGit.Utils
 		}
 
 		private void CheckCrossDependency(Resolve resolve, Type injectedType,ParameterInfo parameterInfo)
-		{
-			if (resolve.injectedParamsCached == null)
-				resolve.injectedParamsCached = BuildInjectionParams(GetInjectConstructor(resolve.InstanceType));
-			if (CrossDependency(resolve.injectedParamsCached, injectedType))
-				throw new Exception(string.Format("Cross References detected when injecting parameter {0} of '{1}' with '{2}'", parameterInfo.Name,injectedType.Name, resolve.InstanceType.Name));
-		}
+        {
+            resolve.injectedParamsCached ??= BuildInjectionParams(GetInjectConstructor(resolve.InstanceType));
+            if (CrossDependency(resolve.injectedParamsCached, injectedType))
+				throw new Exception($"Cross References detected when injecting parameter {parameterInfo.Name} of '{injectedType.Name}' with '{resolve.InstanceType.Name}'");
+        }
 
-		private bool CrossDependency(KeyValuePair<string,Type>[] injectedParams, Type type)
+		private static bool CrossDependency(KeyValuePair<string,Type>[] injectedParams, Type type)
 		{
 			if (injectedParams == null) return false;
 
@@ -179,11 +178,9 @@ namespace UniGit.Utils
 		}
 
 		private KeyValuePair<string, Type>[] BuildInjectionParams(ConstructorInfo constructorInfo)
-		{
-			if(constructorInfo == null)
-				return new KeyValuePair<string, Type>[0];
-			return constructorInfo.GetParameters().Select(p => new KeyValuePair<string, Type>(p.Name, p.ParameterType)).ToArray();
-		}
+        {
+            return constructorInfo == null ? new KeyValuePair<string, Type>[0] : constructorInfo.GetParameters().Select(p => new KeyValuePair<string, Type>(p.Name, p.ParameterType)).ToArray();
+        }
 
 		private bool IsGenericTypeList(Type type)
 		{
@@ -194,12 +191,12 @@ namespace UniGit.Utils
 		{
 			if (parameter.ParameterType.IsGenericType)
 			{
-				Type parameterGenericType = parameter.ParameterType.GetGenericTypeDefinition();
+				var parameterGenericType = parameter.ParameterType.GetGenericTypeDefinition();
 				if (IsGenericTypeList(parameterGenericType))
 				{
 					var listType = parameter.ParameterType.GetGenericArguments()[0];
-					List<Resolve> parameterResolves = new List<Resolve>();
-					IList instanceCollection = (IList) Activator.CreateInstance(typeof(List<>).MakeGenericType(listType));
+					var parameterResolves = new List<Resolve>();
+					var instanceCollection = (IList) Activator.CreateInstance(typeof(List<>).MakeGenericType(listType));
 					if (FindResolves(listType, parameter.Name, injecteeType, parameterResolves))
 					{
 						foreach (var r in parameterResolves)
@@ -212,8 +209,7 @@ namespace UniGit.Utils
 				}
 			}
 
-			Resolve resolve;
-			if (FindResolve(parameter, injecteeType, out resolve))
+            if (FindResolve(parameter, injecteeType, out var resolve))
 			{
 				CheckCrossDependency(resolve, injecteeType, parameter);
 				return resolve.GetInstance(this);
@@ -223,8 +219,7 @@ namespace UniGit.Utils
 			{
 				foreach (var additionalArgument in additionalArguments)
 				{
-					var injectionArgument = additionalArgument as InjectionArgument;
-					if (injectionArgument != null)
+                    if (additionalArgument is InjectionArgument injectionArgument)
 					{
 						if (injectionArgument.Id == parameter.Name && parameter.ParameterType.IsInstanceOfType(injectionArgument.Obj))
 						{
@@ -244,33 +239,27 @@ namespace UniGit.Utils
 		    }
 
 			var customAttributes = parameter.GetCustomAttributes(typeof(UniGitInjectOptional),true);
-			if (customAttributes.Length > 0)
-			{
-				var value = parameter.DefaultValue;
-				if (value != DBNull.Value)
-				{
-					return value;
-				}
+            if (customAttributes.Length <= 0)
+                throw new Exception($"Unresolved parameter: '{parameter.Name}' with type: '{parameter.ParameterType}' when injecting into '{injecteeType.Name}'");
+            var value = parameter.DefaultValue;
+            if (value != DBNull.Value)
+            {
+                return value;
+            }
 
-				if(parameter.ParameterType.IsValueType)
-					return Activator.CreateInstance(parameter.ParameterType);
-				return null;
-			}
+            return parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType) : null;
 
-			throw new Exception(string.Format("Unresolved parameter: '{0}' with type: '{1}' when injecting into '{2}'", parameter.Name, parameter.ParameterType,injecteeType.Name));
-		}
+        }
 
 		private bool FindResolves(Type types,string parameterId, Type injecteeType,ICollection<Resolve> outResolves)
 		{
-			bool foundResolves = false;
+			var foundResolves = false;
 			foreach (var resolve in resolves)
-			{
-				if (ValidResolve(resolve, types, parameterId, injecteeType))
-				{
-					outResolves.Add(resolve);
-					foundResolves = true;
-				}
-			}
+            {
+                if (!ValidResolve(resolve, types, parameterId, injecteeType)) continue;
+                outResolves.Add(resolve);
+                foundResolves = true;
+            }
 			return foundResolves;
 		}
 
@@ -331,8 +320,8 @@ namespace UniGit.Utils
 
 		public List<T> GetInstances<T>()
 		{
-			HashSet<Resolve> resolveCallList = new HashSet<Resolve>();
-			List<T> instances = new List<T>();
+			var resolveCallList = new HashSet<Resolve>();
+			var instances = new List<T>();
 			foreach (var resolve in resolves)
 			{
 				if (typeof(T) == resolve.Type && resolve.WhenInjectedIntoType == null && string.IsNullOrEmpty(resolve.id))
@@ -368,7 +357,7 @@ namespace UniGit.Utils
 			}
 		}
 
-		public struct ResolveCreateContext
+		public readonly struct ResolveCreateContext
 		{
 			public readonly InjectionHelper injectionHelper;
 			public readonly object[] arg;
@@ -425,39 +414,35 @@ namespace UniGit.Utils
 
 		public class Resolve : IEquatable<Resolve>, IDisposable
 		{
-			private Type type;
-			private Type instanceType;
-			private Type whenInjectedInto;
-			private Func<ResolveCreateContext,object> method;
+            private Func<ResolveCreateContext,object> method;
 			internal KeyValuePair<string, Type>[] injectedParamsCached;
 			internal string id;
 			private object instance;
 			private object[] arg;
-			private bool nonLazy;
-			private bool cache = true;
+            private bool cache = true;
 
 			public Resolve(Type type)
 			{
-				this.type = type;
-				instanceType = type;
+				this.Type = type;
+				InstanceType = type;
 			}
 
 			public bool Equals(Resolve other)
 			{
 				if (other == null) return false;
-				if (type != other.type || whenInjectedInto != other.whenInjectedInto || other.id != id) return false;
+				if (Type != other.Type || WhenInjectedIntoType != other.WhenInjectedIntoType || other.id != id) return false;
 				return false;
 			}
 
 			public Resolve To(Type type)
 			{
-				if (this.type.IsAssignableFrom(type) || type == this.type)
+				if (this.Type.IsAssignableFrom(type) || type == this.Type)
 				{
-					instanceType = type;
+					InstanceType = type;
 				}
 				else
 				{
-					throw new Exception(string.Format("Type '{0}' must be able to be assigned from type '{1}'", type, this.type));
+					throw new Exception($"Type '{type}' must be able to be assigned from type '{this.Type}'");
 				}
 				return this;
 			}
@@ -469,7 +454,7 @@ namespace UniGit.Utils
 
 			public Resolve WhenInjectedInto(Type type)
 			{
-				whenInjectedInto = type;
+				WhenInjectedIntoType = type;
 				return this;
 			}
 
@@ -486,14 +471,10 @@ namespace UniGit.Utils
 
 			public Resolve FromInstance(object instance)
 			{
-				if (instance == null)
+                this.instance = instance ?? throw new Exception("Instance cannot be null");
+				if (!Type.IsInstanceOfType(instance))
 				{
-					throw new Exception("Instance cannot be null");
-				}
-				this.instance = instance;
-				if (!type.IsInstanceOfType(instance))
-				{
-					throw new Exception(string.Format("Instance of type: {0} does not match resolve type: {1}",instance.GetType(),type));
+					throw new Exception($"Instance of type: {instance.GetType()} does not match resolve type: {Type}");
 				}
 				return this;
 			}
@@ -506,7 +487,7 @@ namespace UniGit.Utils
 
 			public Resolve NonLazy()
 			{
-				nonLazy = true;
+				IsNonLazy = true;
 				return this;
 			}
 
@@ -524,90 +505,59 @@ namespace UniGit.Utils
 
 			public object GetInstance(InjectionHelper injectionHelper)
 			{
-				if (cache)
-				{
-					EnsureInstance(injectionHelper);
-					return instance;
-				}
-
-				return CreateInstance(injectionHelper);
-			}
+                if (!cache) return CreateInstance(injectionHelper);
+                EnsureInstance(injectionHelper);
+                return instance;
+            }
 
 			internal object CreateInstance(InjectionHelper injectionHelper)
 			{
 				if (method != null)
 				{
-					object i = method.Invoke(new ResolveCreateContext(injectionHelper, arg));
+					var i = method.Invoke(new ResolveCreateContext(injectionHelper, arg));
 					injectionHelper.Inject(i);
 					return i;
 				}
 
-				return injectionHelper.CreateInstance(instanceType, arg);
+				return injectionHelper.CreateInstance(InstanceType, arg);
 			}
 
 			internal void EnsureInstance(InjectionHelper injectionHelper)
-			{
-				if (instance == null)
-				{
-					instance = CreateInstance(injectionHelper);
-				}
-			}
+            {
+                instance ??= CreateInstance(injectionHelper);
+            }
 
 			public void Dispose()
 			{
-				IDisposable disposableInstance = instance as IDisposable;
-				if(disposableInstance != null) disposableInstance.Dispose();
-				arg = null;
+				var disposableInstance = instance as IDisposable;
+                disposableInstance?.Dispose();
+                arg = null;
 			}
 
-			public bool HasInstance { get { return instance != null; } }
+			public bool HasInstance => instance != null;
 
-			public Type Type
-			{
-				get { return type; }
-			}
+            public Type Type { get; }
 
-			public Type InstanceType
-			{
-				get { return instanceType; }
-			}
+            public Type InstanceType { get; private set; }
 
-			public Type WhenInjectedIntoType
-			{
-				get { return whenInjectedInto; }
-			}
+            public Type WhenInjectedIntoType { get; private set; }
 
-			public string Id
-			{
-				get { return id; }
-			}
+            public string Id => id;
 
-			public bool IsNonLazy
-			{
-				get { return nonLazy; }
-			}
-		}
+            public bool IsNonLazy { get; private set; }
+        }
 	}
 
 	public class InjectionArgument
 	{
-		private object obj;
-		private string id;
-
-		public InjectionArgument(string id,object obj)
+        public InjectionArgument(string id,object obj)
 		{
-			this.obj = obj;
-			this.id = id;
+			this.Obj = obj;
+			this.Id = id;
 		}
 
-		public object Obj
-		{
-			get { return obj; }
-		}
+		public object Obj { get; }
 
-		public string Id
-		{
-			get { return id; }
-		}
-	}
+        public string Id { get; }
+    }
 }

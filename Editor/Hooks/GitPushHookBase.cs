@@ -3,7 +3,7 @@ using LibGit2Sharp;
 using UniGit;
 using UniGit.Utils;
 
-namespace Assets.Plugins.UniGit.Editor.Hooks
+namespace UniGit.Hooks
 {
 	public abstract class GitPushHookBase
 	{

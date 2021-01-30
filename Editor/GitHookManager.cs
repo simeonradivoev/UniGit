@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Assets.Plugins.UniGit.Editor.Hooks;
 using LibGit2Sharp;
+using UniGit.Hooks;
 using UniGit.Utils;
 
 namespace UniGit
@@ -17,15 +17,15 @@ namespace UniGit
 
 		public bool PrePushHandler(IEnumerable<PushUpdate> updates)
 		{
-			bool cantinue = true;
+			var continueFlag = true;
 			foreach (var hook in pushHooks)
 			{
 				if (!hook.OnPrePush(updates))
 				{
-					cantinue = false;
+					continueFlag = false;
 				}
 			}
-			return cantinue;
+			return continueFlag;
 		}
 	}
 }

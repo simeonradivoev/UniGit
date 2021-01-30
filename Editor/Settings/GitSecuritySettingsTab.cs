@@ -34,7 +34,7 @@ namespace UniGit.Settings
 			if (gitSettings != null)
 			{
 				EditorGUI.BeginChangeCheck();
-				int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("Credentials Manager", "The name of the External program to use"), credentialsManager.SelectedAdapterIndex, credentialsManager.AdapterNames);
+				var newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("Credentials Manager", "The name of the External program to use"), credentialsManager.SelectedAdapterIndex, credentialsManager.AdapterNames);
 				gitSettings.CredentialsManager = newSelectedIndex >= 0 && newSelectedIndex < credentialsManager.AdapterIds.Length ? credentialsManager.AdapterIds[newSelectedIndex] : "";
 				if (EditorGUI.EndChangeCheck())
 				{
@@ -45,17 +45,18 @@ namespace UniGit.Settings
 				GUI.enabled = newSelectedIndex >= 0;
 			}
 			if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButton, GUILayout.Width(64)))
-			{
-				int choice = EditorUtility.DisplayDialogComplex("Remove Credentials Manager", "Disable the current external manager only or delete passwords win external manager.", "Disable Only", "Cancel", "Disable and Delete");
-				if (choice == 0)
-				{
-					credentialsManager.SetSelectedAdapter(-1,false);
-				}
-				else if (choice == 2)
-				{
-					credentialsManager.SetSelectedAdapter(-1,true);
-				}
-			}
+            {
+                var choice = EditorUtility.DisplayDialogComplex("Remove Credentials Manager", "Disable the current external manager only or delete passwords win external manager.", "Disable Only", "Cancel", "Disable and Delete");
+                switch (choice)
+                {
+                    case 0:
+                        credentialsManager.SetSelectedAdapter(-1,false);
+                        break;
+                    case 2:
+                        credentialsManager.SetSelectedAdapter(-1,true);
+                        break;
+                }
+            }
 			GUI.enabled = true;
 			EditorGUILayout.EndHorizontal();
 
@@ -68,11 +69,11 @@ namespace UniGit.Settings
 			scroll = EditorGUILayout.BeginScrollView(scroll);
 			foreach (var gitCredential in credentialsManager.GitCredentials)
 			{
-				bool hasPassword = credentialsManager.HasPassword(gitCredential);
-				string currentusername = credentialsManager.LoadUsername(gitCredential);
+				var hasPassword = credentialsManager.HasPassword(gitCredential);
+				var currentusername = credentialsManager.LoadUsername(gitCredential);
 
 				Texture nameIcon = null;
-				string nameTooltip = "";
+				var nameTooltip = "";
 
 				if (data.RepositoryStatus.SubModuleEntries.Any(m => m.Url == gitCredential.URL))
 				{
@@ -94,7 +95,7 @@ namespace UniGit.Settings
 				gitCredential.Name = EditorGUILayout.TextField(GitGUI.GetTempContent("Name","Display name. Serves no purpose other then visual."), gitCredential.Name);
 				if (credentialsManager.IsAdapterSelected)
 				{
-					GUIContent managerUrlContent = GitGUI.GetTempContent("Manager URL");
+					var managerUrlContent = GitGUI.GetTempContent("Manager URL");
 					if (!hasPassword)
 					{
 						managerUrlContent.image = GitGUI.Textures.WarrningIconSmall;
@@ -105,7 +106,7 @@ namespace UniGit.Settings
 					if (GUILayout.Button(GitGUI.IconContent("UnityEditor.SceneHierarchyWindow", string.Empty, "Options"), GitGUI.Styles.IconButton,GUILayout.Width(20)))
 					{
 						var c = gitCredential;
-						GenericMenu genericMenu = new GenericMenu();
+						var genericMenu = new GenericMenu();
 						genericMenu.AddItem(new GUIContent("Automatic fill"), false, () =>
 						{
 							c.ManagerUrl = credentialsManager.GetFormatedUrl(c.URL); 
@@ -125,7 +126,7 @@ namespace UniGit.Settings
 				EditorGUILayout.Space();
 				GUILayout.Label(GUIContent.none, "sv_iconselector_sep");
 				EditorGUILayout.Space();
-				bool newIsToken = gitCredential.IsToken;
+				var newIsToken = gitCredential.IsToken;
 
 				if (credentialsManager.IsAdapterSelected)
 				{
@@ -217,15 +218,16 @@ namespace UniGit.Settings
 
 				if (GUILayout.Button(GitGUI.GetTempContent("Remove"), EditorStyles.miniButtonRight))
 				{
-					int choise = EditorUtility.DisplayDialogComplex("Remove Credential Entry", "Removing credential from UniGit only or from external manager as well?","Remove From UniGit","Cancel","Remove From Both");
-					if (choise == 0)
-					{
-						credentialsManager.RemoveCredentials(gitCredential,false);
-					}
-					else if(choise == 1)
-					{
-						credentialsManager.RemoveCredentials(gitCredential,true);
-					}
+					var choice = EditorUtility.DisplayDialogComplex("Remove Credential Entry", "Removing credential from UniGit only or from external manager as well?","Remove From UniGit","Cancel","Remove From Both");
+					switch (choice)
+                    {
+                        case 0:
+                            credentialsManager.RemoveCredentials(gitCredential,false);
+                            break;
+                        case 1:
+                            credentialsManager.RemoveCredentials(gitCredential,true);
+                            break;
+                    }
 
 					credentialsManager.GitCredentials.MarkDirty();
 					GUIUtility.ExitGUI();
@@ -258,7 +260,7 @@ namespace UniGit.Settings
 			private string url;
 			private string username;
 			private SecureString password;
-			private GitCredentialsManager credentialsManager;
+			private readonly GitCredentialsManager credentialsManager;
 
 			public AddCredentialPopup(GitCredentialsManager credentialsManager)
 			{

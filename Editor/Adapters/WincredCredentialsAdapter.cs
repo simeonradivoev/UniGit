@@ -30,23 +30,18 @@ namespace UniGit.Adapters
 
 		public string FormatUrl(string url)
 		{
-			Uri uri = new Uri(url);
+			var uri = new Uri(url);
 			return "git:" + uri.GetLeftPart(UriPartial.Authority);
 		}
 
 		public bool SaveUsername(string url, string username)
 		{
-			using (var credential = new Credential(null, null, url) {PersistanceType = persistanceType})
-			{
-				if (credential.Load())
-				{
-					credential.Username = username;
-					return credential.Save();
-				}
-				//Debug.LogErrorFormat("Could not load credential with url: {0} from Windows Creadentials.", url);
-			}
-			return false;
-		}
+            using var credential = new Credential(null, null, url) {PersistanceType = persistanceType};
+            if (!credential.Load()) return false;
+            credential.Username = username;
+            return credential.Save();
+            //Debug.LogErrorFormat("Could not load credential with url: {0} from Windows Creadentials.", url);
+        }
 
 		public bool LoadPassword(string url, out SecureString password)
 		{
@@ -92,34 +87,26 @@ namespace UniGit.Adapters
 
 		public bool SavePassword(string url, string username, SecureString password, bool createMissing)
 		{
-			using (var credential = new Credential(username, null, url,credentialType) {PersistanceType = persistanceType})
-			{
-				if (credential.Load() || createMissing)
-				{
-					credential.SecurePassword = password;
-					return credential.Save();
-				}
-			}
-			return false;
-		}
+            using var credential = new Credential(username, null, url,credentialType) {PersistanceType = persistanceType};
+            if (!credential.Load() && !createMissing) return false;
+            credential.SecurePassword = password;
+            return credential.Save();
+
+        }
 
 		public bool Exists(string url)
 		{
 			if (string.IsNullOrEmpty(url)) return false;
-			using (var credentialSet = new Credential(null,null,url))
-			{
-				credentialSet.Load();
-				return credentialSet.Exists();
-			}
-		}
+            using var credentialSet = new Credential(null,null,url);
+            credentialSet.Load();
+            return credentialSet.Exists();
+        }
 
 		public bool Exists(string url,string username)
-		{
-			using (var credentialSet = new Credential(username,null,url))
-			{
-				return credentialSet.Load();
-			}
-		}
+        {
+            using var credentialSet = new Credential(username,null,url);
+            return credentialSet.Load();
+        }
 	}
 #endif
 }

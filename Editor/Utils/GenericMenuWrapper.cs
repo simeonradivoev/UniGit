@@ -5,36 +5,31 @@ namespace UniGit.Utils
 {
 	public class GenericMenuWrapper : IGenericMenu
 	{
-		private readonly GenericMenu genericMenu;
+        public GenericMenu GenericMenu { get; }
 
-		public GenericMenuWrapper(GenericMenu genericMenu)
+        public GenericMenuWrapper(GenericMenu genericMenu)
 		{
-			this.genericMenu = genericMenu;
+			this.GenericMenu = genericMenu;
 		}
 
 		public void AddItem(GUIContent content, bool on, GenericMenu.MenuFunction func)
 		{
-			genericMenu.AddItem(content,on,func);
+			GenericMenu.AddItem(content,on,func);
 		}
 
 		public void AddDisabledItem(GUIContent content)
 		{
-			genericMenu.AddDisabledItem(content);
+			GenericMenu.AddDisabledItem(content);
 		}
 
 		public void AddItem(GUIContent content, bool on, GenericMenu.MenuFunction2 func, object data)
 		{
-			genericMenu.AddItem(content, on, func,data);
+			GenericMenu.AddItem(content, on, func,data);
 		}
 
 		public void AddSeparator(string text)
 		{
-			genericMenu.AddSeparator(text);
+			GenericMenu.AddSeparator(text);
 		}
-
-		public GenericMenu GenericMenu
-		{
-			get { return genericMenu; }
-		}
-	}
+    }
 }

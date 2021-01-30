@@ -18,13 +18,11 @@ namespace UniGit.Utils
 		}
 
 		internal void Complete()
-		{
-			if (onComplete != null)
-			{
-				onComplete.Invoke(this);
-				onComplete = null;
-			}
-		}
+        {
+            if (onComplete == null) return;
+            onComplete.Invoke(this);
+            onComplete = null;
+        }
 
 		public void MarkDone()
 		{

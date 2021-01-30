@@ -19,20 +19,16 @@ namespace UniGit
 
 		private Repository repository;
 		private readonly GitSettingsJson gitSettings;
-		private readonly Queue<Action> actionQueue = new Queue<Action>();	//queue for executing actions on main thread
-		private UniGitData gitData;
+        private readonly UniGitData gitData;
 		private readonly object statusRetriveLock = new object();
 		private bool repositoryDirty;	//is the whole repository dirty
 		private bool forceSingleThread;	//force single threaded update
 		private bool reloadDirty;	//should the GitLib2Sharp repository be recreated with a new instance
-		private bool isUpdating;
-		private bool inSubModule;
-		private string dotGitDirCached;
+        private string dotGitDirCached;
 		private readonly List<AsyncStageOperation> asyncStages = new List<AsyncStageOperation>();
 		private readonly HashSet<string> updatingFiles = new HashSet<string>();		//currently updating files, mainly for multi threaded update
 		private readonly GitCallbacks callbacks;
-		private readonly IGitPrefs prefs;
-		private readonly List<ISettingsAffector> settingsAffectors = new List<ISettingsAffector>();
+        private readonly List<ISettingsAffector> settingsAffectors = new List<ISettingsAffector>();
 		private readonly GitAsyncManager asyncManager;
 		private readonly List<IGitWatcher> watchers = new List<IGitWatcher>();
 		private readonly ILogger logger;
@@ -53,7 +49,7 @@ namespace UniGit
 			this.paths = paths;
 			this.gitData = gitData;
 			this.callbacks = callbacks;
-			this.prefs = prefs;
+			this.Prefs = prefs;
 			this.asyncManager = asyncManager;
 			this.logger = logger;
 			this.initializer = initializer;
@@ -103,16 +99,16 @@ namespace UniGit
 
 		private void DeleteDirectory(string targetDir)
 		{
-			string[] files = Directory.GetFiles(targetDir);
-			string[] dirs = Directory.GetDirectories(targetDir);
+			var files = Directory.GetFiles(targetDir);
+			var dirs = Directory.GetDirectories(targetDir);
 
-			foreach (string file in files)
+			foreach (var file in files)
 			{
 				File.SetAttributes(file, FileAttributes.Normal);
 				File.Delete(file);
 			}
 
-			foreach (string dir in dirs)
+			foreach (var dir in dirs)
 			{
 				DeleteDirectory(dir);
 			}
@@ -146,9 +142,9 @@ namespace UniGit
 
 			}
 
-			if (actionQueue.Count > 0)
+			if (ActionQueue.Count > 0)
 			{
-				Action action = actionQueue.Dequeue();
+				var action = ActionQueue.Dequeue();
 				if (action != null)
 				{
 					try
@@ -172,22 +168,20 @@ namespace UniGit
 		}
 
 		private void Update(bool reloadRepository,string[] paths = null)
-		{
-			if (initializer.IsValidRepo)
-			{
-				StartUpdating(paths);
+        {
+            if (!initializer.IsValidRepo) return;
+            StartUpdating(paths);
 
-				if (reloadRepository || repository == null)
-				{
-					if (repository != null) repository.Dispose();
-					repository = CreateRepository(gitSettings.ActiveSubModule);
-					callbacks.IssueOnRepositoryLoad(repository);
-				}
+            if (reloadRepository || repository == null)
+            {
+                repository?.Dispose();
+                repository = CreateRepository(gitSettings.ActiveSubModule);
+                callbacks.IssueOnRepositoryLoad(repository);
+            }
 
-				if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status)) RetreiveStatusThreaded(paths);
-				else RetreiveStatus(paths);
-			}
-		}
+            if (!forceSingleThread && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Status)) RetreiveStatusThreaded(paths);
+            else RetreiveStatus(paths);
+        }
 
 		#region Asset Postprocessing
 
@@ -217,11 +211,11 @@ namespace UniGit
 		private void PostprocessStage(string[] projectPaths)
 		{
 			if(repository == null || !initializer.IsValidRepo) return;
-			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
-			string[] pathsFinal = projectPaths.Where(a => !IsEmptyFolder(a)).Select(ToLocalPath).SelectMany(GetPathWithMeta).ToArray();
+			if (Prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
+			var pathsFinal = projectPaths.Where(a => !IsEmptyFolder(a)).Select(ToLocalPath).SelectMany(GetPathWithMeta).ToArray();
 			if (pathsFinal.Length > 0)
 			{
-				bool autoStage = gitSettings != null && gitSettings.AutoStage;
+				var autoStage = gitSettings != null && gitSettings.AutoStage;
 				if (Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 				{
 					if (autoStage)
@@ -244,8 +238,8 @@ namespace UniGit
 		private void PostprocessUnstage(string[] projectPaths)
 		{
 			if (repository == null || !initializer.IsValidRepo) return;
-			if (prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
-			string[] pathsFinal = projectPaths.Select(ToLocalPath).SelectMany(GetPathWithMeta).ToArray();
+			if (Prefs.GetBool(UnityEditorGitPrefs.DisablePostprocess)) return;
+			var pathsFinal = projectPaths.Select(ToLocalPath).SelectMany(GetPathWithMeta).ToArray();
 			if (pathsFinal.Length > 0)
 			{
 				if (gitSettings != null && Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
@@ -263,13 +257,11 @@ namespace UniGit
 		#endregion
 
 		private void CheckNullRepository()
-		{
-			if (repository == null && initializer.IsValidRepo)
-			{
-				repository = CreateRepository(gitSettings.ActiveSubModule);
-				callbacks.IssueOnRepositoryLoad(repository);
-			}
-		}
+        {
+            if (repository != null || !initializer.IsValidRepo) return;
+            repository = CreateRepository(gitSettings.ActiveSubModule);
+            callbacks.IssueOnRepositoryLoad(repository);
+        }
 
 		private Repository CreateRepository(string activeModule)
 		{
@@ -282,26 +274,24 @@ namespace UniGit
 				{
 					var subModuleRepo = new Repository(UniGitPathHelper.Combine(paths.RepoProjectRelativePath, subModule.Path));
 					mainRepository.Dispose();
-					inSubModule = true;
+					InSubModule = true;
 					dotGitDirCached = subModuleRepo.Info.Path;
 					return subModuleRepo;
 				}
 			}
-			inSubModule = false;
+			InSubModule = false;
 			dotGitDirCached = mainRepository.Info.Path;
 			return mainRepository;
 		}
 
 		public void SwitchToSubModule(string path)
-		{
-			if (gitSettings.ActiveSubModule != path && Repository.IsValid(UniGitPathHelper.Combine(paths.RepoProjectRelativePath,path)))
-			{
-				gitSettings.ActiveSubModule = path;
-				gitSettings.MarkDirty();
-				MarkDirty(true);
-			}
+        {
+            if (gitSettings.ActiveSubModule == path || !Repository.IsValid(UniGitPathHelper.Combine(paths.RepoProjectRelativePath, path))) return;
+            gitSettings.ActiveSubModule = path;
+            gitSettings.MarkDirty();
+            MarkDirty(true);
 
-		}
+        }
 
 		public void SwitchToMainRepository()
 		{
@@ -338,7 +328,7 @@ namespace UniGit
 		{
 			foreach (var path in paths)
 			{
-				string fixedPath = UniGitPathHelper.FixUnityPath(path);
+				var fixedPath = UniGitPathHelper.FixUnityPath(path);
 				if(IsDirectory(fixedPath)) continue;
 				if(!gitData.DirtyFilesQueue.Contains(fixedPath))
 					gitData.DirtyFilesQueue.Add(fixedPath);
@@ -349,8 +339,8 @@ namespace UniGit
 		{
 			if (paths != null && paths.Length > 0)
 			{
-				List<GitAsyncOperation> operations = new List<GitAsyncOperation>();
-				foreach (string path in paths)
+				var operations = new List<GitAsyncOperation>();
+				foreach (var path in paths)
 				{
 					operations.Add(asyncManager.QueueWorkerWithLock((p) =>
 					{
@@ -431,7 +421,7 @@ namespace UniGit
 			catch (ThreadAbortException)
 			{
 				//run status retrieval on main thread if this thread was aborted
-				actionQueue.Enqueue(() =>
+				ActionQueue.Enqueue(() =>
 				{
 					RetreiveStatus(paths);
 				});
@@ -456,7 +446,7 @@ namespace UniGit
 
 		private void StartUpdating(IEnumerable<string> paths)
 		{
-			isUpdating = true;
+			IsUpdating = true;
 			updatingFiles.Clear();
 			if (paths != null)
 			{
@@ -472,7 +462,7 @@ namespace UniGit
 		{
 			if (treaded)
 			{
-				actionQueue.Enqueue(() =>
+				ActionQueue.Enqueue(() =>
 				{
 					FinishUpdating(paths);
 				});
@@ -485,7 +475,7 @@ namespace UniGit
 
 		private void FinishUpdating(string[] paths)
 		{
-			isUpdating = false;
+			IsUpdating = false;
 			updatingFiles.Clear();
 			callbacks.IssueUpdateRepository(gitData.RepositoryStatus, paths);
 			foreach (var watcher in watchers)
@@ -495,20 +485,15 @@ namespace UniGit
 		}
 
 		internal bool IsFileDirty(string path)
-		{
-			if (gitData.DirtyFilesQueue.Count <= 0) return false;
-			return gitData.DirtyFilesQueue.Contains(path);
-		}
+        {
+            return gitData.DirtyFilesQueue.Count > 0 && gitData.DirtyFilesQueue.Contains(path);
+        }
 
 		internal bool IsFileUpdating(string path)
 		{
-			if (isUpdating)
-			{
-				if (updatingFiles.Count <= 0) return true;
-				return updatingFiles.Contains(path);
-			}
-			return false;
-		}
+            if (!IsUpdating) return false;
+            return updatingFiles.Count <= 0 || updatingFiles.Contains(path);
+        }
 
 		internal bool IsFileStaging(string localPath)
 		{
@@ -519,20 +504,16 @@ namespace UniGit
 		{
 			if (!initializer.IsValidRepo) return GitGUI.Textures.CollabNew;
 			if (Repository == null) return GitGUI.Textures.Collab;
-			if (isUpdating) return GitGUI.GetTempSpinAnimatedTexture();
+			if (IsUpdating) return GitGUI.GetTempSpinAnimatedTexture();
 			if (gitData.RepositoryStatus.Any(e => e.Status.IsFlagSet(FileStatus.Conflicted))) return GitGUI.Textures.CollabConflict;
-			int? behindBy = Repository.Head.TrackingDetails.BehindBy;
-			int? aheadBy = Repository.Head.TrackingDetails.AheadBy;
+			var behindBy = Repository.Head.TrackingDetails.BehindBy;
+			var aheadBy = Repository.Head.TrackingDetails.AheadBy;
 			if (behindBy.GetValueOrDefault(0) > 0)
 			{
 				return GitGUI.Textures.CollabPull;
 			}
-			if (aheadBy.GetValueOrDefault(0) > 0)
-			{
-				return GitGUI.Textures.CollabPush;
-			}
-			return GitGUI.Textures.Collab;
-		}
+			return aheadBy.GetValueOrDefault(0) > 0 ? GitGUI.Textures.CollabPush : GitGUI.Textures.Collab;
+        }
 
 		public void Dispose()
 		{
@@ -541,18 +522,17 @@ namespace UniGit
 				repository.Dispose();
 				repository = null;
 			}
-			if (callbacks != null)
-			{
-				callbacks.EditorUpdate -= OnEditorUpdate;
-				//asset postprocessing
-				callbacks.OnWillSaveAssets -= OnWillSaveAssets;
-				callbacks.OnPostprocessImportedAssets -= OnPostprocessImportedAssets;
-				callbacks.OnPostprocessDeletedAssets -= OnPostprocessDeletedAssets;
-				callbacks.OnPostprocessMovedAssets -= OnPostprocessMovedAssets;
-				callbacks.OnPlayModeStateChange -= OnPlayModeStateChange;
-				callbacks.RepositoryCreate -= OnRepositoryCreate;
-			}
-		}
+
+            if (callbacks == null) return;
+            callbacks.EditorUpdate -= OnEditorUpdate;
+            //asset postprocessing
+            callbacks.OnWillSaveAssets -= OnWillSaveAssets;
+            callbacks.OnPostprocessImportedAssets -= OnPostprocessImportedAssets;
+            callbacks.OnPostprocessDeletedAssets -= OnPostprocessDeletedAssets;
+            callbacks.OnPostprocessMovedAssets -= OnPostprocessMovedAssets;
+            callbacks.OnPlayModeStateChange -= OnPlayModeStateChange;
+            callbacks.RepositoryCreate -= OnRepositoryCreate;
+        }
 
 		#region Settings Affectors
 		public void AddSettingsAffector(ISettingsAffector settingsAffector)
@@ -610,18 +590,16 @@ namespace UniGit
 		}
 
 		public void ShowBlameWizard(string localPath, GitExternalManager externalManager)
-		{
-			if (!string.IsNullOrEmpty(localPath))
-			{
-				if (externalManager.TakeBlame(localPath))
-				{
-					return;
-				}
+        {
+            if (string.IsNullOrEmpty(localPath)) return;
+            if (externalManager.TakeBlame(localPath))
+            {
+                return;
+            }
 
-				var blameWizard = UniGitLoader.GetWindow<GitBlameWizard>(true);
-				blameWizard.SetBlamePath(localPath);
-			}
-		}
+            var blameWizard = UniGitLoader.GetWindow<GitBlameWizard>(true);
+            blameWizard.SetBlamePath(localPath);
+        }
 
 		public bool CanBlame(FileStatus fileStatus)
 		{
@@ -694,7 +672,7 @@ namespace UniGit
 		{
 			if (async)
 			{
-				actionQueue.Enqueue(action);
+				ActionQueue.Enqueue(action);
 			}
 			else
 			{
@@ -715,26 +693,14 @@ namespace UniGit
 
 		public bool IsDirectory(string localPath)
 		{
-			string projectPath = ToProjectPath(localPath);
-			if (IsSubModule(ToProjectPath(localPath)))
-			{
-				return false;
-			}
-			if (Path.IsPathRooted(projectPath))
-			{
-				return Directory.Exists(UniGitPathHelper.Combine(paths.RepoPath, projectPath));
-			}
-			return Directory.Exists(projectPath);
-		}
+			var projectPath = ToProjectPath(localPath);
+			return !IsSubModule(ToProjectPath(localPath)) && Directory.Exists(Path.IsPathRooted(projectPath) ? UniGitPathHelper.Combine(paths.RepoPath, projectPath) : projectPath);
+        }
 
 		public bool IsEmptyFolderMeta(string path)
-		{
-			if (UniGitPathHelper.IsMetaPath(path))
-			{
-				return IsEmptyFolder(path.Substring(0, path.Length - 5));
-			}
-			return false;
-		}
+        {
+            return UniGitPathHelper.IsMetaPath(path) && IsEmptyFolder(path.Substring(0, path.Length - 5));
+        }
 
 		public bool IsEmptyFolder(string path)
 		{
@@ -757,9 +723,8 @@ namespace UniGit
                 localPath = UniGitPathHelper.Combine(paths.RepoProjectRelativePath, localPath);
             }
             
-			if (inSubModule) return UniGitPathHelper.Combine(gitSettings.ActiveSubModule, localPath);
-			return localPath;
-		}
+			return InSubModule ? UniGitPathHelper.Combine(gitSettings.ActiveSubModule, localPath) : localPath;
+        }
 
 		public string ToLocalPath(string projectPath)
 		{
@@ -767,25 +732,22 @@ namespace UniGit
             {
                 projectPath = UniGitPathHelper.SubtractDirectory(projectPath, UniGitPathHelper.ToUnityPath(paths.RepoProjectRelativePath));
             }
-            if (inSubModule) return UniGitPathHelper.SubtractDirectory(projectPath, gitSettings.ActiveSubModule);
-			return projectPath;
-		}
+            return InSubModule ? UniGitPathHelper.SubtractDirectory(projectPath, gitSettings.ActiveSubModule) : projectPath;
+        }
 
 		/// <summary>
 		/// If in sub module returns it's repo path
 		/// </summary>
 		/// <returns></returns>
 		public string GetCurrentRepoPath()
-		{
-			if (inSubModule) return UniGitPathHelper.Combine(paths.RepoPath, gitSettings.ActiveSubModule);
-			return paths.RepoPath;
-		}
+        {
+            return InSubModule ? UniGitPathHelper.Combine(paths.RepoPath, gitSettings.ActiveSubModule) : paths.RepoPath;
+        }
 
 		public string GetCurrentDotGitFolder()
-		{
-			if (inSubModule) return dotGitDirCached;
-			return UniGitPathHelper.Combine(paths.RepoPath, ".git");
-		}
+        {
+            return InSubModule ? dotGitDirCached : UniGitPathHelper.Combine(paths.RepoPath, ".git");
+        }
 
 		#region Enumeration helpers
 
@@ -793,7 +755,7 @@ namespace UniGit
 		{
 			if (UniGitPathHelper.IsMetaPath(path))
 			{
-				string assetPath = AssetPathFromMeta(path);
+				var assetPath = AssetPathFromMeta(path);
 				yield return path;
 				//if the asset belonging to the meta file is a folder just return the meta
 				if (IsDirectory(assetPath)) yield break;
@@ -804,19 +766,18 @@ namespace UniGit
 			}
 			else
 			{
-				string metaPath = MetaPathFromAsset(path);
+				var metaPath = MetaPathFromAsset(path);
 				//if the path is a directory then return only it's meta path
 				if (IsDirectory(path))
 				{
 					yield return metaPath;
 					yield break;
 				}
-				if (!string.IsNullOrEmpty(metaPath))
-				{
-					yield return path;
-					yield return metaPath;
-				}
-			}
+
+                if (string.IsNullOrEmpty(metaPath)) yield break;
+                yield return path;
+                yield return metaPath;
+            }
 		}
 
 		public IEnumerable<string> GetPathsWithMeta(IEnumerable<string> paths)
@@ -835,13 +796,9 @@ namespace UniGit
 		#region Static Helpers
 
 		public static string AssetPathFromMeta(string metaPath)
-		{
-			if (UniGitPathHelper.IsMetaPath(metaPath))
-			{
-				return metaPath.Substring(0, metaPath.Length - 5);
-			}
-			return metaPath;
-		}
+        {
+            return UniGitPathHelper.IsMetaPath(metaPath) ? metaPath.Substring(0, metaPath.Length - 5) : metaPath;
+        }
 
 		public static string MetaPathFromAsset(string assetPath)
 		{
@@ -866,8 +823,8 @@ namespace UniGit
 			{
 				if (UniGitPathHelper.IsMetaPath(path))
 				{
-					string assetPath = AssetPathFromMeta(path);
-					string rootedAssetPath = Path.Combine(paths.RepoPath, assetPath);
+					var assetPath = AssetPathFromMeta(path);
+					var rootedAssetPath = Path.Combine(paths.RepoPath, assetPath);
 					if (!Path.HasExtension(assetPath) && !File.Exists(rootedAssetPath) && !Directory.Exists(rootedAssetPath))
 					{
 						Directory.CreateDirectory(rootedAssetPath);
@@ -886,15 +843,16 @@ namespace UniGit
 			}
 			else
 			{
-				float percent = (float)completedSteps / totalSteps;
-				EditorUtility.DisplayProgressBar("Transferring", string.Format("Checking Out: {0}",path),percent);
+				var percent = (float)completedSteps / totalSteps;
+				EditorUtility.DisplayProgressBar("Transferring", $"Checking Out: {path}",percent);
 			}
 		}
 
 		public bool FetchTransferProgressHandler(TransferProgress progress)
 		{
-			float percent = (float)progress.ReceivedObjects / progress.TotalObjects;
-			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Received total of: {0} bytes. {1}%", progress.ReceivedBytes, (percent * 100).ToString("###")), percent);
+			var percent = (float)progress.ReceivedObjects / progress.TotalObjects;
+			var cancel = EditorUtility.DisplayCancelableProgressBar("Transferring",
+                $"Transferring: Received total of: {progress.ReceivedBytes} bytes. {(percent * 100).ToString("###")}%", percent);
 			if (progress.TotalObjects == progress.ReceivedObjects)
 			{
 #if UNITY_EDITOR
@@ -908,12 +866,12 @@ namespace UniGit
 
 		public void DisablePostprocessing()
 		{
-			prefs.SetBool(UnityEditorGitPrefs.DisablePostprocess, true);
+			Prefs.SetBool(UnityEditorGitPrefs.DisablePostprocess, true);
 		}
 
 		public void EnablePostprocessing()
 		{
-			prefs.SetBool(UnityEditorGitPrefs.DisablePostprocess, false);
+			Prefs.SetBool(UnityEditorGitPrefs.DisablePostprocess, false);
 		}
 
 		#region Getters and Setters
@@ -936,44 +894,26 @@ namespace UniGit
 			{
 				return UpdateStatusEnum.UpdatingAssetDatabase;
 			}
-			if (isUpdating)
+			if (IsUpdating)
 			{
 				return UpdateStatusEnum.Updating;
 			}
 			return UpdateStatusEnum.Ready;
 		}
 
-		public IGitPrefs Prefs
-		{
-			get { return prefs; }
-		}
+		public IGitPrefs Prefs { get; }
 
-		public bool IsUpdating
-		{
-			get { return isUpdating; }
-		}
+        public bool IsUpdating { get; private set; }
 
-		public bool IsAsyncStaging
-		{
-			get { return asyncStages.Count > 0; }
-		}
+        public bool IsAsyncStaging => asyncStages.Count > 0;
 
-		public bool IsDirty
-		{
-			get { return gitData.DirtyFilesQueue.Count > 0 || repositoryDirty; }
-		}
+        public bool IsDirty => gitData.DirtyFilesQueue.Count > 0 || repositoryDirty;
 
-		public bool InSubModule
-		{
-			get { return inSubModule; }
-		}
+        public bool InSubModule { get; private set; }
 
-		public Signature Signature
-		{
-			get { return new Signature(Repository.Config.GetValueOrDefault<string>("user.name"), Repository.Config.GetValueOrDefault<string>("user.email"),DateTimeOffset.Now);}
-		}
+        public Signature Signature => new Signature(Repository.Config.GetValueOrDefault<string>("user.name"), Repository.Config.GetValueOrDefault<string>("user.email"),DateTimeOffset.Now);
 
-		public Repository Repository
+        public Repository Repository
 		{
 			get
 			{
@@ -986,7 +926,7 @@ namespace UniGit
 		{
 			get
 			{
-				GitSettingsJson.ThreadingType newThreading = gitSettings.Threading;
+				var newThreading = gitSettings.Threading;
 				foreach (var affector in settingsAffectors)
 				{
 					affector.AffectThreading(ref newThreading);
@@ -995,19 +935,18 @@ namespace UniGit
 			}
 		}
 
-		public Queue<Action> ActionQueue => actionQueue;
+		public Queue<Action> ActionQueue { get; } = new Queue<Action>();
 
-		#endregion
+        #endregion
 
 		public class AsyncUpdateOperation : IEquatable<GitAsyncOperation>
 		{
 			private readonly GitAsyncOperation operation;
-			private readonly string[] localPaths;
 
-			public AsyncUpdateOperation(GitAsyncOperation operation, string[] localPaths)
+            public AsyncUpdateOperation(GitAsyncOperation operation, string[] localPaths)
 			{
 				this.operation = operation;
-				this.localPaths = localPaths;
+				this.LocalPaths = localPaths;
 			}
 
 			public bool Equals(GitAsyncOperation other)
@@ -1029,62 +968,44 @@ namespace UniGit
 				return operation.GetHashCode();
 			}
 
-			public bool IsDone
-			{
-				get { return operation.IsDone; }
-			}
+			public bool IsDone => operation.IsDone;
 
-			public string[] LocalPaths
-			{
-				get { return localPaths; }
-			}
-		}
+            public string[] LocalPaths { get; }
+        }
 
 		public class AsyncStageOperation : IEquatable<GitAsyncOperation>
 		{
-			private readonly GitAsyncOperation operation;
-			private readonly HashSet<string> localPaths;
-
-			public AsyncStageOperation(GitAsyncOperation operation, IEnumerable<string> localPaths)
+            public AsyncStageOperation(GitAsyncOperation operation, IEnumerable<string> localPaths)
 			{
-				this.operation = operation;
-				this.localPaths = new HashSet<string>(localPaths);
+				this.Operation = operation;
+				this.LocalPaths = new HashSet<string>(localPaths);
 			}
 
 			public bool Equals(GitAsyncOperation other)
 			{
-				return operation.Equals(other);
+				return Operation.Equals(other);
 			}
 
 			public override bool Equals(object obj)
 			{
 				if (obj is GitAsyncOperation)
 				{
-					return operation.Equals(obj);
+					return Operation.Equals(obj);
 				}
 				return ReferenceEquals(this, obj);
 			}
 
 			public override int GetHashCode()
 			{
-				return operation.GetHashCode();
+				return Operation.GetHashCode();
 			}
 
-			public HashSet<string> LocalPaths
-			{
-				get { return localPaths; }
-			}
+			public HashSet<string> LocalPaths { get; }
 
-			public GitAsyncOperation Operation
-			{
-				get { return operation; }
-			}
+            public GitAsyncOperation Operation { get; }
 
-			public bool IsDone
-			{
-				get { return operation.IsDone; }
-			}
-		}
+            public bool IsDone => Operation.IsDone;
+        }
 
 		public enum UpdateStatusEnum
 		{

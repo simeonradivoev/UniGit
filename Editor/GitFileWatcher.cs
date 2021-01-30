@@ -9,11 +9,11 @@ namespace UniGit
 {
 	public class GitFileWatcher : IDisposable
 	{
-		private List<FileSystemWatcher> fileWatchers;
+		private readonly List<FileSystemWatcher> fileWatchers;
 		private readonly GitManager gitManager;
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitCallbacks gitCallbacks;
-		private Regex ignoreFoldersRegex;
+		private readonly Regex ignoreFoldersRegex;
         private UniGitPaths paths;
 
 		[UniGitInject]
@@ -29,7 +29,7 @@ namespace UniGit
 			this.gitCallbacks = gitCallbacks;
 			fileWatchers = new List<FileSystemWatcher>();
 
-			string regexPattern = @".*.git$";
+			var regexPattern = @".*.git$";
 			if (!trackAssetsPath) regexPattern += "|.*Assets$";
 			ignoreFoldersRegex = new Regex(regexPattern);
 
@@ -50,39 +50,36 @@ namespace UniGit
 
 		private void CreateWatchers()
 		{
-			string rootedPath = gitManager.GetCurrentRepoPath();
-			string projectPath = rootedPath.Replace(paths.ProjectPath, "");
-			if (!UniGitPathHelper.IsPathInAssetFolder(projectPath))
-			{
-				var mainFileWatcher = new FileSystemWatcher(rootedPath)
-				{
-					InternalBufferSize = 4,
-					EnableRaisingEvents = gitSettings.TrackSystemFiles,
-					IncludeSubdirectories = false,
-					NotifyFilter = NotifyFilters.FileName
-				};
-				fileWatchers.Add(mainFileWatcher);
-				Subscribe(mainFileWatcher);
+			var rootedPath = gitManager.GetCurrentRepoPath();
+			var projectPath = rootedPath.Replace(paths.ProjectPath, "");
+            if (UniGitPathHelper.IsPathInAssetFolder(projectPath)) return;
+            var mainFileWatcher = new FileSystemWatcher(rootedPath)
+            {
+                InternalBufferSize = 4,
+                EnableRaisingEvents = gitSettings.TrackSystemFiles,
+                IncludeSubdirectories = false,
+                NotifyFilter = NotifyFilters.FileName
+            };
+            fileWatchers.Add(mainFileWatcher);
+            Subscribe(mainFileWatcher);
 
-				var repoDirectoryInfo = new DirectoryInfo(rootedPath);
-				foreach (var directory in repoDirectoryInfo.GetDirectories())
-				{
-					if (!gitManager.Repository.Ignore.IsPathIgnored(directory.FullName) && ShouldTrackDirectory(directory))
-					{
-						var fileWatcher = new FileSystemWatcher(directory.FullName)
-						{
-							InternalBufferSize = 4,
-							EnableRaisingEvents = gitSettings.TrackSystemFiles,
-							IncludeSubdirectories = true,
-							NotifyFilter = NotifyFilters.FileName
-						};
+            var repoDirectoryInfo = new DirectoryInfo(rootedPath);
+            foreach (var directory in repoDirectoryInfo.GetDirectories())
+            {
+                if (gitManager.Repository.Ignore.IsPathIgnored(directory.FullName) ||
+                    !ShouldTrackDirectory(directory)) continue;
+                var fileWatcher = new FileSystemWatcher(directory.FullName)
+                {
+                    InternalBufferSize = 4,
+                    EnableRaisingEvents = gitSettings.TrackSystemFiles,
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName
+                };
 
-						fileWatchers.Add(fileWatcher);
-						Subscribe(fileWatcher);
-					}
-				}
-			}
-		}
+                fileWatchers.Add(fileWatcher);
+                Subscribe(fileWatcher);
+            }
+        }
 
 		private void OnSettingsChange()
 		{
@@ -121,7 +118,7 @@ namespace UniGit
 
 		private void WatcherActivity(object sender, FileSystemEventArgs e)
 		{
-			string relativePath = gitManager.GetRelativePath(e.FullPath);
+			var relativePath = gitManager.GetRelativePath(e.FullPath);
 			if (!gitManager.Repository.Ignore.IsPathIgnored(relativePath) && !gitManager.IsDirectory(relativePath))
 			{
 				if (e.ChangeType == WatcherChangeTypes.Renamed)
@@ -142,12 +139,10 @@ namespace UniGit
 			foreach (var fileWatcher in fileWatchers)
 			{
 				var newResult = fileWatcher.WaitForChanged(types, timeout);
-				if (newResult.ChangeType != 0 || newResult.TimedOut)
-				{
-					result = newResult;
-					return false;
-				}
-			}
+                if (newResult.ChangeType == 0 && !newResult.TimedOut) continue;
+                result = newResult;
+                return false;
+            }
 
 			result = new WaitForChangedResult();
 			return true;

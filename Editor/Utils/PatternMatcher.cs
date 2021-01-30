@@ -11,12 +11,12 @@ namespace UniGit.Utils
 			expression = expression.ToLowerInvariant();
 			name = name.ToLowerInvariant();
 			int num9;
-			char ch = '\0';
-			char ch2 = '\0';
-			int[] sourceArray = new int[16];
-			int[] numArray2 = new int[16];
-			bool flag = false;
-			if (((name == null) || (name.Length == 0)) || ((expression == null) || (expression.Length == 0)))
+			var ch = '\0';
+			var ch2 = '\0';
+			var sourceArray = new int[16];
+			var numArray2 = new int[16];
+			var flag = false;
+			if (((name.Length == 0)) || ((expression.Length == 0)))
 			{
 				return false;
 			}
@@ -26,16 +26,16 @@ namespace UniGit.Utils
 			}
 			if ((expression[0] == '*') && (expression.IndexOf('*', 1) == -1))
 			{
-				int length = expression.Length - 1;
+				var length = expression.Length - 1;
 				if ((name.Length >= length) && (string.Compare(expression, 1, name, name.Length - length, length, StringComparison.OrdinalIgnoreCase) == 0))
 				{
 					return true;
 				}
 			}
 			sourceArray[0] = 0;
-			int num7 = 1;
-			int num = 0;
-			int num8 = expression.Length * 2;
+			var num7 = 1;
+			var num = 0;
+			var num8 = expression.Length * 2;
 			while (!flag)
 			{
 				int num3;
@@ -53,12 +53,12 @@ namespace UniGit.Utils
 						break;
 					}
 				}
-				int index = 0;
-				int num5 = 0;
-				int num6 = 0;
+				var index = 0;
+				var num5 = 0;
+				var num6 = 0;
 				while (index < num7)
 				{
-					int num2 = (sourceArray[index++] + 1) / 2;
+					var num2 = (sourceArray[index++] + 1) / 2;
 					num3 = 0;
 					Label_00F2:
 					if (num2 != expression.Length)
@@ -75,8 +75,8 @@ namespace UniGit.Utils
 							num3 = 1;
 							if (num5 >= 14)
 							{
-								int num11 = numArray2.Length * 2;
-								int[] destinationArray = new int[num11];
+								var num11 = numArray2.Length * 2;
+								var destinationArray = new int[num11];
 								Array.Copy(numArray2, destinationArray, numArray2.Length);
 								numArray2 = destinationArray;
 								destinationArray = new int[num11];
@@ -91,13 +91,13 @@ namespace UniGit.Utils
 							}
 							if (ch2 == '>')
 							{
-								bool flag2 = false;
+								var flag2 = false;
 								if (!flag && (ch == '.'))
 								{
-									int num13 = name.Length;
-									for (int i = num; i < num13; i++)
+									var num13 = name.Length;
+									for (var i = num; i < num13; i++)
 									{
-										char ch3 = name[i];
+										var ch3 = name[i];
 										num3 = 1;
 										if (ch3 == '.')
 										{
@@ -158,7 +158,7 @@ namespace UniGit.Utils
 					{
 						while (num6 < num5)
 						{
-							int num14 = sourceArray.Length;
+							var num14 = sourceArray.Length;
 							while ((index < num14) && (sourceArray[index] < numArray2[num6]))
 							{
 								index++;
@@ -171,7 +171,7 @@ namespace UniGit.Utils
 				{
 					return false;
 				}
-				int[] numArray4 = sourceArray;
+				var numArray4 = sourceArray;
 				sourceArray = numArray2;
 				numArray2 = numArray4;
 				num7 = num5;

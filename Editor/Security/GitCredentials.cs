@@ -24,8 +24,7 @@ namespace UniGit
 
 		public Entry GetEntry(string url)
 		{
-			if (entries == null) return null;
-			return entries.FirstOrDefault(r => r.URL.Equals(url,StringComparison.InvariantCultureIgnoreCase));
+            return entries?.FirstOrDefault(r => r.URL.Equals(url,StringComparison.InvariantCultureIgnoreCase));
 		}
 
 		internal void AddEntry(Entry entry)
@@ -48,12 +47,9 @@ namespace UniGit
 			return entries.GetEnumerator();
 		}
 
-		public List<Entry> Entries
-		{
-			get { return entries; }
-		}
+		public List<Entry> Entries => entries;
 
-		[Serializable]
+        [Serializable]
 		public class Entry
 		{
 			[SerializeField] internal string name;
@@ -66,34 +62,31 @@ namespace UniGit
 
 			public string Name
 			{
-				get { return name; }
-				set { name = value; }
-			}
+				get => name;
+                set => name = value;
+            }
 
 			public string URL
 			{
-				get { return url; }
-				set { url = value; }
-			}
+				get => url;
+                set => url = value;
+            }
 
 			public bool IsToken
 			{
-				get { return isToken; }
-				set { isToken = value; }
-			}
+				get => isToken;
+                set => isToken = value;
+            }
 
 			public string NewPassword
 			{
-				get { return newPassword; }
-				set { newPassword = value; }
-			}
+				get => newPassword;
+                set => newPassword = value;
+            }
 
-			public string Username
-			{
-				get { return username; }
-			}
+			public string Username => username;
 
-			public bool HasPassword
+            public bool HasPassword
 			{
 				get
 				{
@@ -126,11 +119,9 @@ namespace UniGit
 			}
 
 			public SecureString DecryptPassword()
-			{
-				string decrypredPassword;
-				if (string.IsNullOrEmpty(password)) return new SecureString();
-				return DPAPI.Decrypt(password, Application.dataPath, out decrypredPassword);
-			}
+            {
+                return string.IsNullOrEmpty(password) ? new SecureString() : DPAPI.Decrypt(password, Application.dataPath, out _);
+            }
 		}
 	}
 }

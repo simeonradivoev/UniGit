@@ -73,7 +73,7 @@ namespace UniGit
 				tabs = tabsArray.Select(t => t.ConstructContents()).ToArray();
 				toolbarButtons = tabsArray.Select(t => new ToolbarButton()).ToArray();
 
-                for (int i = 0; i < tabsArray.Length; i++)
+                for (var i = 0; i < tabsArray.Length; i++)
 				{
 					tabs[i].userData = tabsArray[i];
 					tabsToolbar.Add(toolbarButtons[i]);
@@ -102,22 +102,20 @@ namespace UniGit
 			toolbarButton.SetEnabled(tabIndex != tab);
 
             toolbarButton.clickable.clicked += () =>
-			{
-				if (this.tab != tabIndex)
-				{
-					lastTabIndex = this.tab;
-					toolbarButtons[this.tab].SetEnabled(true);
-					this.tab = tabIndex;
-					toolbarButtons[tabIndex].SetEnabled(false);
-                    ((GitSettingsTab)tabs[lastTabIndex].userData).OnLostFocus();
-                    if (isFocused)
-                    {
-                        ((GitSettingsTab)tabs[tabIndex].userData).OnFocus();
-                    }
-                    animationTween = gitAnimation.StartAnimation(AnimationDuration, this,
-						GitSettingsJson.AnimationTypeEnum.Settings);
-				}
-			};
+            {
+                if (tab == tabIndex) return;
+                lastTabIndex = tab;
+                toolbarButtons[tab].SetEnabled(true);
+                tab = tabIndex;
+                toolbarButtons[tabIndex].SetEnabled(false);
+                ((GitSettingsTab)tabs[lastTabIndex].userData).OnLostFocus();
+                if (isFocused)
+                {
+                    ((GitSettingsTab)tabs[tabIndex].userData).OnFocus();
+                }
+                animationTween = gitAnimation.StartAnimation(AnimationDuration, this,
+                    GitSettingsJson.AnimationTypeEnum.Settings);
+            };
 		}
 
 		protected override void OnInitialize()
@@ -158,7 +156,7 @@ namespace UniGit
 		{
 			base.Update();
 
-			bool validRepo = gitManager != null && initializer.IsValidRepo;
+			var validRepo = gitManager != null && initializer.IsValidRepo;
             if (settingsWindowElement != null)
             {
                 settingsWindowElement.style.display = validRepo && gitManager.Repository != null ? DisplayStyle.Flex : DisplayStyle.None;
@@ -174,12 +172,12 @@ namespace UniGit
 		{
 			if (animationTween.Valid)
 			{
-				float animTime = GitAnimation.ApplyEasing(animationTween.Percent);
-				int animDir = (int)Mathf.Sign(tab - lastTabIndex);
+				var animTime = GitAnimation.ApplyEasing(animationTween.Percent);
+				var animDir = (int)Mathf.Sign(tab - lastTabIndex);
 
 				if (lastTabElement != null)
 				{
-					float pos = (1 - animTime) * -animDir * settingsTabsElement.contentRect.width;
+					var pos = (1 - animTime) * -animDir * settingsTabsElement.contentRect.width;
 
 					lastTabElement.style.right = -pos;
 					lastTabElement.style.left = pos;
@@ -189,7 +187,7 @@ namespace UniGit
 
 				if (currentTabElement != null)
 				{
-					float pos = animTime * animDir * settingsTabsElement.contentRect.width;
+					var pos = animTime * animDir * settingsTabsElement.contentRect.width;
 					currentTabElement.style.right = -pos;
 					currentTabElement.style.left = pos;
 					currentTabElement.style.display = DisplayStyle.Flex;
@@ -259,16 +257,14 @@ namespace UniGit
 		{
 			base.OnDestroy();
 
-			if (tabs != null)
-			{
-				foreach (var settingsTab in tabs)
-				{
-					((GitSettingsTab)settingsTab.userData).Dispose();
-				}
+            if (tabs == null) return;
+            foreach (var settingsTab in tabs)
+            {
+                ((GitSettingsTab)settingsTab.userData).Dispose();
+            }
 
-				tabs = null;
-			}
-		}
+            tabs = null;
+        }
 
 		private VisualElement lastTabElement
 		{
@@ -276,11 +272,9 @@ namespace UniGit
 			{
 				if (tabs == null) return null;
 				if (lastTabIndex < 0) return null;
-				int tabIndex = lastTabIndex;
-				if (tabIndex < tabs.Length)
-					return tabs[tabIndex];
-				return null;
-			}
+				var tabIndex = lastTabIndex;
+				return tabIndex < tabs.Length ? tabs[tabIndex] : null;
+            }
 		}
 
 		private VisualElement currentTabElement
@@ -289,11 +283,9 @@ namespace UniGit
 			{
 				if (tabs == null) return null;
 				if (tab < 0) return null;
-				int tabIndex = tab;
-				if (tabIndex < tabs.Length)
-					return tabs[tabIndex];
-				return null;
-			}
+				var tabIndex = tab;
+				return tabIndex < tabs.Length ? tabs[tabIndex] : null;
+            }
 		}
 
         private GitSettingsTab lastTab => (GitSettingsTab)lastTabElement?.userData;

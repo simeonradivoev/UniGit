@@ -78,7 +78,7 @@ namespace UniGit
 				{
 					EditorGUI.BeginChangeCheck();
 					GUI.SetNextControlName("Commit Message Field");
-					string newCommitMessage = EditorGUILayout.TextArea(settings.commitMessage, GUILayout.ExpandHeight(true));
+					var newCommitMessage = EditorGUILayout.TextArea(settings.commitMessage, GUILayout.ExpandHeight(true));
 					if (EditorGUI.EndChangeCheck())
 					{
 						if ((Event.current.character == ' ' || Event.current.character == '\0') && !(commitMessageLastChar == ' ' || commitMessageLastChar == '\0'))
@@ -105,7 +105,7 @@ namespace UniGit
 			
 			if (GUILayout.Button(GitGUI.GetTempContent("Commit"), styles.commitButton))
 			{
-				GenericMenu commitMenu = new GenericMenu();
+				var commitMenu = new GenericMenu();
 				BuildCommitMenu(commitMenu,window);
 				commitMenu.ShowAsContext();
 			}

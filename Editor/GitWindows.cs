@@ -12,11 +12,11 @@ namespace UniGit
 		public static event Action<EditorWindow> OnWindowRemovedEvent;
 
 		private static List<EditorWindow> windows;
-		public static IEnumerable<EditorWindow> Windows { get { return windows; } }
+		public static IEnumerable<EditorWindow> Windows => windows;
 
-		public static void Init()
+        public static void Init()
 		{
-			//windows list needs to be assigned manualy and not directly on definition as unity might call it after windows have subscribed
+			//windows list needs to be assigned manually and not directly on definition as unity might call it after windows have subscribed
 			windows = new List<EditorWindow>();
 		}
 
@@ -25,20 +25,20 @@ namespace UniGit
 			if(windows == null) return;
 			if (windows.Contains(window))
 			{
-				Debug.LogErrorFormat("Winodw {0} is already in list.",window.GetType().Name);
+				Debug.LogErrorFormat("Window {0} is already in list.",window.GetType().Name);
 				return;
 			}
 			windows.Add(window);
-			if(OnWindowAddedEvent != null) OnWindowAddedEvent.Invoke(window);
-		}
+            OnWindowAddedEvent?.Invoke(window);
+        }
 
 		public static void RemoveWindow(EditorWindow window)
 		{
 			if(windows == null) return;
 			if (windows.Remove(window))
-			{
-				if(OnWindowRemovedEvent != null) OnWindowRemovedEvent.Invoke(window);
-			}
+            {
+                OnWindowRemovedEvent?.Invoke(window);
+            }
 		}
 
 		public static T GetWindow<T>() where T : EditorWindow

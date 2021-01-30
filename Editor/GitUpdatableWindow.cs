@@ -11,16 +11,13 @@ namespace UniGit
 	public abstract class GitUpdatableWindow : EditorWindow, IGitWatcher
 	{
 		//used an object because the EditorWindow saves Booleans even if private
-		[NonSerialized] private bool initialized;
-		[NonSerialized] protected GitManager gitManager;
+        [NonSerialized] protected GitManager gitManager;
 		[NonSerialized] protected GitSettingsJson gitSettings;
 		[NonSerialized] protected GitReflectionHelper reflectionHelper;
 		[NonSerialized] protected UniGitData data;
 		[NonSerialized] protected GitCallbacks gitCallbacks;
 		[NonSerialized] protected ILogger logger;
-		[NonSerialized] private bool lastHadFocus;
-		[NonSerialized] private bool isDirty;
-		[NonSerialized] protected GitInitializer initializer;
+        [NonSerialized] protected GitInitializer initializer;
 		[NonSerialized] protected GitSettingsManager settingsManager;
 		[NonSerialized] protected UniGitPaths paths;
         [NonSerialized] protected IGitResourceManager resourceManager;
@@ -80,7 +77,7 @@ namespace UniGit
 
 		#region Editor Specific Updates
 
-		//caled only in the editor as we can't force Editor recompile to reinject dependencies
+		//Called only in the editor as we can't force Editor recompile to reinject dependencies
 		protected virtual void OnRepositoryCreate()
 		{
 			
@@ -158,7 +155,7 @@ namespace UniGit
 
 			//only update the window if it is initialized. That means opened and visible.
 			//the editor window will initialize itself once it's focused
-			if (!initialized || !initializer.IsValidRepo || !HasFocus) return;
+			if (!IsInitialized || !initializer.IsValidRepo || !HasFocus) return;
 			OnGitUpdate(status, paths);
 		}
 
@@ -173,21 +170,21 @@ namespace UniGit
 			//Only initialize if the editor Window is focused
 			if (HasFocus && gitManager.Repository != null && data.Initialized)
 			{
-				if (!initialized)
+				if (!IsInitialized)
 				{
-					initialized = true;
+					IsInitialized = true;
 					if (!initializer.IsValidRepo) return;
-					isDirty = false;
+					IsDirty = false;
 					OnInitialize();
 					OnGitManagerUpdateRepositoryInternal(data.RepositoryStatus, null);
 					//simulate repository loading for first initialization
 					OnRepositoryLoad(gitManager.Repository);
 					Repaint();
 				}
-				else if (isDirty)
+				else if (IsDirty)
 				{
 					if (!initializer.IsValidRepo) return;
-					isDirty = false;
+					IsDirty = false;
 					OnGitManagerUpdateRepositoryInternal(data.RepositoryStatus, null);
 					//simulate repository loading for first initialization
 					OnRepositoryLoad(gitManager.Repository);
@@ -203,12 +200,12 @@ namespace UniGit
 
 		public void MarkDirty()
 		{
-			isDirty = true;
+			IsDirty = true;
 		}
 
 		protected virtual void Update()
 		{
-			bool validRepo = gitManager != null && initializer.IsValidRepo;
+			var validRepo = gitManager != null && initializer.IsValidRepo;
 			if (invalidRepoElement != null)
 			{
 				invalidRepoElement.style.display = !validRepo ? DisplayStyle.Flex : DisplayStyle.None;
@@ -245,19 +242,22 @@ namespace UniGit
 
 		#endregion
 
-		public bool IsInitialized => initialized;
+		[field: NonSerialized]
+        public bool IsInitialized { get; private set; }
 
-		public bool HasFocus => reflectionHelper.HasFocusFucntion.Invoke(this);
+        public bool HasFocus => reflectionHelper.HasFocusFunction.Invoke(this);
 
 		public virtual bool IsWatching => HasFocus;
 
 		public bool IsValid => this;
 
-		protected bool LastHadFocus => lastHadFocus;
+		[field: NonSerialized]
+        protected bool LastHadFocus { get; }
 
-		protected bool IsDirty => isDirty;
+        [field: NonSerialized]
+        protected bool IsDirty { get; private set; }
 
-		protected abstract void OnGitUpdate(GitRepoStatus status,string[] paths);
+        protected abstract void OnGitUpdate(GitRepoStatus status,string[] paths);
 		protected abstract void OnInitialize();
 		protected abstract void OnRepositoryLoad(Repository repository);
 		protected abstract void OnEditorUpdate();

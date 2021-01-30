@@ -9,21 +9,20 @@ namespace UniGit
 		private string diff;
 		private string merge;
 		private TrackType type;
-		private bool isDirty;
 
-		public static GitLfsTrackedInfo Parse(string data)
+        public static GitLfsTrackedInfo Parse(string data)
 		{
 			if (string.IsNullOrEmpty(data)) return null;
-			string[] chunks = data.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+			var chunks = data.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 			if (chunks.Length < 5) return null;
-			GitLfsTrackedInfo info = new GitLfsTrackedInfo
+			var info = new GitLfsTrackedInfo
 			{
 				extension = chunks[0].Trim(),
 				filter = chunks[1].Trim(),
 				diff = chunks[2].Trim(),
 				merge = chunks[3].Trim()
 			};
-			string typeString = chunks[4].Trim();
+			var typeString = chunks[4].Trim();
 			if (typeString.EndsWith("delta"))
 			{
 				info.type = TrackType.Delta;
@@ -42,30 +41,27 @@ namespace UniGit
 
 		public string Extension
 		{
-			get { return extension; }
-			set
+			get => extension;
+            set
 			{
-				if (extension != value) isDirty = true;
+				if (extension != value) IsDirty = true;
 				extension = value;
 			}
 		}
 
 		public TrackType Type
 		{
-			get { return type; }
-			set
+			get => type;
+            set
 			{
-				if(type != value) isDirty = true;
+				if(type != value) IsDirty = true;
 				type = value;
 			}
 		}
 
-		public bool IsDirty
-		{
-			get { return isDirty; }
-		}
+		public bool IsDirty { get; private set; }
 
-		public enum TrackType
+        public enum TrackType
 		{
 			Text,Delta
 		}

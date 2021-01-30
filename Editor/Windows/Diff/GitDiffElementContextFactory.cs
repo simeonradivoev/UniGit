@@ -28,10 +28,10 @@ namespace UniGit
 
 		internal void Build(IGenericMenu editMenu,GitDiffWindow window)
 		{
-			StatusListEntry[] entries = window.GetStatusList().Where(window.IsSelected).ToArray();
-			FileStatus selectedFlags = entries.Select(e => e.State).CombineFlags();
+			var entries = window.GetStatusList().Where(window.IsSelected).ToArray();
+			var selectedFlags = entries.Select(e => e.State).CombineFlags();
 
-			GUIContent addContent = new GUIContent("Stage", GitGUI.Textures.CollabPush);
+			var addContent = new GUIContent("Stage", GitGUI.Textures.CollabPush);
 			if (GitManager.CanStage(selectedFlags))
 			{
 				editMenu.AddItem(addContent, false, () => { AddSelectedCallback(window);});
@@ -40,7 +40,7 @@ namespace UniGit
 			{
 				editMenu.AddDisabledItem(addContent);
 			}
-			GUIContent removeContent = new GUIContent("Unstage", GitGUI.Textures.CollabPull);
+			var removeContent = new GUIContent("Unstage", GitGUI.Textures.CollabPull);
 			if (GitManager.CanUnstage(selectedFlags))
 			{
 				editMenu.AddItem(removeContent, false, () => { RemoveSelectedCallback(window);});
@@ -51,10 +51,10 @@ namespace UniGit
 			}
 			
 			editMenu.AddSeparator("");
-			Texture2D diffIcon = GitGUI.Textures.ZoomTool;
+			var diffIcon = GitGUI.Textures.ZoomTool;
 			if (entries.Length >= 1)
 			{
-				string localPath = entries[0].LocalPath;
+				var localPath = entries[0].LocalPath;
 				if (selectedFlags.IsFlagSet(FileStatus.Conflicted))
 				{
 					if (conflictsHandler.CanResolveConflictsWithTool(localPath))
@@ -166,7 +166,7 @@ namespace UniGit
 			{
 				menu.AddItem(new GUIContent("Add All"), false, () =>
 				{
-					string[] paths = window.GetStatusList().Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => gitManager.GetPathWithMeta(s.LocalPath)).ToArray();
+					var paths = window.GetStatusList().Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => gitManager.GetPathWithMeta(s.LocalPath)).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 					{
 						gitManager.AsyncStage(paths).onComplete += (o) => { window.Repaint(); };
@@ -188,7 +188,7 @@ namespace UniGit
 			{
 				menu.AddItem(new GUIContent("Remove All"), false, () =>
 				{
-					string[] paths = window.GetStatusList().Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => gitManager.GetPathWithMeta(s.LocalPath)).ToArray();
+					var paths = window.GetStatusList().Where(s => s.State.IsFlagSet(fileStatus)).SelectMany(s => gitManager.GetPathWithMeta(s.LocalPath)).ToArray();
 					if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 					{
 						gitManager.AsyncUnstage(paths).onComplete += (o) => { window.Repaint(); };
@@ -220,25 +220,25 @@ namespace UniGit
 
 		private void RevertSelectedCallback(GitDiffWindow window)
 		{
-			string[] localPaths = window.GetStatusList().Where(window.IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.LocalPath)).ToArray();
+			var localPaths = window.GetStatusList().Where(window.IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.LocalPath)).ToArray();
 			Revert(localPaths);
 		}
 
 		private void RevertSelectedMeta(GitDiffWindow window)
 		{
-			string[] metaLocalPaths = window.GetStatusList().Where(window.IsSelected).Select(e => GitManager.MetaPathFromAsset(e.LocalPath)).ToArray();
+			var metaLocalPaths = window.GetStatusList().Where(window.IsSelected).Select(e => GitManager.MetaPathFromAsset(e.LocalPath)).ToArray();
 			Revert(metaLocalPaths);
 		}
 
 		private void RevertSelectedObjects(GitDiffWindow window)
 		{
-			string[] localPaths = window.GetStatusList().Where(window.IsSelected).Select(e => e.LocalPath).SkipWhile(gitManager.IsDirectory).ToArray();
+			var localPaths = window.GetStatusList().Where(window.IsSelected).Select(e => e.LocalPath).SkipWhile(gitManager.IsDirectory).ToArray();
 			Revert(localPaths);
 		}
 
 		private void AddSelectedCallback(GitDiffWindow window)
 		{
-			string[] localPaths = window.GetStatusList().Where(window.IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.LocalPath)).ToArray();
+			var localPaths = window.GetStatusList().Where(window.IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.LocalPath)).ToArray();
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Stage))
 			{
 				gitManager.AsyncStage(localPaths).onComplete += (o) => { window.Repaint(); };
@@ -274,16 +274,12 @@ namespace UniGit
 		}
 
 		private void BlameAuto(StatusListEntry entry)
-		{
-			if (entry.MetaChange.IsFlagSet(MetaChangeEnum.Object))
-			{
-				gitManager.ShowBlameWizard(entry.LocalPath, externalManager);
-			}
-			else
-			{
-				gitManager.ShowBlameWizard(GitManager.MetaPathFromAsset(entry.LocalPath), externalManager);
-			}
-		}
+        {
+            gitManager.ShowBlameWizard(
+                entry.MetaChange.IsFlagSet(MetaChangeEnum.Object)
+                    ? entry.LocalPath
+                    : GitManager.MetaPathFromAsset(entry.LocalPath), externalManager);
+        }
 
 		private void BlameMeta(StatusListEntry entry)
 		{
@@ -297,7 +293,7 @@ namespace UniGit
 
 		private void RemoveSelectedCallback(GitDiffWindow window)
 		{
-			string[] localPaths = window.GetStatusList().Where(window.IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.LocalPath)).ToArray();
+			var localPaths = window.GetStatusList().Where(window.IsSelected).SelectMany(e => gitManager.GetPathWithMeta(e.LocalPath)).ToArray();
 			if (gitManager.Threading.IsFlagSet(GitSettingsJson.ThreadingType.Unstage))
 			{
 				gitManager.AsyncUnstage(localPaths).onComplete += (o) => { window.Repaint(); };
@@ -312,8 +308,8 @@ namespace UniGit
 
 		private void OnRevertProgress(string path,int currentSteps,int totalSteps)
 		{
-			float percent = (float) currentSteps / totalSteps;
-			EditorUtility.DisplayProgressBar("Reverting File",string.Format("Reverting file {0} {1}%",path, (percent * 100).ToString("####")), percent);
+			var percent = (float) currentSteps / totalSteps;
+			EditorUtility.DisplayProgressBar("Reverting File",$"Reverting file {path} {(percent * 100):####}%", percent);
 			if (currentSteps >= totalSteps)
 			{
 				EditorUtility.ClearProgressBar();

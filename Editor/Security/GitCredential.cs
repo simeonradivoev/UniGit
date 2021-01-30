@@ -47,60 +47,51 @@ namespace UniGit.Security
 
 		public string Name
 		{
-			get { return name; }
-			set { name = value; }
-		}
+			get => name;
+            set => name = value;
+        }
 
 		public string URL
 		{
-			get { return url; }
-			set { url = value; }
-		}
+			get => url;
+            set => url = value;
+        }
 
 		public string ManagerUrl
 		{
-			get { return managerUrl; }
-			set { managerUrl = value; }
-		}
+			get => managerUrl;
+            set => managerUrl = value;
+        }
 
 		public bool SpecifyManagerUsername
 		{
-			get { return specifyManagerUsername; }
-			set { specifyManagerUsername = value; }
-		}
+			get => specifyManagerUsername;
+            set => specifyManagerUsername = value;
+        }
 
 		public bool IsToken
 		{
-			get { return isToken; }
-			set { isToken = value; }
-		}
+			get => isToken;
+            set => isToken = value;
+        }
 
 		public SecureString NewPassword
 		{
-			get { return newPassword; }
-			set { newPassword = value; }
-		}
+			get => newPassword;
+            set => newPassword = value;
+        }
 
 		public string NewUsername
 		{
-			get { return newUsername; }
-			set { newUsername = value; }
-		}
+			get => newUsername;
+            set => newUsername = value;
+        }
 
-		public string Username
-		{
-			get { return username; }
-		}
+		public string Username => username;
 
-		internal bool HasStoredPassword
-		{
-			get
-			{
-				return !string.IsNullOrEmpty(password);
-			}
-		}
+        internal bool HasStoredPassword => !string.IsNullOrEmpty(password);
 
-		public void SetUsername(string username)
+        public void SetUsername(string username)
 		{
 			this.username = username;
 		}
@@ -116,10 +107,8 @@ namespace UniGit.Security
 		}
 
 		public SecureString DecryptPassword()
-		{
-			string description;	//optional
-			if (string.IsNullOrEmpty(password)) return new SecureString();
-			return DPAPI.Decrypt(password, Application.dataPath, out description);
-		}
+        {
+            return string.IsNullOrEmpty(password) ? new SecureString() : DPAPI.Decrypt(password, Application.dataPath, out _);
+        }
 	}
 }

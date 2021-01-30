@@ -16,14 +16,8 @@ namespace UniGit.Status
 			this.status = status;
 		}
 
-		public string LocalPath
-		{
-			get { return localPath; }
-		}
+		public string LocalPath => localPath;
 
-		public FileStatus Status
-		{
-			get { return status; }
-		}
-	}
+        public FileStatus Status => status;
+    }
 }

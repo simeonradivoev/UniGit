@@ -17,12 +17,11 @@ namespace UniGit.Windows.Diff
 		private readonly GitSettingsJson gitSettings;
 		private readonly GitManager gitManager;
 		private readonly GitLfsHelper lfsHelper;
-		private readonly object lockObj;
 
-		public DiffWindowStatusList()
+        public DiffWindowStatusList()
 		{
 			entries = new List<StatusListEntry>();
-			lockObj = new object();
+			LockObj = new object();
 		}
 
 		public DiffWindowStatusList(GitSettingsJson gitSettings, GitManager gitManager,GitLfsHelper lfsHelper) : this()
@@ -43,13 +42,13 @@ namespace UniGit.Windows.Diff
 
 			if (UniGitPathHelper.IsMetaPath(entry.LocalPath))
 			{
-				string mainAssetPath = GitManager.AssetPathFromMeta(entry.LocalPath);
+				var mainAssetPath = GitManager.AssetPathFromMeta(entry.LocalPath);
 				if (!gitSettings.ShowEmptyFolders && gitManager.IsEmptyFolder(mainAssetPath)) return;
 
-				int index = entries.FindIndex(e => e.LocalPath == mainAssetPath);
+				var index = entries.FindIndex(e => e.LocalPath == mainAssetPath);
 				if (index >= 0)
 				{
-					StatusListEntry ent = entries[index];
+					var ent = entries[index];
 					ent.MetaChange |= MetaChangeEnum.Meta;
 					ent.State |= entry.Status;
 					entries[index] = ent;
@@ -60,10 +59,10 @@ namespace UniGit.Windows.Diff
 			}
 			else
 			{
-				int index = entries.FindIndex(e => e.LocalPath == entry.LocalPath);
+				var index = entries.FindIndex(e => e.LocalPath == entry.LocalPath);
 				if (index >= 0)
 				{
-					StatusListEntry ent = entries[index];
+					var ent = entries[index];
 					ent.State |= entry.Status;
 					entries[index] = ent;
 					return;
@@ -88,9 +87,9 @@ namespace UniGit.Windows.Diff
 
 		private void AddSorted(StatusListEntry entry, IComparer<StatusListEntry> sorter)
 		{
-			for (int i = 0; i < entries.Count; i++)
+			for (var i = 0; i < entries.Count; i++)
 			{
-				int compare = sorter.Compare(entries[i], entry);
+				var compare = sorter.Compare(entries[i], entry);
 				if (compare > 0)
 				{
 					entries.Insert(i, entry);
@@ -113,7 +112,7 @@ namespace UniGit.Windows.Diff
 				if (UniGitPathHelper.IsMetaPath(path))
 				{
 					var assetPath = GitManager.AssetPathFromMeta(path);
-					for (int i = entries.Count - 1; i >= 0; i--)
+					for (var i = entries.Count - 1; i >= 0; i--)
 					{
 						var entry = entries[i];
 						if (entry.LocalPath == assetPath)
@@ -130,7 +129,7 @@ namespace UniGit.Windows.Diff
 				}
 				else
 				{
-					for (int i = entries.Count - 1; i >= 0; i--)
+					for (var i = entries.Count - 1; i >= 0; i--)
 					{
 						var entry = entries[i];
 						if (entry.LocalPath == path)
@@ -148,22 +147,16 @@ namespace UniGit.Windows.Diff
 			}
 		}
 
-		public StatusListEntry this[int index]
-		{
-			get { return entries[index]; }
-		}
+		public StatusListEntry this[int index] => entries[index];
 
-		public void Clear()
+        public void Clear()
 		{
 			entries.Clear();
 		}
 
-		public object LockObj
-		{
-			get { return lockObj; }
-		}
+		public object LockObj { get; }
 
-		IEnumerator IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
 		{
 			return GetEnumerator();
 		}
@@ -173,11 +166,8 @@ namespace UniGit.Windows.Diff
 			return entries.GetEnumerator();
 		}
 
-		public int Count
-		{
-			get { return entries.Count; }
-		}
-	}
+		public int Count => entries.Count;
+    }
 
 	[Serializable]
 	public struct StatusListEntry
@@ -204,37 +194,28 @@ namespace UniGit.Windows.Diff
 
 		public string GetGuid(GitManager gitManager)
 		{
-			string projectPath = gitManager.ToProjectPath(localPath);
+			var projectPath = gitManager.ToProjectPath(localPath);
 			return UniGitPathHelper.IsPathInAssetFolder(projectPath) ? AssetDatabase.AssetPathToGUID(projectPath) : projectPath;
 		}
 
-		public string LocalPath
-		{
-			get { return localPath; }
-		}
+		public string LocalPath => localPath;
 
-		public string Name
-		{
-			get { return name; }
-		}
+        public string Name => name;
 
-		public MetaChangeEnum MetaChange
+        public MetaChangeEnum MetaChange
 		{
-			get { return metaChange; }
-			internal set { metaChange = value; }
-		}
+			get => metaChange;
+            internal set => metaChange = value;
+        }
 
 		public FileStatus State
 		{
-			get { return state; }
-			internal set { state = value; }
-		}
+			get => state;
+            internal set => state = value;
+        }
 
-		public StatusEntryFlags Flags
-		{
-			get { return flags; }
-		}
-	}
+		public StatusEntryFlags Flags => flags;
+    }
 
 	[Serializable]
 	[Flags]

@@ -47,12 +47,10 @@ namespace UniGit
 			public GUIContent submoduleTagIconSmall;
 		}
 
-		private Icons m_icons;
-
-		[UniGitInject]
+        [UniGitInject]
 		public GitOverlay(IGitResourceManager resourceManager)
 		{
-			m_icons = new Icons()
+			icons = new Icons()
 			{
 				validIcon = new GUIContent(resourceManager.GetTexture("success")),
 				validIconSmall = new GUIContent(resourceManager.GetTexture("success_small")),
@@ -99,31 +97,31 @@ namespace UniGit
 
 			if (type.IsFlagSet(FileStatus.Ignored))
 			{
-				content = small ? m_icons.ignoredIconSmall : m_icons.ignoredIcon;
+				content = small ? icons.ignoredIconSmall : icons.ignoredIcon;
 			}
 			else if (type.IsFlagSet(FileStatus.NewInIndex))
 			{
-				content = small ? m_icons.addedIconSmall : m_icons.addedIcon;
+				content = small ? icons.addedIconSmall : icons.addedIcon;
 			}
 			else if (type.IsFlagSet(FileStatus.NewInWorkdir))
 			{
-				content = small ? m_icons.untrackedIconSmall : m_icons.untrackedIcon;
+				content = small ? icons.untrackedIconSmall : icons.untrackedIcon;
 			}
 			else if (type.IsFlagSet(FileStatus.ModifiedInWorkdir | FileStatus.ModifiedInIndex))
 			{
-				content = small ? m_icons.modifiedIconSmall : m_icons.modifiedIcon;
+				content = small ? icons.modifiedIconSmall : icons.modifiedIcon;
 			}
 			else if (type.IsFlagSet(FileStatus.Conflicted))
 			{
-				content = small ? m_icons.conflictIconSmall : m_icons.conflictIcon;
+				content = small ? icons.conflictIconSmall : icons.conflictIcon;
 			}
 			else if (type.IsFlagSet(FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir))
 			{
-				content = small ? m_icons.renamedIconSmall : m_icons.renamedIcon;
+				content = small ? icons.renamedIconSmall : icons.renamedIcon;
 			}
 			else if (type.IsFlagSet(FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir))
 			{
-				content = small ? m_icons.deletedIconSmall : m_icons.deletedIcon;
+				content = small ? icons.deletedIconSmall : icons.deletedIcon;
 			}
 			return content != null ? SetupTooltip(content, type) : GUIContent.none;
 		}
@@ -132,67 +130,56 @@ namespace UniGit
 		{
 			if (type.IsFlagSet(FileStatus.Ignored))
 			{
-				yield return SetupTooltip(small ? m_icons.ignoredIconSmall : m_icons.ignoredIcon,type);
+				yield return SetupTooltip(small ? icons.ignoredIconSmall : icons.ignoredIcon,type);
 			}
 			if (type.IsFlagSet(FileStatus.NewInIndex))
 			{
-				yield return SetupTooltip(small ? m_icons.addedIconSmall : m_icons.addedIcon,type);
+				yield return SetupTooltip(small ? icons.addedIconSmall : icons.addedIcon,type);
 			}
 			if (type.IsFlagSet(FileStatus.NewInWorkdir))
 			{
-				yield return SetupTooltip(small ? m_icons.untrackedIconSmall : m_icons.untrackedIcon,type);
+				yield return SetupTooltip(small ? icons.untrackedIconSmall : icons.untrackedIcon,type);
 			}
 			if (type.IsFlagSet(FileStatus.ModifiedInWorkdir | FileStatus.ModifiedInIndex))
 			{
-				yield return SetupTooltip(small ? m_icons.modifiedIconSmall : m_icons.modifiedIcon,type);
+				yield return SetupTooltip(small ? icons.modifiedIconSmall : icons.modifiedIcon,type);
 			}
 			if (type.IsFlagSet(FileStatus.Conflicted))
 			{
-				yield return SetupTooltip(small ? m_icons.conflictIconSmall : m_icons.conflictIcon,type);
+				yield return SetupTooltip(small ? icons.conflictIconSmall : icons.conflictIcon,type);
 			}
 			if (type.IsFlagSet(FileStatus.RenamedInIndex | FileStatus.RenamedInWorkdir))
 			{
-				yield return SetupTooltip(small ? m_icons.renamedIconSmall : m_icons.renamedIcon,type);
+				yield return SetupTooltip(small ? icons.renamedIconSmall : icons.renamedIcon,type);
 			}
 			if (type.IsFlagSet(FileStatus.DeletedFromIndex | FileStatus.DeletedFromWorkdir))
 			{
-				yield return SetupTooltip(small ? m_icons.deletedIconSmall : m_icons.deletedIcon,type);
+				yield return SetupTooltip(small ? icons.deletedIconSmall : icons.deletedIcon,type);
 			}
 		}
 
-		private GUIContent SetupTooltip(GUIContent content, FileStatus type)
+		private static GUIContent SetupTooltip(GUIContent content, FileStatus type)
 		{
 			content.tooltip = type.ToString();
 			return content;
 		}
 
 		public GUIContent GetDiffTypeIcon(ChangeKind type, bool small)
-		{
-			switch (type)
-			{
-				case ChangeKind.Unmodified:
-					return small ? m_icons.validIconSmall : m_icons.validIcon;
-				case ChangeKind.Added:
-					return small ? m_icons.addedIconSmall : m_icons.addedIcon;
-				case ChangeKind.Deleted:
-					return small ? m_icons.deletedIconSmall : m_icons.deletedIcon;
-				case ChangeKind.Modified:
-					return small ? m_icons.modifiedIconSmall : m_icons.modifiedIcon;
-				case ChangeKind.Ignored:
-					return small ? m_icons.ignoredIconSmall : m_icons.ignoredIcon;
-				case ChangeKind.Untracked:
-					return small ? m_icons.untrackedIconSmall : m_icons.untrackedIcon;
-				case ChangeKind.Conflicted:
-					return small ? m_icons.conflictIconSmall : m_icons.conflictIcon;
-				case ChangeKind.Renamed:
-					return small ? m_icons.renamedIconSmall : m_icons.renamedIcon;
-			}
-			return null;
-		}
+        {
+            return type switch
+            {
+                ChangeKind.Unmodified => small ? icons.validIconSmall : icons.validIcon,
+                ChangeKind.Added => small ? icons.addedIconSmall : icons.addedIcon,
+                ChangeKind.Deleted => small ? icons.deletedIconSmall : icons.deletedIcon,
+                ChangeKind.Modified => small ? icons.modifiedIconSmall : icons.modifiedIcon,
+                ChangeKind.Ignored => small ? icons.ignoredIconSmall : icons.ignoredIcon,
+                ChangeKind.Untracked => small ? icons.untrackedIconSmall : icons.untrackedIcon,
+                ChangeKind.Conflicted => small ? icons.conflictIconSmall : icons.conflictIcon,
+                ChangeKind.Renamed => small ? icons.renamedIconSmall : icons.renamedIcon,
+                _ => null
+            };
+        }
 
-		public Icons icons
-		{
-			get { return m_icons; }
-		}
-	}
+		public Icons icons { get; }
+    }
 }

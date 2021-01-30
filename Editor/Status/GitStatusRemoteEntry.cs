@@ -16,14 +16,8 @@ namespace UniGit.Status
 			name = remote.Name;
 		}
 
-		public string Url
-		{
-			get { return url; }
-		}
+		public string Url => url;
 
-		public string Name
-		{
-			get { return name; }
-		}
-	}
+        public string Name => name;
+    }
 }

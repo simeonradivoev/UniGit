@@ -52,10 +52,8 @@ namespace UniGit
 		{
 			if(branch == null) return;
 
-			if(branchNames == null)
-				branchNames = gitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
-			if(branchFriendlyNames == null)
-				branchFriendlyNames = gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
+			branchNames ??= gitManager.Repository.Branches.Select(b => b.CanonicalName).ToArray();
+			branchFriendlyNames ??= gitManager.Repository.Branches.Select(b => b.FriendlyName).ToArray();
 
 			if (remotes != null && branch.Remote != null)
 				selectedRemote = Array.IndexOf(remotes, branch.Remote);
@@ -79,16 +77,14 @@ namespace UniGit
 		protected void DrawCredentials()
 		{
 			credentials.Active = EditorGUILayout.Toggle(GitGUI.GetTempContent("Custom Credentials","Credentials to use instead of the ones from the credentials manager."), credentials.Active);
-			if (credentials.Active)
-			{
-				EditorGUI.indentLevel = 1;
-				credentials.IsToken = EditorGUILayout.Toggle(GitGUI.GetTempContent("Is Token"), credentials.IsToken);
-				credentials.Username = EditorGUILayout.TextField(GitGUI.GetTempContent(credentials.IsToken ? "Token" : "Username", "If left empty, stored credentials in settings will be used."), credentials.Username);
-				if(!credentials.IsToken)
-					GitGUI.SecurePasswordFieldLayout(GitGUI.GetTempContent("Password", "If left empty, stored credentials in settings will be used."),credentials.Password);
-				EditorGUI.indentLevel = 0;
-			}
-		}
+            if (!credentials.Active) return;
+            EditorGUI.indentLevel = 1;
+            credentials.IsToken = EditorGUILayout.Toggle(GitGUI.GetTempContent("Is Token"), credentials.IsToken);
+            credentials.Username = EditorGUILayout.TextField(GitGUI.GetTempContent(credentials.IsToken ? "Token" : "Username", "If left empty, stored credentials in settings will be used."), credentials.Username);
+            if(!credentials.IsToken)
+                GitGUI.SecurePasswordFieldLayout(GitGUI.GetTempContent("Password", "If left empty, stored credentials in settings will be used."),credentials.Password);
+            EditorGUI.indentLevel = 0;
+        }
 
 		protected override bool DrawWizardGUI()
 		{
@@ -139,7 +135,8 @@ namespace UniGit
             switch (result.Status)
 			{
 				case MergeStatus.UpToDate:
-				    if(historyWindow != null) historyWindow.ShowNotification(new GUIContent(string.Format("Everything is Up to date. Nothing to {0}.", mergeType)));
+				    if(historyWindow != null) historyWindow.ShowNotification(new GUIContent(
+                        $"Everything is Up to date. Nothing to {mergeType}."));
 					break;
 				case MergeStatus.FastForward:
 					if(historyWindow != null) historyWindow.ShowNotification(new GUIContent(mergeType + " Complete with Fast Forwarding."));
@@ -157,7 +154,7 @@ namespace UniGit
 					logger.LogFormat(LogType.Log,"{0} Complete without Fast Forwarding.",mergeType);
 					break;
 				case MergeStatus.Conflicts:
-					GUIContent content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
+					var content = GitGUI.IconContent("console.warnicon", "There are merge conflicts!");
 				    if (diffWindow != null)
 				    {
 				        diffWindow.ShowNotification(content);
@@ -198,27 +195,27 @@ namespace UniGit
 
 			public SecureString Password
 			{
-				get { return password; }
-				set { password = value; }
-			}
+				get => password;
+                set => password = value;
+            }
 
 			public string Username
 			{
-				get { return username; }
-				set { username = value; }
-			}
+				get => username;
+                set => username = value;
+            }
 
 			public bool IsToken
 			{
-				get { return isToken; }
-				set { isToken = value; }
-			}
+				get => isToken;
+                set => isToken = value;
+            }
 
 			public bool Active
 			{
-				get { return active; }
-				set { active = value; }
-			}
+				get => active;
+                set => active = value;
+            }
 		}
 
 		[Serializable]

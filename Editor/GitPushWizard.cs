@@ -51,7 +51,7 @@ namespace UniGit
 			{
 				if (e is NonFastForwardException)
 				{
-					GUIContent content = GitGUI.IconContent("console.warnicon", "Could not push changes to remote. Merge changes with remote before pushing.");
+					var content = GitGUI.IconContent("console.warnicon", "Could not push changes to remote. Merge changes with remote before pushing.");
 					if (focusedWindow != null)
 					{
 						focusedWindow.ShowNotification(content);
@@ -75,7 +75,7 @@ namespace UniGit
 			{
 				return false;
 			}
-			bool cancel = EditorUtility.DisplayCancelableProgressBar("Building Pack", stage.ToString(), (float)current / total);
+			var cancel = EditorUtility.DisplayCancelableProgressBar("Building Pack", stage.ToString(), (float)current / total);
 			if (current == total)
 			{
 #if UNITY_EDITOR
@@ -87,8 +87,9 @@ namespace UniGit
 
 		private bool PushTransferProgress(int current, int total, long bytes)
 		{
-			float percent = (float)current / total;
-			bool cancel = EditorUtility.DisplayCancelableProgressBar("Transferring", string.Format("Transferring: Sent total of: {0} bytes. {1}%", bytes, (percent * 100).ToString("###")), percent);
+			var percent = (float)current / total;
+			var cancel = EditorUtility.DisplayCancelableProgressBar("Transferring",
+                $"Transferring: Sent total of: {bytes} bytes. {(percent * 100).ToString("###")}%", percent);
 			if (total == current)
 			{
 				logger.LogFormat(LogType.Log,"Push Transfer complete. Sent a total of {0} bytes.", bytes);

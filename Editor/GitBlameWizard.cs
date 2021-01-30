@@ -135,50 +135,54 @@ namespace UniGit
 			}
 			else
 			{
-				Rect scrollRect = new Rect(0,0,position.width,position.height- commitsWindowHeight);
-				Rect viewRect = new Rect(0,0,0,lines.Length * EditorGUIUtility.singleLineHeight);
-				for (int i = 0; i < lines.Length; i++)
-				{
-					viewRect.width = Mathf.Max(viewRect.width, styles.lineStyle.CalcSize(GitGUI.GetTempContent(lines[i])).x);
-				}
+				var scrollRect = new Rect(0,0,position.width,position.height- commitsWindowHeight);
+				var viewRect = new Rect(0,0,0,lines.Length * EditorGUIUtility.singleLineHeight);
+				foreach (var line in lines)
+                {
+                    viewRect.width = Mathf.Max(viewRect.width, styles.lineStyle.CalcSize(GitGUI.GetTempContent(line)).x);
+                }
 				viewRect.width += 32;
 				linesScroll = GUI.BeginScrollView(scrollRect, linesScroll, viewRect);
-				for (int i = 0; i < lines.Length; i++)
+				for (var i = 0; i < lines.Length; i++)
 				{
-					GUIContent lineContent = GitGUI.GetTempContent(lines[i]);
-					Rect lineRect = new Rect(32, i * EditorGUIUtility.singleLineHeight, viewRect.width - 32, EditorGUIUtility.singleLineHeight);
+					var lineContent = GitGUI.GetTempContent(lines[i]);
+					var lineRect = new Rect(32, i * EditorGUIUtility.singleLineHeight, viewRect.width - 32, EditorGUIUtility.singleLineHeight);
 					if (lineRect.y < linesScroll.y + scrollRect.height && lineRect.y + lineRect.height > linesScroll.y)
-					{
-						bool isFromHunk = blameHunk.Any(hunk => hunk.ContainsLine(i) && hunk.FinalCommit.Sha == selectedCommit);
-						if (Event.current.type == EventType.Repaint)
-						{
-							styles.lineNumStyle.Draw(new Rect(0, i * EditorGUIUtility.singleLineHeight, 32, EditorGUIUtility.singleLineHeight), i.ToString(),false,false,false,false);
-							styles.lineStyle.Draw(lineRect,lineContent,false,false,isFromHunk,false);
-						}
-						else if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && lineRect.Contains(Event.current.mousePosition))
-						{
-							foreach (var hunk in blameHunk)
-							{
-								if (hunk.ContainsLine(i))
-								{
-									selectedCommit = hunk.FinalCommit.Sha;
-									MoveToCommit(selectedCommit);
-									Repaint();
-									break;
-								}
-							}
-						}
-					}
+                    {
+                        var isFromHunk = blameHunk.Any(hunk => hunk.ContainsLine(i) && hunk.FinalCommit.Sha == selectedCommit);
+                        switch (Event.current.type)
+                        {
+                            case EventType.Repaint:
+                                styles.lineNumStyle.Draw(new Rect(0, i * EditorGUIUtility.singleLineHeight, 32, EditorGUIUtility.singleLineHeight), i.ToString(),false,false,false,false);
+                                styles.lineStyle.Draw(lineRect,lineContent,false,false,isFromHunk,false);
+                                break;
+                            case EventType.MouseDown when Event.current.button == 0 && lineRect.Contains(Event.current.mousePosition):
+                            {
+                                foreach (var hunk in blameHunk)
+                                {
+                                    if (hunk.ContainsLine(i))
+                                    {
+                                        selectedCommit = hunk.FinalCommit.Sha;
+                                        MoveToCommit(selectedCommit);
+                                        Repaint();
+                                        break;
+                                    }
+                                }
+
+                                break;
+                            }
+                        }
+                    }
 				}
 				GUI.EndScrollView();
 
 				DoCommitsResize(new Rect(0, position.height - commitsWindowHeight, position.width, 4));
 
-				int hunkCount = 0;
+				var hunkCount = 0;
 				float hunkMaxWidth = 0;
 				foreach (var entry in commitLog)
 				{
-					Vector2 hunkSize = styles.hunkStyle.CalcSize(GitGUI.GetTempContent(entry.Commit.MessageShort));
+					var hunkSize = styles.hunkStyle.CalcSize(GitGUI.GetTempContent(entry.Commit.MessageShort));
 					hunkMaxWidth = Mathf.Max(hunkMaxWidth, hunkSize.x);
 					hunkCount++;
 				}
@@ -186,16 +190,16 @@ namespace UniGit
 				scrollRect = new Rect(0, position.height - commitsWindowHeight + 4, position.width, commitsWindowHeight - 4);
 				hunksScroll = GUI.BeginScrollView(scrollRect, hunksScroll, viewRect);
 
-				int hunkId = 0;
+				var hunkId = 0;
 				foreach (var entry in commitLog)
 				{
-					GUIContent commitContent = GitGUI.GetTempContent(entry.Commit.MessageShort);
-					Rect commitRect = new Rect(0, hunkId * CommitLineHeight, hunkMaxWidth, CommitLineHeight);
-					Rect commitInfoRect = new Rect(commitRect.x, commitRect.y, 24, commitRect.height);
+					var commitContent = GitGUI.GetTempContent(entry.Commit.MessageShort);
+					var commitRect = new Rect(0, hunkId * CommitLineHeight, hunkMaxWidth, CommitLineHeight);
+					var commitInfoRect = new Rect(commitRect.x, commitRect.y, 24, commitRect.height);
 					EditorGUIUtility.AddCursorRect(commitInfoRect,MouseCursor.Link);
 					if (Event.current.type == EventType.Repaint)
 					{
-						int controlId = GUIUtility.GetControlID(commitContent, FocusType.Passive, commitRect);
+						var controlId = GUIUtility.GetControlID(commitContent, FocusType.Passive, commitRect);
 						styles.hunkStyle.Draw(commitRect, commitContent, controlId, selectedCommit == entry.Commit.Sha);
 						GUIStyle.none.Draw(commitInfoRect, GitGUI.IconContent("SubAssetCollapseButton"), false,false,false,false);
 					}
@@ -243,25 +247,21 @@ namespace UniGit
 		private void MoveToLineFromCommit(string sha)
 		{
 			foreach (var hunk in blameHunk)
-			{
-				if (hunk.FinalCommit.Sha == sha)
-				{
-					linesScroll.y = hunk.FinalStartLineNumber * EditorGUIUtility.singleLineHeight;
-					break;
-				}
-			}
+            {
+                if (hunk.FinalCommit.Sha != sha) continue;
+                linesScroll.y = hunk.FinalStartLineNumber * EditorGUIUtility.singleLineHeight;
+                break;
+            }
 		}
 
 		private void MoveToCommit(string sha)
 		{
-			for (int j = 0; j < commitLog.Length; j++)
-			{
-				if (commitLog[j].Commit.Sha == sha)
-				{
-					hunksScroll.y = j * CommitLineHeight;
-					break;
-				}
-			}
+			for (var j = 0; j < commitLog.Length; j++)
+            {
+                if (commitLog[j].Commit.Sha != sha) continue;
+                hunksScroll.y = j * CommitLineHeight;
+                break;
+            }
 		}
 
 		public class CommitInfoPopupContent : PopupWindowContent

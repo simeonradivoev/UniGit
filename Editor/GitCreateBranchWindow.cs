@@ -45,7 +45,7 @@ namespace UniGit
 			}
 
 			GitGUI.StartEnable(IsValidBranchName(name) && commit != null);
-			GUIContent createBranchContent = GitGUI.GetTempContent("Create Branch");
+			var createBranchContent = GitGUI.GetTempContent("Create Branch");
 			if(!IsValidBranchName(name))
 				createBranchContent.tooltip = "Invalid Branch Name";
 			if (GUILayout.Button(createBranchContent))
@@ -57,11 +57,8 @@ namespace UniGit
 					{
 						logger.LogFormat(LogType.Log,"Branch {0} created",name);
 						editorWindow.Close();
-						if (onCreated != null)
-						{
-							onCreated.Invoke();
-						}
-					}
+                        onCreated?.Invoke();
+                    }
 					else
 					{
 						logger.LogFormat(LogType.Error,"Could not create branch: {0}",name);
@@ -81,7 +78,7 @@ namespace UniGit
 			GitGUI.EndEnable();
 		}
 
-		private bool IsValidBranchName(string branchName)
+		private static bool IsValidBranchName(string branchName)
 		{
 			return !string.IsNullOrEmpty(branchName) && !branchName.Contains(" ");
 		}

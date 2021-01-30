@@ -19,8 +19,7 @@ namespace UniGit
 
 		public Texture2D GetTexture(string name, bool throwError = true)
 		{
-			Texture2D tex;
-			if (textures.TryGetValue(name, out tex))
+            if (textures.TryGetValue(name, out var tex))
 			{
                 return tex;
             }

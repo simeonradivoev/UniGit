@@ -58,7 +58,7 @@ namespace UniGit.Settings
 			EditorGUILayout.Space();
 			EditorGUILayout.BeginHorizontal();
 			GUILayout.FlexibleSpace();
-			Rect createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), GitGUI.Styles.AddComponentBtn);
+			var createBranchRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Create Branch"), GitGUI.Styles.AddComponentBtn);
 			if (GUI.Button(createBranchRect, GitGUI.IconContent("ol plus", "Create Branch"), GitGUI.Styles.AddComponentBtn))
 			{
 				PopupWindow.Show(createBranchRect, injectionHelper.CreateInstance<GitCreateBranchWindow>(gitManager.Repository.Commits.FirstOrDefault(),(Action)(() =>
@@ -72,22 +72,22 @@ namespace UniGit.Settings
 
 		private void DoBranch(Branch branch,BranchCollection branchCollection)
 		{
-			bool isHead = branch.IsCurrentRepositoryHead;
+			var isHead = branch.IsCurrentRepositoryHead;
 
-			GUIContent titleContent = GitGUI.GetTempContent(branch.FriendlyName);
+			var titleContent = GitGUI.GetTempContent(branch.FriendlyName);
 			if (isHead)
 				titleContent.text += " (HEAD)";
 			if(branch.IsRemote)
 				titleContent.image = GitGUI.IconContentTex("ToolHandleGlobal");
 
 			GUILayout.Label(titleContent, isHead ? "IN BigTitle" : "ShurikenModuleTitle", GUILayout.ExpandWidth(true));
-			int selectedRemote = Array.FindIndex(remoteCacheList, e => e.Remote == branch.Remote);
+			var selectedRemote = Array.FindIndex(remoteCacheList, e => e.Remote == branch.Remote);
 			EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.PrefixLabel(GitGUI.GetTempContent("Remote"));
 			if (remoteNames != null)
 			{
 				EditorGUI.BeginChangeCheck();
-				int newSelectedRemote = EditorGUILayout.Popup(selectedRemote, remoteNames);
+				var newSelectedRemote = EditorGUILayout.Popup(selectedRemote, remoteNames);
 				if (EditorGUI.EndChangeCheck() && selectedRemote != newSelectedRemote)
 				{
 					branchCollection.Update(branch, (u) =>
@@ -116,7 +116,7 @@ namespace UniGit.Settings
 				});
 			}
 			GUI.enabled = !branch.IsRemote && !isHead;
-			Rect switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), EditorStyles.miniButtonMid);
+			var switchButtonRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Switch"), EditorStyles.miniButtonMid);
 			if (GUI.Button(switchButtonRect,GitGUI.GetTempContent("Switch"), EditorStyles.miniButtonMid))
 			{
 				if (externalManager.TakeSwitch())

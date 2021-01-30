@@ -12,9 +12,8 @@ namespace UniGit
 {
 	public class GitExternalManager
 	{
-		private IExternalAdapter[] adapters;
-		private GUIContent[] adapterNames;
-		private int selectedAdapterIndex = -1;
+		private readonly IExternalAdapter[] adapters;
+        private int selectedAdapterIndex = -1;
 		private IExternalAdapter selectedAdapter;
 		private bool initiazlitedSelected;
 		private readonly ILogger logger;
@@ -24,7 +23,7 @@ namespace UniGit
 		public GitExternalManager(ICollection<IExternalAdapter> adapters,ILogger logger,GitSettingsJson gitSettings)
 		{
 			this.adapters = adapters.OrderBy(GetAdapterPriority).ToArray();
-			adapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
+			AdapterNames = adapters.Select(a => new GUIContent(GetAdapterName(a))).ToArray();
 			this.logger = logger;
 			this.gitSettings = gitSettings;
 		}
@@ -78,24 +77,21 @@ namespace UniGit
 
 		private string GetAdapterName(IExternalAdapter adapter)
 		{
-			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapter);
-			if (attribute == null) return null;
-			return attribute.FriendlyName;
-		}
+			var attribute = GetAdapterAttribute(adapter);
+			return attribute?.FriendlyName;
+        }
 
 		private int GetAdapterPriority(IExternalAdapter adapter)
 		{
-			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapter);
-			if (attribute == null) return 0;
-			return attribute.Priority;
-		}
+			var attribute = GetAdapterAttribute(adapter);
+			return attribute?.Priority ?? 0;
+        }
 
 		private bool Exists(IExternalAdapter adapterInfo)
 		{
-			ExternalAdapterAttribute attribute = GetAdapterAttribute(adapterInfo);
-			if (attribute == null) return false;
-			return attribute.ProcessNames.All(ExistsOnPath);
-		}
+			var attribute = GetAdapterAttribute(adapterInfo);
+			return attribute != null && attribute.ProcessNames.All(ExistsOnPath);
+        }
 
 		public bool TakeCommit(string message)
 		{
@@ -215,8 +211,8 @@ namespace UniGit
 
 		#region Getters and Setters
 
-		public GUIContent[] AdapterNames { get { return adapterNames; } }
+		public GUIContent[] AdapterNames { get; }
 
-		#endregion
+        #endregion
 	}
 }

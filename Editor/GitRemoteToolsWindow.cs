@@ -29,7 +29,7 @@ namespace UniGit
 		[SerializeField] private string issuesSerialized;
 		[SerializeField] private string currentCommentsSerialzied;
 		[SerializeField] private int currentIssue = -1;
-		private List<Element> elements = new List<Element>();
+		private readonly List<Element> elements = new List<Element>();
 		private GitCallbacks callbacks;
 		private Vector2 issuesScroll;
 		private Vector2 currentIssueScroll;
@@ -45,79 +45,73 @@ namespace UniGit
 		}
 
 		private void InitStyles()
-		{
-			if (styles == null)
-			{
-				styles = new Styles()
-				{
-					IssueElementBg = new GUIStyle("IN GameObjectHeader")
-					{
-
-					},
-					IssueBodyText = new GUIStyle(EditorStyles.textArea)
-					{
-						wordWrap = true
-					},
-					IssueTitleBig = new GUIStyle("TL Selection H1")
-					{
-						alignment = TextAnchor.MiddleLeft
-					},
-					IssueTitleBigBg = new GUIStyle("IN GameObjectHeader")
-					{
-						margin = new RectOffset(0,0,8,8),
-						padding = new RectOffset(16,16,21,16)
-					},
-					IssueTitle = new GUIStyle(EditorStyles.largeLabel)
-					{
-						fontStyle = FontStyle.Bold,
-						fontSize = 14,
-						alignment = TextAnchor.UpperLeft
-					},
-					IssueLabel = new GUIStyle("sv_iconselector_selection")
-					{
-						fixedHeight = EditorGUIUtility.singleLineHeight,
-						margin = new RectOffset(4,4,7,7),
-						padding = new RectOffset(4,4,1,1),
-						alignment = TextAnchor.UpperCenter
-					},
-					IssueSubTitle = new GUIStyle(EditorStyles.miniLabel),
-					Avatar = new GUIStyle("ShurikenEffectBg")
-					{
-						contentOffset = Vector3.zero, 
-						alignment = TextAnchor.MiddleCenter, 
-						clipping = TextClipping.Clip, 
-						imagePosition = ImagePosition.ImageOnly,
-					}
-				};
-			}
-		}
+        {
+            styles ??= new Styles()
+            {
+                IssueElementBg = new GUIStyle("IN GameObjectHeader")
+                {
+                },
+                IssueBodyText = new GUIStyle(EditorStyles.textArea)
+                {
+                    wordWrap = true
+                },
+                IssueTitleBig = new GUIStyle("TL Selection H1")
+                {
+                    alignment = TextAnchor.MiddleLeft
+                },
+                IssueTitleBigBg = new GUIStyle("IN GameObjectHeader")
+                {
+                    margin = new RectOffset(0, 0, 8, 8),
+                    padding = new RectOffset(16, 16, 21, 16)
+                },
+                IssueTitle = new GUIStyle(EditorStyles.largeLabel)
+                {
+                    fontStyle = FontStyle.Bold,
+                    fontSize = 14,
+                    alignment = TextAnchor.UpperLeft
+                },
+                IssueLabel = new GUIStyle("sv_iconselector_selection")
+                {
+                    fixedHeight = EditorGUIUtility.singleLineHeight,
+                    margin = new RectOffset(4, 4, 7, 7),
+                    padding = new RectOffset(4, 4, 1, 1),
+                    alignment = TextAnchor.UpperCenter
+                },
+                IssueSubTitle = new GUIStyle(EditorStyles.miniLabel),
+                Avatar = new GUIStyle("ShurikenEffectBg")
+                {
+                    contentOffset = Vector3.zero,
+                    alignment = TextAnchor.MiddleCenter,
+                    clipping = TextClipping.Clip,
+                    imagePosition = ImagePosition.ImageOnly,
+                }
+            };
+        }
 
 		[UsedImplicitly]
 		private void OnEnable()
 		{
 			wantsMouseMove = true;
 			GitWindows.AddWindow(this);
-			if (!string.IsNullOrEmpty(issuesSerialized))
-			{
-				DeserialzieIssues(JSON.Parse(issuesSerialized));
-				if (currentIssue >= 0)
-				{
-					var issue = GetIssue(currentIssue);
-					if (issue != null)
-					{
-						if (string.IsNullOrEmpty(currentCommentsSerialzied))
-						{
-							LoadComments(issue);
-						}
-						else
-						{
-							issue.comments = LoadElements<Comment>(JSON.Parse(currentCommentsSerialzied));
-						}
-					}
-				}
-				Repaint();
-			}
-		}
+            if (string.IsNullOrEmpty(issuesSerialized)) return;
+            DeserialzieIssues(JSON.Parse(issuesSerialized));
+            if (currentIssue >= 0)
+            {
+                var issue = GetIssue(currentIssue);
+                if (issue != null)
+                {
+                    if (string.IsNullOrEmpty(currentCommentsSerialzied))
+                    {
+                        LoadComments(issue);
+                    }
+                    else
+                    {
+                        issue.comments = LoadElements<Comment>(JSON.Parse(currentCommentsSerialzied));
+                    }
+                }
+            }
+            Repaint();
+        }
 
 		private void Refresh()
 		{
@@ -159,7 +153,7 @@ namespace UniGit
 
 			GUILayout.FlexibleSpace();
 			EditorGUI.BeginChangeCheck();
-			GUILayout.Label(GitGUI.GetTempContent(string.Format("calls left: {0}",callsLeft)));
+			GUILayout.Label(GitGUI.GetTempContent($"calls left: {callsLeft}"));
 			EditorGUILayout.Space();
 			GUILayout.Label(GitGUI.GetTempContent("Token"));
 			settings.RemoteToken = EditorGUILayout.TextField(settings.RemoteToken,EditorStyles.toolbarTextField);
@@ -177,8 +171,9 @@ namespace UniGit
 				GUILayout.Label(new GUIContent(currentIssueObj.user.avatar_texture),styles.Avatar,GUILayout.MaxWidth(64),GUILayout.MaxHeight(64));
 
 				EditorGUILayout.BeginVertical();
-				EditorGUILayout.LabelField(new GUIContent(string.Format("{0} #{1}", currentIssueObj.title, currentIssueObj.number)), styles.IssueTitleBig);
-				EditorGUILayout.LabelField(new GUIContent(string.Format("{0} opened this issue on {1} · {2} comments", currentIssueObj.user, currentIssueObj.created_at, currentIssueObj.commentCount)));
+				EditorGUILayout.LabelField(new GUIContent($"{currentIssueObj.title} #{currentIssueObj.number}"), styles.IssueTitleBig);
+				EditorGUILayout.LabelField(new GUIContent(
+                    $"{currentIssueObj.user} opened this issue on {currentIssueObj.created_at} · {currentIssueObj.commentCount} comments"));
 				EditorGUILayout.EndVertical();
 
 				EditorGUILayout.EndHorizontal();
@@ -210,7 +205,7 @@ namespace UniGit
 
 				GUILayout.Label(new GUIContent("Milestone"), "ProjectBrowserHeaderBgTop");
 
-				string milestone = currentIssueObj.milestone;
+				var milestone = currentIssueObj.milestone;
 				if (!string.IsNullOrEmpty(milestone))
 				{
 					GUILayout.Label(new GUIContent(milestone), "AssetLabel");
@@ -240,19 +235,19 @@ namespace UniGit
 			}
 			else
 			{
-				float issuesWidth = position.width;
-				float issueElementHeight = EditorGUIUtility.singleLineHeight * 3.5f;
-				float totalIssuesHeight = elements.OfType<Issue>().Count() * issueElementHeight;
+				var issuesWidth = position.width;
+				var issueElementHeight = EditorGUIUtility.singleLineHeight * 3.5f;
+				var totalIssuesHeight = elements.OfType<Issue>().Count() * issueElementHeight;
 				issuesScroll = GUI.BeginScrollView(new Rect(0, EditorGUIUtility.singleLineHeight, issuesWidth, position.height - EditorGUIUtility.singleLineHeight), issuesScroll, new Rect(0, 0, issuesWidth, totalIssuesHeight));
-				Rect lastRect = new Rect();
+				var lastRect = new Rect();
 				foreach (var issue in elements.OfType<Issue>())
 				{
-					RectOffset elementPadding = styles.IssueElementBg.padding;
-					Rect elementRect = new Rect(0, lastRect.y + lastRect.height, position.width, issueElementHeight);
-					Rect paddedRect = new Rect(elementRect.x + elementPadding.left, elementRect.y + elementPadding.top, elementRect.width - elementPadding.horizontal, elementRect.height - elementPadding.vertical);
+					var elementPadding = styles.IssueElementBg.padding;
+					var elementRect = new Rect(0, lastRect.y + lastRect.height, position.width, issueElementHeight);
+					var paddedRect = new Rect(elementRect.x + elementPadding.left, elementRect.y + elementPadding.top, elementRect.width - elementPadding.horizontal, elementRect.height - elementPadding.vertical);
 					GUI.Box(elementRect, GUIContent.none, styles.IssueElementBg);
 					EditorGUIUtility.AddCursorRect(elementRect, MouseCursor.Link);
-					bool isOver = elementRect.Contains(current.mousePosition);
+					var isOver = elementRect.Contains(current.mousePosition);
 					if (isOver)
 					{
 						GUI.Box(new Rect(elementRect.x, elementRect.y, 6, elementRect.height), GUIContent.none, "LODSliderRangeSelected");
@@ -275,7 +270,8 @@ namespace UniGit
 
 					GUILayout.FlexibleSpace();
 					EditorGUILayout.EndHorizontal();
-					GUILayout.Label(new GUIContent(string.Format("#{0} opened on {1} by {2}", issue.number, issue.created_at, issue.user.login)), styles.IssueSubTitle);
+					GUILayout.Label(new GUIContent(
+                        $"#{issue.number} opened on {issue.created_at} by {issue.user.login}"), styles.IssueSubTitle);
 					EditorGUILayout.EndVertical();
 					EditorGUILayout.EndHorizontal();
 					GUILayout.EndArea();
@@ -300,22 +296,23 @@ namespace UniGit
 
 		public bool MyRemoteCertificateValidationCallback(System.Object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) 
 		{
-			bool isOk = true;
+			var isOk = true;
 			// If there are errors in the certificate chain, look at each error to determine the cause.
-			if (sslPolicyErrors != SslPolicyErrors.None) {
-				for (int i=0; i<chain.ChainStatus.Length; i++) {
-					if (chain.ChainStatus [i].Status != X509ChainStatusFlags.RevocationStatusUnknown) {
-						chain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
-						chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
-						chain.ChainPolicy.UrlRetrievalTimeout = new TimeSpan (0, 1, 0);
-						chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllFlags;
-						bool chainIsValid = chain.Build ((X509Certificate2)certificate);
-						if (!chainIsValid) {
-							isOk = false;
-						}
-					}
-				}
-			}
+			if (sslPolicyErrors != SslPolicyErrors.None)
+            {
+                foreach (var status in chain.ChainStatus)
+                {
+                    if (status.Status == X509ChainStatusFlags.RevocationStatusUnknown) continue;
+                    chain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
+                    chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
+                    chain.ChainPolicy.UrlRetrievalTimeout = new TimeSpan (0, 1, 0);
+                    chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllFlags;
+                    var chainIsValid = chain.Build ((X509Certificate2)certificate);
+                    if (!chainIsValid) {
+                        isOk = false;
+                    }
+                }
+            }
 			return isOk;
 		}
 
@@ -331,18 +328,16 @@ namespace UniGit
 		private void LoadComments(Issue issue)
 		{
 			issue.comments = new Comment[0];
-			if (issue.commentCount > 0)
-			{
-				var commentsRequest = UnityWebRequest.Get(string.Format("https://api.github.com/repos/simeonradivoev/UniGit/issues/{0}/comments",issue.number));
-				commentsRequest.SetRequestHeader("Authorization","token " + settings.RemoteToken);
-				commentsRequest.SendWebRequest().completed += operation =>
-				{
-					currentCommentsSerialzied = commentsRequest.downloadHandler.text;
-					issue.comments = LoadElements<Comment>(JSON.Parse(currentCommentsSerialzied));
-					int.TryParse(commentsRequest.GetResponseHeaders()["X-RateLimit-Remaining"], out callsLeft);
-				};
-			}
-		}
+            if (issue.commentCount <= 0) return;
+            var commentsRequest = UnityWebRequest.Get($"https://api.github.com/repos/simeonradivoev/UniGit/issues/{issue.number}/comments");
+            commentsRequest.SetRequestHeader("Authorization","token " + settings.RemoteToken);
+            commentsRequest.SendWebRequest().completed += operation =>
+            {
+                currentCommentsSerialzied = commentsRequest.downloadHandler.text;
+                issue.comments = LoadElements<Comment>(JSON.Parse(currentCommentsSerialzied));
+                int.TryParse(commentsRequest.GetResponseHeaders()["X-RateLimit-Remaining"], out callsLeft);
+            };
+        }
 
 		private Element GetElement(int id,Type elementType)
 		{
@@ -370,7 +365,7 @@ namespace UniGit
 
 			public override bool Equals(object obj)
 			{
-				Element other = obj as Element;
+				var other = obj as Element;
 				if (other == null) return false;
 				return id == other.id;
 			}
@@ -386,7 +381,7 @@ namespace UniGit
 			elements.Clear();
 			foreach (var child in obj.Children)
 			{
-				Issue issue = new Issue(child["id"]);
+				var issue = new Issue(child["id"]);
 				issue.number = child["number"];
 				issue.title = child["title"];
 				issue.body = child["body"];
@@ -403,47 +398,42 @@ namespace UniGit
 		public Element LoadElement(JSONNode node,Type elementType)
 		{
 			var existingElement = GetElement(node["id"],elementType);
-			if (existingElement == null)
-			{
-				existingElement = (Element)Activator.CreateInstance(elementType,node["id"].AsInt);
-				foreach (var keyValue in node)
-				{
-					var field = elementType.GetField(keyValue.Key);
-					if (field != null)
-					{
-						string stringValue = keyValue.Value.Value;
-						object parsedValue;
-						if (typeof(Element).IsAssignableFrom(field.FieldType))
-						{
-							parsedValue = LoadElement(keyValue.Value, field.FieldType);
-						}
-						else if (field.FieldType == typeof(Color))
-						{
-							Color outColor;
-							if (ColorUtility.TryParseHtmlString("#" + stringValue, out outColor))
-							{
-								parsedValue = outColor;
-							}
-							else
-							{
-								throw new Exception("Could not parse color");
-							}
-						}
-						else
-						{
-							parsedValue = Convert.ChangeType(stringValue, field.FieldType);
-						}
+            if (existingElement != null) return existingElement;
+            existingElement = (Element)Activator.CreateInstance(elementType,node["id"].AsInt);
+            foreach (var keyValue in node)
+            {
+                var field = elementType.GetField(keyValue.Key);
+                if (field == null) continue;
+                var stringValue = keyValue.Value.Value;
+                object parsedValue;
+                if (typeof(Element).IsAssignableFrom(field.FieldType))
+                {
+                    parsedValue = LoadElement(keyValue.Value, field.FieldType);
+                }
+                else if (field.FieldType == typeof(Color))
+                {
+                    if (ColorUtility.TryParseHtmlString("#" + stringValue, out var outColor))
+                    {
+                        parsedValue = outColor;
+                    }
+                    else
+                    {
+                        throw new Exception("Could not parse color");
+                    }
+                }
+                else
+                {
+                    parsedValue = Convert.ChangeType(stringValue, field.FieldType);
+                }
 
-						if (parsedValue != null)
-						{
-							field.SetValue(existingElement,parsedValue);
-						}
-					}
-				}
-				elements.Add(existingElement);
-				existingElement.OnDeserialzied();
-			}
-			return existingElement;
+                if (parsedValue != null)
+                {
+                    field.SetValue(existingElement,parsedValue);
+                }
+            }
+            elements.Add(existingElement);
+            existingElement.OnDeserialzied();
+            return existingElement;
 		}
 
 		public Issue GetIssue(int number)
@@ -458,8 +448,8 @@ namespace UniGit
 
 		public T[] LoadElements<T>(JSONNode node) where T : Element
 		{
-			T[] elements = new T[node.Count];
-			for (int i = 0; i < node.Count; i++)
+			var elements = new T[node.Count];
+			for (var i = 0; i < node.Count; i++)
 			{
 				elements[i] = LoadElement<T>(node[i]);
 			}

@@ -21,7 +21,7 @@ namespace UniGit
 
 		public int Compare(StatusListEntry x, StatusListEntry y)
 		{
-			int stateCompare = window.IsGrouping() ? GetPriority(x.State).CompareTo(GetPriority(y.State)) : 0;
+			var stateCompare = window.IsGrouping() ? GetPriority(x.State).CompareTo(GetPriority(y.State)) : 0;
 			if (stateCompare == 0)
 			{
 				var settings = window.GitDiffSettings;
@@ -35,10 +35,10 @@ namespace UniGit
 
 				if (settings.unstagedChangesPriority)
 				{
-					bool canStageX = GitManager.CanStage(x.State);
-					bool canUnstageX = GitManager.CanUnstage(x.State);
-					bool canStageY = GitManager.CanStage(y.State);
-					bool canUnstageY = GitManager.CanUnstage(y.State);
+					var canStageX = GitManager.CanStage(x.State);
+					var canUnstageX = GitManager.CanUnstage(x.State);
+					var canStageY = GitManager.CanStage(y.State);
+					var canUnstageY = GitManager.CanUnstage(y.State);
 
 					//prioritize upsaged changes that are pending
 					if ((canStageX && canUnstageX) && !(canStageY && canUnstageY))
@@ -61,14 +61,14 @@ namespace UniGit
 						break;
 					case GitDiffWindow.SortType.ModificationDate:
 						//todo cache modification dates
-						DateTime modifedTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetLastWriteTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), p))));
-						DateTime modifedRightTime = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetLastWriteTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(),p))));
+						var modifedTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetLastWriteTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(), p))));
+						var modifedRightTime = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetLastWriteTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(),p))));
 						stateCompare = DateTime.Compare(modifedRightTime,modifedTimeLeft);
 						break;
 					case GitDiffWindow.SortType.CreationDate:
 						//todo cache creation dates
-						DateTime createdTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetCreationTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(),p))));
-						DateTime createdRightTime = GetClosest(gitManager.GetPathWithMeta(y.LocalPath).Select(p => File.GetCreationTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(),p))));
+						var createdTimeLeft = GetClosest(gitManager.GetPathWithMeta(x.LocalPath).Select(p => File.GetCreationTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(),p))));
+						var createdRightTime = GetClosest(gitManager.GetPathWithMeta(y.LocalPath).Select(p => File.GetCreationTime(UniGitPathHelper.Combine(gitManager.GetCurrentRepoPath(),p))));
 						stateCompare = DateTime.Compare(createdRightTime,createdTimeLeft);
 						break;
 					default:
@@ -77,18 +77,18 @@ namespace UniGit
 			}
 			if (stateCompare == 0)
 			{
-				stateCompare = String.Compare(x.LocalPath, y.LocalPath, StringComparison.Ordinal);
+				stateCompare = string.Compare(x.LocalPath, y.LocalPath, StringComparison.Ordinal);
 			}
 			return stateCompare;
 		}
 
 		private DateTime GetClosest(IEnumerable<DateTime> dates)
 		{
-			DateTime now = DateTime.MaxValue;
-			DateTime closest = DateTime.Now;
-			long min = long.MaxValue;
+			var now = DateTime.MaxValue;
+			var closest = DateTime.Now;
+			var min = long.MaxValue;
 
-			foreach (DateTime date in dates)
+			foreach (var date in dates)
 				if (Math.Abs(date.Ticks - now.Ticks) < min)
 				{
 					min = date.Ticks - now.Ticks;

@@ -32,9 +32,9 @@ namespace UniGit
 		{
 			GUILayout.Label(GitGUI.GetTempContent("Switch to: " + branch.FriendlyName), GitGUI.Styles.BigTitle,GUILayout.ExpandWidth(true));
 			force = EditorGUILayout.Toggle(GitGUI.GetTempContent("Force", "Override working tree changes"), force);
-			if (GUILayout.Button(GitGUI.GetTempContent("Siwtch")))
+			if (GUILayout.Button(GitGUI.GetTempContent("Switch")))
 			{
-				CheckoutOptions checkoutOptions = new CheckoutOptions()
+				var checkoutOptions = new CheckoutOptions()
 				{
 					OnCheckoutNotify = OnCheckoutNotify,
 					OnCheckoutProgress = OnCheckoutProgress
@@ -75,8 +75,8 @@ namespace UniGit
 
 		protected void OnCheckoutProgress(string path, int completedSteps, int totalSteps)
 		{
-			float percent = (float)completedSteps / totalSteps;
-			EditorUtility.DisplayProgressBar("Checkout", string.Format("Checking {0} steps out of {1}.", completedSteps, totalSteps), percent);
+			var percent = (float)completedSteps / totalSteps;
+			EditorUtility.DisplayProgressBar("Checkout", $"Checking {completedSteps} steps out of {totalSteps}.", percent);
 		}
 	}
 }

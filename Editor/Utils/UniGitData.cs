@@ -25,46 +25,37 @@ namespace UniGit.Utils
 
 		private void OnEnable()
 		{
-			if(repositoryStatus == null) repositoryStatus = new GitRepoStatus();
-			if(dirtyFilesQueue == null) dirtyFilesQueue = new List<string>();
-			if(logEntries == null) logEntries = new List<GitLog.LogEntry>();
+			repositoryStatus ??= new GitRepoStatus();
+			dirtyFilesQueue ??= new List<string>();
+			logEntries ??= new List<GitLog.LogEntry>();
 		}
 
 		[UsedImplicitly]
 		private void OnDisable()
 		{
 			//the data needs to be initialized first, because starting the editor for the first time calls OnDisable
-			if (initialized && gitCallbacks != null)
+			if (initialized)
 			{
-				gitCallbacks.IssueBeforeAssemblyReload();
+				gitCallbacks?.IssueBeforeAssemblyReload();
 			}
 		}
 
-		public List<GitLog.LogEntry> LogEntries
-		{
-			get { return logEntries; }
-		}
+		public List<GitLog.LogEntry> LogEntries => logEntries;
 
-		public List<string> DirtyFilesQueue
-		{
-			get { return dirtyFilesQueue; }
-		}
+        public List<string> DirtyFilesQueue => dirtyFilesQueue;
 
-		public GitRepoStatus RepositoryStatus
-		{
-			get { return repositoryStatus; }
-		}
+        public GitRepoStatus RepositoryStatus => repositoryStatus;
 
-		public bool Initialized
+        public bool Initialized
 		{
-			get { return initialized; }
-			set { initialized = value; }
-		}
+			get => initialized;
+            set => initialized = value;
+        }
 
 		public bool LogInitialized
 		{
-			get { return logInitialized; }
-			set { logInitialized = value; }
-		}
+			get => logInitialized;
+            set => logInitialized = value;
+        }
 	}
 }

@@ -33,7 +33,7 @@ namespace UniGit.Settings
 			}
 
 			EditorGUI.BeginChangeCheck();
-			int newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), externalManager.SelectedAdapterIndex, externalManager.AdapterNames);
+			var newSelectedIndex = EditorGUILayout.Popup(GitGUI.GetTempContent("External Program", "The name of the External program to use"), externalManager.SelectedAdapterIndex, externalManager.AdapterNames);
 			gitSettings.ExternalProgram = externalManager.AdapterNames[newSelectedIndex].text;
 			if (EditorGUI.EndChangeCheck())
 			{

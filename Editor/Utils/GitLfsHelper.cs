@@ -24,46 +24,40 @@ namespace UniGit.Utils
 		{
 			var list = new List<Regex>();
 			var attributesPath = Path.Combine(paths.RepoPath, ".gitattributes");
-			string[] attributesLines;
-			if (fileLinesReader.ReadLines(attributesPath,out attributesLines))
-			{
-				foreach (var line in attributesLines)
-				{
-					ReadLine(line, list);
-				}
-			}
-			return list.ToArray();
+            if (!fileLinesReader.ReadLines(attributesPath, out var attributesLines)) return list.ToArray();
+            foreach (var line in attributesLines)
+            {
+                ReadLine(line, list);
+            }
+            return list.ToArray();
 		}
 
 		private void ReadLine(string line,List<Regex> list)
 		{
 			
-			string[] pairs = line.Split(new []{ ' ' },StringSplitOptions.RemoveEmptyEntries);
-			if (pairs.Length > 0)
-			{
-				var filter = pairs[0];
-				if (pairs.Any(p => p.Equals("filter=lfs",StringComparison.OrdinalIgnoreCase)))
-				{
-					string pattern = '^' +
-									 filter
-										 .Replace(".", "[.]")
-						                 .Replace("*", ".*")
-						                 .Replace("?", ".")
-					                 + '$';
-					var regex = new Regex(pattern, RegexOptions.Compiled);
-					list.Add(regex);
-				}
-			}
-		}
+			var pairs = line.Split(new []{ ' ' },StringSplitOptions.RemoveEmptyEntries);
+            if (pairs.Length <= 0) return;
+            var filter = pairs[0];
+            if (!pairs.Any(p => p.Equals("filter=lfs", StringComparison.OrdinalIgnoreCase))) return;
+            var pattern = '^' +
+                          filter
+                              .Replace(".", "[.]")
+                              .Replace("*", ".*")
+                              .Replace("?", ".")
+                          + '$';
+            var regex = new Regex(pattern, RegexOptions.Compiled);
+            list.Add(regex);
+        }
 
 		public bool IsLfsPath(string path)
-		{
-			//we need no GC that's why use a for loop
-			for (int i = 0; i < lfsFilters.Length; i++)
-			{
-				if (lfsFilters[i].IsMatch(path)) return true;
-			}
-			return false;
-		}
+        {
+            //we need no GC that's why use a for loop
+            foreach (var t in lfsFilters)
+            {
+                if (t.IsMatch(path)) return true;
+            }
+
+            return false;
+        }
 	}
 }

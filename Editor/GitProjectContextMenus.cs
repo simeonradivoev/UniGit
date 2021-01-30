@@ -39,7 +39,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/✚ Add", priority = 50), UsedImplicitly]
 		private static void AddSelected()
 		{
-			string[] localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p))
+			var localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p))
 				.SelectMany(gitManager.GetPathWithMeta).ToArray();
 			gitManager.AutoStage(localPaths);
 		}
@@ -55,7 +55,7 @@ namespace UniGit
 		[MenuItem("Assets/Git/✖ Remove", priority = 50), UsedImplicitly]
 		private static void RemoveSelected()
 		{
-			string[] localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta).ToArray();
+			var localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta).ToArray();
 			gitManager.AutoUnstage(localPaths);
 		}
 
@@ -78,7 +78,7 @@ namespace UniGit
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
 			if (Selection.assetGUIDs.Length != 1) return false;
-			string localPath = gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
+			var localPath = gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
 			if (gitManager.IsDirectory(localPath)) return false;
 			return true;
 		}
@@ -94,7 +94,7 @@ namespace UniGit
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
 			if (Selection.assetGUIDs.Length != 1) return false;
-			string localPath = gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
+			var localPath = gitManager.ToLocalPath(AssetDatabase.GUIDToAssetPath(Selection.assetGUIDs[0]));
 			if (gitManager.IsDirectory(localPath)) return false;
 			return true;
 		}
@@ -124,7 +124,7 @@ namespace UniGit
 		}
 
 		[MenuItem("Assets/Git/⌛ Revert", priority = 80), UsedImplicitly]
-		private static void Revet()
+		private static void Revert()
 		{
 			var localPaths = Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Select(p => gitManager.ToLocalPath(p)).SelectMany(gitManager.GetPathWithMeta).ToArray();
 			if (externalManager.TakeRevert(localPaths))
@@ -151,7 +151,7 @@ namespace UniGit
 			
 			gitCallbacks.IssueAssetDatabaseRefresh();
 			gitManager.MarkDirtyAuto(localPaths);
-			var projectWindow = gitProjectOverlay.ProjectWindows.FirstOrDefault(reflectionHelper.HasFocusFucntion);
+			var projectWindow = gitProjectOverlay.ProjectWindows.FirstOrDefault(reflectionHelper.HasFocusFunction);
 			if (projectWindow != null)
 			{
 				projectWindow.ShowNotification(new GUIContent("Revert Complete!"));
@@ -159,7 +159,7 @@ namespace UniGit
 		}
 
 		[MenuItem("Assets/Git/⌛ Revert", true, priority = 80), UsedImplicitly]
-		private static bool RevetValidate()
+		private static bool RevertValidate()
 		{
 			if (gitManager == null || !initializer.IsValidRepo) return false;
 			return Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).SelectMany(gitManager.GetPathWithMeta).Where(File.Exists).Select(p => gitManager.ToLocalPath(p))
@@ -168,8 +168,9 @@ namespace UniGit
 
 		private static void OnRevertProgress(string path, int currentSteps, int totalSteps)
 		{
-			float percent = (float)currentSteps / totalSteps;
-			EditorUtility.DisplayProgressBar("Reverting File", string.Format("Reverting file {0} {1}%", path, (percent * 100).ToString("####")), percent);
+			var percent = (float)currentSteps / totalSteps;
+			EditorUtility.DisplayProgressBar("Reverting File",
+                $"Reverting file {path} {(percent * 100).ToString("####")}%", percent);
 			if (currentSteps >= totalSteps)
 			{
 				logger.LogFormat(LogType.Log,"Revert of {0} successful.",path);

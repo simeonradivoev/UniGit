@@ -13,7 +13,7 @@ namespace UniGit.Utils
 		private static readonly GUIContent tmpContent = new GUIContent();
 		private static readonly Stack<bool> enableStack = new Stack<bool>(); 
 		private static readonly Stack<Matrix4x4> matrixStack = new Stack<Matrix4x4>();
-		private static int _secureTextFieldHash = "EditorSecurePasswordField".GetHashCode();
+		private static readonly int _secureTextFieldHash = "EditorSecurePasswordField".GetHashCode();
 
 		private static StylesClass _styles;
 		private static TexturesClass _textures;
@@ -22,36 +22,30 @@ namespace UniGit.Utils
 		{
 			get
 			{
-				if (_styles == null)
-				{
-					_styles = new StylesClass();
-					InitStyles(_styles);
-				}
-				return _styles;
+                if (_styles != null) return _styles;
+                _styles = new StylesClass();
+                InitStyles(_styles);
+                return _styles;
 			}
 		}
 		public static TexturesClass Textures
 		{
 			get
 			{
-				if (_textures == null)
-				{
-					_textures = new TexturesClass();
-					InitTextures(_textures);
-				}
-				return _textures;
+                if (_textures != null) return _textures;
+                _textures = new TexturesClass();
+                InitTextures(_textures);
+                return _textures;
 			}
 		}
 		public static ContentsClass Contents
 		{
 			get
 			{
-				if (_contents == null)
-				{
-					_contents = new ContentsClass();
-					InitContents(_contents);
-				}
-				return _contents;
+                if (_contents != null) return _contents;
+                _contents = new ContentsClass();
+                InitContents(_contents);
+                return _contents;
 			}
 		}
 		public class StylesClass
@@ -67,7 +61,8 @@ namespace UniGit.Utils
 			public GUIStyle ShurikenModuleTitle;
 			public GUIStyle ProjectBrowserHeaderBgTop;
 			public GUIStyle ShurikenModuleBg;
-		}
+            public GUIStyle ObjectField;
+        }
 
 		public class TexturesClass
 		{
@@ -97,7 +92,8 @@ namespace UniGit.Utils
 		{
 			styles.BigTitle = "IN BigTitle";
 			styles.BreadcrumMid = "GUIEditor.BreadcrumbMid";
-			styles.SelectionBoxGlow = "TL SelectionButton PreDropGlow";
+			styles.SelectionBoxGlow = "TV Selection";
+			styles.ObjectField = "ObjectField";
 			styles.GroupBox = "GroupBox";
 			styles.LightmapEditorSelectedHighlight = "LightmapEditorSelectedHighlight";
 			styles.IconButton = "IconButton";
@@ -119,7 +115,7 @@ namespace UniGit.Utils
 			textures.AnimationWindow = EditorGUIUtility.FindTexture("UnityEditor.AnimationWindow");
 			textures.ZoomTool = EditorGUIUtility.FindTexture("ViewToolZoom");
 			textures.SpinTextures = new Texture2D[12];
-			for (int i = 0; i < 12; i++)
+			for (var i = 0; i < 12; i++)
 			{
 				textures.SpinTextures[i] = EditorGUIUtility.FindTexture("WaitSpin" + i.ToString("00"));
 			}
@@ -138,7 +134,7 @@ namespace UniGit.Utils
 
 		public static Texture2D GetTempSpinAnimatedTexture()
 		{
-			int index = Mathf.FloorToInt((float) ((EditorApplication.timeSinceStartup * 0.5) % 1) * 12);
+			var index = Mathf.FloorToInt((float) ((EditorApplication.timeSinceStartup * 0.5) % 1) * 12);
 			return Textures.SpinTextures[index];
 		}
 
@@ -150,30 +146,15 @@ namespace UniGit.Utils
 			return tmpContent;
 		}
 
-		public static Texture IconContentTex(string name)
-		{
-			return EditorGUIUtility.IconContent(name).image;
-		}
+        public static Texture IconContentTex(string name) => EditorGUIUtility.IconContent(name).image;
 
-		public static GUIContent IconContent(string name)
-		{
-			var original = EditorGUIUtility.IconContent(name);
-			return original;
-		}
+        public static GUIContent IconContent(string name) => EditorGUIUtility.IconContent(name);
 
-		public static GUIContent IconContent(string name, string text)
-		{
-			var original = EditorGUIUtility.IconContent(name);
-			return new GUIContent(original) {text = text};
-		}
+        public static GUIContent IconContent(string name, string text) => new GUIContent(EditorGUIUtility.IconContent(name)) {text = text};
 
-		public static GUIContent IconContent(string name, string text,string tooltip)
-		{
-			var original = EditorGUIUtility.IconContent(name);
-			return new GUIContent(original) { text = text,tooltip = tooltip};
-		}
+        public static GUIContent IconContent(string name, string text, string tooltip) => new GUIContent(EditorGUIUtility.IconContent(name)) {text = text, tooltip = tooltip};
 
-		public static GUIContent GetTempContent(string label)
+        public static GUIContent GetTempContent(string label)
 		{
 			tmpContent.text = label;
 			tmpContent.tooltip = string.Empty;
@@ -219,14 +200,12 @@ namespace UniGit.Utils
 			GUI.enabled = enabled;
 		}
 
-		public static void StartEnable()
-		{
-			enableStack.Push(GUI.enabled);
-		}
+        public static void StartEnable() => enableStack.Push(GUI.enabled);
 
-		public static void EndEnable()
-		{
-			GUI.enabled = enableStack.Pop();
+
+        public static void EndEnable()
+		{GUI.enabled = enableStack.Pop()
+			;
 		}
 
 		public static void PushMatrix()
@@ -246,17 +225,17 @@ namespace UniGit.Utils
 
 		public static void SecurePasswordFieldLayout(GUIContent content, SecureString value,params GUILayoutOption[] layouts)
 		{
-			Rect rect = GUILayoutUtility.GetRect(content, EditorStyles.textField,layouts);
+			var rect = GUILayoutUtility.GetRect(content, EditorStyles.textField,layouts);
 			SecurePasswordField(rect,content,value);
 		}
 
 		public static void SecurePasswordField(Rect rect, GUIContent content, SecureString value)
 		{
-			int controlId = GUIUtility.GetControlID(_secureTextFieldHash, FocusType.Keyboard, rect);
+			var controlId = GUIUtility.GetControlID(_secureTextFieldHash, FocusType.Keyboard, rect);
 			rect = EditorGUI.PrefixLabel(rect, content);
 			EditorGUIUtility.AddCursorRect(rect,MouseCursor.Text);
-			GUIStyle fieldStyle = EditorStyles.textField;
-			Event current = Event.current;
+			var fieldStyle = EditorStyles.textField;
+			var current = Event.current;
 
 			switch (current.GetTypeForControl(controlId))
 			{
@@ -300,12 +279,12 @@ namespace UniGit.Utils
 					}
 					break;
 				case EventType.Repaint:
-					fieldStyle.Draw(rect,GetTempContent("".PadRight(value != null ? value.Length : 0,'*')),controlId);
+					fieldStyle.Draw(rect,GetTempContent("".PadRight(value?.Length ?? 0,'*')),controlId);
 					break;
 				case EventType.ContextClick:
 					if (rect.Contains(current.mousePosition))
 					{
-						GenericMenu menu = new GenericMenu();
+						var menu = new GenericMenu();
 						if(value != null && value.Length > 0)
 							menu.AddItem(new GUIContent("Clear"),false, () =>
 							{
@@ -322,30 +301,30 @@ namespace UniGit.Utils
 
 		public static void DrawLoading(Rect rect,GUIContent loadinContent)
 		{
-			const float loadinCricleSize = 24;
-			Vector2 loadingLabelWidth = EditorStyles.largeLabel.CalcSize(loadinContent);
-			float totalWidth = loadinCricleSize + loadingLabelWidth.x + 8;
-			float totalHeight = Mathf.Max(loadingLabelWidth.y, loadinCricleSize);
+			const float loadingCircleSize = 24;
+			var loadingLabelWidth = EditorStyles.largeLabel.CalcSize(loadinContent);
+			var totalWidth = loadingCircleSize + loadingLabelWidth.x + 8;
+			var totalHeight = Mathf.Max(loadingLabelWidth.y, loadingCircleSize);
 
 			PushMatrix();
-			Rect loadinCircleRect = new Rect(rect.x + rect.width / 2 - totalWidth / 2, rect.y + rect.height / 2 - totalHeight / 2, loadinCricleSize, loadinCricleSize);
+			var loadinCircleRect = new Rect(rect.x + rect.width / 2 - totalWidth / 2, rect.y + rect.height / 2 - totalHeight / 2, loadingCircleSize, loadingCircleSize);
 			GUIUtility.RotateAroundPivot((float)EditorApplication.timeSinceStartup * 300, loadinCircleRect.center);
 			GUI.DrawTexture(loadinCircleRect, EditorGUIUtility.FindTexture("CollabProgress"));
 			PopMatrix();
 
-			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadinCricleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
+			GUI.Label(new Rect(loadinCircleRect.x + loadinCircleRect.width + 8, loadinCircleRect.y + ((loadingCircleSize - loadingLabelWidth.y) / 2), loadingLabelWidth.x, loadingLabelWidth.y), loadinContent, EditorStyles.largeLabel);
 		}
 
 		public static bool LinkButtonLayout(GUIContent content, GUIStyle style)
 		{
-			Rect rect = GUILayoutUtility.GetRect(content, style);
+			var rect = GUILayoutUtility.GetRect(content, style);
 			EditorGUIUtility.AddCursorRect(rect,MouseCursor.Link);
 			return GUI.Button(rect, content, style);
 		}
 
 		public static void ShowNotificationOnWindow<T>(GUIContent content,bool createIfMissing) where T : EditorWindow
 		{
-			T window = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
+			var window = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
 			if (window == null)
 			{
 				if (createIfMissing)
@@ -357,12 +336,12 @@ namespace UniGit.Utils
 			window.ShowNotification(content);
 		}
 
-		public static string FormatRemainningTime(DateTime timeOffset)
+		public static string FormatRemainingTime(DateTime timeOffset)
 		{
-			return FormatRemainningTime(timeOffset.Ticks);
+			return FormatRemainingTime(timeOffset.Ticks);
 		}
 
-		public static string FormatRemainningTime(long ticks)
+		public static string FormatRemainingTime(long ticks)
 		{
 			const int SECOND = 1;
 			const int MINUTE = 60 * SECOND;
@@ -371,7 +350,7 @@ namespace UniGit.Utils
 			const int MONTH = 30 * DAY;
 
 			var ts = new TimeSpan(DateTime.Now.Ticks - ticks);
-			double delta = Math.Abs(ts.TotalSeconds);
+			var delta = Math.Abs(ts.TotalSeconds);
 
 			#if SHOW_SECONDS
 			if (delta < 1 * MINUTE)
@@ -398,23 +377,23 @@ namespace UniGit.Utils
 
 			if (delta < 12 * MONTH)
 			{
-				int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
+				var months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
 				return months <= 1 ? "one month ago" : months + " months ago";
 			}
 
-			int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
+			var years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
 			return years <= 1 ? "one year ago" : years + " years ago";
 		}
 
 		#region Config Fields
 		internal static void DoConfigStringsField(Configuration configuration,GUIContent content, string key, string[] options, string def)
 		{
-			string oldValue = configuration.GetValueOrDefault(key, def);
+			var oldValue = configuration.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
 			EditorGUILayout.BeginHorizontal();
 			EditorGUILayout.PrefixLabel(content);
 			GUI.SetNextControlName(key + " Config Popup");
-			int newValueIndex = EditorGUILayout.Popup(Array.IndexOf(options, oldValue), options);
+			var newValueIndex = EditorGUILayout.Popup(Array.IndexOf(options, oldValue), options);
 			string newValue;
 			if (newValueIndex >= 0 && newValueIndex < options.Length)
 			{
@@ -433,10 +412,10 @@ namespace UniGit.Utils
 
 		internal static void DoConfigStringField(Configuration configuration, GUIContent content, string key, string def)
 		{
-			string oldValue = configuration.GetValueOrDefault(key, def);
+			var oldValue = configuration.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
 			GUI.SetNextControlName(key + " Config String");
-			string newValue = EditorGUILayout.DelayedTextField(content, oldValue);
+			var newValue = EditorGUILayout.DelayedTextField(content, oldValue);
 			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
 			{
 				configuration.Set(key, newValue);
@@ -445,10 +424,10 @@ namespace UniGit.Utils
 
 		internal static void DoConfigIntField(Configuration configuration, GUIContent content, string key, int def)
 		{
-			int oldValue = configuration.GetValueOrDefault(key, def);
+			var oldValue = configuration.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
 			GUI.SetNextControlName(key + " Config Int");
-			int newValue = EditorGUILayout.DelayedIntField(content, oldValue);
+			var newValue = EditorGUILayout.DelayedIntField(content, oldValue);
 			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
 			{
 				configuration.Set(key, newValue);
@@ -457,10 +436,10 @@ namespace UniGit.Utils
 
 		internal static void DoConfigIntSlider(Configuration configuration, GUIContent content, int min, int max, string key, int def)
 		{
-			int oldValue = configuration.GetValueOrDefault(key, def);
+			var oldValue = configuration.GetValueOrDefault(key, def);
 			EditorGUI.BeginChangeCheck();
 			GUI.SetNextControlName(key + " Config Int");
-			int newValue = EditorGUILayout.IntSlider(content, oldValue, min, max);
+			var newValue = EditorGUILayout.IntSlider(content, oldValue, min, max);
 			if (EditorGUI.EndChangeCheck() && oldValue != newValue)
 			{
 				configuration.Set(key, newValue);
@@ -469,9 +448,9 @@ namespace UniGit.Utils
 
 		internal static void DoConfigToggle(Configuration configuration, GUIContent content, string key, bool def)
 		{
-			bool oldValue = configuration.GetValueOrDefault(key, def);
+			var oldValue = configuration.GetValueOrDefault(key, def);
 			GUI.SetNextControlName(key + " Config Toggle");
-			bool newValue = EditorGUILayout.Toggle(content, oldValue);
+			var newValue = EditorGUILayout.Toggle(content, oldValue);
 			if (oldValue != newValue)
 			{
 				configuration.Set(key, newValue);
