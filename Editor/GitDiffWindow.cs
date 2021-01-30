@@ -373,12 +373,16 @@ namespace UniGit
 
 		private void MainGUI()
 		{
-			RepositoryInformation repoInfo = gitManager.Repository.Info;
-			GUILayout.BeginArea(CommitRect);
-			gitDiffWindowCommitRenderer.DoCommit(repoInfo, this, ref commitScroll);
-			GUILayout.EndArea();
+			RepositoryInformation repoInfo = gitManager.Repository?.Info;
 
-			toolbarRenderer.DoDiffToolbar(DiffToolbarRect, this, ref filter);
+            if (repoInfo != null)
+            {
+                GUILayout.BeginArea(CommitRect);
+                gitDiffWindowCommitRenderer.DoCommit(repoInfo, this, ref commitScroll);
+                GUILayout.EndArea();
+            }
+
+            toolbarRenderer.DoDiffToolbar(DiffToolbarRect, this, ref filter);
 
 			if (diffWindowStatusList == null)
 			{

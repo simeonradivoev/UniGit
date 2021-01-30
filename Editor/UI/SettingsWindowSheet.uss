@@ -16,7 +16,7 @@
 	background-image: resource("Icons/donate");
 }
 
-#Help{
+#HelpSettings{
 	position: absolute;
 	right: 22px;
 	background-image: resource("_Help");

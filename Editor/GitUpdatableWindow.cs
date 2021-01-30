@@ -24,6 +24,7 @@ namespace UniGit
 		[NonSerialized] protected GitSettingsManager settingsManager;
 		[NonSerialized] protected UniGitPaths paths;
         [NonSerialized] protected IGitResourceManager resourceManager;
+        [NonSerialized] protected bool isFocused;
 
         #region VisualElements
 
@@ -142,14 +143,14 @@ namespace UniGit
 		}
 
 		protected virtual void OnFocus()
-		{
-			
-		}
+        {
+            isFocused = true;
+        }
 
 		protected virtual void OnLostFocus()
-		{
-			
-		}
+        {
+            isFocused = false;
+        }
 
 		private void OnGitManagerUpdateRepositoryInternal(GitRepoStatus status,string[] paths)
 		{

@@ -56,13 +56,17 @@ namespace UniGit.Settings
 		public void OnFocus()
 		{
 			hasFocused = true;
-		}
+
+            if (hasFocused && initilized && gitManager.Repository != null && data.Initialized && initializer.IsValidRepo)
+            {
+                OnGitManagerUpdateInternal(data.RepositoryStatus, null);
+            }
+        }
 
 		public void OnLostFocus()
 		{
 			hasFocused = false;
-			initilized = false;
-		}
+        }
 
 		public virtual VisualElement ConstructContents()
 		{

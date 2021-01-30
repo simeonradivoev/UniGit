@@ -24,7 +24,7 @@ namespace UniGit
 		private GitAnimation gitAnimation;
 		private GitAnimation.GitTween animationTween;
 
-		#region Visual Elements
+        #region Visual Elements
 
 		private VisualElement settingsWindowElement;
 		private VisualElement settingsTabsElement;
@@ -78,7 +78,7 @@ namespace UniGit
 					tabs[i].userData = tabsArray[i];
 					tabsToolbar.Add(toolbarButtons[i]);
                     InitTabVisuals(i, tabsArray[i],tabs[i], toolbarButtons[i]);
-				}
+                }
 			}
 			catch (Exception e)
 			{
@@ -99,7 +99,7 @@ namespace UniGit
 
 			toolbarButton.text = tabData.Name.text;
 			toolbarButton.userData = tabIndex;
-			toolbarButton.SetEnabled(tabIndex != 0);
+			toolbarButton.SetEnabled(tabIndex != tab);
 
             toolbarButton.clickable.clicked += () =>
 			{
@@ -109,6 +109,11 @@ namespace UniGit
 					toolbarButtons[this.tab].SetEnabled(true);
 					this.tab = tabIndex;
 					toolbarButtons[tabIndex].SetEnabled(false);
+                    ((GitSettingsTab)tabs[lastTabIndex].userData).OnLostFocus();
+                    if (isFocused)
+                    {
+                        ((GitSettingsTab)tabs[tabIndex].userData).OnFocus();
+                    }
                     animationTween = gitAnimation.StartAnimation(AnimationDuration, this,
 						GitSettingsJson.AnimationTypeEnum.Settings);
 				}
@@ -131,9 +136,15 @@ namespace UniGit
 			base.OnLostFocus();
 			currentTab?.OnLostFocus();
 			LoseFocus();
-		}
+        }
 
-		protected override void OnRepositoryLoad(Repository repository)
+        protected override void OnFocus()
+        {
+            base.OnFocus();
+            currentTab?.OnFocus();
+        }
+
+        protected override void OnRepositoryLoad(Repository repository)
 		{
 			Repaint();
 		}
@@ -210,11 +221,13 @@ namespace UniGit
             settingsWindowElement = root.Q("SettingsWindow");
             settingsTabsElement = root.Q("SettingsTabs");
             tabsToolbar = root.Q("TabsToolbar");
-            helpButton = root.Q<Button>("Help");
+            helpButton = root.Q<Button>("HelpSettings");
+            helpButton.tooltip = "Help";
             donateButton = root.Q<Button>("Donate");
+            donateButton.tooltip = "Donate";
 
             helpButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.SettingsWindowHelp);
-			donateButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.Donate);
+            donateButton.clickable.clicked += () => GitLinks.GoTo(GitLinks.Donate);
 		}
 
 		protected override void OnGitUpdate(GitRepoStatus status, string[] paths)
@@ -230,8 +243,7 @@ namespace UniGit
 			{
 				foreach (var settingsTab in tabs)
 				{
-					var customMenu = settingsTab as IHasCustomMenu;
-					if (customMenu != null)
+                    if (settingsTab is IHasCustomMenu customMenu)
 					{
 						customMenu.AddItemsToMenu(menu);
 					}
@@ -289,9 +301,6 @@ namespace UniGit
         private GitSettingsTab currentTab => (GitSettingsTab) currentTabElement?.userData;
 
         //we don't have any need to Git Status in settings
-        public override bool IsWatching
-		{
-			get { return false; }
-		}
-	}
+        public override bool IsWatching => false;
+    }
 }

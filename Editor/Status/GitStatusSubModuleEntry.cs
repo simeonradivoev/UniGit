@@ -17,7 +17,7 @@ namespace UniGit.Status
 		{
 			path = UniGitPathHelper.FixUnityPath(submodule.Path);
 			url = submodule.Url;
-			workDirId = submodule.WorkDirCommitId.Sha;
+			workDirId = submodule.WorkDirCommitId?.Sha;
 			status = submodule.RetrieveStatus();
 		}
 

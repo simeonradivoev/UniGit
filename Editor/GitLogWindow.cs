@@ -137,13 +137,13 @@ namespace UniGit
 
 			Rect toolbarRect = new Rect(0,0,position.width,EditorStyles.toolbarButton.fixedHeight);
 			Rect logInfoRect = new Rect(0,position.height - 100,position.width,100);
-			Rect scrollPos = new Rect(0,toolbarRect.height,position.width,position.height-toolbarRect.height-logInfoRect.height);
+			Rect scrollPos = new Rect(0,toolbarRect.height,position.width, position.height-toolbarRect.height-logInfoRect.height);
 
 			float entryHeight = styles.entryInfoStyle.fixedHeight;
 			
 			Rect viewRect = new Rect(0,0,position.width,visibleCount * entryHeight);
 			GUI.Box(scrollPos,GUIContent.none,styles.consoleBox);
-			scroll = GUI.BeginScrollView(scrollPos,scroll,viewRect,GUI.skin.horizontalScrollbar,GUIStyle.none);
+			scroll = GUI.BeginScrollView(scrollPos,scroll,viewRect,GUIStyle.none, GUI.skin.verticalScrollbar);
 			Event current = Event.current;
 			float lastY = 0;
 			for (int i = 0; i < gitLog.Count; i++)
