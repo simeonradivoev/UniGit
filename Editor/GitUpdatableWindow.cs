@@ -3,6 +3,7 @@ using LibGit2Sharp;
 using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -22,6 +23,7 @@ namespace UniGit
 		[NonSerialized] protected UniGitPaths paths;
         [NonSerialized] protected IGitResourceManager resourceManager;
         [NonSerialized] protected bool isFocused;
+        protected SerializedObject editorSerializedObject;
 
         #region VisualElements
 
@@ -31,7 +33,8 @@ namespace UniGit
         #endregion
 
         protected virtual void OnEnable()
-		{
+        {
+            editorSerializedObject = new SerializedObject(this);
 			GitWindows.AddWindow(this);
 			if(gitManager != null)
 				titleContent.image = gitManager.GetGitStatusIcon();
@@ -87,6 +90,7 @@ namespace UniGit
 
 		protected virtual void ConstructGUI(VisualElement root)
 		{
+            root.Bind(editorSerializedObject);
 			root.styleSheets.Add(resourceManager.LoadUniGitAsset<StyleSheet>("Editor/UI/RootSheet.uss"));
 
             invalidRepoElement = root.Q("InvalidRepository");
@@ -217,8 +221,10 @@ namespace UniGit
             }
         }
 
-		protected void OnDisable()
+		protected virtual void OnDisable()
 		{
+            editorSerializedObject.Dispose();
+            editorSerializedObject = null;
 			GitWindows.RemoveWindow(this);
 		}
 

@@ -1,0 +1,24 @@
+﻿<UXML xmlns="UnityEngine.UIElements"  xmlns:editor="UnityEditor.UIElements">
+  <Template path="Packages/com.simeonradivoev.uni-git/Editor/UI/InvalidRepository.uxml" name="InvalidRepository"/>
+
+    <VisualElement class="container">
+        <Instance template="InvalidRepository" name="InvalidRepository"/>
+        <VisualElement name="DiffInspector">
+		<editor:Toolbar name="Toolbar">
+		<editor:ToolbarButton name="GoToLine" text="Go To Line" />
+		<editor:ToolbarButton name="PreviousChange" text="Previous Change" />
+		<editor:ToolbarButton name="NextChange" text="Next Change" />
+		<Label name="FileName" binding-path="localPath" />
+		<VisualElement class="flex-space" />
+		<editor:ToolbarButton class="icon-button" name="Donate">
+			<Image />
+		</editor:ToolbarButton>
+		<editor:ToolbarButton class="icon-button" name="Help">
+			<Image />
+		</editor:ToolbarButton>
+		</editor:Toolbar>
+		<VisualElement name="Lines">
+		</VisualElement>
+        </VisualElement>
+    </VisualElement>
+</UXML>

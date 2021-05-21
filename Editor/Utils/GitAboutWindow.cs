@@ -9,6 +9,7 @@ namespace UniGit.Utils
 	public class GitAboutWindow : EditorWindow
 	{
 		private GitOverlay gitOverlay;
+        [CanBeNull] private PackageInfo packageInfo;
 		private string gitVersion;
 		private Vector2 scroll;
 
@@ -20,10 +21,11 @@ namespace UniGit.Utils
 		}
 
 		[UniGitInject]
-		private void Construct(GitOverlay gitOverlay)
+		private void Construct(GitOverlay gitOverlay, PackageInfo packageInfo = null)
 		{
 			this.gitOverlay = gitOverlay;
-		}
+            this.packageInfo = packageInfo;
+        }
 
 		private void GetGitVersion()
 		{
@@ -54,8 +56,7 @@ namespace UniGit.Utils
 
 			GUILayout.BeginVertical("AC BoldHeader");
 			GUILayout.Label(GitGUI.GetTempContent("Created by: Simeon Radivoev"));
-            var packageInfo = PackageInfo.FindForAssembly(this.GetType().Assembly);
-            GUILayout.Label(GitGUI.GetTempContent("UniGit Version: " + packageInfo.version));
+            GUILayout.Label(GitGUI.GetTempContent("UniGit Version: " + (packageInfo?.version ?? "Asset Store")));
 			GUILayout.Label(GitGUI.GetTempContent("Git Version: " + gitVersion));
 			GUILayout.Label(GitGUI.GetTempContent("LibGit2Sharp Features: " + version.Features));
 			GUILayout.Label(GitGUI.GetTempContent("License:  GNU GENERAL PUBLIC LICENSE, Version 3, 29 June 2007"),EditorStyles.wordWrappedLabel);

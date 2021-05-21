@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace UniGit
 {
-	public class GitResourceManager : IGitResourceManager
+	public class PackageResourceManager : IGitResourceManager
 	{
 		private readonly Dictionary<string,Texture2D> textures;
 		private readonly ILogger logger;
 
 		[UniGitInject]
-		public GitResourceManager(ILogger logger)
+		public PackageResourceManager(ILogger logger)
 		{
 			this.logger = logger;
 			textures = new Dictionary<string, Texture2D>();

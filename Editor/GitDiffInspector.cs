@@ -5,13 +5,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using LibGit2Sharp;
+using UniGit.Status;
 using UniGit.Utils;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
+using PopupWindow = UnityEditor.PopupWindow;
 
 namespace UniGit
 {
-	public class GitDiffInspector : EditorWindow, IHasCustomMenu
+	public class GitDiffInspector : GitUpdatableWindow, IHasCustomMenu
 	{
 		private const float AnimationDuration = 0.4f;
 
@@ -40,7 +43,7 @@ namespace UniGit
 		private double animationTime;
 		private GitAnimation.GitTween animationTween;
 
-		private class Styles
+        private class Styles
 		{
 			public GUIStyle NormalLine;
 			public GUIStyle LineNum;
@@ -55,6 +58,7 @@ namespace UniGit
 		private const string attributes = @"(?<=\[)[^][]*(?=\])";
 		private const string defines = @"#.*";
 		private const string numbers = @"[\d]+\.?f?";
+		private const string classes = @"(?<=class) [\w]+";
 		private UberRegex uberRegex;
 		private CompareOptions compareOptions;
 		private ExplicitPathsOptions explicitPathsOptions;
@@ -69,10 +73,13 @@ namespace UniGit
 			this.gitAnimation = gitAnimation;
 		}
 
-		private void OnEnable()
+		protected override void OnEnable()
 		{
-            GitWindows.AddWindow(this);
-			compareOptions = new CompareOptions()
+            titleContent.text = "Diff Inspector";
+
+            base.OnEnable();
+
+            compareOptions = new CompareOptions()
 			{
 				Algorithm = DiffAlgorithm.Myers,
 				ContextLines = 0
@@ -80,27 +87,22 @@ namespace UniGit
 
 			explicitPathsOptions = new ExplicitPathsOptions();
 
-			titleContent = new GUIContent("Diff Inspector", GitGUI.Textures.ZoomTool);
-			uberRegex = new UberRegex(new ColoredRegex[]
+            uberRegex = new UberRegex(new ColoredRegex[]
 			{
-				new ColoredRegex("Comments",comments, "green"),
-				new ColoredRegex("Strings",strings, "brown"),
-				new ColoredRegex("Keywords",keywords, "blue"),
-				new ColoredRegex("Types",types, "blue"),
-				new ColoredRegex("Methods",methods, "teal"),
-				new ColoredRegex("Attributes",attributes,"blue"), 
-				new ColoredRegex("Defines",defines, "olive"),
-				new ColoredRegex("Values",values, "brown"),
-				new ColoredRegex("NUmbers",numbers,"brown"), 
+				new ColoredRegex("Comments",comments, "#75715e"),
+				new ColoredRegex("Strings",strings, "#e6db74"),
+				new ColoredRegex("Keywords",keywords, "#66d9ef"),
+				new ColoredRegex("Types",types, "#66d9ef"),
+				new ColoredRegex("Methods",methods, "#a6e22e"),
+				new ColoredRegex("Attributes",attributes,"#a6e22e"), 
+				new ColoredRegex("Defines",defines, "#f8f8f2"),
+				new ColoredRegex("Values",values, "#ae81ff"),
+				new ColoredRegex("NUmbers",numbers,"#ae81ff"), 
+				new ColoredRegex("Classes",classes,"#a6e22e"), 
 			});
 		}
 
-	    private void OnDisable()
-	    {
-	        GitWindows.RemoveWindow(this);
-	    }
-
-		public void Init(string localPath)
+        public void Init(string localPath)
 		{
 			InitStyles();
 			this.localPath = localPath;
@@ -449,8 +451,8 @@ namespace UniGit
                 NormalLine = new GUIStyle(EditorStyles.label)
                 {
                     padding = {left = 6},
-                    normal = new GUIStyleState() {background = Texture2D.whiteTexture},
-                    onNormal = new GUIStyleState() {background = Texture2D.whiteTexture},
+                    normal = {background = Texture2D.whiteTexture},
+                    onNormal = {background = Texture2D.whiteTexture},
                     richText = true
                 },
                 LineNum = new GUIStyle(EditorStyles.label)
@@ -460,7 +462,44 @@ namespace UniGit
             };
         }
 
-		private void OnGUI()
+        protected override void OnGitUpdate(GitRepoStatus status, string[] paths)
+        {
+            
+        }
+
+        protected override void OnInitialize()
+        {
+            
+        }
+
+        protected override void OnRepositoryLoad(Repository repository)
+        {
+            
+        }
+
+        protected override void OnEditorUpdate()
+        {
+            
+        }
+
+        protected override void ConstructGUI(VisualElement root)
+        {
+            var uxml = resourceManager.LoadUniGitAsset<VisualTreeAsset>("Editor/UI/DiffInspector.uxml");
+            var uss = resourceManager.LoadUniGitAsset<StyleSheet>("Editor/UI/DiffInspectorSheet.uss");
+
+            uxml.CloneTree(root);
+            root.styleSheets.Add(uss);
+
+            base.ConstructGUI(root);
+
+            BuildToolbar(root.Q("Toolbar"));
+
+            var diffImgui = new IMGUIContainer(MainGUI);
+            root.Q("Lines").Add(diffImgui);
+            diffImgui.style.flexGrow = 1;
+        }
+
+        private void MainGUI()
 		{
 			InitStyles();
 
@@ -490,14 +529,9 @@ namespace UniGit
 
 			animationTween ??= gitAnimation.StartManualAnimation(AnimationDuration, this, out animationTime,GitSettingsJson.AnimationTypeEnum.DiffInspector);
 
-			var toolbarHeight = EditorStyles.toolbar.fixedHeight;
-			var difHeight = position.height - toolbarHeight;
-
-			DrawToolbar();
-
-			var resizeRect = new Rect(position.width * otherFileWindowWidth - 3, toolbarHeight,6, difHeight);
-			var indexFileRect = new Rect(position.width * otherFileWindowWidth + (resizeRect.width/2), toolbarHeight, position.width * (1 - otherFileWindowWidth) - (resizeRect.width / 2), difHeight);
-			var otherFileScrollRect = new Rect(0, toolbarHeight, position.width * otherFileWindowWidth - (resizeRect.width / 2), difHeight);
+            var resizeRect = new Rect(position.width * otherFileWindowWidth - 3, 0,6, position.height);
+			var indexFileRect = new Rect(position.width * otherFileWindowWidth + (resizeRect.width/2), 0, position.width * (1 - otherFileWindowWidth) - (resizeRect.width / 2), position.height);
+			var otherFileScrollRect = new Rect(0, 0, position.width * otherFileWindowWidth - (resizeRect.width / 2), position.height);
 
 			gitAnimation.Update(animationTween,ref animationTime);
 			var animTime = GitAnimation.ApplyEasing(animationTween.Percent);
@@ -543,40 +577,42 @@ namespace UniGit
             GUI.Box(selectedFile == FileType.IndexFile ? indexFileRect : otherFileScrollRect, GUIContent.none,GitGUI.Styles.SelectionBoxGlow);
 
             GUI.color = new Color(1,1,1,Mathf.Lerp(0,1,animTime));
-			GUI.Box(new Rect(0,0,position.width,position.height - toolbarHeight), GUIContent.none);
+			GUI.Box(new Rect(0,0,position.width,position.height), GUIContent.none);
 			GUI.color = Color.white;
 		}
 
-		private void DrawToolbar()
-		{
-			EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-			var goToLineRect = GUILayoutUtility.GetRect(GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton);
-			if (GUI.Button(goToLineRect, GitGUI.GetTempContent("Go To Line"), EditorStyles.toolbarButton))
-			{
-				PopupWindow.Show(goToLineRect, new GoToLinePopup(GoToLine));
-			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Previous Change"), EditorStyles.toolbarButton))
-			{
-				GoToPreviousChange();
-			}
-			if (GUILayout.Button(GitGUI.GetTempContent("Next Change"), EditorStyles.toolbarButton))
-			{
-				GoToNextChange();
-			}
-			GUILayout.FlexibleSpace();
-			GUILayout.Label(GitGUI.GetTempContent(localPath));
-			if (GitGUI.LinkButtonLayout(gitOverlay.icons.donateSmall, GitGUI.Styles.IconButton))
-			{
-				GitLinks.GoTo(GitLinks.Donate);
-			}
-			if (GitGUI.LinkButtonLayout(GitGUI.Contents.Help, GitGUI.Styles.IconButton))
-			{
-				GitLinks.GoTo(GitLinks.DiffInspectorHelp);
-			}
-			EditorGUILayout.EndHorizontal();
-		}
+        private void BuildToolbar(VisualElement toolbar)
+        {
+            var goToLineButton = toolbar.Q<Button>("GoToLine");
+            goToLineButton.clickable.clicked += () => PopupWindow.Show(goToLineButton.contentRect, new GoToLinePopup(GoToLine));
+            var previousChangeButton = toolbar.Q<Button>("PreviousChange");
+            previousChangeButton.clickable.clicked += GoToPreviousChange;
+            var goToNextChangeButton = toolbar.Q<Button>("NextChange");
+            goToNextChangeButton.clickable.clicked += GoToNextChange;
 
-		private void GoToPreviousChange()
+            toolbar.Q<Button>("Donate").clickable.clicked += () => GitLinks.GoTo(GitLinks.Donate);
+            toolbar.Q<Button>("Help").clickable.clicked += () => GitLinks.GoTo(GitLinks.DiffInspectorHelp);;
+        }
+
+        private class TestBinding : IBinding
+        {
+            public void PreUpdate()
+            {
+                
+            }
+
+            public void Update()
+            {
+                
+            }
+
+            public void Release()
+            {
+                
+            }
+        }
+
+        private void GoToPreviousChange()
 		{
 			for (var i = changeSections.Count-1; i >= 0; i--)
 			{
@@ -656,7 +692,12 @@ namespace UniGit
 			var scrollMaxHorizontal = Mathf.Max(1, Mathf.Max(rect.width, totalLineWidth) - Mathf.Min(rect.width, totalLineWidth));
 			var isRapaint = Event.current.type == EventType.Repaint;
 
-			float height = 0;
+            //Background
+            GUI.color = new Color32(48, 48, 48, 255);
+            GUI.DrawTexture(rect,Texture2D.whiteTexture);
+            GUI.color = Color.white;
+
+            float height = 0;
 			var viewRect = new Rect(0,0, totalLineWidth, totalLinesHeight);
 			var screenRect = new Rect(scrollHorizontalNormal * viewRect.width, scrollVertical, rect.width,rect.height);
 			var newScroll = GUI.BeginScrollView(rect, new Vector2(scrollHorizontalNormal * scrollMaxHorizontal, scrollVertical), viewRect);
@@ -682,7 +723,7 @@ namespace UniGit
 			var linesVisible = Mathf.FloorToInt(rect.height / EditorGUIUtility.singleLineHeight)+1;
 			var visibleLineCount = 0;
 
-			foreach (var changeSection in changeSections)
+            foreach (var changeSection in changeSections)
             {
                 var line = showAdd ? changeSection.addedStartLine : changeSection.removedStartLine;
                 foreach (var blob in changeSection.changeBlobs)

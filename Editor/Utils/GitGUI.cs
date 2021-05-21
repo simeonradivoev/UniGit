@@ -92,7 +92,7 @@ namespace UniGit.Utils
 		{
 			styles.BigTitle = "IN BigTitle";
 			styles.BreadcrumMid = "GUIEditor.BreadcrumbMid";
-			styles.SelectionBoxGlow = "TV Selection";
+			styles.SelectionBoxGlow = "EyeDropperPickedPixel";
 			styles.ObjectField = "ObjectField";
 			styles.GroupBox = "GroupBox";
 			styles.LightmapEditorSelectedHighlight = "LightmapEditorSelectedHighlight";

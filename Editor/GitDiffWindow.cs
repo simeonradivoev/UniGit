@@ -35,7 +35,6 @@ namespace UniGit
 		[SerializeField] private Settings settings;
 		[SerializeField] private DiffWindowStatusList diffWindowStatusList;
 
-		private SerializedObject editoSerializedObject;
 		private Rect commitsRect;
 		private Styles styles;
 		private int lastSelectedIndex;
@@ -146,8 +145,7 @@ namespace UniGit
 			selections ??= new List<SelectionId>();
 			titleContent.text = WindowName;
 			base.OnEnable();
-			editoSerializedObject = new SerializedObject(this);
-			settings ??= new Settings();
+            settings ??= new Settings();
 			if (Undo.GetCurrentGroupName() == CommitMessageUndoGroup)
 			{
 				Undo.RegisterFullObjectHierarchyUndo(this, "Commit Message Changed");
@@ -382,7 +380,7 @@ namespace UniGit
 			}
 
 
-			editoSerializedObject.ApplyModifiedProperties();
+			editorSerializedObject.ApplyModifiedProperties();
 
 			if (Event.current.type == EventType.MouseDown)
 			{

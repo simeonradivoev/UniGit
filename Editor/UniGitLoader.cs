@@ -8,6 +8,7 @@ using UniGit.Utils;
 using UniGit.Windows.Diff;
 using UnityEditor;
 using UnityEngine;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace UniGit
 {
@@ -44,6 +45,17 @@ namespace UniGit
 					repoPath = UniGitPathHelper.FixUnityPath(UniGitPathHelper.Combine(repoPath, EditorPrefs.GetString(RepoPathKey)));
 				}
 
+                var packageInfo = PackageInfo.FindForAssembly(typeof(UniGitLoader).Assembly);
+                if (packageInfo != null)
+                {
+                    injectionHelper.Bind<IGitResourceManager>().To<PackageResourceManager>();
+                    injectionHelper.Bind<PackageInfo>().FromInstance(packageInfo);
+                }
+                else
+                {
+                    injectionHelper.Bind<IGitResourceManager>().To<UnityResourcesManager>();
+                }
+
                 injectionHelper.Bind<UniGitPaths>().FromInstance(new UniGitPaths(repoPath, projectPath));
 				injectionHelper.Bind<GitInitializer>().NonLazy();
 				injectionHelper.Bind<UniGitData>().FromMethod(c => uniGitData); //must have a getter so that it can be injected 
@@ -55,8 +67,7 @@ namespace UniGit
 				injectionHelper.Bind<GitAsyncManager>();
 				injectionHelper.Bind<GitFileWatcher>().NonLazy();
 				injectionHelper.Bind<GitReflectionHelper>();
-				injectionHelper.Bind<IGitResourceManager>().To<GitResourceManager>();
-				injectionHelper.Bind<GitOverlay>();
+                injectionHelper.Bind<GitOverlay>();
 				injectionHelper.Bind<GitAutoFetcher>().NonLazy();
 				injectionHelper.Bind<GitLog>();
 				injectionHelper.Bind<ILogger>().FromMethod(c => new Logger(c.injectionHelper.GetInstance<GitLog>()));

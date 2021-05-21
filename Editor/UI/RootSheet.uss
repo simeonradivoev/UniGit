@@ -22,3 +22,7 @@
 	height: 14px;
 	cursor: link;
 }
+
+.flex-space {
+	margin-left: auto;
+}

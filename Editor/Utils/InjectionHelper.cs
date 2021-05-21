@@ -239,8 +239,9 @@ namespace UniGit.Utils
 		    }
 
 			var customAttributes = parameter.GetCustomAttributes(typeof(UniGitInjectOptional),true);
-            if (customAttributes.Length <= 0)
+            if (customAttributes.Length <= 0 && !parameter.IsOptional)
                 throw new Exception($"Unresolved parameter: '{parameter.Name}' with type: '{parameter.ParameterType}' when injecting into '{injecteeType.Name}'");
+
             var value = parameter.DefaultValue;
             if (value != DBNull.Value)
             {

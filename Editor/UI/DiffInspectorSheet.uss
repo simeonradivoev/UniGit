@@ -1,0 +1,20 @@
+#DiffInspector{
+    flex-grow: 1;
+}
+
+#Lines {
+	flex-grow: 1;
+}
+
+.icon-button Image {
+	width: 16px;
+	height: 16px;
+}
+
+#Donate Image {
+	background-image: url("../Icons/donate.png");
+}
+
+#Help Image {
+	background-image: resource("d__Help");
+}
