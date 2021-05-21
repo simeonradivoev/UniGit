@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Security;
+#if UNITY_EDITOR_WIN
 using CredentialManagement;
+#endif
 using UniGit.Attributes;
 
 namespace UniGit.Adapters

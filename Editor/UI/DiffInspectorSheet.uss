@@ -12,7 +12,7 @@
 }
 
 #Donate Image {
-	background-image: url("../Icons/donate.png");
+	background-image: resource("PreviewPackageInUse");
 }
 
 #Help Image {
