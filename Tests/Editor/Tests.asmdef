@@ -1,5 +1,5 @@
 {
-    "name": "Tests",
+    "name": "UniGit.Editor.Tests",
     "references": [
         "UniGit",
         "UnityEngine.TestRunner",
